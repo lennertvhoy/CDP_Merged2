@@ -3,21 +3,21 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-07T18:36:00+01:00
+  updated_at: 2026-03-07T18:43:00+01:00
   updated_by: agent
   repo_head:
-    value: fb607dd
+    value: 0001ac6
     status: observed
-    checked_at: 2026-03-07T17:53:00+01:00
+    checked_at: 2026-03-07T18:43:00+01:00
     evidence:
-      - git log --oneline --decorate -n 5 -> fb607dd (HEAD -> main, origin/main) docs(agents): add mandatory commit rule for modified files
+      - git log --oneline --decorate -n 3 -> 0001ac6 (HEAD -> main) fix(local): restore postgresql-first canonical segments
   branch:
     value: main
     status: observed
-    checked_at: 2026-03-07T17:12:15+01:00
+    checked_at: 2026-03-07T18:43:00+01:00
     evidence:
-      - git status --short -> M NEXT_ACTIONS.md; M PROJECT_STATE.yaml; M STATUS.md; M WORKLOG.md; ?? .full_import.pid; ?? scripts/test_chatbot_10k_quality.py
-      - git log --oneline --decorate -n 5 -> 36007b1 (HEAD -> main, origin/main)
+      - git status --short -> M BACKLOG.md; M infra/scripts/shutdown-restart-test.sh; M scripts/*; M src/ingestion/kbo_ingest.py; ?? .full_import.pid; ?? output/agent_artifacts/software-companies-in-brussels_20260307_171512.markdown; ?? scripts/test_chatbot_10k_quality.py
+      - git log --oneline --decorate -n 3 -> 0001ac6 (HEAD -> main)
   live_docs:
     status: observed
     checked_at: 2026-03-06T13:49:38+01:00
