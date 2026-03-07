@@ -10,6 +10,25 @@ from src.search_engine.schema import ProfileSearchParams
 class SQLBuilder(QueryBuilder):
     """SQL query builder for PostgreSQL backend."""
 
+    def _resolved_nace_codes(self, params: ProfileSearchParams) -> list[str]:
+        codes = list(params.nace_codes or [])
+        if params.nace_code:
+            single_code = params.nace_code.strip()
+            if single_code and single_code not in codes:
+                codes.insert(0, single_code)
+        return codes
+
+    def _normalize_email_domain(self, email_domain: str | None) -> str | None:
+        if not email_domain:
+            return None
+
+        normalized = email_domain.strip().lower()
+        if normalized.startswith("@"):
+            normalized = normalized[1:]
+        if "@" in normalized:
+            normalized = normalized.split("@", 1)[1]
+        return normalized or None
+
     def build(self, params: ProfileSearchParams) -> str:
         """
         Build SQL query from ProfileSearchParams.
@@ -32,8 +51,9 @@ class SQLBuilder(QueryBuilder):
             clean = params.enterprise_number.replace(".", "").replace(" ", "")
             conditions.append(f"enterprise_number = '{clean}'")
 
-        if params.nace_codes:
-            codes = ", ".join([f"'{c}'" for c in params.nace_codes])
+        resolved_nace_codes = self._resolved_nace_codes(params)
+        if resolved_nace_codes:
+            codes = ", ".join([f"'{c}'" for c in resolved_nace_codes])
             conditions.append(f"nace_code IN ({codes})")
 
         if params.juridical_codes:
@@ -48,6 +68,12 @@ class SQLBuilder(QueryBuilder):
 
         if params.has_email:
             conditions.append("email IS NOT NULL AND email != ''")
+
+        normalized_email_domain = self._normalize_email_domain(params.email_domain)
+        if normalized_email_domain:
+            conditions.append(
+                f"LOWER(SPLIT_PART(email, '@', 2)) = '{normalized_email_domain.lower()}'"
+            )
 
         if params.keywords:
             conditions.append(f"name ILIKE '%{params.keywords}%'")
@@ -95,11 +121,12 @@ LIMIT 100
             conditions.append(f"enterprise_number = {next_param()}")
             query_params.append(clean)
 
-        if params.nace_codes:
+        resolved_nace_codes = self._resolved_nace_codes(params)
+        if resolved_nace_codes:
             # For IN clauses, we need to expand placeholders
-            placeholders = ", ".join([next_param() for _ in params.nace_codes])
+            placeholders = ", ".join([next_param() for _ in resolved_nace_codes])
             conditions.append(f"nace_code IN ({placeholders})")
-            query_params.extend(params.nace_codes)
+            query_params.extend(resolved_nace_codes)
 
         if params.juridical_codes:
             placeholders = ", ".join([next_param() for _ in params.juridical_codes])
@@ -115,6 +142,11 @@ LIMIT 100
 
         if params.has_email:
             conditions.append("email IS NOT NULL AND email != ''")
+
+        normalized_email_domain = self._normalize_email_domain(params.email_domain)
+        if normalized_email_domain:
+            conditions.append(f"LOWER(SPLIT_PART(email, '@', 2)) = LOWER({next_param()})")
+            query_params.append(normalized_email_domain)
 
         if params.keywords:
             conditions.append(f"name ILIKE {next_param()}")

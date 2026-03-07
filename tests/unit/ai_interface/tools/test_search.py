@@ -378,6 +378,84 @@ class TestSearchProfilesAppliedFilters:
         result = json.loads(result_raw)
         assert result["profiles_sample"][0]["status"] == "AC"
 
+    @pytest.mark.asyncio
+    async def test_single_nace_code_alias_maps_into_applied_filters(self):
+        """Single nace_code inputs should be normalized to nace_codes."""
+        from src.ai_interface.tools.search import search_profiles
+
+        pg_payload = {
+            "total": 12,
+            "result": [
+                {
+                    "enterprise_number": "p1",
+                    "company_name": "Restaurant Example",
+                    "city": "Gent",
+                    "status": "AC",
+                    "industry_nace_code": "56101",
+                }
+            ],
+        }
+
+        mock_pg = _make_postgresql_mock(pg_payload)
+
+        with (
+            patch("src.ai_interface.tools.search.get_search_service", return_value=mock_pg),
+            patch(
+                "src.ai_interface.tools.search.TracardiClient",
+                return_value=_make_tracardi_mock({"total": 0, "result": []}),
+            ),
+            patch(
+                "src.ai_interface.tools.search.AzureSearchRetriever",
+                return_value=_make_azure_mock(),
+            ),
+            patch("src.ai_interface.tools.search.settings", _disabled_settings()),
+        ):
+            result = json.loads(await search_profiles.ainvoke({"nace_code": "56101"}))
+
+        assert result["status"] == "ok"
+        assert result["applied_filters"]["nace_codes"] == ["56101"]
+        called_filters = mock_pg.search_companies.await_args.args[0]
+        assert called_filters.nace_codes == ["56101"]
+
+    @pytest.mark.asyncio
+    async def test_email_domain_filter_is_normalized_and_forwarded(self):
+        """Email domain filters should normalize addresses and reach PostgreSQL."""
+        from src.ai_interface.tools.search import search_profiles
+
+        pg_payload = {
+            "total": 3,
+            "result": [
+                {
+                    "enterprise_number": "p1",
+                    "company_name": "Mail Example",
+                    "city": "Gent",
+                    "status": "AC",
+                    "main_email": "owner@gmail.com",
+                }
+            ],
+        }
+
+        mock_pg = _make_postgresql_mock(pg_payload)
+
+        with (
+            patch("src.ai_interface.tools.search.get_search_service", return_value=mock_pg),
+            patch(
+                "src.ai_interface.tools.search.TracardiClient",
+                return_value=_make_tracardi_mock({"total": 0, "result": []}),
+            ),
+            patch(
+                "src.ai_interface.tools.search.AzureSearchRetriever",
+                return_value=_make_azure_mock(),
+            ),
+            patch("src.ai_interface.tools.search.settings", _disabled_settings()),
+        ):
+            result = json.loads(await search_profiles.ainvoke({"email_domain": "info@Gmail.com"}))
+
+        assert result["status"] == "ok"
+        assert result["applied_filters"]["email_domain"] == "gmail.com"
+        called_filters = mock_pg.search_companies.await_args.args[0]
+        assert called_filters.email_domain == "gmail.com"
+
 
 class TestAggregateProfilesPercentOfTotal:
     """Regression tests for Bug #5: percent_of_total used sample size instead of total_count."""

@@ -12,9 +12,11 @@ DEPRECATED: Import directly from src.ai_interface.tools submodule instead.
 # Re-export all tools for backward compatibility
 from src.ai_interface.tools import (
     aggregate_profiles,
+    create_data_artifact,
     create_segment,
     email_segment_export,
     export_segment_to_csv,
+    get_data_coverage_stats,
     get_segment_stats,
     lookup_juridical_code,
     lookup_nace_code,
@@ -38,11 +40,13 @@ from src.ai_interface.tools.nace_resolver import (
 )
 
 __all__ = [
+    "create_data_artifact",
     # Search
     "search_profiles",
     "create_segment",
     "get_segment_stats",
     "aggregate_profiles",
+    "get_data_coverage_stats",
     # NACE/Juridical
     "lookup_nace_code",
     "lookup_juridical_code",

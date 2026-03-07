@@ -1,7 +1,7 @@
 {
   "thread_id": "it-thread-stable-user-stories",
   "profile_id": "profile-it-thread-stable-user-stories",
-  "turn_count": 8,
+  "turn_count": 9,
   "results": [
     {
       "turn_index": 1,
@@ -156,6 +156,78 @@
     },
     {
       "turn_index": 5,
+      "user_text": "Create a spreadsheet artifact for those companies.",
+      "final_answer": "Artifact ready: artifact_created title=it-gent-report type=search_results format=csv use_last_search=True",
+      "tool_calls": [
+        {
+          "name": "create_data_artifact_mock",
+          "args": {
+            "title": "it-gent-report",
+            "artifact_type": "search_results",
+            "output_format": "csv",
+            "use_last_search": true
+          },
+          "id": "call-artifact-1"
+        }
+      ],
+      "node_trace": [
+        "router",
+        "agent",
+        "tools",
+        "agent"
+      ],
+      "language": "en",
+      "profile_id": "profile-it-thread-stable-user-stories",
+      "thread_id": "it-thread-stable-user-stories",
+      "raw_chunks": [
+        {
+          "node": "router",
+          "language": "en"
+        },
+        {
+          "node": "agent",
+          "message": {
+            "type": "AIMessage",
+            "content": "",
+            "tool_calls": [
+              {
+                "name": "create_data_artifact_mock",
+                "args": {
+                  "title": "it-gent-report",
+                  "artifact_type": "search_results",
+                  "output_format": "csv",
+                  "use_last_search": true
+                },
+                "id": "call-artifact-1",
+                "type": "tool_call"
+              }
+            ]
+          }
+        },
+        {
+          "node": "tools",
+          "tool_messages": [
+            {
+              "type": "ToolMessage",
+              "content": "artifact_created title=it-gent-report type=search_results format=csv use_last_search=True",
+              "name": "create_data_artifact_mock",
+              "status": "success",
+              "tool_call_id": "call-artifact-1"
+            }
+          ]
+        },
+        {
+          "node": "agent",
+          "message": {
+            "type": "AIMessage",
+            "content": "Artifact ready: artifact_created title=it-gent-report type=search_results format=csv use_last_search=True",
+            "tool_calls": []
+          }
+        }
+      ]
+    },
+    {
+      "turn_index": 6,
       "user_text": "Run a tool-heavy plan for this context.",
       "final_answer": "NACE resolved: [\"62010\", \"62020\"]",
       "tool_calls": [
@@ -221,7 +293,7 @@
       ]
     },
     {
-      "turn_index": 6,
+      "turn_index": 7,
       "user_text": "Create the segment and continue the tool-heavy flow.",
       "final_answer": "Tool-heavy flow finished: pushed_to_resend segment_id=it-gent count=2",
       "tool_calls": [
@@ -327,7 +399,7 @@
       ]
     },
     {
-      "turn_index": 7,
+      "turn_index": 8,
       "user_text": "Trigger failure and recover in the same turn.",
       "final_answer": "Recovered successfully: lookup_ok keyword=it",
       "tool_calls": [
@@ -431,7 +503,7 @@
       ]
     },
     {
-      "turn_index": 8,
+      "turn_index": 9,
       "user_text": "Identity check: what do you remember about this ongoing thread?",
       "final_answer": "Acknowledged and remembered for the same identity session.",
       "tool_calls": [],

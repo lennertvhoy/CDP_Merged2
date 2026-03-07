@@ -16,6 +16,25 @@ from src.search_engine.schema import ProfileSearchParams
 class ESBuilder(QueryBuilder):
     """Builds Elasticsearch DSL queries from ProfileSearchParams."""
 
+    def _resolved_nace_codes(self, params: ProfileSearchParams) -> list[str]:
+        codes = list(params.nace_codes or [])
+        if params.nace_code:
+            single_code = params.nace_code.strip()
+            if single_code and single_code not in codes:
+                codes.insert(0, single_code)
+        return codes
+
+    def _normalize_email_domain(self, email_domain: str | None) -> str | None:
+        if not email_domain:
+            return None
+
+        normalized = email_domain.strip().lower()
+        if normalized.startswith("@"):
+            normalized = normalized[1:]
+        if "@" in normalized:
+            normalized = normalized.split("@", 1)[1]
+        return normalized or None
+
     def build(self, params: ProfileSearchParams) -> str:
         """Build an Elasticsearch DSL query dict serialised as a JSON string.
 
@@ -35,14 +54,15 @@ class ESBuilder(QueryBuilder):
         if params.status:
             must_clauses.append({"term": {"traits.status.keyword": params.status}})
 
-        if params.nace_codes:
+        resolved_nace_codes = self._resolved_nace_codes(params)
+        if resolved_nace_codes:
             # Support both singular and plural field names for compatibility
             must_clauses.append(
                 {
                     "bool": {
                         "should": [
-                            {"terms": {"traits.nace_code.keyword": params.nace_codes}},
-                            {"terms": {"traits.nace_codes.keyword": params.nace_codes}},
+                            {"terms": {"traits.nace_code.keyword": resolved_nace_codes}},
+                            {"terms": {"traits.nace_codes.keyword": resolved_nace_codes}},
                         ]
                     }
                 }
@@ -75,6 +95,10 @@ class ESBuilder(QueryBuilder):
 
         if params.has_email:
             must_clauses.append({"exists": {"field": "traits.email"}})
+
+        normalized_email_domain = self._normalize_email_domain(params.email_domain)
+        if normalized_email_domain:
+            must_clauses.append({"wildcard": {"traits.email.keyword": f"*@{normalized_email_domain}"}})
 
         if params.has_phone:
             must_clauses.append({"exists": {"field": "traits.phone"}})

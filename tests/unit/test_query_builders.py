@@ -40,6 +40,22 @@ class TestTQLBuilder:
 
         assert 'traits.nace_codes IN ["62010", "62020"]' in query
 
+    def test_single_nace_code_alias_query(self):
+        """Single nace_code should be normalized into the TQL query."""
+        builder = TQLBuilder()
+        params = ProfileSearchParams(nace_code="56101")
+        query = builder.build(params)
+
+        assert 'traits.nace_code IN ["56101"]' in query
+
+    def test_email_domain_query(self):
+        """Email-domain filters should appear in generated TQL."""
+        builder = TQLBuilder()
+        params = ProfileSearchParams(email_domain="info@gmail.com")
+        query = builder.build(params)
+
+        assert 'traits.email == "*@gmail.com"' in query
+
     def test_kbo_normalization(self):
         """Test KBO number normalization."""
         builder = TQLBuilder()

@@ -48,6 +48,25 @@ class TQLBuilder(QueryBuilder):
     def _escape_tql_value(self, value: str) -> str:
         return value.replace("\\", "\\\\").replace('"', '\\"').strip()
 
+    def _resolved_nace_codes(self, params: ProfileSearchParams) -> list[str]:
+        codes = list(params.nace_codes or [])
+        if params.nace_code:
+            single_code = params.nace_code.strip()
+            if single_code and single_code not in codes:
+                codes.insert(0, single_code)
+        return codes
+
+    def _normalize_email_domain(self, email_domain: str | None) -> str | None:
+        if not email_domain:
+            return None
+
+        normalized = email_domain.strip().lower()
+        if normalized.startswith("@"):
+            normalized = normalized[1:]
+        if "@" in normalized:
+            normalized = normalized.split("@", 1)[1]
+        return normalized or None
+
     def _extract_keyword_tokens(self, keyword: str) -> list[str]:
         raw_tokens = re.findall(r"[A-Za-z0-9]+", keyword.lower())
         tokens: list[str] = []
@@ -91,6 +110,7 @@ class TQLBuilder(QueryBuilder):
     def build(self, params: ProfileSearchParams, *, lexical_operator: str = "CONSIST") -> str:
         """Build TQL query from ProfileSearchParams."""
         conditions = []
+        resolved_nace_codes = self._resolved_nace_codes(params)
 
         # 1. Exact Matches - TQL uses = (single equals) for equality
         if params.city:
@@ -119,8 +139,8 @@ class TQLBuilder(QueryBuilder):
 
         # 3. Array fields - TQL uses IN [...] for membership checks
         # Support both singular and plural field names for compatibility
-        if params.nace_codes:
-            codes_list = ", ".join([f'"{code}"' for code in params.nace_codes])
+        if resolved_nace_codes:
+            codes_list = ", ".join([f'"{code}"' for code in resolved_nace_codes])
             # Use OR with both field names to handle data structure variations
             nace_condition_singular = f"traits.nace_code IN [{codes_list}]"
             nace_condition_plural = f"traits.nace_codes IN [{codes_list}]"
@@ -139,6 +159,10 @@ class TQLBuilder(QueryBuilder):
             conditions.append("traits.phone EXISTS")
         if params.has_email:
             conditions.append("traits.email EXISTS")
+        normalized_email_domain = self._normalize_email_domain(params.email_domain)
+        if normalized_email_domain:
+            escaped_domain = self._escape_tql_value(normalized_email_domain)
+            conditions.append(f'traits.email == "*@{escaped_domain}"')
 
         # 6. Name/Keyword Search (Smart Detection)
         if params.keywords:

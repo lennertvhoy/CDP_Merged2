@@ -21,6 +21,10 @@ class ProfileSearchParams(BaseModel):
     nace_codes: list[str] | None = Field(
         None, description="List of NACE codes (e.g., ['62010']) found via lookup tool."
     )
+    nace_code: str | None = Field(
+        None,
+        description="Single NACE code convenience alias (e.g., '62010'). Normalized to nace_codes.",
+    )
     juridical_codes: list[str] | None = Field(
         None, description="List of Juridical form codes (e.g., ['014']) found via lookup tool."
     )
@@ -45,4 +49,8 @@ class ProfileSearchParams(BaseModel):
     )
     has_email: bool | None = Field(
         False, description="If True, only return profiles with an email address."
+    )
+    email_domain: str | None = Field(
+        None,
+        description="Restrict results to a specific email domain (e.g., 'gmail.com').",
     )
