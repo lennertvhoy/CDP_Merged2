@@ -560,3 +560,49 @@ Fixed `scripts/enrich_companies_chunked.py` to return non-zero exit code when in
 ---
 
 *Earlier entries available in git history*
+
+---
+
+## 2026-03-07 (Tracardi Workflows Configured with Nodes and Triggers)
+
+### Task: Configure all 5 Tracardi workflows with nodes and event triggers
+
+**Type:** verification_only  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-07 20:20 CET  
+**Git HEAD:** not modified (GUI configuration)
+
+**Summary:**
+User successfully configured all 5 Resend email processing workflows in the Tracardi GUI with nodes and event triggers. Workflows are now ready for deployment.
+
+**Workflows Configured:**
+
+| Workflow | Nodes | Trigger(s) |
+|----------|-------|------------|
+| **Email Engagement Processor** | Start → End | email.opened, email.clicked |
+| **Email Bounce Processor** | Start → Update Profile → End | email.bounced |
+| **Email Delivery Processor** | Start → End | email.delivered |
+| **Email Complaint Processor** | Start → End | email.complained |
+| **High Engagement Segment** | Start → End | profile.updated |
+
+**Configuration Summary:**
+- All workflows have Start and End nodes on their canvas
+- Email Bounce Processor has an additional "Update Profile" node for marking emails as invalid
+- Event triggers configured to listen for Resend webhook events (bounce, complaint, delivery, open, click)
+- High Engagement Segment triggers on profile updates from CDP API (for engagement score changes)
+
+**Screenshots Saved:**
+- `tracardi_workflows_configured.png` - Shows all 5 workflows with node configuration
+
+**Current Tracardi State:**
+- **Workflows**: 5 configured, ready for deployment
+- **Event Sources**: 4 configured and functional
+- **Profiles**: 31 stored
+- **Events**: 52 recorded
+- **GUI**: Accessible at http://localhost:8787
+
+**Next Steps:**
+1. Deploy workflows - Click "Deploy" on each workflow in the Tracardi GUI
+2. Configure Resend webhooks - Run the webhook setup script to connect Resend to Tracardi
+3. Test end-to-end - Send test emails and verify events trigger the workflows
+
