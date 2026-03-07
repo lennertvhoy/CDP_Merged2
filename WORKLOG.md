@@ -4,6 +4,56 @@
 
 ---
 
+## 2026-03-08 (360° Tool Re-Test After Prompt Restructure - ALL FAILED)
+
+### Task: Re-test 3 failed queries after system prompt restructure
+
+**Type:** verification_only  
+**Status:** COMPLETE (all tests failed)  
+**Timestamp:** 2026-03-08 00:55 CET  
+**Git Head:** `3f74f15` - refactor(chatbot): Restructure system prompt to prioritize 360° tools at TOP
+
+**Summary:**
+Re-tested the 3 queries that were failing before the prompt restructure. **All 3 tests still failed.** The system prompt restructure (moving 360° tools to Section 1A) was insufficient to fix the tool selection problem.
+
+**Test Results:**
+
+| Query | Expected Tool | Actual Tool | Status |
+|-------|---------------|-------------|--------|
+| "How well are source systems linked to KBO?" | `get_identity_link_quality` | `get_data_coverage_stats` | ❌ FAILED |
+| "Show me revenue distribution by city" | `get_geographic_revenue_distribution` | `aggregate_profiles` | ❌ FAILED |
+| "Pipeline value for software companies in Brussels?" | `get_industry_summary` | `search_profiles` | ❌ FAILED |
+
+**LLM Reasoning (from browser traces):**
+
+1. **KBO link quality:** "I need to assess how well source systems are linked to KBO, which is a data-coverage question rather than finding companies by industry or location. I will use get_data_coverage_stats..."
+   - LLM interpreted "linkage" as "coverage" and never considered `get_identity_link_quality`
+
+2. **Revenue distribution:** "I need to find companies and aggregate their revenue by city... I will use aggregate_profiles with group_by=city..."
+   - LLM interpreted "revenue distribution" as "aggregation by city" and never considered `get_geographic_revenue_distribution`
+
+3. **Pipeline value:** "I need to find software companies in Brussels and then compute their pipeline value. I will use search_profiles with keywords=software, city=Brussels..."
+   - LLM interpreted as a search problem, not a cross-source pipeline analysis
+
+**Root Cause Analysis:**
+
+The prompt restructure failed because:
+
+1. **LLM still pattern-matches to standard tools first** - Even with 360° tools at the top, the LLM classifies queries into "coverage", "aggregation", or "search" buckets and stops looking
+2. **The decision logic isn't concrete enough** - "Cross-source concepts" is too abstract; LLM needs explicit examples
+3. **Tool descriptions may not trigger the right associations** - "get_geographic_revenue_distribution" doesn't clearly signal "use this for revenue by city queries"
+
+**Next Steps:**
+
+1. **Add explicit EXAMPLES section** showing exact query patterns → tool mappings
+2. **Add negative constraints** like "DO NOT USE aggregate_profiles for revenue queries - use get_geographic_revenue_distribution instead"
+3. **Add tool name hints in routing** - e.g., "For 'revenue by city', use: get_geographic_revenue_distribution"
+4. **Consider more descriptive tool names** - e.g., `query_revenue_by_city` instead of `get_geographic_revenue_distribution`
+
+**Screenshot:** `chatbot_360_retest_all_failed_2026-03-08.png`
+
+---
+
 ---
 
 ## 2026-03-08 (System Prompt Restructure - 360° Tools Prioritized)

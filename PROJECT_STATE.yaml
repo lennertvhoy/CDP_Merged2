@@ -143,7 +143,7 @@ current_state:
       system_prompt_enhanced_at: 2026-03-07T23:40:00+01:00
       tool_selection_tested_at: 2026-03-08T00:10:00+01:00
       system_prompt_restructured_at: 2026-03-08T00:47:00+01:00
-      tool_selection_status: restructured_pending_retest
+      tool_selection_status: restructured_retest_failed_needs_stronger_prompts
       tools:
         - query_unified_360
         - get_industry_summary
@@ -166,17 +166,20 @@ current_state:
           expected: get_identity_link_quality
           actual: get_data_coverage_stats
           passed: false
-          notes: "Retest needed after prompt restructure"
+          tested_at: "2026-03-08T00:55:00+01:00"
+          notes: "LLM classifies 'linkage' as 'coverage' - needs explicit examples"
         - query: "Show me revenue distribution by city"
           expected: get_geographic_revenue_distribution
           actual: aggregate_profiles
           passed: false
-          notes: "Retest needed after prompt restructure"
+          tested_at: "2026-03-08T00:55:00+01:00"
+          notes: "LLM classifies 'revenue distribution' as 'aggregation' - needs stronger routing"
         - query: "Pipeline value for software companies in Brussels?"
           expected: get_industry_summary
-          actual: "LLM said can't calculate"
+          actual: search_profiles
           passed: false
-          notes: "Retest needed after prompt restructure"
+          tested_at: "2026-03-08T00:55:00+01:00"
+          notes: "LLM classifies 'pipeline value' as search then calculation - misses cross-source concept"
       tool_selection_improvements:
         - Added CRITICAL guidance distinguishing 360° tools from standard search
         - Added tool selection matrix (when to use which tool)
@@ -186,7 +189,8 @@ current_state:
         - "2026-03-08: Added TOOL SELECTION ROUTING section at beginning with STEP 1 decision logic"
         - "2026-03-08: Added tool selection matrix table in Section 1B"
         - "2026-03-08: Updated VALID_TOOL_NAMES to include all 360° tools"
-      tool_selection_next_action: Re-test the 3 failed queries to verify the fix works
+      tool_selection_next_action: Add explicit EXAMPLES to system prompt showing exact query→tool mappings
+      tool_selection_screenshot: chatbot_360_retest_all_failed_2026-03-08.png
     local_dataset:
       status: verified_working
       total_companies: 1940603
