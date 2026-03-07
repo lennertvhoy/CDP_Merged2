@@ -95,6 +95,15 @@ class TestSQLBuilderParameterized:
         assert "62010" in param_values
         assert "9000" in param_values
 
+    def test_email_domain_parameterized(self, builder):
+        """Verify email-domain filters are parameterized safely."""
+        params = ProfileSearchParams(email_domain="info@gmail.com")
+        sql, query_params = builder.build_parametrized(params)
+
+        assert "SPLIT_PART(email, '@', 2)" in sql
+        assert "DROP TABLE" not in sql
+        assert "gmail.com" in query_params
+
     def test_enterprise_number_normalization(self, builder):
         """Verify enterprise number normalization in parameterized query."""
         params = ProfileSearchParams(enterprise_number="0207.446.759")

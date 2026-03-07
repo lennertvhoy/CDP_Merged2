@@ -205,6 +205,7 @@ def _build_azure_query_text(
     zip_code: str | None,
     nace_codes: list[str] | None,
     juridical_codes: list[str] | None,
+    email_domain: str | None = None,
 ) -> str:
     """Build a best-effort keyword query for Azure AI Search."""
     tokens: list[str] = []
@@ -218,7 +219,21 @@ def _build_azure_query_text(
         tokens.extend(nace_codes)
     if juridical_codes:
         tokens.extend(juridical_codes)
+    if email_domain:
+        tokens.append(email_domain)
     return " ".join(t for t in tokens if t).strip() or "*"
+
+
+def _normalize_email_domain(email_domain: str | None) -> str | None:
+    if not email_domain:
+        return None
+
+    normalized = email_domain.strip().lower()
+    if normalized.startswith("@"):
+        normalized = normalized[1:]
+    if "@" in normalized:
+        normalized = normalized.split("@", 1)[1]
+    return normalized or None
 
 
 @tool(args_schema=ProfileSearchParams)
@@ -226,6 +241,7 @@ async def search_profiles(
     keywords: str | None = None,
     enterprise_number: str | None = None,
     nace_codes: list[str] | None = None,
+    nace_code: str | None = None,
     juridical_codes: list[str] | None = None,
     juridical_keyword: str | None = None,
     city: str | None = None,
@@ -234,6 +250,7 @@ async def search_profiles(
     min_start_date: str | None = None,
     has_phone: bool | None = False,
     has_email: bool | None = None,
+    email_domain: str | None = None,
 ) -> str:
     """Search for companies in the CDP using PostgreSQL as the authoritative source.
 
@@ -244,6 +261,7 @@ async def search_profiles(
         keywords: Industry keyword; auto-resolved to NACE codes.
         enterprise_number: KBO enterprise number.
         nace_codes: List of NACE activity codes.
+        nace_code: Single NACE code convenience alias.
         juridical_codes: List of juridical form codes.
         juridical_keyword: Optional keyword for Juridical Forms.
         city: City name.
@@ -252,6 +270,7 @@ async def search_profiles(
         min_start_date: ISO date string (YYYY-MM-DD).
         has_phone: Filter to companies with phone number.
         has_email: Filter to companies with email.
+        email_domain: Optional email-domain filter, for example ``gmail.com``.
 
     Returns:
         JSON string with:
@@ -261,6 +280,9 @@ async def search_profiles(
         - applied filters and query metadata
     """
     original_keyword = keywords
+    normalized_email_domain = _normalize_email_domain(email_domain)
+    if nace_code and not nace_codes:
+        nace_codes = [nace_code.strip()]
     resolution_mode = "activity_nace_codes" if nace_codes else "none"
     resolved_codes: list[str] = list(nace_codes or [])
 
@@ -304,6 +326,7 @@ async def search_profiles(
             min_start_date,
             bool(has_phone),
             bool(has_email),
+            normalized_email_domain,
         ]
     )
     sample_limit = DEFAULT_SAMPLE_LIMIT if has_structured_filters else BROAD_QUERY_SAMPLE_LIMIT
@@ -320,6 +343,7 @@ async def search_profiles(
         min_start_date=min_start_date,
         has_phone=has_phone,
         has_email=has_email,
+        email_domain=normalized_email_domain,
         limit=sample_limit,
         offset=0,
     )
@@ -337,6 +361,7 @@ async def search_profiles(
         min_start_date=min_start_date,
         has_phone=has_phone,
         has_email=has_email,
+        email_domain=normalized_email_domain,
     )
     queries = QueryFactory.generate_all(params)
     tql_query = queries.get("tql", "")
@@ -347,6 +372,7 @@ async def search_profiles(
         zip_code,
         nace_codes,
         juridical_codes,
+        normalized_email_domain,
     )
     azure_retriever = AzureSearchRetriever()
 
@@ -453,6 +479,7 @@ async def search_profiles(
             min_start_date=min_start_date,
             has_phone=has_phone,
             has_email=has_email,
+            email_domain=normalized_email_domain,
             limit=sample_limit,
             offset=0,
         )
@@ -609,6 +636,7 @@ async def search_profiles(
             "min_start_date": min_start_date,
             "has_phone": bool(has_phone),
             "has_email": bool(has_email),
+            "email_domain": normalized_email_domain,
         },
         "counts": {
             "authoritative_total": total_count,
@@ -877,7 +905,9 @@ async def aggregate_profiles(
     zip_code: str | None = None,
     status: str | None = None,
     nace_codes: list[str] | None = None,
+    nace_code: str | None = None,
     juridical_codes: list[str] | None = None,
+    email_domain: str | None = None,
     limit_results: int = 20,
 ) -> str:
     """Aggregate and analyze profiles by a specific field using PostgreSQL.
@@ -896,7 +926,9 @@ async def aggregate_profiles(
         zip_code: Filter to specific postal code.
         status: Optional company status filter, for example "AC" for active.
         nace_codes: List of NACE codes to filter by.
+        nace_code: Single NACE code convenience alias.
         juridical_codes: List of juridical form codes to filter by.
+        email_domain: Optional email-domain filter.
         limit_results: Maximum number of groups to return (default 20).
 
     Returns:
@@ -923,6 +955,8 @@ async def aggregate_profiles(
         )
 
     # Resolve keywords to NACE codes if provided
+    if nace_code and not nace_codes:
+        nace_codes = [nace_code.strip()]
     resolved_nace_codes = list(nace_codes or [])
     if keywords and not nace_codes:
         found_codes = _get_nace_codes_from_keyword(keywords)
@@ -938,6 +972,7 @@ async def aggregate_profiles(
         city=city,
         zip_code=zip_code,
         status=status,
+        email_domain=_normalize_email_domain(email_domain),
     )
 
     # Use PostgreSQL search service for aggregation

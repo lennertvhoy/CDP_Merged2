@@ -131,6 +131,17 @@ def test_build_where_clause_maps_min_start_date_to_founded_date(service_setup):
     assert params == [date(2024, 1, 1)]
 
 
+def test_build_where_clause_supports_email_domain_filter(service_setup):
+    service, _, _ = service_setup
+
+    where_clause, params = service._build_where_clause(
+        CompanySearchFilters(email_domain="info@Gmail.com", status=None)
+    )
+
+    assert where_clause == "LOWER(SPLIT_PART(main_email, '@', 2)) = LOWER($1)"
+    assert params == ["gmail.com"]
+
+
 @pytest.mark.asyncio
 async def test_search_companies_executes_queries_and_returns_metadata(service_setup):
     service, client, conn = service_setup

@@ -57,6 +57,7 @@ class CompanySearchFilters:
     min_start_date: str | None = None
     has_phone: bool | None = None
     has_email: bool | None = None
+    email_domain: str | None = None
     limit: int = 100
     offset: int = 0
 
@@ -74,6 +75,18 @@ class PostgreSQLSearchService:
     def __init__(self) -> None:
         """Initialize the search service."""
         self._client = get_postgresql_client()
+
+    @staticmethod
+    def _normalize_email_domain(email_domain: str | None) -> str | None:
+        if not email_domain:
+            return None
+
+        normalized = email_domain.strip().lower()
+        if normalized.startswith("@"):
+            normalized = normalized[1:]
+        if "@" in normalized:
+            normalized = normalized.split("@", 1)[1]
+        return normalized or None
 
     async def ensure_connected(self) -> None:
         """Ensure database connection is established."""
@@ -247,6 +260,13 @@ class PostgreSQLSearchService:
         # Has email filter
         if filters.has_email:
             conditions.append("main_email IS NOT NULL AND main_email != ''")
+
+        normalized_email_domain = self._normalize_email_domain(filters.email_domain)
+        if normalized_email_domain:
+            conditions.append(
+                f"LOWER(SPLIT_PART(main_email, '@', 2)) = LOWER({next_param()})"
+            )
+            params.append(normalized_email_domain)
 
         where_clause = " AND ".join(conditions) if conditions else "1=1"
         return where_clause, params

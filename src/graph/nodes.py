@@ -18,7 +18,11 @@ from langchain_openai import AzureChatOpenAI, ChatOpenAI
 # ToolExecutor removed in LangGraph 1.x - using direct tool invocation instead
 from src.ai_interface.tools import (
     aggregate_profiles,
+    create_data_artifact,
     create_segment,
+    email_segment_export,
+    export_segment_to_csv,
+    get_data_coverage_stats,
     get_segment_stats,
     lookup_juridical_code,
     lookup_nace_code,
@@ -42,13 +46,17 @@ search_cache = get_search_cache()
 tools = [
     search_profiles,
     aggregate_profiles,
+    create_data_artifact,
     create_segment,
+    get_data_coverage_stats,
     get_segment_stats,
     push_to_flexmail,
     send_email_via_resend,
     send_bulk_emails_via_resend,
     push_segment_to_resend,
     send_campaign_via_resend,
+    export_segment_to_csv,
+    email_segment_export,
     lookup_nace_code,
     lookup_juridical_code,
 ]
@@ -102,7 +110,8 @@ Use `search_profiles(juridical_keyword="...")`. The tool will automatically reso
 ## 4. PROACTIVE NEXT STEPS (MANDATORY AFTER SEARCHES)
 When you find companies, ALWAYS suggest next actions:
 - "Would you like me to create a segment from these results?"
-- "Should I push these to a Flexmail campaign?"
+- "Should I push these to a Resend audience or campaign?"
+- "Do you want a CSV spreadsheet or markdown report for these results?"
 - "Want me to find similar companies in other cities?"
 - "Would you like analytics on these companies (breakdown by city, juridical form, etc.)?"
 
@@ -121,17 +130,29 @@ The system will AUTOMATICALLY use the exact same TQL query from the previous sea
 **After search_profiles succeeds, you MUST include suggestions like:**
 "I found [X] companies. Would you like me to:
 1. Create a segment for these results?
-2. Push them to Flexmail?
-3. Show analytics (breakdown by city/form)?
-4. Search for similar companies in other cities?"
+2. Push them to Resend?
+3. Create a CSV or markdown artifact?
+4. Show analytics (breakdown by city/form)?
+5. Search for similar companies in other cities?"
 
 ## 5. AGGREGATION & ANALYTICS
 Use `aggregate_profiles` for breakdowns:
 - "Break down restaurants by juridical form"
 - "Top 5 cities with IT companies"
 - "Email coverage by industry"
+- "Group companies with email addresses by city"
 
-## 6. EMAIL PROVIDER SELECTION
+For overall local dataset health or enrichment coverage, use `get_data_coverage_stats`.
+
+## 6. REPORTS, EXPORTS, AND LOCAL ARTIFACTS
+- Use `create_data_artifact` when the user wants a local document, spreadsheet-compatible file, JSON export, or analysis artifact.
+- For spreadsheet-compatible output from the query plane, prefer `create_data_artifact(..., output_format="csv")`.
+- For a human-readable report or handoff document, prefer `create_data_artifact(..., output_format="markdown")`.
+- When the user says "export those results" after a search, prefer `create_data_artifact(..., use_last_search=True)`.
+- Use `export_segment_to_csv` for Tracardi segment exports.
+- Use `email_segment_export` when the user wants the segment export emailed out.
+
+## 7. EMAIL PROVIDER SELECTION
 
 You have TWO email providers available:
 
@@ -150,7 +171,7 @@ When user asks to "send email" or "email these contacts":
 - If transactional/notification → prefer Resend
 - Otherwise, ASK: "Would you like to send via Resend or Flexmail?"
 
-## 7. REFUSAL
+## 8. REFUSAL
 If you cannot map a user's intent to these fields (e.g., "Find companies with red logos"),
 explain that the database does not support that filter.
 """,
@@ -310,13 +331,17 @@ async def agent_node(state: AgentState) -> dict:
 VALID_TOOL_NAMES = {
     "search_profiles",
     "aggregate_profiles",
+    "create_data_artifact",
     "create_segment",
+    "get_data_coverage_stats",
     "get_segment_stats",
     "push_to_flexmail",
     "send_email_via_resend",
     "send_bulk_emails_via_resend",
     "push_segment_to_resend",
     "send_campaign_via_resend",
+    "export_segment_to_csv",
+    "email_segment_export",
     "lookup_nace_code",
     "lookup_juridical_code",
 }
@@ -334,6 +359,24 @@ def _is_valid_nace_code(code: str) -> bool:
     if not isinstance(code, str):
         return False
     return len(code) == 5 and code.isdigit()
+
+
+def _merge_last_search_params(
+    tool_args: dict[str, Any],
+    stored_params: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Fill missing artifact/search arguments from stored search params."""
+    if not stored_params:
+        return tool_args
+
+    merged = dict(tool_args)
+    for key, value in stored_params.items():
+        if value in (None, "", []):
+            continue
+        current_value = merged.get(key)
+        if current_value in (None, "", []):
+            merged[key] = value
+    return merged
 
 
 def _validate_tool_call(tool_call: dict) -> tuple[bool, str]:
@@ -357,12 +400,16 @@ def _validate_tool_call(tool_call: dict) -> tuple[bool, str]:
         return False, f"Destructive operation '{name}' is not allowed."
 
     # Check 3: NACE code validation for search_profiles
-    if name == "search_profiles":
+    if name in {"search_profiles", "aggregate_profiles", "create_data_artifact"}:
         nace_codes = args.get("nace_codes", [])
         if nace_codes:
             invalid_codes = [c for c in nace_codes if not _is_valid_nace_code(str(c))]
             if invalid_codes:
                 return False, f"Invalid NACE codes (must be 5 digits): {invalid_codes}"
+
+        single_nace_code = args.get("nace_code")
+        if single_nace_code and not _is_valid_nace_code(str(single_nace_code)):
+            return False, f"Invalid nace_code '{single_nace_code}'. Must be 5 digits."
 
         # Check for potential SQL/TQL injection patterns
         injection_patterns = [
@@ -389,7 +436,7 @@ def _validate_tool_call(tool_call: dict) -> tuple[bool, str]:
                         )
 
     # Check 4: Validate aggregate_profiles arguments
-    if name == "aggregate_profiles":
+    if name in {"aggregate_profiles", "create_data_artifact"}:
         valid_group_by = {
             "city",
             "juridical_form",
@@ -406,8 +453,25 @@ def _validate_tool_call(tool_call: dict) -> tuple[bool, str]:
                 f"Invalid group_by '{group_by}'. Valid options: {', '.join(sorted(valid_group_by))}",
             )
 
+    if name == "create_data_artifact":
+        valid_artifact_types = {"search_results", "aggregation", "coverage_report"}
+        artifact_type = args.get("artifact_type")
+        if artifact_type and artifact_type not in valid_artifact_types:
+            return (
+                False,
+                f"Invalid artifact_type '{artifact_type}'. Valid options: {', '.join(sorted(valid_artifact_types))}",
+            )
+
+        valid_output_formats = {"markdown", "csv", "json"}
+        output_format = args.get("output_format")
+        if output_format and output_format not in valid_output_formats:
+            return (
+                False,
+                f"Invalid output_format '{output_format}'. Valid options: {', '.join(sorted(valid_output_formats))}",
+            )
+
     # Check 5: Argument type validation
-    if name == "search_profiles":
+    if name in {"search_profiles", "create_data_artifact"}:
         # Validate boolean fields
         for bool_field in ["has_phone", "has_email"]:
             value = args.get(bool_field)
@@ -416,6 +480,14 @@ def _validate_tool_call(tool_call: dict) -> tuple[bool, str]:
                     False,
                     f"'{bool_field}' must be a boolean (true/false), got {type(value).__name__}",
                 )
+
+    if name == "create_data_artifact":
+        use_last_search = args.get("use_last_search")
+        if use_last_search is not None and not isinstance(use_last_search, bool):
+            return (
+                False,
+                f"'use_last_search' must be a boolean (true/false), got {type(use_last_search).__name__}",
+            )
 
     return True, ""
 
@@ -643,6 +715,29 @@ async def tools_node(state: AgentState, config: RunnableConfig | None = None) ->
                         state_has_tql=state.get("last_search_tql") is not None,
                         config_received=config is not None,
                         message="CRITICAL: Segment will have 0 profiles - no TQL available",
+                    )
+            elif tool_name == "create_data_artifact":
+                use_last_search = tool_args.get("use_last_search", False)
+                logger.info(
+                    "create_data_artifact_processing",
+                    title=tool_args.get("title"),
+                    use_last_search=use_last_search,
+                    has_stored_params=stored_params is not None,
+                    conversation_id=conversation_id,
+                )
+                if use_last_search and stored_params:
+                    tool_args = _merge_last_search_params(tool_args, stored_params)
+                    logger.info(
+                        "create_data_artifact_injected_last_search_params",
+                        title=tool_args.get("title"),
+                        applied_keys=sorted(stored_params.keys()),
+                        conversation_id=conversation_id,
+                    )
+                elif use_last_search and not stored_params:
+                    logger.warning(
+                        "create_data_artifact_missing_last_search_params",
+                        title=tool_args.get("title"),
+                        conversation_id=conversation_id,
                     )
 
             # Execute the tool directly (ToolExecutor removed in LangGraph 1.x)

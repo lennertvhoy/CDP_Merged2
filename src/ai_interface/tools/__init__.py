@@ -6,6 +6,7 @@ New code should import from the specific submodule directly when possible.
 
 # Search tools
 # Email marketing tools
+from src.ai_interface.tools.artifact import create_data_artifact
 from src.ai_interface.tools.email import (
     push_segment_to_resend,
     push_to_flexmail,
@@ -28,16 +29,19 @@ from src.ai_interface.tools.nace_resolver import (
 from src.ai_interface.tools.search import (
     aggregate_profiles,
     create_segment,
+    get_data_coverage_stats,
     get_segment_stats,
     search_profiles,
 )
 
 __all__ = [
+    "create_data_artifact",
     # Search
     "search_profiles",
     "create_segment",
     "get_segment_stats",
     "aggregate_profiles",
+    "get_data_coverage_stats",
     # NACE/Juridical
     "lookup_nace_code",
     "lookup_juridical_code",

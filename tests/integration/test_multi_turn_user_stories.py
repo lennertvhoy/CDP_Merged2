@@ -53,6 +53,20 @@ async def push_to_resend_mock(segment_id: str) -> str:
 
 
 @tool
+async def create_data_artifact_mock(
+    title: str,
+    artifact_type: str,
+    output_format: str = "markdown",
+    use_last_search: bool = False,
+) -> str:
+    """Deterministic local artifact generation stub."""
+    return (
+        f"artifact_created title={title} type={artifact_type} format={output_format} "
+        f"use_last_search={use_last_search}"
+    )
+
+
+@tool
 async def recoverable_lookup(keyword: str) -> str:
     """Tool that can fail once to exercise fallback + recovery path."""
     if keyword == "fail":
@@ -91,6 +105,9 @@ class DeterministicStoryModel:
             if last.name == "push_to_resend_mock":
                 return AIMessage(content=f"Tool-heavy flow finished: {last.content}")
 
+            if last.name == "create_data_artifact_mock":
+                return AIMessage(content=f"Artifact ready: {last.content}")
+
             if last.name == "recoverable_lookup":
                 if getattr(last, "status", None) == "error":
                     return AIMessage(
@@ -113,6 +130,37 @@ class DeterministicStoryModel:
         if "hallo" in last_human:
             return AIMessage(content="Nederlandse bevestiging voor deze beurt.")
 
+        if "create the segment" in last_human:
+            return AIMessage(
+                content="",
+                tool_calls=[
+                    {
+                        "name": "create_segment_mock",
+                        "args": {"name": "it-gent", "condition": 'traits.city="Gent"'},
+                        "id": "call-seg-1",
+                        "type": "tool_call",
+                    }
+                ],
+            )
+
+        if "spreadsheet" in last_human or "artifact" in last_human or "report" in last_human:
+            return AIMessage(
+                content="",
+                tool_calls=[
+                    {
+                        "name": "create_data_artifact_mock",
+                        "args": {
+                            "title": "it-gent-report",
+                            "artifact_type": "search_results",
+                            "output_format": "csv",
+                            "use_last_search": True,
+                        },
+                        "id": "call-artifact-1",
+                        "type": "tool_call",
+                    }
+                ],
+            )
+
         if "follow-up" in last_human or "those companies" in last_human:
             previous_context = " ".join(m.content.lower() for m in human_messages[:-1])
             city = "gent" if "gent" in previous_context else "brussel"
@@ -123,19 +171,6 @@ class DeterministicStoryModel:
                         "name": "search_profiles_mock",
                         "args": {"city": city, "keywords": "it", "status": "AC"},
                         "id": "call-search-followup",
-                        "type": "tool_call",
-                    }
-                ],
-            )
-
-        if "create the segment" in last_human:
-            return AIMessage(
-                content="",
-                tool_calls=[
-                    {
-                        "name": "create_segment_mock",
-                        "args": {"name": "it-gent", "condition": 'traits.city="Gent"'},
-                        "id": "call-seg-1",
                         "type": "tool_call",
                     }
                 ],
@@ -179,6 +214,7 @@ def _stable_driver(*, thread_id: str) -> ConversationDriver:
             search_profiles_mock,
             create_segment_mock,
             push_to_resend_mock,
+            create_data_artifact_mock,
             recoverable_lookup,
         ],
     )
@@ -196,6 +232,10 @@ class TestMultiTurnUserStoriesStableHarness:
             TurnSpec(
                 user_text="Follow-up: use those companies and narrow to active only.",
                 expect_tools=["search_profiles_mock"],
+            ),
+            TurnSpec(
+                user_text="Create a spreadsheet artifact for those companies.",
+                expect_tools=["create_data_artifact_mock"],
             ),
             TurnSpec(
                 user_text="Run a tool-heavy plan for this context.",
