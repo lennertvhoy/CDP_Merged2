@@ -377,6 +377,10 @@ This repo is often worked on by multiple agents or sessions.
    - any path ownership that remains unclear
 9. If ownership is unclear, say `ownership_unclear` instead of guessing.
 10. A handoff that omits dirty-worktree ownership when the worktree is dirty is incomplete.
+11. **CRITICAL:** Before writing any handoff, rerun `git status --short`.
+12. Do not provide a handoff while the worktree is dirty.
+13. If only session-owned changes remain, commit them before handoff.
+14. If pre-existing or ownership-unclear dirty paths remain, clean the worktree first by an explicit action that preserves or resolves them (for example: user-approved commit, stash, or discard). If that cannot be done safely, escalate to the user instead of handing off over a dirty worktree.
 
 ---
 
@@ -553,9 +557,11 @@ After completing work:
 6. Update this file only if the workflow rules or architecture changed.
 7. If the task exposed contradictory current documentation, fix or quarantine that contradiction before handoff.
 8. End every session with a copy-pasteable `## Handoff` block, even for completed tasks.
-9. Make the next safe step explicit in the handoff so the next session can resume autonomously.
-10. If the worktree was dirty, include start-vs-end ownership details in the handoff.
-11. If a protocol gap was discovered and fixed, log that workflow change in `WORKLOG.md`.
+9. Rerun `git status --short` immediately before preparing the handoff.
+10. Clean the worktree before handoff. If that requires a user decision on pre-existing or ownership-unclear changes, stop and escalate instead of handing off a dirty tree.
+11. Make the next safe step explicit in the handoff so the next session can resume autonomously.
+12. If the worktree was dirty earlier in the session, include start-vs-end ownership details in the handoff and how it was cleaned.
+13. If a protocol gap was discovered and fixed, log that workflow change in `WORKLOG.md`.
 
 Git commits are recommended when the work is self-contained and the worktree allows a clean, scoped commit.
 
@@ -762,6 +768,7 @@ If a deployment causes issues:
 | 2026-03-04 | Track MCP, agent skills, GenAI observability, evals, and Responses alignment as future-value standards; keep A2A conditional and AG-UI/A2UI low-priority | Encourage modularity and future-proofing without trend-chasing |
 | 2026-03-07 | When the user pauses Azure deployment to save costs, agents must switch to local-only execution and treat cloud deployment work as paused until explicitly resumed | Prevent unnecessary spend and stop stale Azure-first assumptions from driving the queue |
 | 2026-03-07 | Any file modified in a session must be committed before handoff, even if pre-existing dirty | Prevent ambiguous dirty state and ensure clean handoffs |
+| 2026-03-07 | Agents must clean the worktree before handoff; if pre-existing dirty paths block that, they must resolve or escalate instead of handing off a dirty tree | Prevent ambiguous ownership and stop repeated dirty-worktree handoffs |
 
 ---
 
