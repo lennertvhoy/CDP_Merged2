@@ -1,22 +1,23 @@
-# AZURE INFRASTRUCTURE - REPO-MANAGED RESOURCES ON AZURE
+# AZURE TARGET ARCHITECTURE WITH LOCAL-FIRST OPERATING MODE
+# Azure deployment path is currently paused by user direction to save costs.
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-07T16:10:00+01:00
+  updated_at: 2026-03-07T18:09:00+01:00
   updated_by: agent
   repo_head:
-    value: no_local_commits_yet
+    value: fb607dd
     status: observed
-    checked_at: 2026-03-07T15:58:00+01:00
+    checked_at: 2026-03-07T17:53:00+01:00
     evidence:
-      - git log --oneline --decorate -n 5 -> fatal: your current branch 'main' does not have any commits yet
+      - git log --oneline --decorate -n 5 -> fb607dd (HEAD -> main, origin/main) docs(agents): add mandatory commit rule for modified files
   branch:
     value: main
     status: observed
-    checked_at: 2026-03-07T15:58:00+01:00
+    checked_at: 2026-03-07T17:12:15+01:00
     evidence:
-      - git status --short
-      - git log --oneline --decorate -n 5 -> fatal: your current branch 'main' does not have any commits yet
+      - git status --short -> M NEXT_ACTIONS.md; M PROJECT_STATE.yaml; M STATUS.md; M WORKLOG.md; ?? .full_import.pid; ?? scripts/test_chatbot_10k_quality.py
+      - git log --oneline --decorate -n 5 -> 36007b1 (HEAD -> main, origin/main)
   live_docs:
     status: observed
     checked_at: 2026-03-06T13:49:38+01:00
@@ -52,6 +53,15 @@ current_state:
       status: observed
       checked_at: 2026-03-06T13:49:38+01:00
       summary: Current live state now lives only in PROJECT_STATE.yaml, STATUS.md, and NEXT_ACTIONS.md. History belongs in WORKLOG.md and roadmap material belongs in BACKLOG.md.
+  operating_mode:
+    status: reported
+    decided_at: 2026-03-07T17:12:00+01:00
+    mode: local_only_cost_control
+    summary: User direction on 2026-03-07 paused Azure deployment work to save costs. Default execution and verification are now local-only until the user explicitly reopens cloud work.
+    implications:
+      - prefer_local_runtime_and_local_postgresql
+      - treat_azure_deployment_as_paused_not_default
+      - keep_historical_azure_state_but_do_not_drive_next_actions_from_it
   architecture:
     status: observed
     decided_at: 2026-03-03
@@ -68,25 +78,27 @@ current_state:
     constraints:
       - no_tracardi_license_yet
       - azure_budget_about_150_eur_per_month
+      - azure_deployment_path_temporarily_paused_to_save_costs
       - no_live_exact_tenant_yet
       - no_live_autotask_tenant_yet
     acceptance:
       - user_final_verification_required
       - one_week_of_user_observed_stability_required_before_signoff
   deployment:
-    status: observed
+    status: reported
     verified_at: 2026-03-06T20:09:00+01:00
     repo_head: 877f0e9
     deployed_application_sha: 877f0e9
     container_app_revision: ca-cdpmerged-fast--stg-877f0e9
     container_image: ghcr.io/lennertvhoy/cdp_merged:sha-877f0e9<SECRET_KEY>
+    active_path: paused_by_user_for_cost_control
     scale:
       min_replicas: 0
       max_replicas: 5
     readiness_endpoint:
       url: https://ca-cdpmerged-fast.wonderfulisland-74a59b9d.westeurope.azurecontainerapps.io/project/readinessz
       result: 2026-03-06 17:03Z GitHub Actions smoke job 66060849591 succeeded for the a4344ae staging deploy; in this session Playwright also opened the revision FQDN and the live UI served responses on the deployed revision.
-    note: CI run 22773361038 and CD run 22773361035 both completed successfully for a4344ae. Azure control-plane checks now show latest ready revision/image a4344ae with 100% traffic, and live browser plus container-log smokes confirmed the deployed revision answers the baseline restaurant/Brussels scenario and now enforces min_start_date.
+    note: Last verified Azure deployment context remains recorded for reference, but the user paused Azure deployment work on 2026-03-07 to save costs. Do not treat this deployment block as the active verification target until cloud work is explicitly resumed.
   observability:
     status: observed
     verified_at: 2026-03-06T15:33:21+01:00
@@ -121,17 +133,62 @@ current_state:
     note: No broad waste was observed inside rg-cdpmerged-fast. The strongest storage-account cleanup candidate is stcdpmergedprtnlp because the group currently holds three nearly identical es-snapshots storage accounts while the repo's current Terraform footprint defines two, and stcdpmergedprtnlp uniquely carries the tag temporary_containerapp_exception=true. The Application Insights Smart Detection action group also looks orphaned because rg-cdpmerged-fast has no App Insights component or smartDetectorAlertRules.
   chatbot:
     status: observed
-    verified_at: 2026-03-07T15:43:00+01:00
+    verified_at: 2026-03-07T18:08:56+01:00
     authoritative_query_plane: postgresql
-    deployment_health: 877f0e9_serving_analytics_fix_deployed
-    active_followup: import_or_attach_populated_local_dataset_and_verify_production_prompt_quality
+    deployment_health: historical_azure_revision_877f0e9_not_active_focus
+    local_dataset:
+      status: verified_working
+      total_companies: 1940603
+      imported_at: 2026-03-07T16:56:00+01:00
+      with_status: 1940603
+      with_nace: 1252022
+      with_city: 1176707
+      with_email: 190533
+      verified_at: 2026-03-07T17:05:00+01:00
+      test_results:
+        restaurants_gent: 1105
+        companies_brussels: 41290
+        companies_antwerpen: 62831
+        aggregation_working: true
+    active_followup: expand_real_local_multi_message_runtime_coverage
+    local_runtime_capabilities:
+      status: observed
+      verified_at: 2026-03-07T18:08:56+01:00
+      compose_stack:
+        status: observed
+        verified_at: 2026-03-07T18:08:56+01:00
+        startup_command: docker compose up -d --build
+        services:
+          - postgres_healthy_on_5432
+          - tracardi_api_up_on_8686
+          - tracardi_gui_up_on_8787
+          - chatbot_healthy_on_8000
+        health_checks:
+          - curl -fsS http://127.0.0.1:8000/healthz -> status ok
+          - curl -fsS http://127.0.0.1:8000/readinessz -> status ok
+          - curl -fsS http://127.0.0.1:8686/healthcheck -> 200
+        demo_smoke_quick: passing_8_of_8
+      regression_script: scripts/regression_local_chatbot.py
+      regression_result: passing_7_of_7_against_compose_managed_local_stack
+      verified_features:
+        - nace_code_alias_search
+        - email_domain_filtering
+        - corrected_aggregation_contract_checks
+        - local_artifact_generation_markdown_csv_json
+        - multi_turn_harness_with_artifact_tool
+      latest_verified_counts:
+        nace_56101: 21888
+        email_domain_gmail: 61905
+      artifact_example:
+        path: /home/ff/Documents/CDP_Merged/output/agent_artifacts/regression-gent-restaurants_20260307_170755.markdown
+        status: observed
     quality_matrix_results:
       count_queries: passing
       follow_up_narrowing: passing
       multi_turn_continuity: passing
       segment_creation: functional
-      analytics_aggregation: fixed_deployed_pending_live_verification
-    note: Quality matrix evaluation completed. Azure OpenAI rate limiting is FIXED (no 429 errors). Multi-turn continuity works. Analytics aggregation fix DEPLOYED - revision ca-cdpmerged-fast--stg-877f0e9 now serving with "industry" alias support. On 2026-03-07 the local search tool contract was hardened so generic queries no longer default to status=AC and zero-result responses now surface an explicit empty-dataset diagnostic when the local companies table has no rows.
+      analytics_aggregation: local_full_dataset_verified_live_recheck_deferred
+    note: Same-day local verification confirmed the default compose-managed stack now boots PostgreSQL, Tracardi, and the chatbot locally with healthy `/healthz` and `/readinessz` probes. Full-dataset counts, aggregation, email-domain filtering, single-NACE-code aliasing, local artifact generation, and the updated quick demo smoke all passed locally. Tool exposure now includes create_data_artifact, get_data_coverage_stats, export_segment_to_csv, and email_segment_export for the local operator/runtime path. Azure deployment follow-up is intentionally deferred while the user keeps the project in local-only cost-control mode.
   enrichment:
     status: observed
     verified_at: 2026-03-06T16:57:04+01:00
@@ -229,29 +286,29 @@ current_state:
     note: Capacity increased via REST API PATCH to resolve 429 rate limiting errors. Playwright test confirmed successful response without throttling.
   local_development:
     status: observed
-    verified_at: 2026-03-07T16:10:00+01:00
+    verified_at: 2026-03-07T17:05:00+01:00
     canonical_repo_path: /home/ff/Documents/CDP_Merged
     code_tree_restored: true
     llm_provider_for_local_bootstrap: openai
     local_postgresql:
-      status: healthy_with_smoke_dataset
+      status: healthy_with_full_dataset
       container: cdp-postgres
       image: postgis/postgis:15-3.4-alpine
       schema_bootstrap: schema_local.sql
-      companies_table_rows: 1000
-      note: Direct 2026-03-07 local verification now shows a PostgreSQL-only smoke import working from the active repo zip. `scripts/import_kbo_full_enriched.py --test --skip-tracardi` inserted 1000 rows into local `public.companies`, and a follow-up SQL probe confirmed the dedicated canonical columns are populated (`status=1000`, `juridical_situation=1000`, `legal_form_code=1000`, `type_of_enterprise=1000`, `all_names=1000`, `all_nace_codes=687`, `nace_descriptions=687`, `establishment_count>0=682`). The importer path is now resolved relative to the active repo or `KBO_ZIP_PATH`, and the retry path was rechecked after fixing both an off-by-one record-limit bug and the COPY fallback INSERT placeholder mismatch. This is still only a 1000-row smoke dataset, so local count answers are no longer empty-dataset diagnostics but are still not business-truth totals.
+      companies_table_rows: 1940603
+      note: Same-day local verification and handoff evidence now show the full 1.94M KBO dataset loaded into local PostgreSQL. Reported local checks found 1105 restaurants in Gent, 41290 companies in Brussels, 62831 companies in Antwerpen, and successful Brussels aggregation; local development is now the active truth-bearing execution path while Azure deployment remains paused.
     local_chatbot:
-      status: functional_with_partial_local_dataset
+      status: functional_with_full_local_dataset
       launch_script: start_chatbot.sh
       runtime: uvicorn src.app:chainlit_server_app
-      pid: 249192
       last_verified_endpoints:
         - /healthz
         - /readinessz
       verified_queries:
-        - '"How many restaurant companies are in Brussels?" -> real OpenAI response with tool calls'
-        - '"How many restaurant companies are in Sint-Niklaas?" -> tool returns dataset_state.companies_table_empty=true with no default active-only filter'
-      note: Chatbot now uses real OpenAI (gpt-4o-mini), tools execute correctly, generic searches no longer default to status=AC, and the empty-dataset diagnostic was verified before the local smoke import. The local table now contains 1000 smoke-imported KBO rows, which is enough to validate non-empty tool behavior but not enough to treat local counts as business truth.
+        - '"How many restaurant companies are in Gent?" -> 1105 via PostgreSQL-backed tools'
+        - '"How many companies are in Brussels?" -> 41290 with no forced status filter'
+        - '"What are the top industries in Brussels?" -> aggregation returns 70200 at 4.8%'
+      note: Local chatbot verification is now anchored to the full local dataset and is the active quality gate. Do not treat Azure prompt rechecks as required while the local-only cost-control mode remains in effect.
     local_tracardi_stack:
       status: observed
       verified_at: 2026-03-07T15:35:00+01:00
@@ -278,20 +335,24 @@ current_state:
       note: Local Tracardi is fully functional for chat-session bootstrap. Event sources created via setup_tracardi_kbo_and_email.py.
 
 active_problems:
-  local_companies_dataset_partial:
-    status: observed
+  remaining_helper_scripts_use_stale_repo_paths:
+    status: resolved
     severity: medium
     discovered_at: 2026-03-07
-    summary: The local PostgreSQL companies table is no longer empty, but it currently contains only a 1000-row smoke-import slice, so local chatbot count answers are still not representative of the real 1.94M-row business dataset.
+    resolved_at: 2026-03-07
+    summary: All active helper and setup scripts now use repo-relative imports or `scripts.kbo_runtime.resolve_kbo_zip_path()` instead of hard-coding the stale `.openclaw` workspace path.
     evidence:
-      - DATABASE_URL=postgresql://cdpadmin:cdpadmin123@localhost:5432/cdp?sslmode=disable .venv/bin/python scripts/import_kbo_full_enriched.py --test --skip-tracardi --batch-size 250 --checkpoint-interval 500 -> Final PostgreSQL count: 1000
-      - docker exec cdp-postgres psql -U cdpadmin -d cdp -At -F '\t' -c "SELECT COUNT(*) ... FROM companies" -> 1000 rows with canonical columns populated in the smoke slice
+      - Fixed 12 Python scripts to use Path(__file__).parent.parent or resolve_kbo_zip_path()
+      - Fixed 3 shell scripts to use $(dirname "$0") or equivalent
+      - Fixed src/ingestion/kbo_ingest.py and infra/scripts/shutdown-restart-test.sh
+      - Cleared __pycache__ to remove stale compiled references
+      - Verification: grep -r "\.openclaw" scripts/ src/ tests/ --include="*.py" --include="*.sh" -> no matches
     affects:
-      - local_chatbot_count_accuracy
-      - local_market_sizing_queries
-      - local_demo_quality
+      - local_helper_scripts
+      - local_demo_setup
+      - repo_path_portability
     owner: agent
-    next_action: Expand the local PostgreSQL-first load beyond the 1000-row smoke slice, or point local DATABASE_URL at a populated PostgreSQL instance, before using local counts as business truth.
+    next_action: None - stale path cleanup complete. Created scripts/regression_local_chatbot.py for ongoing validation.
   local_kbo_import_path_broken:
     status: resolved
     severity: high

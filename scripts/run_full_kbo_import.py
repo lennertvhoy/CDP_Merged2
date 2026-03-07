@@ -206,7 +206,7 @@ async def verify_results():
         logger.info(f"  With AI description: {with_ai_desc:,}")
         
         # Tracardi stats
-        tracardi_url = os.getenv("TRACARDI_API_URL", "http://137.117.212.154:8686")
+        tracardi_url = os.getenv("TRACARDI_API_URL", "http://localhost:8686")
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(f"{tracardi_url}/profiles/count")
@@ -256,7 +256,7 @@ def ensure_postgres_running() -> bool:
     
     try:
         subprocess.run(
-            ["docker-compose", "-f", str(compose_file), "up", "-d"],
+            ["docker", "compose", "-f", str(compose_file), "up", "-d"],
             check=True,
             cwd=Path(__file__).parent.parent
         )

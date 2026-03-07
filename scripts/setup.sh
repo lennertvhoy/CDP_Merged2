@@ -18,27 +18,37 @@ command -v poetry   >/dev/null 2>&1 || {
 echo "📦 Installing Python dependencies..."
 poetry install --no-interaction
 
-# 3. Set up environment file
-if [ ! -f ".env" ]; then
-    echo "📝 Creating .env from template..."
-    cp .env.example .env
-    echo "⚠️  Edit .env to set your OPENAI_API_KEY (or configure Ollama)"
+# 3. Set up local override file
+if [ ! -f ".env.local" ]; then
+    echo "📝 Creating .env.local from template..."
+    cp .env.local.example .env.local
+    echo "⚠️  Edit .env.local to set your OPENAI_API_KEY and local Tracardi credentials"
 fi
 
 # 4. Install pre-commit hooks
 echo "🔧 Installing pre-commit hooks..."
 poetry run pre-commit install
 
-# 5. Start infrastructure
-echo "🐳 Starting Docker services..."
-docker compose up -d
+# 5. Start the full local stack
+echo "🐳 Starting local PostgreSQL, Tracardi, and chatbot..."
+docker compose up -d --build
 
 # 6. Wait for Tracardi to be ready
 echo "⏳ Waiting for Tracardi to be ready..."
 MAX_TRIES=30
 for i in $(seq 1 $MAX_TRIES); do
-    if curl -s http://localhost:8686/healthcheck >/dev/null 2>&1; then
+    if curl -fsS http://localhost:8686/healthcheck >/dev/null 2>&1; then
         echo "✅ Tracardi is ready"
+        break
+    fi
+    echo "   Waiting... ($i/$MAX_TRIES)"
+    sleep 5
+done
+
+echo "⏳ Waiting for chatbot to be ready..."
+for i in $(seq 1 $MAX_TRIES); do
+    if curl -fsS http://localhost:8000/healthz >/dev/null 2>&1; then
+        echo "✅ Chatbot is ready"
         break
     fi
     echo "   Waiting... ($i/$MAX_TRIES)"
@@ -49,6 +59,6 @@ echo ""
 echo "✅ Setup complete!"
 echo ""
 echo "Next steps:"
-echo "  1. Edit .env with your API keys"
-echo "  2. Run: make dev"
-echo "  3. Open: http://localhost:8000"
+echo "  1. Open chatbot:  http://localhost:8000"
+echo "  2. Open Tracardi: http://localhost:8787"
+echo "  3. Run local regression: .venv/bin/python scripts/regression_local_chatbot.py"

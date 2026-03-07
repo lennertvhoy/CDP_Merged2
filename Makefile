@@ -51,8 +51,8 @@ pre-commit-install: ## Install pre-commit hooks
 pre-commit-run: ## Run pre-commit on all files
 	poetry run pre-commit run --all-files
 
-docker-up: ## Start all infrastructure services
-	docker compose up -d
+docker-up: ## Start the full local stack (PostgreSQL, Tracardi, chatbot)
+	docker compose up -d --build
 
 docker-down: ## Stop all infrastructure services
 	docker compose down

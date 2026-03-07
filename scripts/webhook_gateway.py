@@ -688,7 +688,7 @@ async def forward_to_tracardi(event: dict):
     """
     import httpx
 
-    tracardi_url = os.getenv("TRACARDI_TRACKER_URL", "http://137.117.212.154:8686/tracker")
+    tracardi_url = os.getenv("TRACARDI_TRACKER_URL", "http://localhost:8686/tracker")
     request_id = event.get("request_id", "unknown")
 
     try:

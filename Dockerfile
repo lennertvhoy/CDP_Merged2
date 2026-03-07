@@ -25,5 +25,5 @@ RUN poetry config virtualenvs.create false \
 # Expose port
 EXPOSE 8000
 
-# Run Chainlit app (Azure can inject PORT)
-CMD ["sh", "-c", "chainlit run src/app.py --host 0.0.0.0 --port ${PORT:-8000}"]
+# Run the same ASGI app used by the host-side local launcher.
+CMD ["sh", "-c", "python -m uvicorn src.app:chainlit_server_app --host 0.0.0.0 --port ${PORT:-8000}"]

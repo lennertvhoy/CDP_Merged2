@@ -140,7 +140,7 @@ def verify_range_endpoint(base_url: str, username: str, password: str) -> bool:
 
 def main():
     """Main entry point."""
-    base_url = os.environ.get("TRACARDI_URL", "http://137.117.212.154:8686")
+    base_url = os.environ.get("TRACARDI_URL", "http://localhost:8686")
     username = os.environ.get("TRACARDI_USERNAME", "admin@admin.com")
     password = os.environ.get("TRACARDI_PASSWORD")
     

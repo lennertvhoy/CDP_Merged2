@@ -17,7 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Set only non-secret defaults before imports.
-os.environ.setdefault("TRACARDI_API_URL", "http://137.117.212.154:8686")
+os.environ.setdefault("TRACARDI_API_URL", "http://localhost:8686")
 os.environ.setdefault("TRACARDI_SOURCE_ID", "kbo-source")
 
 
