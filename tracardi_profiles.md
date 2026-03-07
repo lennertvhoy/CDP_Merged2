@@ -1,0 +1,49 @@
+- generic [ref=e41]:
+  - generic [ref=e42]:
+    - generic [ref=e43] [cursor=pointer]:
+      - generic [ref=e44]: TRACARDI
+      - generic [ref=e45]: v. 1.0.x
+    - generic [ref=e46]:
+      - generic [ref=e47] [cursor=pointer]:
+        - img [ref=e49]
+        - generic [ref=e51]: Dashboard
+      - generic [ref=e52] [cursor=pointer]:
+        - img [ref=e54]
+        - generic [ref=e57]: Inbound Traffic
+      - generic [ref=e58] [cursor=pointer]:
+        - img [ref=e60]
+        - generic [ref=e63]: Mapping
+      - generic [ref=e64] [cursor=pointer]:
+        - img [ref=e66]
+        - generic [ref=e69]: Identification
+      - generic [ref=e70] [cursor=pointer]:
+        - img [ref=e72]
+        - generic [ref=e74]: Data
+      - generic [ref=e75] [cursor=pointer]:
+        - img [ref=e77]
+        - generic [ref=e80]: Outbound Traffic
+      - generic [ref=e81] [cursor=pointer]:
+        - img [ref=e83]
+        - generic [ref=e85]: Audience
+      - generic [ref=e86] [cursor=pointer]:
+        - img [ref=e88]
+        - generic [ref=e91]: Automation
+      - generic [ref=e92] [cursor=pointer]:
+        - img [ref=e94]
+        - generic [ref=e96]: Reporting
+      - generic [ref=e97] [cursor=pointer]:
+        - img [ref=e99]
+        - generic [ref=e103]: Resources
+      - generic [ref=e104] [cursor=pointer]:
+        - img [ref=e106]
+        - generic [ref=e110]: Tests
+  - generic [ref=e111]:
+    - generic [ref=e112] [cursor=pointer]:
+      - img [ref=e114]
+      - generic [ref=e116]: Monitoring
+    - generic [ref=e117] [cursor=pointer]:
+      - img [ref=e119]
+      - generic [ref=e121]: Maintenance
+    - generic [ref=e122] [cursor=pointer]:
+      - img [ref=e124]
+      - generic [ref=e127]: Collapse
