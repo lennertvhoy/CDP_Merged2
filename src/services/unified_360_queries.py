@@ -143,7 +143,6 @@ class IndustrySummary:
 class GeographicSummary:
     """Geographic distribution summary."""
     city: str
-    province: str
     total_companies: int
     companies_with_crm: int
     companies_with_financials: int
@@ -151,6 +150,7 @@ class GeographicSummary:
     total_revenue_ytd: Decimal
     total_outstanding: Decimal
     market_penetration_pct: float
+    province: str = ""  # Kept for backward compatibility, may be empty
 
 
 class Unified360Service:
@@ -462,7 +462,6 @@ class Unified360Service:
                 """
                 SELECT 
                     city,
-                    province,
                     total_companies,
                     companies_with_crm,
                     companies_with_financials,
@@ -482,7 +481,7 @@ class Unified360Service:
         return [
             GeographicSummary(
                 city=row['city'],
-                province=row['province'],
+                province="",
                 total_companies=row['total_companies'],
                 companies_with_crm=row['companies_with_crm'],
                 companies_with_financials=row['companies_with_financials'],

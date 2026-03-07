@@ -27,13 +27,16 @@ SELECT
     c.city as kbo_city,
     c.postal_code as kbo_postal_code,
     c.street_address as kbo_street,
-    c.country_code,
+    c.country as country_code,
     c.company_size,
     c.employee_count,
     c.establishment_count,
     c.founded_date,
     c.website_url,
-    c.email_domain,
+    CASE WHEN c.main_email IS NOT NULL AND c.main_email LIKE '%@%'
+        THEN split_part(c.main_email, '@', 2)
+        ELSE NULL
+    END as email_domain,
     c.geo_latitude,
     c.geo_longitude,
     
@@ -86,6 +89,38 @@ COMMENT ON VIEW unified_company_360 IS 'Unified 360° view combining KBO, Teamle
 
 -- Index on the view's key columns (via underlying tables)
 CREATE INDEX IF NOT EXISTS idx_companies_kbo_lookup ON companies(kbo_number) WHERE kbo_number IS NOT NULL;
+
+-- ==========================================
+-- 1b. Exact Customer Financial Summary (helper view for financial aggregation)
+-- ==========================================
+CREATE OR REPLACE VIEW exact_customer_financial_summary AS
+SELECT 
+    ex.id::text as customer_id,
+    ex.kbo_number,
+    COALESCE(SUM(CASE 
+        WHEN si.invoice_date >= DATE_TRUNC('year', CURRENT_DATE) 
+        THEN si.total_amount_incl 
+        ELSE 0 
+    END), 0) as revenue_ytd,
+    COALESCE(SUM(si.total_amount_incl), 0) as revenue_total,
+    COALESCE(SUM(CASE 
+        WHEN si.payment_status IN ('open', 'partial') 
+        THEN si.amount_open 
+        ELSE 0 
+    END), 0) as outstanding_amount,
+    COALESCE(SUM(CASE 
+        WHEN si.due_date < CURRENT_DATE 
+        AND si.payment_status IN ('open', 'partial') 
+        THEN si.amount_open 
+        ELSE 0 
+    END), 0) as overdue_amount,
+    COUNT(CASE WHEN si.payment_status IN ('open', 'partial') THEN 1 END) as open_invoices
+FROM exact_customers ex
+LEFT JOIN exact_sales_invoices si ON si.exact_customer_id = ex.source_record_id
+WHERE ex.source_system = 'exact'
+GROUP BY ex.id, ex.kbo_number;
+
+COMMENT ON VIEW exact_customer_financial_summary IS 'Aggregated financial summary per Exact customer';
 
 -- ==========================================
 -- 2. Unified Pipeline & Revenue View
@@ -152,7 +187,7 @@ LEFT JOIN (
         fs.overdue_amount,
         fs.open_invoices
     FROM exact_customers ex
-    LEFT JOIN exact_customer_financial_summary fs ON fs.customer_id = ex.id
+    LEFT JOIN exact_customer_financial_summary fs ON fs.customer_id = ex.id::text
     WHERE ex.source_system = 'exact'
 ) ex_fin ON ex_fin.kbo_number = uc360.kbo_number
 WHERE uc360.kbo_number IS NOT NULL;
@@ -398,30 +433,29 @@ COMMENT ON VIEW high_value_accounts IS 'Prioritized accounts with revenue, pipel
 -- ==========================================
 CREATE OR REPLACE VIEW geographic_revenue_distribution AS
 SELECT 
-    COALESCE(kbo_city, 'Unknown') as city,
-    COALESCE(province, 'Unknown') as province,
+    COALESCE(upr.kbo_city, 'Unknown') as city,
     
-    COUNT(DISTINCT kbo_number) as total_companies,
-    COUNT(DISTINCT CASE WHEN has_crm_data THEN kbo_number END) as companies_with_crm,
-    COUNT(DISTINCT CASE WHEN has_financial_data THEN kbo_number END) as companies_with_financials,
+    COUNT(DISTINCT upr.kbo_number) as total_companies,
+    COUNT(DISTINCT CASE WHEN upr.has_crm_data THEN upr.kbo_number END) as companies_with_crm,
+    COUNT(DISTINCT CASE WHEN upr.has_financial_data THEN upr.kbo_number END) as companies_with_financials,
     
-    SUM(tl_pipeline_value) as total_pipeline,
-    SUM(tl_won_value_ytd) as total_closed_won_ytd,
-    SUM(exact_revenue_ytd) as total_revenue_ytd,
-    SUM(exact_outstanding) as total_outstanding,
-    SUM(exact_overdue) as total_overdue,
+    SUM(upr.tl_pipeline_value) as total_pipeline,
+    SUM(upr.tl_won_value_ytd) as total_closed_won_ytd,
+    SUM(upr.exact_revenue_ytd) as total_revenue_ytd,
+    SUM(upr.exact_outstanding) as total_outstanding,
+    SUM(upr.exact_overdue) as total_overdue,
     
     -- Average metrics
-    ROUND(AVG(tl_pipeline_value) FILTER (WHERE tl_pipeline_value > 0), 2) as avg_pipeline_value,
-    ROUND(AVG(exact_revenue_ytd) FILTER (WHERE exact_revenue_ytd > 0), 2) as avg_revenue_ytd,
+    ROUND(AVG(upr.tl_pipeline_value) FILTER (WHERE upr.tl_pipeline_value > 0), 2) as avg_pipeline_value,
+    ROUND(AVG(upr.exact_revenue_ytd) FILTER (WHERE upr.exact_revenue_ytd > 0), 2) as avg_revenue_ytd,
     
     -- Market penetration indicator
-    ROUND(100.0 * COUNT(DISTINCT CASE WHEN has_crm_data OR has_financial_data THEN kbo_number END) / 
-        NULLIF(COUNT(DISTINCT kbo_number), 0), 2) as market_penetration_pct
+    ROUND(100.0 * COUNT(DISTINCT CASE WHEN upr.has_crm_data OR upr.has_financial_data THEN upr.kbo_number END) / 
+        NULLIF(COUNT(DISTINCT upr.kbo_number), 0), 2) as market_penetration_pct
 
 FROM unified_pipeline_revenue upr
 LEFT JOIN companies c ON c.kbo_number = upr.kbo_number
-GROUP BY COALESCE(kbo_city, 'Unknown'), COALESCE(province, 'Unknown')
+GROUP BY COALESCE(upr.kbo_city, 'Unknown')
 ORDER BY total_revenue_ytd DESC NULLS LAST, total_pipeline DESC NULLS LAST;
 
 COMMENT ON VIEW geographic_revenue_distribution IS 'Revenue and pipeline distribution by geography';
