@@ -8,6 +8,62 @@
 
 ## Active
 
+### P0: Connect Source Systems (HIGHEST YIELD)
+
+**Status:** IN PROGRESS - Teamleader client ready, needs PostgreSQL sync pipeline
+**Discovered:** 2026-03-07 (user has demo environments available)
+**Last Updated:** 2026-03-07 21:30 CET
+**Severity:** CRITICAL
+**Goal:** Get real data flowing from Teamleader and Exact into PostgreSQL
+
+#### Current State
+
+- **Teamleader**: Production-ready client exists (`src/services/teamleader.py`) with OAuth, rate limiting, pagination
+- **Exact**: Mock-only demo exists (`scripts/demo_exact_integration.py`), needs real client
+- **Verification script**: `scripts/verify_teamleader_access.py` confirms live reads work
+- **Demo script**: `scripts/demo_teamleader_integration.py` shows hybrid real/mock mode working
+- **Gap**: No PostgreSQL persistence layer for CRM data - data only displayed, not stored
+- **Gap**: No identity bridge linking KBO companies to Teamleader companies
+
+#### High-Yield Connection Priorities
+
+1. **Teamleader → PostgreSQL sync pipeline** (HIGHEST)
+   - Create `scripts/sync_teamleader_to_postgres.py`
+   - Sync companies, contacts, deals, events to canonical tables
+   - Map Teamleader IDs to KBO IDs via VAT/names
+   - Store in `source_identity_links` table
+
+2. **Cross-source identity reconciliation** (HIGH)
+   - Match Teamleader companies to KBO companies (VAT number, name similarity)
+   - Create unified 360° view: KBO (public) + Teamleader (CRM) data combined
+   - Enable chatbot queries like "Show me IT companies in Gent with open deals"
+
+3. **Exact Online → PostgreSQL sync pipeline** (HIGH)
+   - Build real Exact client (OAuth, rate limiting) modeled after Teamleader client
+   - Sync accounts, contacts, invoices, transactions
+   - Enable financial 360° view: revenue, payment behavior, invoice history
+
+4. **Chatbot 360° query tools** (MEDIUM)
+   - Extend chatbot to query combined KBO + CRM + financial data
+   - "What is the total pipeline value for software companies in Brussels?"
+   - "Show me customers with >€50K revenue who haven't been contacted in 30 days"
+
+#### Completed Foundation
+
+✅ **Local stack ready** - PostgreSQL, Tracardi, chatbot all working locally
+✅ **Teamleader client production-ready** - OAuth, pagination, rate limiting implemented
+✅ **KBO base data loaded** - 1.94M companies in PostgreSQL
+✅ **Tracardi activation layer** - Event sources, workflows, Resend bridge ready
+
+#### Next Actions
+
+1. Create `scripts/sync_teamleader_to_postgres.py` - incremental sync with cursor/last_modified tracking
+2. Design identity reconciliation schema - how to link tl_company_id ↔ kbo_company_id
+3. Verify user has Teamleader demo env credentials in `.env.teamleader`
+4. Run first live sync and verify data lands in PostgreSQL
+
+---
+
 ### P0: Finalize Offline Local Development Stack
 
 **Status:** COMPLETE - runtime fixed, full 1.94M dataset loaded and verified
@@ -57,8 +113,6 @@
 - Aggregation queries working (top industries in Brussels: 70200 at 4.8%)
 - All queries execute in <3 seconds
 
-#### Completed
-
 ✅ **Stale path cleanup completed** (2026-03-07 17:35 CET)
 - Fixed 12 Python scripts with stale `.openclaw` path references
 - Fixed 3 shell scripts with stale `.openclaw` path references
@@ -77,7 +131,7 @@
 
 #### Next Actions
 
-All P0 items complete. Ready for next local-only task or user direction.
+All P0 foundation items complete. Ready for source system connection work.
 
 ### P1: Local Helper Script Hardening
 
