@@ -294,6 +294,19 @@ async def agent_node(state: AgentState) -> dict:
             model=settings.LLM_MODEL,
             temperature=0,
         ).bind_tools(tools)
+    elif provider_type == "moonshot":
+        # Moonshot AI (Kimi) - OpenAI-compatible API
+        if not settings.MOONSHOT_API_KEY:
+            raise ValueError(
+                "Moonshot AI API key not configured. "
+                "Set MOONSHOT_API_KEY in your environment."
+            )
+        model = ChatOpenAI(
+            api_key=settings.MOONSHOT_API_KEY,
+            base_url=settings.MOONSHOT_BASE_URL,
+            model=settings.LLM_MODEL,
+            temperature=0,
+        ).bind_tools(tools)
     elif provider_type == "azure_openai":
         auth = AzureCredentialResolver("azure_openai_langchain").resolve(
             explicit_key=settings.AZURE_OPENAI_API_KEY,
