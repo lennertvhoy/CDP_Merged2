@@ -189,7 +189,9 @@ current_state:
         - "2026-03-08: Added TOOL SELECTION ROUTING section at beginning with STEP 1 decision logic"
         - "2026-03-08: Added tool selection matrix table in Section 1B"
         - "2026-03-08: Updated VALID_TOOL_NAMES to include all 360° tools"
-      tool_selection_next_action: Add explicit EXAMPLES to system prompt showing exact query→tool mappings
+        - "2026-03-08: Added Section 1C - EXAMPLES with exact query→tool mappings"
+        - "2026-03-08: Added Section 1D - NEGATIVE CONSTRAINTS with DO NOT USE language"
+      tool_selection_next_action: Re-test 360° tool selection with new explicit examples and negative constraints
       tool_selection_screenshot: chatbot_360_retest_all_failed_2026-03-08.png
     local_dataset:
       status: verified_working

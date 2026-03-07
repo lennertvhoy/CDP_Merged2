@@ -113,10 +113,25 @@ poetry run python scripts/sync_exact_to_postgres.py
 
 #### Follow-up Items - UPDATED 2026-03-08
 
-**Status:** ⚠️ RETEST FAILED - Need stronger prompt engineering
+**Status:** ✅ EXAMPLES ADDED - Ready for re-test
 
-**Test Results (2026-03-08 00:55 CET):**
-All 3 test queries still failing after prompt restructure:
+**Changes Made (2026-03-08):**
+Added explicit EXAMPLES section (1C) and NEGATIVE CONSTRAINTS section (1D) to system prompt:
+
+1. **Section 1C: EXAMPLES - EXACT QUERY → TOOL MAPPINGS**
+   - Exact query patterns mapped to specific tools
+   - For KBO linkage: "How well are source systems linked to KBO?" → `get_identity_link_quality`
+   - For revenue distribution: "Show me revenue distribution by city" → `get_geographic_revenue_distribution`
+   - For pipeline: "Pipeline value for software companies in Brussels?" → `get_industry_summary`
+
+2. **Section 1D: NEGATIVE CONSTRAINTS - WHAT NOT TO DO**
+   - "NEVER use `get_data_coverage_stats` for KBO matching quality"
+   - "NEVER use `aggregate_profiles` for revenue distribution by city"
+   - "NEVER use `search_profiles` for pipeline value calculations"
+   - Strong prohibition language with correct alternatives
+
+**Previous Test Results (2026-03-08 00:55 CET):**
+All 3 test queries were failing after prompt restructure:
 
 | Query | Expected Tool | Actual Tool | Status |
 |-------|--------------|-------------|--------|
@@ -125,25 +140,21 @@ All 3 test queries still failing after prompt restructure:
 | "Pipeline value for software companies in Brussels?" | `get_industry_summary` | `search_profiles` | ❌ FAILED |
 
 **Root Cause Analysis:**
-The system prompt restructure alone wasn't sufficient. The LLM is still:
+The system prompt restructure alone wasn't sufficient. The LLM was:
 1. Classifying "linkage" queries as "coverage" queries
 2. Classifying "revenue distribution" queries as "aggregation" queries  
 3. Classifying "pipeline value" queries as "search" queries
 
-The LLM is stopping at the first matching pattern instead of recognizing cross-source concepts.
+**Next Step:**
+🔄 **Re-test the 3 failing queries** to verify the explicit examples and negative constraints fix the issue.
 
-**Next Steps:**
-1. **Add explicit EXAMPLES to the system prompt** - Show exact query → tool mappings
-2. **Add stronger language** like "DO NOT USE aggregate_profiles for revenue/pipeline queries"
-3. **Consider tool renaming** to make 360° tools more discoverable (e.g., `query_revenue_by_city`)
-4. **Add tool name hints in routing section** - e.g., "For 'revenue by city', use get_geographic_revenue_distribution"
-5. **Test with more explicit query phrasing** to see if LLM needs exact keyword matches
-
-**Solution Attempted (Insufficient):**
+**Previous Solutions Applied:**
 - ✅ Restructured system prompt with 360° tools in Section 1A (TOP)
 - ✅ Added TOOL SELECTION ROUTING section with STEP 1 decision logic
-- ✅ Added tool selection matrix
+- ✅ Added tool selection matrix in Section 1B
 - ✅ Updated VALID_TOOL_NAMES
+- ✅ Added explicit EXAMPLES section 1C (new)
+- ✅ Added NEGATIVE CONSTRAINTS section 1D (new)
 
 **Screenshot:** `chatbot_360_retest_all_failed_2026-03-08.png`
 
