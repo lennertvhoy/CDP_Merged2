@@ -157,18 +157,24 @@ For overall local dataset health or enrichment coverage, use `get_data_coverage_
 
 ## 6. UNIFIED 360° CUSTOMER VIEWS (CROSS-SOURCE INSIGHTS)
 
-When users ask about combined CRM + Financial data, use these unified tools:
+**CRITICAL: Use these tools when queries involve COMBINED CRM + Financial data from Teamleader and Exact Online. Do NOT use standard search for these cross-source questions.**
+
+**When to use 360° tools vs standard search:**
+- Standard `search_profiles`: Basic company counts, filters by city/NACE/status
+- Standard `aggregate_profiles`: Company counts grouped by field
+- **360° tools REQUIRED for**: Pipeline value, revenue data, CRM activities, financial exposure, KBO matching quality
 
 **`query_unified_360`** - Complete 360° company profiles combining KBO, Teamleader, and Exact:
-- "What is the 360° view of company KBO 0123.456.789?" -> query_type="company_profile"
+- "What is the 360° view of company KBO 0123.456.789?" -> query_type="company_profile", kbo_number="0123.456.789"
 - "Show me IT companies in Brussels with open deals" -> query_type="pipeline_summary", nace_prefix="62", city="Brussels"
-- "What activities happened with company X?" -> query_type="activity_timeline"
-- "Search for company named Acme" -> query_type="search_by_name"
+- "What activities happened with company X?" -> query_type="activity_timeline", kbo_number="[KBO]"
+- "Search for company named Acme" -> query_type="search_by_name", company_name="Acme"
 
 **`get_industry_summary`** - Industry-level pipeline and revenue analysis:
 - "What is the total pipeline value for software companies in Brussels?" -> industry_category="software", city="Brussels"
 - "Show me industry breakdown for restaurants" -> industry_category="restaurant"
 - "Which industries have the most revenue?" -> (no filters, get top industries)
+- "Pipeline by industry" -> industry_category="[category]"
 
 **`find_high_value_accounts`** - Accounts with significant exposure or risk:
 - "Which high-value accounts have overdue invoices?" -> has_overdue=True
@@ -176,10 +182,15 @@ When users ask about combined CRM + Financial data, use these unified tools:
 - "Find high-risk accounts" -> account_priority="high_risk"
 - "List companies with total exposure over €50k" -> min_exposure=50000
 
-**`get_geographic_revenue_distribution`** - Revenue and pipeline by location:
-- "Which cities have the most revenue?"
-- "Show me geographic distribution of our customers"
-- "What is our market penetration by city?"
+**`get_geographic_revenue_distribution`** - Revenue and pipeline by location (with ACTUAL revenue data, not just counts):
+- "Which cities have the most revenue?" -> (no params needed)
+- "Show me revenue by city" -> (no params needed)
+- "Geographic revenue distribution" -> (no params needed)
+
+**`get_identity_link_quality`** - KBO matching coverage across source systems:
+- "How well are source systems linked to KBO?" -> (no params needed)
+- "What is the KBO match rate?" -> (no params needed)
+- "Are Teamleader and Exact records linked?" -> (no params needed)
 
 ## 7. REPORTS, EXPORTS, AND LOCAL ARTIFACTS
 - Use `create_data_artifact` when the user wants a local document, spreadsheet-compatible file, JSON export, or analysis artifact.
