@@ -143,3 +143,30 @@ Direct tool alignment check:
 
 **Follow-up discovered during verification:**
 - The earlier browser-driven run reported `1,529` software companies in Brussels, while the direct deterministic `search_profiles` check returned `1,652` in the same session. The segment/export gap is fixed, but the planner/tool-argument mismatch behind that count difference still needs a targeted regression.
+
+---
+
+## 2026-03-07 (Clean Worktree Rule Enforced)
+
+### Task: Clean worktree and codify no-handoff-on-dirty-tree rule
+
+**Type:** docs_or_process_only
+**Status:** COMPLETE
+**Timestamp:** 2026-03-07 18:46 CET
+
+**Summary:**
+The repo had a pre-existing dirty worktree again at handoff time. Preserved that state in a named stash, restored a clean worktree, and tightened `AGENTS.md` so agents must rerun `git status --short` and clean the worktree before any future handoff.
+
+**Evidence:**
+
+```text
+Pre-clean snapshot:
+  git status --short -> BACKLOG.md, infra/scripts/shutdown-restart-test.sh, scripts/*, src/ingestion/kbo_ingest.py, .full_import.pid, output/agent_artifacts/software-companies-in-brussels_20260307_171512.markdown, scripts/test_chatbot_10k_quality.py
+
+Preservation action:
+  git stash push -u -m "pre-handoff-cleanup-2026-03-07T18:45:clean-worktree"
+  git stash list --max-count=3 -> stash@{0}: On main: pre-handoff-cleanup-2026-03-07T18:45:clean-worktree
+
+Post-clean check:
+  git status --short -> clean before editing AGENTS.md / WORKLOG.md
+```
