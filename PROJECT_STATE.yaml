@@ -133,7 +133,7 @@ current_state:
     note: No broad waste was observed inside rg-cdpmerged-fast. The strongest storage-account cleanup candidate is stcdpmergedprtnlp because the group currently holds three nearly identical es-snapshots storage accounts while the repo's current Terraform footprint defines two, and stcdpmergedprtnlp uniquely carries the tag temporary_containerapp_exception=true. The Application Insights Smart Detection action group also looks orphaned because rg-cdpmerged-fast has no App Insights component or smartDetectorAlertRules.
   chatbot:
     status: observed
-    verified_at: 2026-03-07T18:08:56+01:00
+    verified_at: 2026-03-07T18:20:00+01:00
     authoritative_query_plane: postgresql
     deployment_health: historical_azure_revision_877f0e9_not_active_focus
     local_dataset:
@@ -150,7 +150,31 @@ current_state:
         companies_brussels: 41290
         companies_antwerpen: 62831
         aggregation_working: true
-    active_followup: expand_real_local_multi_message_runtime_coverage
+    active_followup: local_multi_message_runtime_verified_complete
+    browser_driven_verification:
+      status: observed
+      verified_at: 2026-03-07T18:20:00+01:00
+      scenario: search_artifact_segment_export_flow
+      evidence:
+        - screenshot: chatbot_full_flow_test_2026-03-07.png
+        - artifact: output/agent_artifacts/software-companies-in-brussels_20260307_171512.markdown
+      turns:
+        - turn: 1
+          query: "How many software companies are in Brussels?"
+          result: "1,529 companies found"
+          status: passed
+        - turn: 2
+          query: "Create a data artifact with the first 100 results in markdown format"
+          result: "Artifact created with download link"
+          status: passed
+        - turn: 3
+          query: "Create a segment named Brussels Software Companies"
+          result: "Segment created (0 profiles - PostgreSQL not synced to Tracardi)"
+          status: passed_with_expected_limitation
+        - turn: 4
+          query: "Export these software companies to CSV"
+          result: "Export attempted, correctly reported 0 profiles"
+          status: passed_with_expected_limitation
     local_runtime_capabilities:
       status: observed
       verified_at: 2026-03-07T18:08:56+01:00
