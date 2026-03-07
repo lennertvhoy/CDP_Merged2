@@ -6,6 +6,65 @@
 
 ---
 
+## 2026-03-07 (Resend Webhook Setup Verified)
+
+### Task: Configure and verify Resend webhook integration with Tracardi
+
+**Type:** verification_only  
+**Status:** COMPLETE (local setup)  
+**Timestamp:** 2026-03-07 20:45 CET  
+**Git HEAD:** Modified (scripts created, event source type fixed)
+
+**Summary:**
+Verified local Tracardi is ready to receive Resend webhook events. Fixed event source type configuration issue (webhook → REST) to enable `/track` endpoint compatibility. Created verification and fix scripts. ngrok not configured, blocking external webhook receipt from Resend servers.
+
+**Issues Discovered and Fixed:**
+
+| Issue | Root Cause | Fix |
+|-------|-----------|-----|
+| Tracker endpoint rejected events (422) | Resend event source configured with `type: ["webhook"]` | Changed to `type: ["rest"]` with REST API Bridge |
+
+**Scripts Created:**
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/verify_local_resend_setup.py` | Comprehensive verification of local Resend webhook setup |
+| `scripts/fix_resend_event_source.py` | Fixes event source type from webhook to REST |
+
+**Scripts Modified:**
+
+| Script | Change |
+|--------|--------|
+| `scripts/setup_tracardi_kbo_and_email.py` | Changed resend-webhook event source type from webhook to REST |
+
+**Verification Results:**
+
+```
+✅ Tracardi Authentication: Working
+✅ Resend Event Source: Type REST, Enabled
+✅ Email Workflows: 5 workflows deployed
+✅ Tracker Endpoint: Accepting events
+✅ Event Simulation: Profile created successfully
+⚠️  ngrok: Not configured (requires auth token)
+```
+
+**Local Setup Status:**
+- Tracardi API: http://localhost:8686 (healthy)
+- Resend event source: `resend-webhook` (type: REST, enabled)
+- Workflows: All 5 email processing workflows deployed
+- Test events: Successfully create profiles with engagement tracking
+
+**External Webhook Status:**
+- ngrok: Not configured (requires `./ngrok config add-authtoken <token>`)
+- Resend API key: Configured in `.env`
+- Next step: Configure ngrok to expose local Tracardi for external webhooks
+
+**Reference:**
+- Verification script: `python scripts/verify_local_resend_setup.py`
+- Setup script (fixed): `scripts/setup_tracardi_kbo_and_email.py`
+
+---
+
 ## 2026-03-07 (Tracardi Workflows Created via GUI)
 
 ### Task: Create 5 Resend email processing workflows in Tracardi GUI
