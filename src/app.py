@@ -13,8 +13,8 @@ import httpx
 from chainlit.oauth_providers import get_configured_oauth_providers
 from chainlit.server import app as chainlit_server_app
 from chainlit.user import User
-from fastapi import Request
-from fastapi.responses import JSONResponse
+from fastapi import HTTPException, Request
+from fastapi.responses import FileResponse, JSONResponse
 from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
@@ -27,6 +27,7 @@ from src.graph.workflow import compile_workflow
 from src.services.postgresql_search import get_search_service
 from src.services.runtime_support_schema import ensure_runtime_support_schema
 from src.services.tracardi import TracardiClient
+from src.ai_interface.tools.artifact import ARTIFACT_ROOT
 from src.ui.actions import build_action_reply, build_welcome_actions
 from src.ui.components import build_chat_profiles, build_starters
 from src.ui.formatters import DEFAULT_CHAT_PROFILE, build_status_cards, build_welcome_markdown
@@ -501,3 +502,63 @@ async def on_create_segment(action):
 async def on_push_to_resend(action):
     """Handle Resend push action."""
     await _run_action_callback("push_to_resend", action)
+
+
+# ─── Artifact Download Endpoint ─────────────────────────────────────────────
+
+@chainlit_server_app.get("/download/artifacts/{filename}")
+async def download_artifact(filename: str):
+    """Serve artifact files (CSV, JSON, Markdown) with path traversal protection.
+    
+    This endpoint allows users to download files created by the create_data_artifact tool.
+    Path traversal attacks are prevented by validating the resolved path stays within
+    the artifact root directory.
+    
+    Args:
+        filename: Name of the artifact file to download (e.g., "report_20260307_181718.csv")
+    
+    Returns:
+        FileResponse: The artifact file with appropriate content-type header
+    
+    Raises:
+        HTTPException: 400 for invalid filenames, 403 for path traversal attempts,
+                      404 if file doesn't exist
+    """
+    # Reject path traversal attempts in the filename itself
+    if ".." in filename or "/" in filename or "\\" in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    
+    # Resolve the full path and ensure it's within ARTIFACT_ROOT
+    try:
+        file_path = (ARTIFACT_ROOT / filename).resolve()
+        root_path = ARTIFACT_ROOT.resolve()
+        
+        # Security check: file must be within ARTIFACT_ROOT
+        if not str(file_path).startswith(str(root_path)):
+            raise HTTPException(status_code=403, detail="Access denied")
+    except (OSError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid path: {exc}")
+    
+    # Check file exists
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    # Check it's actually a file (not a directory)
+    if not file_path.is_file():
+        raise HTTPException(status_code=400, detail="Not a file")
+    
+    # Determine content type based on extension
+    suffix = file_path.suffix.lower()
+    media_types = {
+        ".csv": "text/csv",
+        ".json": "application/json",
+        ".md": "text/markdown",
+        ".txt": "text/plain",
+    }
+    media_type = media_types.get(suffix, "application/octet-stream")
+    
+    return FileResponse(
+        path=file_path,
+        media_type=media_type,
+        filename=filename,
+    )
