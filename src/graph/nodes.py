@@ -22,12 +22,17 @@ from src.ai_interface.tools import (
     create_segment,
     email_segment_export,
     export_segment_to_csv,
+    find_high_value_accounts,
     get_data_coverage_stats,
+    get_geographic_revenue_distribution,
+    get_identity_link_quality,
+    get_industry_summary,
     get_segment_stats,
     lookup_juridical_code,
     lookup_nace_code,
     push_segment_to_resend,
     push_to_flexmail,
+    query_unified_360,
     search_profiles,
     send_bulk_emails_via_resend,
     send_campaign_via_resend,
@@ -59,6 +64,12 @@ tools = [
     email_segment_export,
     lookup_nace_code,
     lookup_juridical_code,
+    # Unified 360° View tools
+    query_unified_360,
+    get_industry_summary,
+    find_high_value_accounts,
+    get_geographic_revenue_distribution,
+    get_identity_link_quality,
 ]
 
 # Create tool name to function mapping for direct invocation
@@ -144,7 +155,33 @@ Use `aggregate_profiles` for breakdowns:
 
 For overall local dataset health or enrichment coverage, use `get_data_coverage_stats`.
 
-## 6. REPORTS, EXPORTS, AND LOCAL ARTIFACTS
+## 6. UNIFIED 360° CUSTOMER VIEWS (CROSS-SOURCE INSIGHTS)
+
+When users ask about combined CRM + Financial data, use these unified tools:
+
+**`query_unified_360`** - Complete 360° company profiles combining KBO, Teamleader, and Exact:
+- "What is the 360° view of company KBO 0123.456.789?" -> query_type="company_profile"
+- "Show me IT companies in Brussels with open deals" -> query_type="pipeline_summary", nace_prefix="62", city="Brussels"
+- "What activities happened with company X?" -> query_type="activity_timeline"
+- "Search for company named Acme" -> query_type="search_by_name"
+
+**`get_industry_summary`** - Industry-level pipeline and revenue analysis:
+- "What is the total pipeline value for software companies in Brussels?" -> industry_category="software", city="Brussels"
+- "Show me industry breakdown for restaurants" -> industry_category="restaurant"
+- "Which industries have the most revenue?" -> (no filters, get top industries)
+
+**`find_high_value_accounts`** - Accounts with significant exposure or risk:
+- "Which high-value accounts have overdue invoices?" -> has_overdue=True
+- "Show me companies with high pipeline value" -> account_priority="high_opportunity"
+- "Find high-risk accounts" -> account_priority="high_risk"
+- "List companies with total exposure over €50k" -> min_exposure=50000
+
+**`get_geographic_revenue_distribution`** - Revenue and pipeline by location:
+- "Which cities have the most revenue?"
+- "Show me geographic distribution of our customers"
+- "What is our market penetration by city?"
+
+## 7. REPORTS, EXPORTS, AND LOCAL ARTIFACTS
 - Use `create_data_artifact` when the user wants a local document, spreadsheet-compatible file, JSON export, or analysis artifact.
 - For spreadsheet-compatible output from the query plane, prefer `create_data_artifact(..., output_format="csv")`.
 - For a human-readable report or handoff document, prefer `create_data_artifact(..., output_format="markdown")`.
@@ -152,7 +189,7 @@ For overall local dataset health or enrichment coverage, use `get_data_coverage_
 - Use `export_segment_to_csv` for canonical segment exports.
 - Use `email_segment_export` when the user wants the segment export emailed out.
 
-## 7. EMAIL PROVIDER SELECTION
+## 8. EMAIL PROVIDER SELECTION
 
 You have TWO email providers available:
 
@@ -171,7 +208,7 @@ When user asks to "send email" or "email these contacts":
 - If transactional/notification → prefer Resend
 - Otherwise, ASK: "Would you like to send via Resend or Flexmail?"
 
-## 8. REFUSAL
+## 9. REFUSAL
 If you cannot map a user's intent to these fields (e.g., "Find companies with red logos"),
 explain that the database does not support that filter.
 """,
