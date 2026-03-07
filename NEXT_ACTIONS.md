@@ -65,6 +65,36 @@ poetry run python scripts/sync_exact_to_postgres.py --full
 poetry run python scripts/sync_exact_to_postgres.py
 ```
 
+#### ⚠️ CRITICAL ISSUE: Tool Selection Still Failing After Prompt Updates
+
+**Status:** ❌ RE-TEST FAILED - All 3 test queries used wrong tools  
+**Tested:** 2026-03-08 00:01 CET  
+**Screenshot:** `chatbot_360_retest_all_failed_2026-03-08.png`
+
+**Test Results:**
+
+| Query | Expected Tool | Actual Tool Used | Result |
+|-------|---------------|------------------|--------|
+| "How well are source systems linked to KBO?" | `get_identity_link_quality` | `get_data_coverage_stats` | ❌ FAIL |
+| "Show me revenue distribution by city" | `get_geographic_revenue_distribution` | `aggregate_profiles` | ❌ FAIL |
+| "Pipeline value for software companies in Brussels?" | `get_industry_summary` | None (claimed unavailable) | ❌ FAIL |
+
+**Root Cause:**
+The EXAMPLES section (1C) and NEGATIVE CONSTRAINTS section (1D) added to the system prompt were **insufficient** to guide the LLM's tool selection. Despite explicit "DO NOT USE" prohibitions and exact query→tool mappings, the LLM continued to select incorrect tools.
+
+**Next Approach Required:**
+Need to implement a more structural fix:
+1. **Option A:** Add explicit routing layer before tool selection (classify query type first)
+2. **Option B:** Restructure tool descriptions to be more explicit about when NOT to use them
+3. **Option C:** Add tool selection examples directly in the tool function docstrings
+4. **Option D:** Implement validation layer that checks if the right tool was selected
+
+**Immediate Next Step:**
+Implement Option B + C - strengthen individual tool descriptions with:
+- Clear "USE WHEN" and "DO NOT USE WHEN" sections per tool
+- Concrete examples in each tool's docstring
+- More specific parameter requirements that would fail validation if wrong tool is selected
+
 #### Next Priorities
 
 1. **✅ COMPLETED: Cross-source identity reconciliation infrastructure** (2026-03-07)
