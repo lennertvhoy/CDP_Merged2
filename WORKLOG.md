@@ -6,6 +6,33 @@
 
 ---
 
+## 2026-03-07 (Moonshot AI Provider Support Added)
+
+### Task: Add Moonshot AI (Kimi) as LLM provider option
+
+**Type:** app_code  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-07 21:06 CET  
+**Git Commit:** `e23799d` - feat(llm): add Moonshot AI (Kimi) provider support
+
+**Summary:**
+Added Moonshot AI as an LLM provider option alongside OpenAI, Azure OpenAI, and Ollama. The integration uses the OpenAI-compatible API format.
+
+**Changes:**
+- `src/config.py`: Added MOONSHOT_API_KEY and MOONSHOT_BASE_URL settings
+- `src/graph/nodes.py`: Added moonshot provider handling with ChatOpenAI
+
+**Usage:**
+```bash
+# Add to .env.local
+LLM_PROVIDER=moonshot
+MOONSHOT_API_KEY=your-api-key
+```
+
+**Note:** Feature is available but not enabled by default. User can switch to Moonshot by updating .env.local.
+
+---
+
 ## 2026-03-07 (Resend Webhook Setup Verified)
 
 ### Task: Configure and verify Resend webhook integration with Tracardi
