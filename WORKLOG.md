@@ -6,6 +6,52 @@
 
 ---
 
+## 2026-03-07 (Exact Online Sync Working)
+
+### Task: Activate Exact Online → PostgreSQL sync pipeline
+
+**Type:** data_pipeline  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-07 22:46 CET  
+
+**Summary:**
+Exact Online OAuth authorization completed successfully. The sync pipeline is now operational and has synced financial data from Exact Online demo environment to PostgreSQL.
+
+**Sync Results:**
+
+| Entity | Count | Status |
+|--------|-------|--------|
+| GL Accounts | 60 | ✅ Synced |
+| Invoices | 60 | ✅ Synced |
+
+**What was completed:**
+- ✅ OAuth authorization flow completed
+- ✅ Tokens saved to `.env.exact`
+- ✅ 60 GL Accounts synced to PostgreSQL (`exact_accounts` table)
+- ✅ 60 Invoices synced to PostgreSQL (`exact_sales_invoices` table)
+- ✅ Full sync pipeline operational
+
+**Run sync anytime:**
+```bash
+poetry run python scripts/sync_exact_to_postgres.py --full
+```
+
+**Architecture Now Complete:**
+```
+Exact Online API (OData)
+    ↓ OAuth2 + Auto Token Refresh
+PostgreSQL Financial Tables
+    ↓ KBO/VAT Matching
+Unified 360° Financial View
+```
+
+**Next Steps:**
+- Cross-source identity reconciliation (KBO matching verification)
+- Chatbot 360° query tools for financial data
+- Enable queries like "What is the total revenue from software companies in Brussels?"
+
+---
+
 ## 2026-03-07 (Teamleader Sync Pipeline Complete)
 
 ### Task: Build production-ready Teamleader → PostgreSQL sync pipeline
@@ -256,4 +302,3 @@ Unified 360° View (exact_customer_financial_summary)
 - Enable chatbot financial 360° queries
 
 ---
-
