@@ -1,0 +1,332 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect Change Scope
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.classify.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Classify changed files
+        id: classify
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base_sha="${{ github.event.pull_request.base.sha }}"
+          else
+            base_sha="${{ github.event.before }}"
+          fi
+
+          if [ -z "${base_sha}" ] || [ "${base_sha}" = "0000000000000000000000000000000000000000" ]; then
+            base_sha="$(git rev-list --max-parents=0 HEAD)"
+          fi
+
+          mapfile -t changed_files < <(git diff --name-only "${base_sha}" "${GITHUB_SHA}")
+
+          docs_only=true
+          if [ "${#changed_files[@]}" -eq 0 ]; then
+            docs_only=false
+          fi
+
+          for file in "${changed_files[@]}"; do
+            case "${file}" in
+              *.drawio|*.gif|*.jpeg|*.jpg|*.md|*.png|*.svg|*.webp|\
+              .python-path|\
+              .vscode/*|\
+              AGENTS.md|BACKLOG.md|GEMINI.md|HANDOVER_TEMPLATE.md|NEXT_ACTIONS.md|PROJECT_STATE.yaml|PROJECT_STATUS_SUMMARY.md|STATUS.md|WORKLOG.md|\
+              docs/*|logs/*|reports/*|environment.yml)
+                ;;
+              *)
+                docs_only=false
+                break
+                ;;
+            esac
+          done
+
+          echo "docs_only=${docs_only}" >> "${GITHUB_OUTPUT}"
+
+  docs_fast_path:
+    name: Docs Fast Path
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.docs_only == 'true'
+    steps:
+      - name: Skip expensive CI for docs-only change set
+        run: echo "Docs-only change set detected; skipping lint, tests, dependency audit, and migration gates."
+
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.docs_only != 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('pyproject.toml') }}
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Run ruff linter
+        run: poetry run ruff check src/ tests/
+
+      - name: Run ruff formatter check
+        run: poetry run ruff format --check src/ tests/
+
+      - name: Run mypy type checker
+        run: poetry run mypy src/ --ignore-missing-imports
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.docs_only != 'true'
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: ${{ runner.os }}-py${{ matrix.python-version }}-poetry-${{ hashFiles('pyproject.toml') }}
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Run unit tests with coverage
+        env:
+          LLM_PROVIDER: mock
+          OPENAI_API_KEY: test-key-not-real
+          TRACARDI_API_URL: http://localhost:8686
+          TRACARDI_USERNAME: admin
+          TRACARDI_PASSWORD: admin
+          TRACARDI_SOURCE_ID: test-source
+          FLEXMAIL_ENABLED: "false"
+          FLEXMAIL_ACCOUNT_ID: test-account
+          FLEXMAIL_API_TOKEN: test-token
+          FLEXMAIL_WEBHOOK_SECRET: test-secret
+          LOG_LEVEL: WARNING
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+        run: |
+          poetry run pytest tests/ \
+            -m "not integration and not e2e" \
+            --cov=src \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            -v
+
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-${{ matrix.python-version }}
+        if: matrix.python-version == '3.11'
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.docs_only != 'true'
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install security tooling
+        run: pip install bandit pip-audit
+      - name: Run bandit security scan
+        run: bandit -c .bandit.yml -r src/ -ll
+      - name: Run dependency vulnerability audit
+        run: pip-audit -r requirements.txt -r requirements-dev.txt --progress-spinner off
+
+  secrets:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  migration-flags-unit-gate:
+    name: Migration Flags Unit Gate
+    runs-on: ubuntu-latest
+    needs:
+      - changes
+      - test
+    if: needs.changes.outputs.docs_only != 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: ${{ runner.os }}-migration-gates-poetry-${{ hashFiles('pyproject.toml') }}
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Run migration feature-flag focused unit tests
+        env:
+          LLM_PROVIDER: mock
+          OPENAI_API_KEY: test-key-not-real
+          TRACARDI_API_URL: http://localhost:8686
+          TRACARDI_USERNAME: admin
+          TRACARDI_PASSWORD: admin
+          TRACARDI_SOURCE_ID: test-source
+          FLEXMAIL_ENABLED: "false"
+          FLEXMAIL_ACCOUNT_ID: test-account
+          FLEXMAIL_API_TOKEN: test-token
+          FLEXMAIL_WEBHOOK_SECRET: test-secret
+          LOG_LEVEL: WARNING
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+        run: |
+          mkdir -p artifacts
+          poetry run pytest \
+            tests/unit/test_config.py \
+            tests/unit/test_nodes.py \
+            tests/unit/test_tools.py \
+            tests/unit/test_validation.py \
+            -k "citation or shadow or azure_search" \
+            --junitxml=artifacts/migration-flags-unit-junit.xml \
+            -v | tee artifacts/migration-flags-unit.log
+
+      - name: Upload migration unit gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-flags-unit-gate
+          path: artifacts/
+          if-no-files-found: error
+
+  migration-flags-integration-gate:
+    name: Migration Flags Integration Gate
+    runs-on: ubuntu-latest
+    needs:
+      - changes
+      - migration-flags-unit-gate
+    if: needs.changes.outputs.docs_only != 'true' && vars.RUN_INTEGRATION_GATES == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: ${{ runner.os }}-migration-int-gates-poetry-${{ hashFiles('pyproject.toml') }}
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Run migration integration gate
+        env:
+          LLM_PROVIDER: mock
+          OPENAI_API_KEY: test-key-not-real
+          TRACARDI_API_URL: http://localhost:8686
+          TRACARDI_USERNAME: admin
+          TRACARDI_PASSWORD: admin
+          TRACARDI_SOURCE_ID: test-source
+          FLEXMAIL_ENABLED: "false"
+          FLEXMAIL_ACCOUNT_ID: test-account
+          FLEXMAIL_API_TOKEN: test-token
+          FLEXMAIL_WEBHOOK_SECRET: test-secret
+          INTEGRATION_TESTS: "1"
+          LOG_LEVEL: WARNING
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+        run: |
+          mkdir -p artifacts
+          poetry run pytest \
+            tests/integration/test_multi_turn_user_stories.py \
+            -m integration \
+            --junitxml=artifacts/migration-flags-integration-junit.xml \
+            -v | tee artifacts/migration-flags-integration.log
+
+      - name: Upload migration integration gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-flags-integration-gate
+          path: artifacts/
+          if-no-files-found: error

@@ -1,0 +1,13 @@
+[Unit]
+Description=CDP_Merged Enrichment Progress Monitor
+After=network.target
+
+[Service]
+Type=oneshot
+User=ff
+ExecStart=/bin/bash /home/ff/.openclaw/workspace/repos/CDP_Merged/monitor_enrichment.sh
+StandardOutput=append:/home/ff/.openclaw/workspace/logs/enrichment_monitor_service.log
+StandardError=append:/home/ff/.openclaw/workspace/logs/enrichment_monitor_service.log
+
+[Install]
+WantedBy=multi-user.target

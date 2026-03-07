@@ -1,0 +1,92 @@
+# Copy to terraform.tfvars and fill values before `terraform apply`.
+
+project_name = "cdpmerged"
+environment  = "prod"
+location     = "westeurope"
+
+# Paste your SSH public key content (single line). Azure expects an RSA key.
+admin_ssh_public_key = "ssh-rsa AAAA...your-key..."
+
+# Lock down in real usage (home office/VPN range).
+admin_allowed_cidr = "0.0.0.0/0"
+app_allowed_cidr   = "0.0.0.0/0"
+
+# Keep the €90-100 baseline sizing.
+app_vm_size = "Standard_B2s"
+es_vm_size  = "Standard_B1ms"
+
+# Build and push this repo image first, then point here.
+agent_image = "ghcr.io/your-org/cdp-merged:latest"
+
+llm_provider = "openai"
+
+# Azure AI Search provisioning (phased rollout-safe defaults)
+enable_azure_search = false
+
+# Optional: set when reusing an existing service (used when enable_azure_search=false)
+azure_search_endpoint = ""
+
+# Optional override when creating a new service
+azure_search_service_name                     = ""
+azure_search_sku                              = "basic"
+azure_search_replica_count                    = 1
+azure_search_partition_count                  = 1
+azure_search_public_network_access_enabled    = true
+azure_search_local_authentication_enabled     = true
+
+# Runtime Azure Search index/query settings
+azure_search_index_name        = "cdp-documents"
+azure_search_api_version       = "2023-11-01"
+azure_search_top_k             = 20
+azure_search_timeout_seconds   = 10
+azure_search_id_field          = "id"
+azure_search_title_field       = "name"
+azure_search_content_field     = "content"
+azure_search_url_field         = "source_url"
+
+# Feature flags for rollout control (all disabled by default)
+enable_azure_search_retrieval = false
+enable_azure_search_shadow_mode = false
+enable_citation_required = false
+
+# MI/KV-first auth controls
+azure_auth_use_default_credential = true
+azure_auth_allow_key_fallback     = true
+azure_auth_strict_mi_kv_only      = false
+
+# Optional Key Vault integration hooks
+azure_key_vault_url = ""
+azure_key_vault_id  = ""
+
+# Optional key-based auth fallback for Azure Search runtime
+azure_search_api_key_secret_name = ""
+azure_search_api_key             = ""
+
+# If true, injects the provisioned Azure Search admin key into runtime env.
+# Keep false for safer phased migration; prefer MI or Key Vault secret name.
+azure_search_inject_admin_key = false
+
+# App secrets and runtime config for src/config.py.
+agent_environment = {
+  LLM_MODEL               = "gpt-4o-mini"
+  OPENAI_API_KEY          = "sk-..."
+  FLEXMAIL_ENABLED        = "false"
+  FLEXMAIL_API_URL        = "https://api.flexmail.eu"
+  FLEXMAIL_ACCOUNT_ID     = ""
+  FLEXMAIL_API_TOKEN      = ""
+  FLEXMAIL_SOURCE_ID      = "0"
+  FLEXMAIL_WEBHOOK_SECRET = ""
+  LOG_LEVEL               = "INFO"
+  DEBUG                   = "false"
+}
+
+# Optional explicit passwords. Leave empty to auto-generate.
+tracardi_admin_password = ""
+mysql_password          = ""
+installation_token      = ""
+
+# Optional custom tags.
+tags = {
+  owner       = "cdp-team"
+  cost_center = "marketing-ai"
+}

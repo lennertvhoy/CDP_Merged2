@@ -1,0 +1,162 @@
+#cloud-config
+package_update: true
+packages:
+  - docker.io
+  - docker-compose
+  - curl
+  - jq
+
+write_files:
+  - path: /opt/tracardi/docker-compose.yml
+    owner: root:root
+    permissions: '0644'
+    content: |
+      services:
+        mysql:
+          image: ${mysql_image}
+          container_name: tracardi_mysql
+          restart: unless-stopped
+          environment:
+            - MYSQL_ROOT_PASSWORD=${mysql_password}
+            - MYSQL_DATABASE=tracardi
+          volumes:
+            - mysql_data:/var/lib/mysql
+          ports:
+            - "3306:3306"
+          healthcheck:
+            test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -p$${MYSQL_ROOT_PASSWORD} --silent"]
+            interval: 20s
+            timeout: 10s
+            retries: 20
+          networks:
+            - tracardi_net
+
+        tracardi-api:
+          image: ${tracardi_api_image}
+          container_name: tracardi_api
+          restart: unless-stopped
+          ports:
+            - "8686:80"
+          environment:
+            - MYSQL_HOST=mysql
+            - MYSQL_PORT=3306
+            - MYSQL_DATABASE=tracardi
+            - MYSQL_USER=root
+            - MYSQL_PASSWORD=${mysql_password}
+            - ELASTIC_HOST=none
+            - ELASTIC_PORT=9200
+            - LOGGING_LEVEL=info
+            - INSTALLATION_TOKEN=${installation_token}
+            - TRACARDI_ADMIN_PASSWORD=${tracardi_admin_password}
+            - TRACARDI_MYSQL_ONLY=true
+            - TRACARDI_STORAGE_DRIVER=mysql
+            - TRACARDI_EVENT_RESOLVER=mysql
+          depends_on:
+            mysql:
+              condition: service_healthy
+          networks:
+            - tracardi_net
+          healthcheck:
+            test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:80/health || exit 1"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 60s
+
+        tracardi-gui:
+          image: ${tracardi_gui_image}
+          container_name: tracardi_gui
+          restart: unless-stopped
+          ports:
+            - "8787:80"
+          environment:
+            - API_URL=http://$${TRACARDI_PUBLIC_IP}:8686
+            - TRACKER_URL=http://$${TRACARDI_PUBLIC_IP}:8686
+          depends_on:
+            - tracardi-api
+          networks:
+            - tracardi_net
+
+      volumes:
+        mysql_data:
+
+      networks:
+        tracardi_net:
+          driver: bridge
+
+  - path: /opt/tracardi/healthcheck.sh
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      echo "Checking Tracardi API..."
+      curl -fsS http://127.0.0.1:8686/health || exit 1
+      echo "Checking Tracardi GUI..."
+      curl -fsS http://127.0.0.1:8787 >/dev/null || exit 1
+      echo "All services healthy!"
+
+  - path: /opt/tracardi/setup.sh
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      
+      echo "=== Tracardi Minimal Setup ==="
+      echo "Waiting for MySQL to be ready..."
+      sleep 30
+      
+      echo "Checking Docker containers..."
+      docker ps
+      
+      echo "Setup complete!"
+      echo "API URL: http://$(curl -sS -H Metadata:true 'http://169.254.169.254/metadata/instance/network/interface/0/ipv4/ipAddress/0/publicIpAddress?api-version=2021-02-01&format=text'):8686"
+      echo "GUI URL: http://$(curl -sS -H Metadata:true 'http://169.254.169.254/metadata/instance/network/interface/0/ipv4/ipAddress/0/publicIpAddress?api-version=2021-02-01&format=text'):8787"
+
+  - path: /etc/systemd/system/tracardi-health.service
+    owner: root:root
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=Tracardi Health Check
+      After=docker.service
+
+      [Service]
+      Type=oneshot
+      ExecStart=/opt/tracardi/healthcheck.sh
+      StandardOutput=journal
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  - mkdir -p /opt/tracardi
+  - systemctl enable --now docker
+  
+  # Get public IP and set environment variable
+  - |
+    TRACARDI_PUBLIC_IP=$(curl -sS -H Metadata:true "http://169.254.169.254/metadata/instance/network/interface/0/ipv4/ipAddress/0/publicIpAddress?api-version=2021-02-01&format=text" 2>/dev/null || echo "")
+    if [ -z "$TRACARDI_PUBLIC_IP" ]; then 
+      TRACARDI_PUBLIC_IP=$(hostname -I | awk '{print $1}')
+    fi
+    echo "TRACARDI_PUBLIC_IP=$TRACARDI_PUBLIC_IP" >/opt/tracardi/runtime.env
+    echo "Public IP: $TRACARDI_PUBLIC_IP"
+  
+  # Start Docker Compose
+  - |
+    cd /opt/tracardi
+    set -a
+    . /opt/tracardi/runtime.env
+    set +a
+    docker-compose up -d
+  
+  # Wait for services to start
+  - sleep 60
+  
+  # Run setup script
+  - /opt/tracardi/setup.sh
+  
+  # Display status
+  - docker ps
+  - echo "Tracardi deployment complete!"

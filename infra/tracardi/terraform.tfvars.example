@@ -1,0 +1,36 @@
+# Copy this file to terraform.tfvars before running plan/apply.
+
+project_name = "cdpmerged"
+environment  = "prod"
+
+# Reuse existing RG unless you explicitly want a new one.
+resource_group_name  = "rg-cdpmerged-fast"
+create_resource_group = false
+
+# Keep West Europe with current Container App deployment.
+location = "westeurope"
+
+# Required: Azure currently expects an RSA key for Linux VM auth in this setup.
+admin_ssh_public_key = "ssh-rsa AAAA...your-key..."
+
+# Lock down SSH/API/GUI to your fixed office/VPN IP.
+admin_allowed_cidr  = "203.0.113.10/32"
+office_allowed_cidr = "203.0.113.10/32"
+
+# Required: subnet CIDR used by the CDP_Merged Container App environment.
+# Use docs/deployment.md commands to discover this value.
+container_app_subnet_cidr = "10.42.1.0/24"
+
+# Option B sizing (recommended in the spec).
+tracardi_vm_size = "Standard_B2s"
+data_vm_size     = "Standard_B1ms"
+
+# Optional custom credentials. Leave empty to auto-generate secure values.
+tracardi_admin_password = ""
+installation_token      = ""
+redis_password          = ""
+
+tags = {
+  owner       = "cdp-team"
+  cost_center = "marketing-ai"
+}

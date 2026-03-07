@@ -1,0 +1,71 @@
+{
+  "timestamp": "2026-02-25T16:49:54.512578",
+  "source_directory": "data/cleaned",
+  "total_records": 33,
+  "metrics": [
+    {
+      "name": "KBO Format Validity",
+      "value": "5/5",
+      "threshold": 95.0,
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "No Duplicates",
+      "value": 0,
+      "threshold": 0,
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "Postal Code Validity",
+      "value": "5/5",
+      "threshold": 90.0,
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "Email Validity",
+      "value": "5/5",
+      "threshold": 95.0,
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "No Orphaned Records",
+      "value": 0,
+      "threshold": 0,
+      "passed": true,
+      "details": null
+    }
+  ],
+  "issues": [
+    {
+      "type": "invalid_kbo_checkdigit",
+      "entity": "1234567890",
+      "message": "KBO 1234567890 has invalid check digit"
+    },
+    {
+      "type": "invalid_kbo_checkdigit",
+      "entity": "1234567891",
+      "message": "KBO 1234567891 has invalid check digit"
+    },
+    {
+      "type": "invalid_kbo_checkdigit",
+      "entity": "1234567892",
+      "message": "KBO 1234567892 has invalid check digit"
+    },
+    {
+      "type": "invalid_kbo_checkdigit",
+      "entity": "1234567893",
+      "message": "KBO 1234567893 has invalid check digit"
+    },
+    {
+      "type": "invalid_kbo_checkdigit",
+      "entity": "1234567894",
+      "message": "KBO 1234567894 has invalid check digit"
+    }
+  ],
+  "recommendations": [],
+  "overall_score": 100.0
+}

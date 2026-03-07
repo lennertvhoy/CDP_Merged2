@@ -1,0 +1,78 @@
+name: Cost Optimization Monitor
+
+on:
+  schedule:
+    # Run weekly on Sundays at 00:00 UTC
+    - cron: '0 0 * * 0'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  analyze-costs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Analyze Resource Costs
+        run: |
+          echo "=== CDP_Merged Cost Analysis ==="
+          echo "Resource Group: rg-cdpmerged-fast"
+          echo
+          
+          # List all resources
+          echo "Resources:"
+          az resource list --resource-group rg-cdpmerged-fast --output table
+          
+          echo
+          echo "=== Cost Estimation ==="
+          
+          # Container App
+          echo "Container App:"
+          az containerapp show -n ca-cdpmerged-fast -g rg-cdpmerged-fast --query "properties.template.{cpu:containers[0].resources.cpu, memory:containers[0].resources.memory, minReplicas:scale.minReplicas}" -o table || true
+          
+          # VMs
+          echo
+          echo "Virtual Machines:"
+          az vm list -g rg-cdpmerged-fast --query "[].{Name:name, Size:hardwareProfile.vmSize}" -o table || true
+          
+          # Log Analytics workspaces
+          echo
+          echo "Log Analytics Workspaces (check for duplicates!):"
+          az monitor log-analytics workspace list -g rg-cdpmerged-fast -o table || true
+          
+          # Azure Search
+          echo
+          echo "Azure AI Search:"
+          az search service show -n cdpmerged-search -g rg-cdpmerged-fast --query "{Name:name, SKU:sku.name}" -o table || true
+
+      - name: Check for Cost Anomalies
+        run: |
+          # Check for duplicate Log Analytics workspaces
+          workspace_count=$(az monitor log-analytics workspace list -g rg-cdpmerged-fast --query "length(@)" -o tsv)
+          if [ "$workspace_count" -gt 1 ]; then
+            echo "::warning::Found $workspace_count Log Analytics workspaces. Consider consolidating to save €20-40/month."
+          fi
+          
+          # Check Container App sizing
+          cpu=$(az containerapp show -n ca-cdpmerged-fast -g rg-cdpmerged-fast --query "properties.template.containers[0].resources.cpu" -o tsv)
+          min_replicas=$(az containerapp show -n ca-cdpmerged-fast -g rg-cdpmerged-fast --query "properties.template.scale.minReplicas" -o tsv)
+          
+          if [ "$cpu" == "0.5" ] && [ "$min_replicas" == "1" ]; then
+            echo "::notice::Container App is running at production specs (0.5 CPU, min 1 replica). Consider dev optimization: 0.25 CPU, min 0 replicas."
+          fi
+
+      - name: Post Summary
+        run: |
+          echo "## Cost Optimization Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Quick Wins" >> $GITHUB_STEP_SUMMARY
+          echo "- [ ] Consolidate Log Analytics workspaces (save €20-40/month)" >> $GITHUB_STEP_SUMMARY
+          echo "- [ ] Enable Container App scale-to-zero for dev (save €25-35/month)" >> $GITHUB_STEP_SUMMARY
+          echo "- [ ] Use Azure AI Search Free tier for dev (save €60/month)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "See full report: \`reports/azure_cost_optimization_20250225.md\`" >> $GITHUB_STEP_SUMMARY

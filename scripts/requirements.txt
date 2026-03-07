@@ -1,0 +1,24 @@
+# KBO Data Cleanup and Enrichment Requirements
+
+# Data processing
+csv>=1.0
+
+# HTTP requests for APIs
+requests>=2.28.0
+
+# DNS resolution for website discovery
+dnspython>=2.3.0
+
+# Optional: for production database connections
+# pymongo>=4.5.0
+
+# Optional: for Redis caching
+# redis>=5.0.0
+
+# Optional: for progress bars
+# tqdm>=4.65.0
+
+# Development dependencies (uncomment for dev)
+# pytest>=7.0.0
+# black>=23.0.0
+# flake8>=6.0.0

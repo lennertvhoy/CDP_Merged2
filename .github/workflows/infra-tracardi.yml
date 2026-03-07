@@ -1,0 +1,117 @@
+name: Infra Tracardi
+
+on:
+  pull_request:
+    paths:
+      - "infra/tracardi/**"
+      - ".github/workflows/infra-tracardi.yml"
+  push:
+    branches: [main, develop]
+    paths:
+      - "infra/tracardi/**"
+      - ".github/workflows/infra-tracardi.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: infra-tracardi-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TF_IN_AUTOMATION: "true"
+
+jobs:
+  terraform-fmt-validate:
+    name: Terraform Fmt + Validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: infra/tracardi
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.5
+
+      - name: Terraform fmt check
+        run: terraform fmt -check -diff
+
+      - name: Terraform init (backend disabled)
+        run: terraform init -backend=false -input=false
+
+      - name: Terraform validate
+        run: terraform validate
+
+  terraform-security:
+    name: Terraform Security Scan
+    runs-on: ubuntu-latest
+    needs: terraform-fmt-validate
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run tfsec (SARIF)
+        uses: aquasecurity/tfsec-sarif-action@v0.1.4
+        with:
+          working_directory: infra/tracardi
+          sarif_file: tfsec.sarif
+
+      - name: Upload tfsec SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: tfsec.sarif
+        continue-on-error: true
+
+  terraform-plan:
+    name: Terraform Plan (CI Safe)
+    runs-on: ubuntu-latest
+    needs:
+      - terraform-fmt-validate
+      - terraform-security
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    environment: staging
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        working-directory: infra/tracardi
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.5
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform init (backend disabled)
+        run: terraform init -backend=false -input=false
+
+      - name: Terraform plan
+        run: |
+          terraform plan \
+            -input=false \
+            -lock=false \
+            -refresh=false \
+            -compact-warnings \
+            -var "create_resource_group=true" \
+            -var "resource_group_name=rg-cdpmerged-ci" \
+            -var "admin_ssh_public_key=ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDZtn/eydOnGwjwrq4T+9d1eK2YI6doTkubSDWKcMuHgyQ5sky/K0GVlswrrLFkn9g2ZyhdBQ+SxRqbEyU+oiSpzmrMzsOjVBaF/js1oYNGkBph/HGknzjteSpDFfWQys3y2Cd95hrYsbuQBP2jxO7s3ng0kODycdAuhau2xqFqkYJ+2y4R3MD9ZbNZVgO14h2GcEv0ekqJ4Y430h4RuEKt8o9U5J/8MdxtRJBNngpeVqHExSI+4JAsJj/5fUkUhM7ythlxkikrDFpbSzpOTNBdiRwS6vsIF67ClQPqZxcHOKFGXwRr/V8+bLnxkdW27vmPxUDTjPCplNYPyhqo8CH3 ci@example" \
+            -var "admin_allowed_cidr=203.0.113.10/32" \
+            -var "office_allowed_cidr=203.0.113.10/32" \
+            -var "container_app_subnet_cidr=10.42.1.0/24"

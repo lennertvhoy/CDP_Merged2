@@ -1,0 +1,52 @@
+{
+  "version": "2.0",
+  "logging": {
+    "applicationInsights": {
+      "samplingSettings": {
+        "isEnabled": true,
+        "excludedTypes": "Request"
+      }
+    },
+    "logLevel": {
+      "default": "Information",
+      "Host.Results": "Information",
+      "Function": "Information",
+      "Host.Aggregator": "Information"
+    }
+  },
+  "extensions": {
+    "eventHubs": {
+      "batchCheckpointFrequency": 1,
+      "eventProcessorOptions": {
+        "maxBatchSize": 100,
+        "prefetchCount": 300,
+        "receiveTimeout": "00:02:00"
+      },
+      "initialOffsetOptions": {
+        "type": "fromStart",
+        "enqueuedTimeUtc": ""
+      }
+    }
+  },
+  "functionTimeout": "00:10:00",
+  "healthMonitor": {
+    "enabled": true,
+    "healthCheckInterval": "00:00:10",
+    "healthCheckWindow": "00:02:00",
+    "healthCheckThreshold": 6,
+    "counterThreshold": 0.8
+  },
+  "singleton": {
+    "lockPeriod": "00:00:15",
+    "listenerLockPeriod": "00:00:15",
+    "listenerLockRecoveryPollingInterval": "00:01:00",
+    "lockAcquisitionTimeout": "00:01:00",
+    "lockAcquisitionPollingInterval": "00:00:03"
+  },
+  "concurrency": {
+    "dynamicConcurrencyEnabled": true,
+    "snapshotPersistenceEnabled": true,
+    "cpuThreshold": 0.8,
+    "maximumFunctionConcurrency": 100
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "variables": {
+    "light": {
+      "background": "#FBF7EF",
+      "paper": "#FFFFFF",
+      "primary": {
+        "main": "#16324F",
+        "dark": "#0F2438",
+        "light": "#EEF3F6"
+      },
+      "text": {
+        "primary": "#16324F",
+        "secondary": "#5A7188"
+      }
+    },
+    "dark": {
+      "background": "#0D1724",
+      "paper": "#142231",
+      "primary": {
+        "main": "#F4B942",
+        "dark": "#D9A12E",
+        "light": "#FFE5A3"
+      },
+      "text": {
+        "primary": "#FFF7EA",
+        "secondary": "#C0CED9"
+      }
+    }
+  },
+  "custom_fonts": [
+    "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+  ]
+}

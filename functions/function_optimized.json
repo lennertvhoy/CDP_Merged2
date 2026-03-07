@@ -1,0 +1,18 @@
+{
+  "scriptFile": "event_processor_optimized.py",
+  "entryPoint": "main",
+  "bindings": [
+    {
+      "type": "eventHubTrigger",
+      "name": "events",
+      "direction": "in",
+      "eventHubName": "cdp-events",
+      "connection": "EventHubConnectionString",
+      "consumerGroup": "$Default",
+      "cardinality": "many",
+      "dataType": "string"
+    }
+  ],
+  "disabled": false,
+  "configurationSource": "attributes"
+}
