@@ -253,3 +253,45 @@ result = await service.aggregate_by_field(
 
 ---
 
+
+---
+
+## 2026-03-07 (CSV Export Download Fix)
+
+### Task: Add download endpoint for CSV export artifacts
+
+**Type:** app_code  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-07 19:25 CET  
+**Git HEAD:** 03c20f3
+
+**Summary:**
+Implemented download functionality for CSV/JSON/Markdown artifacts created by the `create_data_artifact` tool. Previously, files were saved to the server but users couldn't download them. Now each artifact response includes a download URL.
+
+**Changes:**
+
+1. **src/app.py**
+   - Added `/download/artifacts/{filename}` FastAPI endpoint
+   - Path traversal protection with path resolution and validation
+   - Proper content-type headers based on file extension
+   - Security: rejects `..`, `/`, `\` in filenames
+
+2. **src/ai_interface/tools/artifact.py**
+   - Added `_get_base_url()` helper (uses CHAINLIT_URL env var or localhost:8000)
+   - Added `_build_download_url(filename)` to construct download URLs
+   - Metadata now includes `download_url` and `filename` fields
+
+**Security Features:**
+- Files must resolve within ARTIFACT_ROOT directory
+- Path traversal attempts return HTTP 403
+- Invalid filenames return HTTP 400
+- Non-existent files return HTTP 404
+
+**Testing:**
+- Syntax check passed
+- Endpoint pattern: `http://localhost:8000/download/artifacts/{filename}.csv`
+- Response includes: `"download_url": "http://localhost:8000/download/artifacts/..."`
+
+**Future Azure Deployment:**
+Same interface can be extended to use Azure Blob Storage with pre-signed SAS URLs.
+
