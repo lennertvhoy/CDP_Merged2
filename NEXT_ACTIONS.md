@@ -103,6 +103,20 @@ poetry run python scripts/sync_exact_to_postgres.py
    - ✅ Fixed database schema issues (migration 006)
    - ✅ Fixed JSON serialization (datetime/Decimal handling)
 
+3. **✅ COMPLETED: Enhanced 360° tool selection guidance** (2026-03-07)
+   - ✅ Problem identified: LLM was using standard tools instead of 360° tools
+   - ✅ Solution: Enhanced system prompt with clearer selection criteria
+   - ✅ Added CRITICAL guidance distinguishing 360° tools from standard search
+   - ✅ Added explicit tool selection matrix
+   - ✅ Added more specific parameter mappings for all 360° tools
+   - ✅ Commit: `eae20da` - docs(chatbot): Enhance system prompt for 360° tool selection
+
+#### Follow-up Items
+
+1. **Re-test 360° tools after prompt enhancement** - Verify LLM now correctly selects 360° tools
+2. **Add more sample queries** to system prompt based on real usage patterns
+3. **Future: Identity Resolution UI/API** - Manual linking interface for unmatched records (from BACKLOG.md)
+
 ---
 
 ### P0: Finalize Offline Local Development Stack

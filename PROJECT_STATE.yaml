@@ -3,7 +3,7 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-07T22:46:00+01:00
+  updated_at: 2026-03-07T23:45:00+01:00
   updated_by: agent
   repo_head:
     value: not_rechecked_after_local_commits
@@ -134,12 +134,13 @@ current_state:
     note: No broad waste was observed inside rg-cdpmerged-fast. The strongest storage-account cleanup candidate is stcdpmergedprtnlp because the group currently holds three nearly identical es-snapshots storage accounts while the repo's current Terraform footprint defines two, and stcdpmergedprtnlp uniquely carries the tag temporary_containerapp_exception=true. The Application Insights Smart Detection action group also looks orphaned because rg-cdpmerged-fast has no App Insights component or smartDetectorAlertRules.
   chatbot:
     status: observed
-    verified_at: 2026-03-07T23:10:00+01:00
+    verified_at: 2026-03-07T23:45:00+01:00
     authoritative_query_plane: postgresql
     deployment_health: historical_azure_revision_877f0e9_not_active_focus
     unified_360_tools:
       status: implemented
       implemented_at: 2026-03-07T23:10:00+01:00
+      system_prompt_enhanced_at: 2026-03-07T23:40:00+01:00
       tools:
         - query_unified_360
         - get_industry_summary
@@ -157,6 +158,11 @@ current_state:
         - "Show me IT companies in Gent with open deals over €10k"
         - "Which high-value accounts have overdue invoices?"
         - "Give me a 360° view of company KBO 0123.456.789"
+      tool_selection_improvements:
+        - Added CRITICAL guidance distinguishing 360° tools from standard search
+        - Added tool selection matrix (when to use which tool)
+        - Enhanced parameter mappings for all 360° tools
+        - Added get_identity_link_quality examples
     local_dataset:
       status: verified_working
       total_companies: 1940603
