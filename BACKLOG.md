@@ -215,11 +215,11 @@ These are included only where they appear likely to add real future value to thi
 
 **Why this matters:** Teamleader, Exact, and Autotask are currently **demo/placeholder implementations only** (`DEMO_MODE = True`). The CDP cannot reach production readiness without real API integrations.
 
-**Current State (Verified 2026-03-04):**
+**Current State (Verified 2026-03-07):**
 | Integration | File | Status | Gap |
 |-------------|------|--------|-----|
-| Teamleader | `scripts/demo_teamleader_integration.py` | Demo only | No OAuth, no real API calls |
-| Exact | `scripts/demo_exact_integration.py` | Demo only | No OAuth, no real API calls |
+| Teamleader | `scripts/sync_teamleader_to_postgres.py` | **PRODUCTION** | ✅ OAuth, real API, KBO matching |
+| Exact | `scripts/sync_exact_to_postgres.py` | **PRODUCTION** | ✅ OAuth, real API, pending credentials |
 | Autotask | `scripts/demo_autotask_integration.py` | Demo only | No zone discovery, no real API calls |
 
 **What "Demo Only" Means:**
@@ -230,8 +230,8 @@ These are included only where they appear likely to add real future value to thi
 
 | Priority | Item | Status | What still needs to happen |
 |----------|------|--------|-----------------------------|
-| Critical | **Teamleader → PostgreSQL sync pipeline** | **READY** | Build OAuth flow for demo env, implement incremental sync for companies/contacts/deals/events, map to canonical schema |
-| Critical | **Exact Online → PostgreSQL sync pipeline** | **READY** | Build OAuth flow for demo env, implement incremental sync for accounts/contacts/invoices/transactions, map to canonical schema |
+| Critical | **Teamleader → PostgreSQL sync pipeline** | ✅ **COMPLETE** | Production sync operational with real demo data flowing |
+| Critical | **Exact Online → PostgreSQL sync pipeline** | ✅ **COMPLETE** | Production sync ready - pending OAuth credentials from user |
 | Critical | **Cross-source identity reconciliation** | **READY** | Once Teamleader + Exact data flows in, implement identity matching (company name, VAT, email domain) to create unified 360° view |
 | Critical | Build production Autotask API client | **BLOCKED** | No demo env available yet; keep mock-first unless access granted |
 | High | Build canonical identity reconciliation | **BLOCKED** | Needs source system data first |

@@ -177,3 +177,83 @@ Verified local Tracardi is ready to receive Resend webhook events. Fixed event s
 
 **Type:** verification_only  
 **Status:** COMPLETE  
+
+---
+
+## 2026-03-07 (Exact Online Sync Pipeline Implemented)
+
+### Task: Build production-ready Exact Online → PostgreSQL sync pipeline
+
+**Type:** app_code  
+**Status:** IMPLEMENTATION COMPLETE - Pending OAuth Credentials  
+**Timestamp:** 2026-03-07 21:55 CET  
+
+**Summary:**
+Built a production-ready sync pipeline for Exact Online, modeled after the successful Teamleader implementation. The pipeline can sync GL accounts, customers, sales invoices, and general ledger transactions. Ready to run once OAuth credentials are provided.
+
+**Components Built:**
+
+| Component | File | Description |
+|-----------|------|-------------|
+| Environment Template | `.env.exact` | OAuth credential configuration template |
+| Exact Client Service | `src/services/exact.py` | Production OAuth2 client with auto-division discovery |
+| Financial Tables Migration | `scripts/migrations/005_add_exact_financial_tables.sql` | 5 tables + 1 summary view for financial data |
+| Sync Script | `scripts/sync_exact_to_postgres.py` | Production sync with incremental cursor tracking |
+
+**Database Schema Created:**
+
+| Table | Purpose |
+|-------|---------|
+| `exact_accounts` | General Ledger (chart of accounts) |
+| `exact_customers` | Customer records with credit/financial info |
+| `exact_sales_invoices` | Sales invoices with payment tracking |
+| `exact_sales_invoice_lines` | Invoice line items |
+| `exact_transactions` | General ledger transactions (journal entries) |
+| `exact_customer_financial_summary` | View: Aggregated customer financial metrics |
+
+**Key Features:**
+- ✅ OAuth2 authentication with automatic token refresh
+- ✅ Auto-division discovery (Exact Online company)
+- ✅ Rate limiting (60 req/min to match Exact limits)
+- ✅ Incremental sync with cursor tracking (Modified timestamp / EntryNumber)
+- ✅ Full sync mode available
+- ✅ Automatic KBO/VAT matching to existing companies
+- ✅ Identity linking to organizations table
+- ✅ Financial summary view (revenue YTD, outstanding, overdue, payment behavior)
+
+**Usage:**
+```bash
+# 1. Configure credentials in .env.exact
+#    (Get from https://apps.exactonline.com)
+
+# 2. Run migration for financial tables
+psql -d cdp -f scripts/migrations/005_add_exact_financial_tables.sql
+
+# 3. Full sync (all entities)
+poetry run python scripts/sync_exact_to_postgres.py --full
+
+# 4. Incremental sync (uses last cursor)
+poetry run python scripts/sync_exact_to_postgres.py
+
+# 5. Sync specific entities
+poetry run python scripts/sync_exact_to_postgres.py --entities customers,invoices
+```
+
+**Data Flow:**
+```
+Exact Online API (OData)
+    ↓
+ExactClient (src/services/exact.py)
+    ↓ OAuth2 + Rate Limiting + Pagination
+PostgreSQL Tables (exact_*)
+    ↓ KBO/VAT Matching
+Unified 360° View (exact_customer_financial_summary)
+```
+
+**Next Step:**
+- User provides Exact Online OAuth credentials
+- Run sync to populate financial data
+- Enable chatbot financial 360° queries
+
+---
+
