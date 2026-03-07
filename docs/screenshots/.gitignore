@@ -1,0 +1,4 @@
+# Transient Playwright artifacts - keep directory structure but ignore temp files
+*.tmp
+*.log
+.DS_Store

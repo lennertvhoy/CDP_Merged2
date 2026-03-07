@@ -1,0 +1,295 @@
+#cloud-config
+package_update: true
+packages:
+  - docker.io
+  - docker-compose
+  - curl
+  - nginx
+  - certbot
+  - python3-certbot-nginx
+
+write_files:
+  - path: /opt/tracardi/docker-compose.yml
+    owner: root:root
+    permissions: '0644'
+    content: |
+      services:
+        mysql:
+          image: ${mysql_image}
+          container_name: tracardi_mysql
+          restart: unless-stopped
+          environment:
+            - MYSQL_ROOT_PASSWORD=${mysql_password}
+            - MYSQL_DATABASE=tracardi
+          volumes:
+            - mysql_data:/var/lib/mysql
+          healthcheck:
+            test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -p$${MYSQL_ROOT_PASSWORD} --silent"]
+            interval: 20s
+            timeout: 10s
+            retries: 20
+
+        tracardi-api:
+          image: ${tracardi_api_image}
+          container_name: tracardi_api
+          restart: unless-stopped
+          ports:
+            - "8686:80"
+          environment:
+            - MYSQL_HOST=mysql
+            - MYSQL_PORT=3306
+            - MYSQL_DATABASE=tracardi
+            - MYSQL_USER=root
+            - MYSQL_PASSWORD=${mysql_password}
+            - ELASTIC_HOST=${data_private_ip}
+            - ELASTIC_PORT=9200
+            - REDIS_HOST=${data_private_ip}
+            - REDIS_PORT=6379
+            - REDIS_PASSWORD=${redis_password}
+            - LOGGING_LEVEL=info
+            - INSTALLATION_TOKEN=${installation_token}
+            - TRACARDI_ADMIN_PASSWORD=${tracardi_admin_password}
+          depends_on:
+            - mysql
+
+        tracardi-gui:
+          image: ${tracardi_gui_image}
+          container_name: tracardi_gui
+          restart: unless-stopped
+          ports:
+            - "8787:80"
+          environment:
+            - API_URL=http://$${TRACARDI_PUBLIC_IP}:8686
+            - TRACKER_URL=http://$${TRACARDI_PUBLIC_IP}:8686
+          depends_on:
+            - tracardi-api
+
+      volumes:
+        mysql_data:
+
+  - path: /opt/tracardi/healthcheck.sh
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      curl -fsS http://127.0.0.1:8686/docs >/dev/null
+      curl -fsS http://127.0.0.1:8787 >/dev/null
+      echo "ok"
+
+  # IaC Compliance: GUI Profile Search Date Range Hotfix
+  # This patch ensures GUI profile search works when empty dates are sent
+  - path: /opt/tracardi/patch_gui_profile_search.py
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env python3
+      import sys
+      sys.path.insert(0, "/app")
+      from pathlib import Path
+
+      path = Path("/app/app/api/generic_endpoint.py")
+      if not path.exists():
+          print("ERROR: generic_endpoint.py not found")
+          sys.exit(1)
+
+      text = path.read_text()
+
+      # Check if already patched
+      if "query.minDate is None or (query.minDate.absolute is None and query.minDate.delta is None)" in text:
+          print("Already patched")
+          sys.exit(0)
+
+      # Create backup
+      backup = Path("/app/app/api/generic_endpoint.py.bak_gui_dates")
+      if not backup.exists():
+          backup.write_text(text)
+          print("Created backup")
+
+      # Patch time_range_with_sql
+      old_code1 = '''async def time_range_with_sql(index: IndexesHistogram, query: DatetimeRangePayload, page: Optional[int] = None):
+          if query.where is not None and query.where.strip() == "*":
+              query.where = ""
+          if page is not None:'''
+
+      new_code1 = '''async def time_range_with_sql(index: IndexesHistogram, query: DatetimeRangePayload, page: Optional[int] = None):
+          if query.where is not None and query.where.strip() == "*":
+              query.where = ""
+          # Default date range for GUI requests that dont include dates
+          if query.minDate is None or (query.minDate.absolute is None and query.minDate.delta is None):
+              from tracardi.domain.time_range_query import DatePayload, DatetimePayload
+              query.minDate = DatePayload(absolute=DatetimePayload(year=1970, month=1, date=1, hour=0, minute=0, second=0, meridiem="AM", timeZone=0))
+          if query.maxDate is None or (query.maxDate.absolute is None and query.maxDate.delta is None):
+              from tracardi.domain.time_range_query import DatePayload, DatetimePayload
+              query.maxDate = DatePayload(absolute=DatetimePayload(year=2100, month=12, date=31, hour=11, minute=59, second=59, meridiem="PM", timeZone=0))
+          if page is not None:'''
+
+      if old_code1 in text:
+          text = text.replace(old_code1, new_code1, 1)
+          print("Patched time_range_with_sql")
+      else:
+          print("WARNING: Could not find time_range_with_sql to patch")
+
+      # Patch histogram_with_sql
+      old_code2 = '''async def histogram_with_sql(index: IndexesHistogram, query: DatetimeRangePayload, group_by: str = None):
+          if query.where is not None and query.where.strip() == "*":
+              query.where = ""
+
+          return await raw_db.index(index.value).histogram_by_sql_in_time_range(query, group_by)'''
+
+      new_code2 = '''async def histogram_with_sql(index: IndexesHistogram, query: DatetimeRangePayload, group_by: str = None):
+          if query.where is not None and query.where.strip() == "*":
+              query.where = ""
+          # Default date range for GUI requests that dont include dates
+          if query.minDate is None or (query.minDate.absolute is None and query.minDate.delta is None):
+              from tracardi.domain.time_range_query import DatePayload, DatetimePayload
+              query.minDate = DatePayload(absolute=DatetimePayload(year=1970, month=1, date=1, hour=0, minute=0, second=0, meridiem="AM", timeZone=0))
+          if query.maxDate is None or (query.maxDate.absolute is None and query.maxDate.delta is None):
+              from tracardi.domain.time_range_query import DatePayload, DatetimePayload
+              query.maxDate = DatePayload(absolute=DatetimePayload(year=2100, month=12, date=31, hour=11, minute=59, second=59, meridiem="PM", timeZone=0))
+
+          return await raw_db.index(index.value).histogram_by_sql_in_time_range(query, group_by)'''
+
+      if old_code2 in text:
+          text = text.replace(old_code2, new_code2, 1)
+          print("Patched histogram_with_sql")
+      else:
+          print("WARNING: Could not find histogram_with_sql to patch")
+
+      path.write_text(text)
+      print("Patch complete")
+
+  - path: /opt/tracardi/apply-patches.sh
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      
+      # Wait for Tracardi API container to be running
+      echo "Waiting for tracardi_api container..."
+      for i in {1..60}; do
+          if docker ps --format '{{.Names}}' | grep -q '^tracardi_api$'; then
+              echo "tracardi_api container found"
+              break
+          fi
+          echo "Waiting... ($i/60)"
+          sleep 5
+      done
+      
+      # Wait a bit more for container to be fully ready
+      sleep 10
+      
+      # Copy and run the patch
+      echo "Applying GUI profile search patch..."
+      docker cp /opt/tracardi/patch_gui_profile_search.py tracardi_api:/tmp/
+      docker exec tracardi_api python3 /tmp/patch_gui_profile_search.py
+      
+      # Restart the API container to apply changes
+      echo "Restarting tracardi_api..."
+      docker restart tracardi_api
+      
+      echo "Patch applied successfully"
+
+  # Nginx reverse proxy configuration for Tracardi
+  - path: /etc/nginx/sites-available/tracardi
+    owner: root:root
+    permissions: '0644'
+    content: |
+      # HTTP redirect to HTTPS
+      server {
+          listen 80;
+          server_name _;
+          
+          # Let's Encrypt challenge
+          location /.well-known/acme-challenge/ {
+              root /var/www/certbot;
+          }
+          
+          # Redirect all HTTP to HTTPS
+          location / {
+              return 301 https://$host$request_uri;
+          }
+      }
+      
+      # HTTPS server - Tracardi API
+      server {
+          listen 443 ssl http2;
+          server_name _;
+          
+          # SSL certificates (will be obtained via certbot)
+          ssl_certificate /etc/letsencrypt/live/tracardi/fullchain.pem;
+          ssl_certificate_key /etc/letsencrypt/live/tracardi/privkey.pem;
+          
+          # SSL configuration
+          ssl_protocols TLSv1.2 TLSv1.3;
+          ssl_ciphers HIGH:!aNULL:!MD5;
+          ssl_prefer_server_ciphers on;
+          
+          # Proxy to Tracardi API
+          location / {
+              proxy_pass http://127.0.0.1:8686;
+              proxy_http_version 1.1;
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection 'upgrade';
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_cache_bypass $http_upgrade;
+              proxy_read_timeout 86400;
+          }
+      }
+
+  # SSL setup script using self-signed certificate initially
+  # Let's Encrypt requires a domain name; for IP-based access, use self-signed
+  - path: /opt/tracardi/setup-ssl.sh
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      
+      echo "Setting up SSL for Tracardi..."
+      
+      # Create directory for certificates
+      mkdir -p /etc/letsencrypt/live/tracardi
+      mkdir -p /var/www/certbot
+      
+      # Get the public IP
+      PUBLIC_IP=$(curl -sS -H Metadata:true "http://169.254.169.254/metadata/instance/network/interface/0/ipv4/ipAddress/0/publicIpAddress?api-version=2021-02-01&format=text" || hostname -I | awk '{print $1}')
+      echo "Public IP: $PUBLIC_IP"
+      
+      # Generate self-signed certificate for IP-based access
+      # This provides HTTPS without requiring a domain name
+      openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+          -keyout /etc/letsencrypt/live/tracardi/privkey.pem \
+          -out /etc/letsencrypt/live/tracardi/fullchain.pem \
+          -subj "/CN=$PUBLIC_IP" \
+          -addext "subjectAltName=IP:$PUBLIC_IP"
+      
+      # Enable nginx site
+      ln -sf /etc/nginx/sites-available/tracardi /etc/nginx/sites-enabled/
+      rm -f /etc/nginx/sites-enabled/default
+      
+      # Test nginx configuration
+      nginx -t
+      
+      # Start/restart nginx
+      systemctl restart nginx
+      systemctl enable nginx
+      
+      echo "SSL setup complete"
+      echo "HTTPS endpoint: https://$PUBLIC_IP/"
+
+runcmd:
+  - mkdir -p /opt/tracardi /var/www/certbot
+  - systemctl enable --now docker
+  - TRACARDI_PUBLIC_IP=$(curl -sS -H Metadata:true "http://169.254.169.254/metadata/instance/network/interface/0/ipv4/ipAddress/0/publicIpAddress?api-version=2021-02-01&format=text" || true)
+  - if [ -z "$TRACARDI_PUBLIC_IP" ]; then TRACARDI_PUBLIC_IP=$(hostname -I | awk '{print $1}'); fi
+  - echo "TRACARDI_PUBLIC_IP=$TRACARDI_PUBLIC_IP" >/opt/tracardi/runtime.env
+  - set -a; . /opt/tracardi/runtime.env; set +a; docker-compose -f /opt/tracardi/docker-compose.yml up -d
+  # IaC Compliance: Apply hotfixes after containers start
+  - /opt/tracardi/apply-patches.sh
+  # SSL Setup: Configure Nginx with self-signed certificate for HTTPS
+  - /opt/tracardi/setup-ssl.sh

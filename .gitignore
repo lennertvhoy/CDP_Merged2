@@ -1,0 +1,61 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.env.*
+!.env.example
+!.env.development
+!.env.test
+!.env.database.example
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Project
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Docker
+*.log
+
+# Local Azure CLI session state
+.azure-config/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
+*.tfvars.json
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Local deployment/data artifacts (never commit)
+data/
+KboOpenData_*.zip
+infra/**/terraform.tfvars
+.enrichment_monitor_state
+_.zip
+ngrok-*.tgz
+logs/import_kbo_state.json
+enrichment_run_result.json
+.enrichment.pid
+
+# Screenshot organization - root level should be clean
+# All screenshots go to docs/screenshots/
+/*.png
+/playwright-screenshots/
+.playwright-cli/page-*.yml

@@ -1,0 +1,395 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "actionGroupName": {
+      "type": "string",
+      "defaultValue": "CDP-Critical-Alerts",
+      "metadata": {
+        "description": "Name of the action group for alerts"
+      }
+    },
+    "emailReceivers": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "Array of email addresses for alert notifications"
+      }
+    },
+    "postgresqlServerName": {
+      "type": "string",
+      "defaultValue": "cdp-postgres-b1ms"
+    },
+    "eventHubNamespace": {
+      "type": "string",
+      "defaultValue": "cdpmerged-eventhub"
+    },
+    "functionAppName": {
+      "type": "string",
+      "defaultValue": "cdpmerged-processor"
+    }
+  },
+  "variables": {
+    "alertSeverity": {
+      "critical": 0,
+      "error": 1,
+      "warning": 2,
+      "informational": 3
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Insights/actionGroups",
+      "apiVersion": "2022-06-01",
+      "name": "[parameters('actionGroupName')]",
+      "location": "Global",
+      "properties": {
+        "groupShortName": "CDPAlert",
+        "enabled": true,
+        "emailReceivers": [
+          {
+            "name": "AdminEmail",
+            "emailAddress": "[parameters('emailReceivers')[0]]",
+            "useCommonAlertSchema": true
+          }
+        ],
+        "smsReceivers": [],
+        "webhookReceivers": [],
+        "eventHubReceivers": [],
+        "itsmReceivers": [],
+        "azureAppPushReceivers": [],
+        "automationRunbookReceivers": [],
+        "voiceReceivers": [],
+        "logicAppReceivers": [],
+        "azureFunctionReceivers": []
+      }
+    },
+    {
+      "type": "Microsoft.Insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "PostgreSQL-High-CPU",
+      "location": "global",
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+      ],
+      "properties": {
+        "description": "Alert when PostgreSQL CPU exceeds 80% for 5 minutes",
+        "severity": "[variables('alertSeverity').warning]",
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresqlServerName'))]"
+        ],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria",
+          "allOf": [
+            {
+              "name": "CPU Percent",
+              "metricName": "cpu_percent",
+              "operator": "GreaterThan",
+              "threshold": 80,
+              "timeAggregation": "Average"
+            }
+          ]
+        },
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "PostgreSQL-High-Memory",
+      "location": "global",
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+      ],
+      "properties": {
+        "description": "Alert when PostgreSQL memory usage exceeds 85% for 5 minutes",
+        "severity": "[variables('alertSeverity').warning]",
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresqlServerName'))]"
+        ],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria",
+          "allOf": [
+            {
+              "name": "Memory Percent",
+              "metricName": "memory_percent",
+              "operator": "GreaterThan",
+              "threshold": 85,
+              "timeAggregation": "Average"
+            }
+          ]
+        },
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "PostgreSQL-Storage-Low",
+      "location": "global",
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+      ],
+      "properties": {
+        "description": "Alert when PostgreSQL storage exceeds 85%",
+        "severity": "[variables('alertSeverity').critical]",
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresqlServerName'))]"
+        ],
+        "evaluationFrequency": "PT5M",
+        "windowSize": "PT15M",
+        "criteria": {
+          "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria",
+          "allOf": [
+            {
+              "name": "Storage Percent",
+              "metricName": "storage_percent",
+              "operator": "GreaterThan",
+              "threshold": 85,
+              "timeAggregation": "Average"
+            }
+          ]
+        },
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "PostgreSQL-Connections-High",
+      "location": "global",
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+      ],
+      "properties": {
+        "description": "Alert when active connections exceed 80% of max",
+        "severity": "[variables('alertSeverity').error]",
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresqlServerName'))]"
+        ],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria",
+          "allOf": [
+            {
+              "name": "Active Connections",
+              "metricName": "active_connections",
+              "operator": "GreaterThan",
+              "threshold": 160,
+              "timeAggregation": "Average"
+            }
+          ]
+        },
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "EventHub-Throttling",
+      "location": "global",
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+      ],
+      "properties": {
+        "description": "Alert when Event Hub requests are throttled",
+        "severity": "[variables('alertSeverity').error]",
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.EventHub/namespaces', parameters('eventHubNamespace'))]"
+        ],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria",
+          "allOf": [
+            {
+              "name": "Throttled Requests",
+              "metricName": "ThrottledRequests",
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "timeAggregation": "Total"
+            }
+          ]
+        },
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "EventHub-High-Ingress",
+      "location": "global",
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+      ],
+      "properties": {
+        "description": "Alert when Event Hub incoming messages spike abnormally",
+        "severity": "[variables('alertSeverity').warning]",
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.EventHub/namespaces', parameters('eventHubNamespace'))]"
+        ],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria",
+          "allOf": [
+            {
+              "name": "Incoming Messages",
+              "metricName": "IncomingMessages",
+              "operator": "GreaterThan",
+              "threshold": 100000,
+              "timeAggregation": "Total"
+            }
+          ]
+        },
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "Function-High-Errors",
+      "location": "global",
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+      ],
+      "properties": {
+        "description": "Alert when Azure Function error rate exceeds threshold",
+        "severity": "[variables('alertSeverity').error]",
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]"
+        ],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria",
+          "allOf": [
+            {
+              "name": "HTTP Server Errors",
+              "metricName": "Http5xx",
+              "operator": "GreaterThan",
+              "threshold": 10,
+              "timeAggregation": "Total"
+            }
+          ]
+        },
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "Function-High-Latency",
+      "location": "global",
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+      ],
+      "properties": {
+        "description": "Alert when Azure Function response time exceeds 5 seconds",
+        "severity": "[variables('alertSeverity').warning]",
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]"
+        ],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria",
+          "allOf": [
+            {
+              "name": "Response Time",
+              "metricName": "HttpResponseTime",
+              "operator": "GreaterThan",
+              "threshold": 5000,
+              "timeAggregation": "Average"
+            }
+          ]
+        },
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/activityLogAlerts",
+      "apiVersion": "2020-10-01",
+      "name": "Function-App-Down",
+      "location": "Global",
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+      ],
+      "properties": {
+        "scopes": [
+          "[subscription().id]"
+        ],
+        "condition": {
+          "allOf": [
+            {
+              "field": "category",
+              "equals": "Administrative"
+            },
+            {
+              "field": "operationName",
+              "equals": "Microsoft.Web/sites/stop/Action"
+            },
+            {
+              "field": "resourceId",
+              "contains": "[parameters('functionAppName')]"
+            }
+          ]
+        },
+        "actions": {
+          "actionGroups": [
+            {
+              "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+            }
+          ]
+        },
+        "enabled": true,
+        "description": "Alert when Azure Function App is stopped"
+      }
+    }
+  ]
+}

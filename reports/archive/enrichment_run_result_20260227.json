@@ -1,0 +1,98 @@
+{
+  "pipeline_completed": true,
+  "phases_run": 1,
+  "phases": [
+    {
+      "phase": "phase1_contact_validation",
+      "enricher": "contact_validation",
+      "job_id": "phase1_contact_validation_20260227_122205",
+      "total_profiles": 10000,
+      "enriched": 10000,
+      "skipped": 0,
+      "stats": {
+        "source": "ContactValidationEnricher",
+        "total": 10000,
+        "success": 10000,
+        "failed": 0,
+        "skipped": 0,
+        "success_rate": 100.0,
+        "duration_seconds": 0.0,
+        "start_time": null,
+        "end_time": "2026-02-27T12:22:41.102116+00:00"
+      },
+      "dry_run": false
+    },
+    {
+      "phase": "phase5_website_discovery",
+      "enricher": "website_discovery",
+      "job_id": "phase5_website_discovery_20260227_122241",
+      "total_profiles": 10000,
+      "enriched": 10000,
+      "skipped": 0,
+      "stats": {
+        "source": "WebsiteDiscoveryEnricher",
+        "total": 10000,
+        "success": 4301,
+        "failed": 5699,
+        "skipped": 0,
+        "success_rate": 43.01,
+        "duration_seconds": 0.0,
+        "start_time": null,
+        "end_time": "2026-02-27T17:02:48.741211+00:00"
+      },
+      "dry_run": false
+    },
+    {
+      "phase": "phase8_descriptions",
+      "enricher": "descriptions",
+      "job_id": "phase8_descriptions_20260227_170248",
+      "total_profiles": 10000,
+      "enriched": 5860,
+      "skipped": 4140,
+      "stats": {
+        "source": "DescriptionEnricher",
+        "total": 5860,
+        "success": 5859,
+        "failed": 1,
+        "skipped": 0,
+        "success_rate": 99.98,
+        "duration_seconds": 0.0,
+        "start_time": null,
+        "end_time": "2026-02-27T18:06:38.411970+00:00"
+      },
+      "dry_run": false
+    },
+    {
+      "phase": "phase9_geocoding",
+      "enricher": "geocoding",
+      "job_id": "phase9_geocoding_20260227_180638",
+      "total_profiles": 10000,
+      "enriched": 9919,
+      "skipped": 81,
+      "stats": {
+        "source": "GeocodingEnricher",
+        "total": 9919,
+        "success": 8931,
+        "failed": 988,
+        "skipped": 0,
+        "success_rate": 90.04,
+        "duration_seconds": 0.0,
+        "start_time": null,
+        "end_time": "2026-02-27T22:07:56.470933+00:00"
+      },
+      "dry_run": false
+    }
+  ],
+  "cost_summary": {
+    "budget_eur": 150.0,
+    "total_spent_eur": 0.18,
+    "remaining_eur": 149.82,
+    "utilization_percent": 0.12,
+    "by_source": {
+      "descriptions": {
+        "cost_eur": 0.18,
+        "count": 1
+      }
+    }
+  }
+}

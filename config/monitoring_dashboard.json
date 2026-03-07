@@ -1,0 +1,499 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "dashboardName": {
+      "type": "string",
+      "defaultValue": "CDP-Production-Dashboard",
+      "metadata": {
+        "description": "Name of the monitoring dashboard"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "postgresqlServerName": {
+      "type": "string",
+      "defaultValue": "cdp-postgres-b1ms"
+    },
+    "eventHubNamespace": {
+      "type": "string",
+      "defaultValue": "cdpmerged-eventhub"
+    },
+    "functionAppName": {
+      "type": "string",
+      "defaultValue": "cdpmerged-processor"
+    }
+  },
+  "variables": {
+    "dashboardId": "[uniqueString(resourceGroup().id)]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Portal/dashboards",
+      "apiVersion": "2020-09-01-preview",
+      "name": "[parameters('dashboardName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "hidden-title": "CDP Production Monitoring"
+      },
+      "properties": {
+        "lenses": {
+          "0": {
+            "order": 0,
+            "parts": {
+              "0": {
+                "position": {
+                  "x": 0,
+                  "y": 0,
+                  "colSpan": 6,
+                  "rowSpan": 4
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "options",
+                      "value": {
+                        "chart": {
+                          "metrics": [
+                            {
+                              "resourceMetadata": {
+                                "id": "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresqlServerName'))]"
+                              },
+                              "name": "cpu_percent",
+                              "aggregationType": 4,
+                              "namespace": "Microsoft.DBforPostgreSQL/flexibleServers",
+                              "metricVisualization": {
+                                "displayName": "CPU Percent"
+                              }
+                            },
+                            {
+                              "resourceMetadata": {
+                                "id": "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresqlServerName'))]"
+                              },
+                              "name": "memory_percent",
+                              "aggregationType": 4,
+                              "namespace": "Microsoft.DBforPostgreSQL/flexibleServers",
+                              "metricVisualization": {
+                                "displayName": "Memory Percent"
+                              }
+                            }
+                          ],
+                          "title": "PostgreSQL CPU and Memory",
+                          "visualization": {
+                            "chartType": 2,
+                            "legendVisualization": {
+                              "isVisible": true,
+                              "position": 2,
+                              "hideSubtitle": false
+                            },
+                            "axisVisualization": {
+                              "x": {
+                                "isVisible": true,
+                                "axisType": 2
+                              },
+                              "y": {
+                                "isVisible": true,
+                                "axisType": 1
+                              }
+                            }
+                          },
+                          "timeContext": {
+                            "options": {
+                              "grain": 1
+                            },
+                            "relative": {
+                              "duration": 3600000
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "type": "Extension/HubsExtension/PartType/MonitorChartPart"
+                }
+              },
+              "1": {
+                "position": {
+                  "x": 6,
+                  "y": 0,
+                  "colSpan": 6,
+                  "rowSpan": 4
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "options",
+                      "value": {
+                        "chart": {
+                          "metrics": [
+                            {
+                              "resourceMetadata": {
+                                "id": "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresqlServerName'))]"
+                              },
+                              "name": "storage_percent",
+                              "aggregationType": 4,
+                              "namespace": "Microsoft.DBforPostgreSQL/flexibleServers",
+                              "metricVisualization": {
+                                "displayName": "Storage Percent"
+                              }
+                            },
+                            {
+                              "resourceMetadata": {
+                                "id": "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('postgresqlServerName'))]"
+                              },
+                              "name": "storage_used",
+                              "aggregationType": 4,
+                              "namespace": "Microsoft.DBforPostgreSQL/flexibleServers",
+                              "metricVisualization": {
+                                "displayName": "Storage Used"
+                              }
+                            }
+                          ],
+                          "title": "PostgreSQL Storage",
+                          "visualization": {
+                            "chartType": 2,
+                            "legendVisualization": {
+                              "isVisible": true,
+                              "position": 2,
+                              "hideSubtitle": false
+                            },
+                            "axisVisualization": {
+                              "x": {
+                                "isVisible": true,
+                                "axisType": 2
+                              },
+                              "y": {
+                                "isVisible": true,
+                                "axisType": 1
+                              }
+                            }
+                          },
+                          "timeContext": {
+                            "options": {
+                              "grain": 1
+                            },
+                            "relative": {
+                              "duration": 3600000
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "type": "Extension/HubsExtension/PartType/MonitorChartPart"
+                }
+              },
+              "2": {
+                "position": {
+                  "x": 0,
+                  "y": 4,
+                  "colSpan": 6,
+                  "rowSpan": 4
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "options",
+                      "value": {
+                        "chart": {
+                          "metrics": [
+                            {
+                              "resourceMetadata": {
+                                "id": "[resourceId('Microsoft.EventHub/namespaces', parameters('eventHubNamespace'))]"
+                              },
+                              "name": "IncomingMessages",
+                              "aggregationType": 1,
+                              "namespace": "Microsoft.EventHub/namespaces",
+                              "metricVisualization": {
+                                "displayName": "Incoming Messages"
+                              }
+                            },
+                            {
+                              "resourceMetadata": {
+                                "id": "[resourceId('Microsoft.EventHub/namespaces', parameters('eventHubNamespace'))]"
+                              },
+                              "name": "OutgoingMessages",
+                              "aggregationType": 1,
+                              "namespace": "Microsoft.EventHub/namespaces",
+                              "metricVisualization": {
+                                "displayName": "Outgoing Messages"
+                              }
+                            }
+                          ],
+                          "title": "Event Hub Throughput",
+                          "visualization": {
+                            "chartType": 2,
+                            "legendVisualization": {
+                              "isVisible": true,
+                              "position": 2,
+                              "hideSubtitle": false
+                            },
+                            "axisVisualization": {
+                              "x": {
+                                "isVisible": true,
+                                "axisType": 2
+                              },
+                              "y": {
+                                "isVisible": true,
+                                "axisType": 1
+                              }
+                            }
+                          },
+                          "timeContext": {
+                            "options": {
+                              "grain": 1
+                            },
+                            "relative": {
+                              "duration": 3600000
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "type": "Extension/HubsExtension/PartType/MonitorChartPart"
+                }
+              },
+              "3": {
+                "position": {
+                  "x": 6,
+                  "y": 4,
+                  "colSpan": 6,
+                  "rowSpan": 4
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "options",
+                      "value": {
+                        "chart": {
+                          "metrics": [
+                            {
+                              "resourceMetadata": {
+                                "id": "[resourceId('Microsoft.EventHub/namespaces', parameters('eventHubNamespace'))]"
+                              },
+                              "name": "ThrottledRequests",
+                              "aggregationType": 7,
+                              "namespace": "Microsoft.EventHub/namespaces",
+                              "metricVisualization": {
+                                "displayName": "Throttled Requests"
+                              }
+                            }
+                          ],
+                          "title": "Event Hub Throttling",
+                          "visualization": {
+                            "chartType": 2,
+                            "legendVisualization": {
+                              "isVisible": true,
+                              "position": 2,
+                              "hideSubtitle": false
+                            },
+                            "axisVisualization": {
+                              "x": {
+                                "isVisible": true,
+                                "axisType": 2
+                              },
+                              "y": {
+                                "isVisible": true,
+                                "axisType": 1
+                              }
+                            }
+                          },
+                          "timeContext": {
+                            "options": {
+                              "grain": 1
+                            },
+                            "relative": {
+                              "duration": 3600000
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "type": "Extension/HubsExtension/PartType/MonitorChartPart"
+                }
+              },
+              "4": {
+                "position": {
+                  "x": 0,
+                  "y": 8,
+                  "colSpan": 6,
+                  "rowSpan": 4
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "options",
+                      "value": {
+                        "chart": {
+                          "metrics": [
+                            {
+                              "resourceMetadata": {
+                                "id": "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]"
+                              },
+                              "name": "FunctionExecutionCount",
+                              "aggregationType": 1,
+                              "namespace": "Microsoft.Web/sites",
+                              "metricVisualization": {
+                                "displayName": "Function Execution Count"
+                              }
+                            },
+                            {
+                              "resourceMetadata": {
+                                "id": "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]"
+                              },
+                              "name": "FunctionExecutionUnits",
+                              "aggregationType": 1,
+                              "namespace": "Microsoft.Web/sites",
+                              "metricVisualization": {
+                                "displayName": "Function Execution Units"
+                              }
+                            }
+                          ],
+                          "title": "Azure Functions Execution",
+                          "visualization": {
+                            "chartType": 2,
+                            "legendVisualization": {
+                              "isVisible": true,
+                              "position": 2,
+                              "hideSubtitle": false
+                            },
+                            "axisVisualization": {
+                              "x": {
+                                "isVisible": true,
+                                "axisType": 2
+                              },
+                              "y": {
+                                "isVisible": true,
+                                "axisType": 1
+                              }
+                            }
+                          },
+                          "timeContext": {
+                            "options": {
+                              "grain": 1
+                            },
+                            "relative": {
+                              "duration": 3600000
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "type": "Extension/HubsExtension/PartType/MonitorChartPart"
+                }
+              },
+              "5": {
+                "position": {
+                  "x": 6,
+                  "y": 8,
+                  "colSpan": 6,
+                  "rowSpan": 4
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "options",
+                      "value": {
+                        "chart": {
+                          "metrics": [
+                            {
+                              "resourceMetadata": {
+                                "id": "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]"
+                              },
+                              "name": "Http5xx",
+                              "aggregationType": 7,
+                              "namespace": "Microsoft.Web/sites",
+                              "metricVisualization": {
+                                "displayName": "HTTP Server Errors"
+                              }
+                            },
+                            {
+                              "resourceMetadata": {
+                                "id": "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]"
+                              },
+                              "name": "Http4xx",
+                              "aggregationType": 7,
+                              "namespace": "Microsoft.Web/sites",
+                              "metricVisualization": {
+                                "displayName": "HTTP Client Errors"
+                              }
+                            }
+                          ],
+                          "title": "Azure Functions Errors",
+                          "visualization": {
+                            "chartType": 2,
+                            "legendVisualization": {
+                              "isVisible": true,
+                              "position": 2,
+                              "hideSubtitle": false
+                            },
+                            "axisVisualization": {
+                              "x": {
+                                "isVisible": true,
+                                "axisType": 2
+                              },
+                              "y": {
+                                "isVisible": true,
+                                "axisType": 1
+                              }
+                            }
+                          },
+                          "timeContext": {
+                            "options": {
+                              "grain": 1
+                            },
+                            "relative": {
+                              "duration": 3600000
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "type": "Extension/HubsExtension/PartType/MonitorChartPart"
+                }
+              }
+            }
+          }
+        },
+        "metadata": {
+          "model": {
+            "timeRange": {
+              "value": {
+                "relative": {
+                  "duration": 24,
+                  "timeUnit": 1
+                }
+              },
+              "type": "MsPortalFx.Composition.Configuration.ValueTypes.TimeRange"
+            },
+            "filterLocale": {
+              "value": "en-us"
+            },
+            "filters": {
+              "value": {
+                "MsPortalFx_TimeRange": {
+                  "model": {
+                    "format": "utc",
+                    "granularity": "auto",
+                    "relative": "1h"
+                  },
+                  "displayCache": "",
+                  "formattedValues": {
+                    "formattedValue": "",
+                    "formattedValues": ["Past hour"]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

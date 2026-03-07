@@ -1,0 +1,100 @@
+#cloud-config
+package_update: true
+packages:
+  - docker.io
+  - docker-compose
+  - curl
+
+write_files:
+  - path: /opt/cdp-app/docker-compose.yml
+    owner: root:root
+    permissions: '0644'
+    content: |
+      services:
+        mysql:
+          image: ${mysql_image}
+          container_name: cdp_mysql
+          restart: unless-stopped
+          environment:
+            - MYSQL_ROOT_PASSWORD=${mysql_password}
+            - MYSQL_DATABASE=tracardi
+            - MYSQL_USER=tracardi
+            - MYSQL_PASSWORD=${mysql_password}
+          ports:
+            - "3306:3306"
+          volumes:
+            - mysql_data:/var/lib/mysql
+
+        rabbitmq:
+          image: ${rabbitmq_image}
+          container_name: cdp_rabbitmq
+          restart: unless-stopped
+          ports:
+            - "5672:5672"
+            - "15672:15672"
+
+        tracardi-api:
+          image: ${tracardi_api_image}
+          container_name: cdp_tracardi_api
+          restart: unless-stopped
+          ports:
+            - "8686:80"
+          environment:
+            - ELASTIC_HOST=${elasticsearch_host}
+            - ELASTIC_PORT=9200
+            - REDIS_HOST=${redis_host}
+            - REDIS_PORT=${redis_port}
+            - REDIS_PASSWORD=${redis_password}
+            - MYSQL_HOST=mysql
+            - MYSQL_PORT=3306
+            - MYSQL_USERNAME=tracardi
+            - MYSQL_PASSWORD=${mysql_password}
+            - MYSQL_DATABASE=tracardi
+            - LOGGING_LEVEL=info
+            - INSTALLATION_TOKEN=${installation_token}
+            - TRACARDI_ADMIN_PASSWORD=${tracardi_admin_password}
+          depends_on:
+            - mysql
+            - rabbitmq
+
+        tracardi-gui:
+          image: ${tracardi_gui_image}
+          container_name: cdp_tracardi_gui
+          restart: unless-stopped
+          ports:
+            - "8787:80"
+          environment:
+            - API_URL=http://$${CDP_PUBLIC_IP}:8686
+            - TRACKER_URL=http://$${CDP_PUBLIC_IP}:8686
+          depends_on:
+            - tracardi-api
+
+        agent:
+          image: ${agent_image}
+          container_name: cdp_agent
+          restart: unless-stopped
+          ports:
+            - "8000:8000"
+          env_file:
+            - /opt/cdp-app/agent.env
+          depends_on:
+            - tracardi-api
+
+      volumes:
+        mysql_data:
+
+  - path: /opt/cdp-app/agent.env
+    owner: root:root
+    permissions: '0600'
+    content: |
+%{ for key, value in agent_env ~}
+      ${key}=${replace(value, "\n", "")}
+%{ endfor ~}
+
+runcmd:
+  - systemctl enable --now docker
+  - PUBLIC_IP=$(curl -sS -H Metadata:true "http://169.254.169.254/metadata/instance/network/interface/0/ipv4/ipAddress/0/publicIpAddress?api-version=2021-02-01&format=text" || true)
+  - if [ -z "$PUBLIC_IP" ]; then PUBLIC_IP=$(hostname -I | awk '{print $1}'); fi
+  - echo "CDP_PUBLIC_IP=$PUBLIC_IP" > /opt/cdp-app/runtime.env
+  - docker-compose --env-file /opt/cdp-app/runtime.env -f /opt/cdp-app/docker-compose.yml pull
+  - docker-compose --env-file /opt/cdp-app/runtime.env -f /opt/cdp-app/docker-compose.yml up -d

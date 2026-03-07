@@ -1,0 +1,66 @@
+# Docker ignore file for CDP_Merged
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+.env
+.env.*
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs and notebooks
+docs/
+notebooks/
+*.md
+!README.md
+!chainlit.md
+data/
+KboOpenData_*.zip
+*.zip
+infra/
+*.tfvars
+*.tfvars.json
+.azure-config/
+# Chainlit config - include entire directory
+.chainlit/*
+!.chainlit/config.toml
+!.chainlit/translations
+dev.log
+
+# CI
+.github/
+
+# Secrets
+*.pem
+*.key
+*.crt
+secrets/

@@ -1,0 +1,28 @@
+logging:
+  version: 1
+  disable_existing_loggers: false
+
+  formatters:
+    json:
+      class: pythonjsonlogger.jsonlogger.JsonFormatter
+      format: "%(asctime)s %(levelname)s %(name)s %(message)s"
+
+  handlers:
+    console:
+      class: logging.StreamHandler
+      formatter: json
+      stream: ext://sys.stdout
+
+  root:
+    level: INFO
+    handlers: [console]
+
+  loggers:
+    urllib3:
+      level: WARNING
+    asyncio:
+      level: WARNING
+    httpx:
+      level: WARNING
+    httpcore:
+      level: WARNING

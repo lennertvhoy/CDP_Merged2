@@ -1,0 +1,15 @@
+[Unit]
+Description=CDP Phase 1 Contact Validation Enrichment
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ff/.openclaw/workspace/repos/CDP_Merged
+ExecStart=/home/ff/.openclaw/workspace/repos/CDP_Merged/.venv/bin/python scripts/enrich_profiles.py --use-postgresql --phase phase1_contact_validation --live --batch-size 1000 --limit 2000000 --log-level INFO
+StandardOutput=append:/home/ff/.openclaw/workspace/repos/CDP_Merged/logs/enrichment_phase1_live.log
+StandardError=append:/home/ff/.openclaw/workspace/repos/CDP_Merged/logs/enrichment_errors.log
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

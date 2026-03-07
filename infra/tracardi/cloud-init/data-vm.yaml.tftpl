@@ -1,0 +1,194 @@
+#cloud-config
+package_update: true
+packages:
+  - docker.io
+  - docker-compose
+  - curl
+  - jq
+
+write_files:
+  - path: /etc/sysctl.d/99-elasticsearch.conf
+    owner: root:root
+    permissions: '0644'
+    content: |
+      vm.max_map_count=262144
+      vm.swappiness=10
+
+  - path: /opt/tracardi/docker-compose.yml
+    owner: root:root
+    permissions: '0644'
+    content: |
+      services:
+        elasticsearch:
+          image: ${elasticsearch_image}
+          container_name: tracardi_elasticsearch
+          restart: unless-stopped
+          environment:
+            - discovery.type=single-node
+            - xpack.security.enabled=false
+            - xpack.ml.enabled=false
+            - ES_JAVA_OPTS=-Xms${elasticsearch_heap_mb}m -Xmx${elasticsearch_heap_mb}m
+            - indices.memory.index_buffer_size=10%
+            - indices.fielddata.cache.size=20%
+            - search.default_search_timeout=30s
+          ports:
+            - "9200:9200"
+          volumes:
+            - es_data:/usr/share/elasticsearch/data
+          healthcheck:
+            test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health || exit 1"]
+            interval: 20s
+            timeout: 10s
+            retries: 12
+            start_period: 60s
+          deploy:
+            resources:
+              limits:
+                memory: 2.5G
+              reservations:
+                memory: 1.5G
+          ulimits:
+            memlock:
+              soft: -1
+              hard: -1
+          logging:
+            driver: "json-file"
+            options:
+              max-size: "100m"
+              max-file: "3"
+
+        redis:
+          image: ${redis_image}
+          container_name: tracardi_redis
+          restart: unless-stopped
+          command: ["redis-server", "--appendonly", "yes", "--requirepass", "${redis_password}"]
+          ports:
+            - "6379:6379"
+          volumes:
+            - redis_data:/data
+          healthcheck:
+            test: ["CMD-SHELL", "redis-cli -a ${redis_password} ping | grep -q PONG"]
+            interval: 20s
+            timeout: 5s
+            retries: 12
+          deploy:
+            resources:
+              limits:
+                memory: 512M
+              reservations:
+                memory: 128M
+
+      volumes:
+        es_data:
+        redis_data:
+
+  - path: /opt/tracardi/healthcheck.sh
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      curl -fsS http://127.0.0.1:9200/_cluster/health >/dev/null
+      redis-cli -a '${redis_password}' ping | grep -q PONG
+      echo "ok"
+
+  - path: /opt/tracardi/monitor.sh
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      # Tracardi Health Monitor - Auto-restart unresponsive services
+      
+      LOG_FILE="/var/log/tracardi-monitor.log"
+      MAX_RETRIES=3
+      RETRY_COUNT=0
+      ES_URL="http://localhost:9200"
+      
+      log_msg() {
+          echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
+      }
+      
+      log_msg "Tracardi monitor started"
+      
+      while true; do
+          # Check Elasticsearch
+          if ! curl -fsS "$ES_URL/_cluster/health" >/dev/null 2>&1; then
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              log_msg "WARNING: ES unresponsive (attempt $RETRY_COUNT/$MAX_RETRIES)"
+              
+              if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+                  log_msg "CRITICAL: ES failed $MAX_RETRIES times, restarting container"
+                  docker restart tracardi_elasticsearch 2>&1 | tee -a "$LOG_FILE"
+                  sleep 30
+                  
+                  # Verify recovery
+                  if curl -fsS "$ES_URL/_cluster/health" >/dev/null 2>&1; then
+                      log_msg "INFO: ES recovered after restart"
+                  else
+                      log_msg "ERROR: ES still down after restart"
+                  fi
+                  RETRY_COUNT=0
+              fi
+          else
+              if [ $RETRY_COUNT -gt 0 ]; then
+                  log_msg "INFO: ES recovered"
+              fi
+              RETRY_COUNT=0
+          fi
+          
+          # Check disk space
+          DISK_USAGE=$(df / | tail -1 | awk '{print $5}' | sed 's/%//')
+          if [ "$DISK_USAGE" -gt 85 ]; then
+              log_msg "WARNING: Disk usage at $DISK_USAGE%"
+          fi
+          
+          # Check memory
+          MEM_AVAILABLE=$(free | grep Mem | awk '{print $7}')
+          MEM_TOTAL=$(free | grep Mem | awk '{print $2}')
+          MEM_PCT=$((MEM_AVAILABLE * 100 / MEM_TOTAL))
+          if [ "$MEM_PCT" -lt 10 ]; then
+              log_msg "WARNING: Low memory - only $MEM_PCT% available"
+          fi
+          
+          sleep 60
+      done
+
+  - path: /etc/systemd/system/tracardi-monitor.service
+    owner: root:root
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=Tracardi Health Monitor
+      After=docker.service
+      Requires=docker.service
+      
+      [Service]
+      Type=simple
+      ExecStart=/opt/tracardi/monitor.sh
+      Restart=always
+      RestartSec=10
+      StandardOutput=journal
+      StandardError=journal
+      
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  - mkdir -p /opt/tracardi
+  - sysctl --system
+  - |
+    # Create 4GB swap file for memory pressure relief
+    if [ ! -f /swapfile ]; then
+      fallocate -l 4G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=4096
+      chmod 600 /swapfile
+      mkswap /swapfile
+      swapon /swapfile
+      echo '/swapfile none swap sw 0 0' >> /etc/fstab
+      echo "vm.swappiness=10" >> /etc/sysctl.conf
+      sysctl -p
+    fi
+  - systemctl enable --now docker
+  - docker-compose -f /opt/tracardi/docker-compose.yml up -d
+  - systemctl daemon-reload
+  - systemctl enable --now tracardi-monitor.service
+  - log_msg "Tracardi data VM setup complete"

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">CDP AI Assistant</title>
+  <desc id="desc">Belgian customer intelligence logo with blue, gold, and teal accents.</desc>
+  <defs>
+    <linearGradient id="bg" x1="20%" x2="90%" y1="10%" y2="90%">
+      <stop offset="0%" stop-color="#16324f" />
+      <stop offset="100%" stop-color="#24507e" />
+    </linearGradient>
+    <linearGradient id="spark" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#f4b942" />
+      <stop offset="100%" stop-color="#ffd877" />
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#bg)" />
+  <path d="M53 188c16-61 60-117 123-126 15-2 27 10 27 25v84c0 14-12 25-26 25H53v-8z" fill="#f7f3e7" opacity="0.96" />
+  <path d="M78 171c12-37 40-72 83-78 11-1 20 7 20 18v52c0 10-8 18-18 18H78v-10z" fill="#2a9d8f" opacity="0.92" />
+  <circle cx="166" cy="89" r="22" fill="url(#spark)" />
+  <path d="M96 112h24c10 0 18 8 18 18s-8 18-18 18H96z" fill="#16324f" />
+  <path d="M96 112h27c10 0 18 8 18 18s-8 18-18 18H96" fill="none" stroke="#f7f3e7" stroke-linecap="round" stroke-linejoin="round" stroke-width="13" />
+  <path d="M134 95h20c28 0 50 22 50 50s-22 50-50 50h-20" fill="none" stroke="#16324f" stroke-linecap="round" stroke-linejoin="round" stroke-width="14" />
+  <path d="M134 95h20c28 0 50 22 50 50s-22 50-50 50h-20" fill="none" stroke="#f4b942" stroke-linecap="round" stroke-linejoin="round" stroke-width="9" />
+</svg>

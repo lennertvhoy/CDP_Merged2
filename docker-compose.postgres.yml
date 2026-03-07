@@ -1,0 +1,37 @@
+# PostgreSQL for KBO Data Import
+# Usage:
+#   docker-compose -f docker-compose.postgres.yml up -d
+#   # Run import
+#   docker-compose -f docker-compose.postgres.yml down
+
+services:
+  postgres:
+    image: postgis/postgis:15-3.4-alpine
+    container_name: cdp-postgres
+    environment:
+      POSTGRES_USER: cdpadmin
+      POSTGRES_PASSWORD: cdpadmin123
+      POSTGRES_DB: cdp
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./schema_local.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cdpadmin -d cdp"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    command: >
+      postgres
+      -c shared_buffers=512MB
+      -c effective_cache_size=1536MB
+      -c work_mem=16MB
+      -c maintenance_work_mem=128MB
+      -c max_connections=200
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+
+volumes:
+  postgres_data:

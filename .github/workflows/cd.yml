@@ -1,0 +1,596 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/cd.yml"
+      - ".chainlit/**"
+      - "Dockerfile"
+      - ".dockerignore"
+      - "README.md"
+      - "chainlit.md"
+      - "poetry.lock"
+      - "pyproject.toml"
+      - "public/**"
+      - "src/**"
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: "Deployment target"
+        type: choice
+        required: true
+        default: production
+        options:
+          - staging
+          - production
+      image_tag:
+        description: "Optional existing image tag (without registry/repo). Default: sha-<commit>"
+        required: false
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+concurrency:
+  group: cd-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect Change Scope
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.classify.outputs.docs_only }}
+      deploy_required: ${{ steps.classify.outputs.deploy_required }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Classify changed files
+        id: classify
+        shell: bash
+        run: |
+          docs_only=false
+          deploy_required=true
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "docs_only=${docs_only}" >> "${GITHUB_OUTPUT}"
+            echo "deploy_required=${deploy_required}" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "docs_only=${docs_only}" >> "${GITHUB_OUTPUT}"
+            echo "deploy_required=${deploy_required}" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          base_sha="${{ github.event.before }}"
+          if [ -z "${base_sha}" ] || [ "${base_sha}" = "0000000000000000000000000000000000000000" ]; then
+            base_sha="$(git rev-list --max-parents=0 HEAD)"
+          fi
+
+          mapfile -t changed_files < <(git diff --name-only "${base_sha}" "${GITHUB_SHA}")
+
+          docs_only=true
+          if [ "${#changed_files[@]}" -eq 0 ]; then
+            docs_only=false
+          fi
+
+          for file in "${changed_files[@]}"; do
+            case "${file}" in
+              *.drawio|*.gif|*.jpeg|*.jpg|*.md|*.png|*.svg|*.webp|\
+              .python-path|\
+              .vscode/*|\
+              AGENTS.md|BACKLOG.md|GEMINI.md|HANDOVER_TEMPLATE.md|NEXT_ACTIONS.md|PROJECT_STATE.yaml|PROJECT_STATUS_SUMMARY.md|STATUS.md|WORKLOG.md|\
+              docs/*|logs/*|reports/*|environment.yml)
+                ;;
+              *)
+                docs_only=false
+                break
+                ;;
+            esac
+          done
+
+          if [ "${docs_only}" = "true" ]; then
+            deploy_required=false
+          fi
+
+          echo "docs_only=${docs_only}" >> "${GITHUB_OUTPUT}"
+          echo "deploy_required=${deploy_required}" >> "${GITHUB_OUTPUT}"
+
+  docs_fast_path:
+    name: Docs Fast Path
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.docs_only == 'true'
+    steps:
+      - name: Skip image build and deployment for docs-only change set
+        run: echo "Docs-only change set detected; skipping release gates, image build, scanning, and deployment."
+
+  migration_release_gates:
+    name: Migration Release Gates
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.deploy_required == 'true'
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: ${{ runner.os }}-cd-migration-gates-${{ hashFiles('pyproject.toml') }}
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Run citation/shadow unit gate
+        env:
+          LLM_PROVIDER: mock
+          OPENAI_API_KEY: test-key-not-real
+          TRACARDI_API_URL: http://localhost:8686
+          TRACARDI_USERNAME: admin
+          TRACARDI_PASSWORD: admin
+          TRACARDI_SOURCE_ID: test-source
+          FLEXMAIL_ENABLED: "false"
+          FLEXMAIL_ACCOUNT_ID: test-account
+          FLEXMAIL_API_TOKEN: test-token
+          FLEXMAIL_WEBHOOK_SECRET: test-secret
+          LOG_LEVEL: WARNING
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+        run: |
+          mkdir -p artifacts
+          poetry run pytest \
+            tests/unit/test_config.py \
+            tests/unit/test_nodes.py \
+            tests/unit/test_tools.py \
+            tests/unit/test_validation.py \
+            -k "citation or shadow or azure_search" \
+            --junitxml=artifacts/cd-migration-unit-junit.xml \
+            -v | tee artifacts/cd-migration-unit.log
+
+      - name: Run citation/shadow integration gate when enabled
+        if: vars.RUN_INTEGRATION_GATES == 'true'
+        env:
+          LLM_PROVIDER: mock
+          OPENAI_API_KEY: test-key-not-real
+          TRACARDI_API_URL: http://localhost:8686
+          TRACARDI_USERNAME: admin
+          TRACARDI_PASSWORD: admin
+          TRACARDI_SOURCE_ID: test-source
+          FLEXMAIL_ENABLED: "false"
+          FLEXMAIL_ACCOUNT_ID: test-account
+          FLEXMAIL_API_TOKEN: test-token
+          FLEXMAIL_WEBHOOK_SECRET: test-secret
+          INTEGRATION_TESTS: "1"
+          LOG_LEVEL: WARNING
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+        run: |
+          poetry run pytest \
+            tests/integration/test_multi_turn_user_stories.py \
+            -m integration \
+            --junitxml=artifacts/cd-migration-integration-junit.xml \
+            -v | tee artifacts/cd-migration-integration.log
+
+      - name: Record skipped integration gate
+        if: vars.RUN_INTEGRATION_GATES != 'true'
+        run: |
+          mkdir -p artifacts
+          echo "Integration release gate skipped: set RUN_INTEGRATION_GATES=true to enable." \
+            | tee artifacts/cd-migration-integration-skipped.log
+
+      - name: Upload migration gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cd-migration-release-gates
+          path: artifacts/
+          if-no-files-found: error
+
+  build:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs:
+      - changes
+      - migration_release_gates
+    if: needs.changes.outputs.deploy_required == 'true'
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_ref: ${{ steps.image_ref.outputs.value }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Lowercase image name
+        run: echo "IMAGE_NAME_LOWER=$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LOWER }}
+          tags: |
+            type=sha,format=long,prefix=sha-
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Export deployable image reference
+        id: image_ref
+        run: |
+          echo "value=${REGISTRY}/${IMAGE_NAME_LOWER}:sha-${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+
+  scan_image:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    needs:
+      - changes
+      - build
+    if: needs.changes.outputs.deploy_required == 'true'
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+
+    steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Trivy SARIF scan
+        id: trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        continue-on-error: true
+        with:
+          image-ref: ${{ needs.build.outputs.image_ref }}
+          format: sarif
+          output: trivy-results.sarif
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+
+      - name: Upload Trivy scan results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+        continue-on-error: true
+
+  deploy_staging:
+    name: Deploy Staging (main)
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - scan_image
+      - changes
+    if: needs.changes.outputs.deploy_required == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: staging
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
+    outputs:
+      fqdn: ${{ steps.fqdn.outputs.value }}
+
+    steps:
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Require staging DATABASE_URL secret
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "${DATABASE_URL}" ]; then
+            echo "Missing required staging environment secret: DATABASE_URL"
+            exit 1
+          fi
+
+      - name: Sync staging database secret
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          az containerapp secret set \
+            --name "ca-cdpmerged-fast" \
+            --resource-group "rg-cdpmerged-fast" \
+            --secrets "database-url=${DATABASE_URL}"
+
+      - name: Deploy image to Container App
+        env:
+          DATABASE_URL_SECRET_REF: secretref:database-url
+        run: |
+          az containerapp update \
+            --name "ca-cdpmerged-fast" \
+            --resource-group "rg-cdpmerged-fast" \
+            --image "${{ needs.build.outputs.image_ref }}" \
+            --set-env-vars "DATABASE_URL=${DATABASE_URL_SECRET_REF}" \
+            --revision-suffix "stg-${GITHUB_SHA::7}"
+
+      - name: Read staging FQDN
+        id: fqdn
+        run: |
+          fqdn="$(az containerapp show \
+            --name "ca-cdpmerged-fast" \
+            --resource-group "rg-cdpmerged-fast" \
+            --query properties.configuration.ingress.fqdn \
+            -o tsv)"
+          echo "value=${fqdn}" >> "${GITHUB_OUTPUT}"
+
+  smoke_staging:
+    name: Smoke Test Staging
+    runs-on: ubuntu-latest
+    needs: deploy_staging
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Wait for health endpoint
+        run: |
+          fqdn="${{ needs.deploy_staging.outputs.fqdn }}"
+          for _ in {1..20}; do
+            if curl -fsS -H "Accept: application/json" "https://${fqdn}/project/readinessz" >/dev/null; then
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "Staging readiness check failed for https://${fqdn}/project/readinessz"
+          exit 1
+
+      - name: Validate staging readiness endpoint
+        run: |
+          response="$(curl -fsS -H "Accept: application/json" \
+            "https://${{ needs.deploy_staging.outputs.fqdn }}/project/readinessz")"
+          printf '%s' "${response}" | python -c 'import json, sys; payload = json.load(sys.stdin); assert payload["status"] == "ok", payload; assert payload["checks"]["postgresql"]["status"] == "ok", payload; assert payload["checks"]["tool_layer"]["status"] == "ok", payload'
+
+  deploy_production:
+    name: Promote to Production (from staging)
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - smoke_staging
+    if: false # needs.changes.outputs.deploy_required == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
+    outputs:
+      fqdn: ${{ steps.fqdn.outputs.value }}
+
+    steps:
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Require production DATABASE_URL secret
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "${DATABASE_URL}" ]; then
+            echo "Missing required production environment secret: DATABASE_URL"
+            exit 1
+          fi
+
+      - name: Sync production database secret
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          az containerapp secret set \
+            --name "ca-cdpmerged-fast" \
+            --resource-group "rg-cdpmerged-fast" \
+            --secrets "database-url=${DATABASE_URL}"
+
+      - name: Deploy image to Container App (production)
+        env:
+          DATABASE_URL_SECRET_REF: secretref:database-url
+        run: |
+          az containerapp update \
+            --name "ca-cdpmerged-fast" \
+            --resource-group "rg-cdpmerged-fast" \
+            --image "${{ needs.build.outputs.image_ref }}" \
+            --set-env-vars "DATABASE_URL=${DATABASE_URL_SECRET_REF}" \
+            --revision-suffix "prd-${GITHUB_SHA::7}"
+
+      - name: Read production FQDN
+        id: fqdn
+        run: |
+          fqdn="$(az containerapp show \
+            --name "ca-cdpmerged-fast" \
+            --resource-group "rg-cdpmerged-fast" \
+            --query properties.configuration.ingress.fqdn \
+            -o tsv)"
+          echo "value=${fqdn}" >> "${GITHUB_OUTPUT}"
+
+  smoke_production:
+    name: Smoke Test Production
+    runs-on: ubuntu-latest
+    needs: deploy_production
+    if: false # github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Wait for production health endpoint
+        run: |
+          fqdn="${{ needs.deploy_production.outputs.fqdn }}"
+          for _ in {1..20}; do
+            if curl -fsS -H "Accept: application/json" "https://${fqdn}/project/readinessz" >/dev/null; then
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "Production readiness check failed for https://${fqdn}/project/readinessz"
+          exit 1
+
+      - name: Validate production readiness endpoint
+        run: |
+          response="$(curl -fsS -H "Accept: application/json" \
+            "https://${{ needs.deploy_production.outputs.fqdn }}/project/readinessz")"
+          printf '%s' "${response}" | python -c 'import json, sys; payload = json.load(sys.stdin); assert payload["status"] == "ok", payload; assert payload["checks"]["postgresql"]["status"] == "ok", payload; assert payload["checks"]["tool_layer"]["status"] == "ok", payload'
+
+  deploy_manual:
+    name: Deploy Manual Target
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - scan_image
+      - changes
+    if: needs.changes.outputs.deploy_required == 'true' && github.event_name == 'workflow_dispatch'
+    environment: ${{ inputs.target_env }}
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
+    outputs:
+      fqdn: ${{ steps.fqdn.outputs.value }}
+
+    steps:
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Resolve image reference
+        id: image
+        run: |
+          image_name_lower="$(echo "${IMAGE_NAME}" | tr '[:upper:]' '[:lower:]')"
+          image_tag="${{ inputs.image_tag }}"
+          if [ -z "${image_tag}" ]; then
+            image_tag="sha-${GITHUB_SHA}"
+          fi
+          echo "value=${REGISTRY}/${image_name_lower}:${image_tag}" >> "${GITHUB_OUTPUT}"
+
+      - name: Require target DATABASE_URL secret
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          TARGET_ENV: ${{ inputs.target_env }}
+        run: |
+          if [ -z "${DATABASE_URL}" ]; then
+            echo "Missing required ${TARGET_ENV} environment secret: DATABASE_URL"
+            exit 1
+          fi
+
+      - name: Sync target database secret
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          az containerapp secret set \
+            --name "ca-cdpmerged-fast" \
+            --resource-group "rg-cdpmerged-fast" \
+            --secrets "database-url=${DATABASE_URL}"
+
+      - name: Deploy image to Container App
+        env:
+          DATABASE_URL_SECRET_REF: secretref:database-url
+        run: |
+          suffix_prefix="${{ inputs.target_env }}"
+          suffix_prefix="${suffix_prefix:0:4}"
+          az containerapp update \
+            --name "ca-cdpmerged-fast" \
+            --resource-group "rg-cdpmerged-fast" \
+            --image "${{ steps.image.outputs.value }}" \
+            --set-env-vars "DATABASE_URL=${DATABASE_URL_SECRET_REF}" \
+            --revision-suffix "${suffix_prefix}-${GITHUB_SHA::7}"
+
+      - name: Read target FQDN
+        id: fqdn
+        run: |
+          fqdn="$(az containerapp show \
+            --name "ca-cdpmerged-fast" \
+            --resource-group "rg-cdpmerged-fast" \
+            --query properties.configuration.ingress.fqdn \
+            -o tsv)"
+          echo "value=${fqdn}" >> "${GITHUB_OUTPUT}"
+
+  smoke_manual:
+    name: Smoke Test Manual Target
+    runs-on: ubuntu-latest
+    needs: deploy_manual
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Wait for health endpoint
+        run: |
+          fqdn="${{ needs.deploy_manual.outputs.fqdn }}"
+          for _ in {1..20}; do
+            if curl -fsS -H "Accept: application/json" "https://${fqdn}/project/readinessz" >/dev/null; then
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "Readiness check failed for https://${fqdn}/project/readinessz"
+          exit 1
+
+      - name: Validate manual target readiness endpoint
+        run: |
+          response="$(curl -fsS -H "Accept: application/json" \
+            "https://${{ needs.deploy_manual.outputs.fqdn }}/project/readinessz")"
+          printf '%s' "${response}" | python -c 'import json, sys; payload = json.load(sys.stdin); assert payload["status"] == "ok", payload; assert payload["checks"]["postgresql"]["status"] == "ok", payload; assert payload["checks"]["tool_layer"]["status"] == "ok", payload'
+
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs:
+      - changes
+      - build
+    if: needs.changes.outputs.deploy_required == 'true' && startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true

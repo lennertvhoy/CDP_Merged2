@@ -1,0 +1,39 @@
+- generic [ref=e9]:
+  - img [ref=e10]
+  - generic [ref=e13]:
+    - text: TRACARDI
+    - generic [ref=e14]: v. 1.0.x
+  - generic [ref=e15]:
+    - generic [ref=e16]:
+      - text: Tracardi API
+      - generic [ref=e17]: "*"
+    - generic [ref=e18]:
+      - textbox "Tracardi API" [disabled] [ref=e19]: http://137.117.212.154:8686
+      - img [ref=e21] [cursor=pointer]
+      - group:
+        - generic: Tracardi API *
+    - paragraph [ref=e23]: You will authorize yourself in the above Tracardi server.
+  - generic [ref=e24]:
+    - generic [ref=e25]:
+      - generic [ref=e26]:
+        - text: Email Address
+        - generic [ref=e27]: "*"
+      - generic [ref=e28]:
+        - textbox "Email Address" [active] [ref=e29]
+        - group:
+          - generic: Email Address *
+    - generic [ref=e30]:
+      - generic:
+        - text: Password
+        - generic: "*"
+      - generic [ref=e31]:
+        - textbox "Password" [ref=e32]
+        - img [ref=e35] [cursor=pointer]
+        - group:
+          - generic: Password *
+    - button "Sign In" [ref=e38] [cursor=pointer]: Sign In
+  - paragraph [ref=e40]:
+    - text: Copyright ©
+    - link "TRACARDI" [ref=e41] [cursor=pointer]:
+      - /url: http://www.tracardi.com/
+    - text: "2026."

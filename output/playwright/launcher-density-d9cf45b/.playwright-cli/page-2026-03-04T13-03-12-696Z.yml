@@ -1,0 +1,53 @@
+- generic [ref=e5]:
+  - generic [ref=e6]:
+    - generic [ref=e7]:
+      - button [ref=e9] [cursor=pointer]:
+        - img
+      - combobox [ref=e11] [cursor=pointer]:
+        - generic:
+          - generic:
+            - generic: Audience Strategist
+        - img [ref=e12]
+    - generic [ref=e14]:
+      - button [ref=e15] [cursor=pointer]
+      - button "Toggle theme" [ref=e17] [cursor=pointer]:
+        - img
+        - generic [ref=e18]: Toggle theme
+  - generic [ref=e22]:
+    - generic [ref=e23]:
+      - generic [ref=e29]:
+        - img "Avatar for CDP AI Assistant" [ref=e32]
+        - generic [ref=e33]:
+          - generic [ref=e36]:
+            - article [ref=e37]:
+              - img "CDP AI Assistant" [ref=e41]
+            - heading "Belgian customer intelligence" [level=1] [ref=e42]
+            - article [ref=e43]: Deterministic market answers for campaign, sales, and operations teams.
+            - article [ref=e44]: "Workspace: Audience Strategist"
+            - article [ref=e45]: Reachable segments, coverage signals, and launch-ready activation lists.
+            - heading "Live signals" [level=3] [ref=e46]
+            - list [ref=e47]:
+              - listitem [ref=e48]: "Truth layer: PostgreSQL-first"
+              - listitem [ref=e49]: "Activation runtime: Tracardi downstream"
+              - listitem [ref=e50]: "Enrichment monitor: No local chunk log detected"
+            - article [ref=e51]:
+              - text: "Try first:"
+              - code [ref=e52]: Find software companies in Gent with a website and email address
+            - article [ref=e53]: Use the quick actions below to switch from discovery to segments, coverage checks, or runtime evidence.
+          - generic [ref=e54]:
+            - button "Find Accounts" [ref=e55] [cursor=pointer]
+            - button "Design Segment" [ref=e56] [cursor=pointer]
+            - button "Review Coverage" [ref=e57] [cursor=pointer]
+            - button "Runtime Status" [ref=e58] [cursor=pointer]
+      - button [ref=e60] [cursor=pointer]:
+        - img
+    - generic [ref=e62]:
+      - generic [ref=e63]:
+        - textbox "..." [active] [ref=e65]
+        - generic [ref=e66]:
+          - button [ref=e69] [cursor=pointer]:
+            - img
+          - generic [ref=e70]:
+            - button [disabled]:
+              - img
+      - article [ref=e73]: ...

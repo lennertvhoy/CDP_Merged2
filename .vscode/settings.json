@@ -1,0 +1,10 @@
+{
+  "python.defaultInterpreterPath": "/home/ff/.openclaw/workspace/repos/CDP_Merged/.venv/bin/python",
+  "python.pythonPath": "/home/ff/.openclaw/workspace/repos/CDP_Merged/.venv/bin/python",
+  "python.venvPath": "/home/ff/.openclaw/workspace/repos/CDP_Merged/.venv",
+  "python.terminal.activateEnvironment": true,
+  "python.analysis.autoSearchPaths": true,
+  "python.analysis.extraPaths": [
+    "/home/ff/.openclaw/workspace/repos/CDP_Merged/src"
+  ]
+}

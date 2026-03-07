@@ -1,0 +1,80 @@
+{
+  "total": 516382,
+  "sample_size": 1000,
+  "field_stats": {
+    "Enterprise Number (traits)": {
+      "populated": 1000,
+      "missing": 0,
+      "pct": 100.0
+    },
+    "KBO (data.identifier.id)": {
+      "populated": 0,
+      "missing": 1000,
+      "pct": 0.0
+    },
+    "Email (main)": {
+      "populated": 0,
+      "missing": 1000,
+      "pct": 0.0
+    },
+    "Email (business)": {
+      "populated": 0,
+      "missing": 1000,
+      "pct": 0.0
+    },
+    "Email (traits)": {
+      "populated": 24,
+      "missing": 976,
+      "pct": 2.4
+    },
+    "Phone (main)": {
+      "populated": 0,
+      "missing": 1000,
+      "pct": 0.0
+    },
+    "Phone (business)": {
+      "populated": 0,
+      "missing": 1000,
+      "pct": 0.0
+    },
+    "Phone (traits)": {
+      "populated": 13,
+      "missing": 987,
+      "pct": 1.3
+    },
+    "Address Street": {
+      "populated": 0,
+      "missing": 1000,
+      "pct": 0.0
+    },
+    "Address Postcode": {
+      "populated": 0,
+      "missing": 1000,
+      "pct": 0.0
+    },
+    "Address Town": {
+      "populated": 0,
+      "missing": 1000,
+      "pct": 0.0
+    },
+    "City (traits)": {
+      "populated": 1000,
+      "missing": 0,
+      "pct": 100.0
+    },
+    "Company Name (traits)": {
+      "populated": 1000,
+      "missing": 0,
+      "pct": 100.0
+    }
+  },
+  "duplicates_sample": {
+    "duplicate_kbos": 0,
+    "total_dup_profiles": 0
+  },
+  "quality_issues": {
+    "invalid_emails": 0,
+    "invalid_phones": 0,
+    "invalid_postcodes": 0
+  }
+}

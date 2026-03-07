@@ -1,0 +1,124 @@
+services:
+  # ==========================================
+  # Elasticsearch for Tracardi
+  # ==========================================
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: cdp_merged_elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:9200 || exit 1" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # ==========================================
+  # Redis for Tracardi
+  # ==========================================
+  redis:
+    image: redis:alpine
+    container_name: cdp_merged_redis
+    restart: always
+
+  # ==========================================
+  # MySQL for Tracardi
+  # ==========================================
+  mysql:
+    image: mysql:8.0
+    container_name: cdp_merged_mysql
+    restart: always
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-changeme}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-tracardi}
+      MYSQL_USER: ${MYSQL_USER:-tracardi}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-changeme}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  # ==========================================
+  # Tracardi API
+  # ==========================================
+  tracardi-api:
+    image: tracardi/tracardi-api:1.0.0
+    container_name: cdp_merged_tracardi_api
+    restart: always
+    ports:
+      - "8686:80"
+    environment:
+      - ELASTIC_HOST=cdp_merged_elasticsearch
+      - ELASTIC_PORT=9200
+      - REDIS_HOST=cdp_merged_redis
+      - MYSQL_HOST=cdp_merged_mysql
+      - MYSQL_PORT=3306
+      - MYSQL_USERNAME=${MYSQL_USER:-tracardi}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-changeme}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-tracardi}
+      - LOGGING_LEVEL=info
+      - INSTALLATION_TOKEN=mytoken
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      mysql:
+        condition: service_started
+
+  # ==========================================
+  # Tracardi GUI
+  # ==========================================
+  tracardi-gui:
+    image: tracardi/tracardi-gui:1.0.0
+    container_name: cdp_merged_tracardi_gui
+    restart: always
+    ports:
+      - "8787:80"
+    environment:
+      - API_URL=http://localhost:8686
+      - TRACKER_URL=http://localhost:8686
+    depends_on:
+      - tracardi-api
+
+  # ==========================================
+  # Wiremock for Flexmail simulation (optional)
+  # ==========================================
+  wiremock:
+    image: wiremock/wiremock:latest
+    container_name: cdp_merged_wiremock
+    ports:
+      - "8080:8080"
+    command: [ "--verbose", "--global-response-templating" ]
+
+  # ==========================================
+  # AI Agent Application
+  # ==========================================
+  agent:
+    build: .
+    container_name: cdp_merged_agent
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - TRACARDI_API_URL=http://cdp_merged_tracardi_api:80
+      - ELASTICSEARCH_URL=http://cdp_merged_elasticsearch:9200
+    depends_on:
+      - tracardi-api
+      - elasticsearch
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  es_data:
+  mysql_data:
