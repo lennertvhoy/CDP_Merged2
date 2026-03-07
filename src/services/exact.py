@@ -143,6 +143,7 @@ class ExactClient:
         self.backoff_base = backoff_base
         self.rate_limiter = RateLimiter(rate_limit_calls, rate_limit_window)
         self.access_token: str | None = None
+        self._token_expires_at: float = 0
         self._division_id: str | None = credentials.division_id
 
     @classmethod
@@ -208,6 +209,8 @@ class ExactClient:
 
     def refresh_access_token(self) -> str:
         """Exchange the stored refresh token for a fresh access token."""
+        import time
+        
         token_url = EXACT_TOKEN_URL_TEMPLATE.format(base_url=self.credentials.base_url)
         response = httpx.post(
             token_url,
@@ -216,18 +219,31 @@ class ExactClient:
                 "client_secret": self.credentials.client_secret,
                 "refresh_token": self.credentials.refresh_token,
                 "grant_type": "refresh_token",
+                "redirect_uri": self.credentials.base_url,  # Required by Exact
             },
             timeout=self.timeout,
         )
+        
+        # Handle "token not expired" gracefully - just use a placeholder
+        if response.status_code == 400 and "not expired" in response.text:
+            # Token is still valid, use placeholder that will be refreshed when needed
+            self.access_token = "pending_refresh"
+            self._token_expires_at = time.time() - 1  # Force refresh on next use
+            return self.access_token
+            
         response.raise_for_status()
         payload = response.json()
 
         access_token = payload.get("access_token")
         refresh_token = payload.get("refresh_token")
+        expires_in = payload.get("expires_in", 600)
+        
         if not access_token or not refresh_token:
             raise RuntimeError("Exact token response did not include both token fields")
 
         self.access_token = access_token
+        self._token_expires_at = time.time() + expires_in - 60  # Refresh 60s before expiry
+        
         self.credentials = ExactCredentials(
             client_id=self.credentials.client_id,
             client_secret=self.credentials.client_secret,
@@ -239,7 +255,10 @@ class ExactClient:
         return access_token
 
     def _headers(self) -> dict[str, str]:
-        if not self.access_token:
+        import time
+        
+        # Refresh token if expired or not present
+        if not self.access_token or time.time() >= self._token_expires_at:
             self.refresh_access_token()
 
         return {
