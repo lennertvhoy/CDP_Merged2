@@ -149,7 +149,7 @@ For overall local dataset health or enrichment coverage, use `get_data_coverage_
 - For spreadsheet-compatible output from the query plane, prefer `create_data_artifact(..., output_format="csv")`.
 - For a human-readable report or handoff document, prefer `create_data_artifact(..., output_format="markdown")`.
 - When the user says "export those results" after a search, prefer `create_data_artifact(..., use_last_search=True)`.
-- Use `export_segment_to_csv` for Tracardi segment exports.
+- Use `export_segment_to_csv` for canonical segment exports.
 - Use `email_segment_export` when the user wants the segment export emailed out.
 
 ## 7. EMAIL PROVIDER SELECTION
@@ -707,7 +707,21 @@ async def tools_node(state: AgentState, config: RunnableConfig | None = None) ->
                     )
                     # Inject the stored TQL as the condition
                     tool_args = {**tool_args, "condition": stored_tql}
-                elif use_last_search and not stored_tql:
+                if use_last_search and stored_params:
+                    tool_args = _merge_last_search_params(tool_args, stored_params)
+                    logger.info(
+                        "create_segment_injected_last_search_params",
+                        name=tool_args.get("name"),
+                        applied_keys=sorted(stored_params.keys()),
+                        conversation_id=conversation_id,
+                    )
+                elif use_last_search and not stored_params:
+                    logger.warning(
+                        "create_segment_missing_last_search_params",
+                        name=tool_args.get("name"),
+                        conversation_id=conversation_id,
+                    )
+                if use_last_search and not stored_tql:
                     logger.error(
                         "create_segment_no_stored_tql",
                         name=tool_args.get("name"),

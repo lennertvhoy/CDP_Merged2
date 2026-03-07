@@ -12,13 +12,14 @@
 
 **Status:** COMPLETE - runtime fixed, full 1.94M dataset loaded and verified
 **Discovered:** 2026-03-07
-**Last Updated:** 2026-03-07 18:09 CET
+**Last Updated:** 2026-03-07 18:36 CET
 **Severity:** HIGH
 
 #### Current State
 
 - The runtime tree has been restored into `/home/ff/Documents/CDP_Merged`.
 - Local PostgreSQL now starts cleanly from `docker-compose.postgres.yml` using `schema_local.sql`.
+- `schema_local.sql` now includes the local support tables required for PostgreSQL-first segments and projection tracking: `activation_projection_state`, `segment_definitions`, `segment_memberships`, and `source_identity_links`.
 - `start_chatbot.sh` now launches the local app via `uvicorn`, sources `.env` plus `.env.local`, and the runtime is using real OpenAI successfully.
 - Local Tracardi containers are up, auth succeeds, and event sources have been created via `setup_tracardi_kbo_and_email.py`.
 - `docker compose up -d --build` now brings up the full local stack by default: PostgreSQL, Tracardi, Wiremock, and the chatbot.
@@ -27,6 +28,7 @@
 - `.env.local` has been updated with `TRACARDI_SOURCE_ID=cdp-api`.
 - The local `public.companies` table now holds the full `1,940,603`-row PostgreSQL-first KBO dataset, so local count and aggregation prompts are now business-truth capable.
 - The chatbot query contract has been corrected so generic searches no longer default to `status=AC`, and zero-result searches now expose an empty-dataset diagnostic instead of offering segments/campaigns blindly.
+- Same-day local app-code verification now confirms that `create_segment`, `get_segment_stats`, `export_segment_to_csv`, `push_segment_to_resend`, and `push_to_flexmail` all prefer canonical PostgreSQL segment membership, with Tracardi left as fallback/operational context rather than the authoritative segment store.
 - The main importer path defect is fixed: `scripts/import_kbo_full_enriched.py` now resolves the KBO zip from `KBO_ZIP_PATH` or the active repo, and `scripts/run_full_kbo_import.py` uses the same resolver.
 - The main importer now writes canonical `companies` columns directly, including `status`, `juridical_situation`, `legal_form_code`, `type_of_enterprise`, `main_fax`, `establishment_count`, `all_names`, `all_nace_codes`, and `nace_descriptions`.
 - Same-day local full-dataset verification found 1,105 restaurants in Gent, 41,290 companies in Brussels, 62,831 companies in Antwerpen, and a successful Brussels industry aggregation.
@@ -104,7 +106,7 @@ None for this work item.
 
 **Status:** COMPLETE
 **Discovered:** 2026-03-07
-**Last Updated:** 2026-03-07 18:20 CET
+**Last Updated:** 2026-03-07 18:36 CET
 **Severity:** HIGH
 
 #### Current State
@@ -113,24 +115,45 @@ None for this work item.
 - Stable harness coverage now includes a tool-heavy multi-turn story with local artifact generation.
 - Compose-managed regression and quick demo smoke now confirm the local PostgreSQL path, NACE alias search, email-domain filtering, artifact export, and top-level demo readiness checks all work.
 - **Browser-driven multi-turn scenario completed:** Verified search → artifact → segment → export flow through real threaded browser session against http://localhost:8000.
+- The local segment/export gap exposed by that browser run is now closed for canonical PostgreSQL-backed segment flows.
 
 #### Completed
 
 ✅ **Browser-driven multi-turn operator scenario** (2026-03-07 18:20 CET)
 - Search: "How many software companies are in Brussels?" → 1,529 companies found
 - Artifact: Created markdown artifact with first 100 results → Download link provided
-- Segment: Created "Brussels Software Companies" segment (0 profiles - expected, PostgreSQL not synced to Tracardi)
-- Export: Attempted CSV export → Correctly reported 0 profiles (segment empty)
+- Segment: Earlier browser run exposed the old Tracardi-only gap by creating "Brussels Software Companies" with 0 profiles
+- Export: Earlier browser run exposed the same gap by returning 0 export rows
 - Artifact file created: `output/agent_artifacts/software-companies-in-brussels_20260307_171512.markdown`
 - Screenshot captured: `chatbot_full_flow_test_2026-03-07.png`
+
+✅ **PostgreSQL-first canonical segment flow fixed locally** (2026-03-07 18:36 CET)
+- Direct tool verification against the rebuilt compose-managed stack now aligns `search_profiles` → `create_segment` → `get_segment_stats` → `export_segment_to_csv`
+- Verification query: "software companies in Brussels" → `search_total=1652`, canonical segment count `1652`, export backend `postgresql`
+- The live local PostgreSQL database now contains `activation_projection_state`, `segment_definitions`, `segment_memberships`, and `source_identity_links`
+- Authoritative segment stats and exports no longer depend on Tracardi profile membership
 
 #### Next Actions
 None - multi-message runtime hardening complete. Local stack verified end-to-end.
 
-#### Known Limitations (Architecture Gap, Not Bug)
-- Segments are created in Tracardi but contain 0 profiles because the PostgreSQL companies have not been synced to Tracardi profiles
-- This is the expected PostgreSQL-first architecture: PostgreSQL is the analytical truth layer, Tracardi is the activation runtime
-- Future work: Add selective PostgreSQL-to-Tracardi sync for activation workflows
+#### Remaining Limitation
+- Tracardi-native projection of canonical PostgreSQL segments is still future work for workflow-centric activation paths, but it is no longer a blocker for local authoritative segment creation, stats, or export
+
+### P2: Explain Browser-Vs-Direct Search Mismatch
+
+**Status:** OPEN
+**Discovered:** 2026-03-07
+**Last Updated:** 2026-03-07 18:36 CET
+**Severity:** MEDIUM
+
+#### Current State
+
+- The earlier browser-driven prompt "How many software companies are in Brussels?" returned `1,529`.
+- The same-session direct deterministic `search_profiles(keywords=software, city=Brussels)` verification returned `1,652`.
+- The canonical segment/export gap is fixed, but the planner/tool-arg mismatch behind the count discrepancy still needs explanation.
+
+#### Next Action
+1. Inspect the exact tool arguments used during the earlier browser session and add a regression around the reproduced planner path.
 
 ## Paused
 

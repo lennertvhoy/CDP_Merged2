@@ -9,15 +9,102 @@ import csv
 import json
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any, Callable
 
 import httpx
 from langchain_core.tools import tool
 
 from src.core.logger import get_logger
 from src.services.resend import ResendClient
+from src.services.canonical_segments import CanonicalSegmentService
 from src.services.tracardi import TracardiClient
 
 logger = get_logger(__name__)
+
+
+def _segment_field_mapping() -> dict[str, Callable[[dict[str, Any]], Any]]:
+    return {
+        "name": lambda p: (
+            p.get("company_name")
+            or p.get("traits", {}).get("name")
+            or p.get("traits", {}).get("kbo_name")
+            or ""
+        ),
+        "email": lambda p: (
+            p.get("main_email")
+            or p.get("traits", {}).get("email")
+            or p.get("traits", {}).get("contact_email")
+            or ""
+        ),
+        "phone": lambda p: (
+            p.get("main_phone")
+            or p.get("traits", {}).get("phone")
+            or p.get("traits", {}).get("contact_phone")
+            or ""
+        ),
+        "city": lambda p: (
+            p.get("city")
+            or p.get("traits", {}).get("city")
+            or p.get("traits", {}).get("kbo_city")
+            or ""
+        ),
+        "zip_code": lambda p: (
+            p.get("postal_code")
+            or p.get("traits", {}).get("zip_code")
+            or p.get("traits", {}).get("kbo_zip_code")
+            or ""
+        ),
+        "status": lambda p: p.get("status") or p.get("traits", {}).get("status") or "",
+        "nace_code": lambda p: (
+            p.get("industry_nace_code") or p.get("traits", {}).get("nace_code") or ""
+        ),
+        "juridical_form": lambda p: (
+            p.get("legal_form")
+            or p.get("traits", {}).get("juridical_form")
+            or p.get("traits", {}).get("kbo_juridical_form")
+            or ""
+        ),
+        "website": lambda p: (
+            p.get("website_url")
+            or p.get("traits", {}).get("website")
+            or p.get("traits", {}).get("url")
+            or ""
+        ),
+        "revenue": lambda p: (
+            p.get("revenue_range") or p.get("traits", {}).get("revenue_eur") or ""
+        ),
+        "employees": lambda p: (
+            p.get("employee_count") or p.get("traits", {}).get("employees") or ""
+        ),
+        "company_size": lambda p: (
+            p.get("company_size") or p.get("traits", {}).get("company_size") or ""
+        ),
+        "founding_year": lambda p: (
+            p.get("founding_year") or p.get("traits", {}).get("founding_year") or ""
+        ),
+    }
+
+
+async def _load_segment_rows(
+    segment_id: str,
+    *,
+    limit: int,
+) -> tuple[list[dict], int, str]:
+    """Load segment rows from PostgreSQL first, then fall back to Tracardi."""
+    try:
+        canonical_service = CanonicalSegmentService()
+        canonical = await canonical_service.get_segment_members(segment_id, limit=limit)
+        if canonical is not None:
+            return canonical["rows"], int(canonical["total_count"]), "postgresql"
+    except Exception as exc:
+        logger.warning("canonical_segment_export_lookup_failed", segment=segment_id, error=str(exc))
+
+    client = TracardiClient()
+    query = f'segments="{segment_id}"'
+    result = await client.search_profiles(query, limit=limit)
+    if not result:
+        raise RuntimeError("Failed to retrieve segment data.")
+    return result.get("result", []) or [], int(result.get("total", 0) or 0), "tracardi"
 
 
 @tool
@@ -42,8 +129,6 @@ async def export_segment_to_csv(
     """
     import tempfile
 
-    client = TracardiClient()
-
     # Default fields if not specified
     if not include_fields:
         include_fields = [
@@ -60,18 +145,13 @@ async def export_segment_to_csv(
 
     logger.info("csv_export_start", segment=segment_id, fields=include_fields)
 
-    # Fetch all profiles in segment
-    query = f'segments="{segment_id}"'
-    result = await client.search_profiles(query, limit=max_records)
-
-    if not result:
+    try:
+        profiles, total_count, backend = await _load_segment_rows(segment_id, limit=max_records)
+    except RuntimeError:
         return json.dumps(
             {"status": "error", "error": "Failed to retrieve segment data."},
             ensure_ascii=False,
         )
-
-    profiles = result.get("result", []) or []
-    total_count = int(result.get("total", 0) or 0)
 
     if not profiles:
         return json.dumps(
@@ -80,6 +160,7 @@ async def export_segment_to_csv(
                 "segment_id": segment_id,
                 "exported_count": 0,
                 "message": "Segment contains no profiles to export.",
+                "backend": backend,
             },
             ensure_ascii=False,
         )
@@ -92,38 +173,7 @@ async def export_segment_to_csv(
     filename = f"{segment_id}_{timestamp}.csv"
     filepath = export_dir / filename
 
-    # Map field names to profile paths
-    field_mapping = {
-        "name": lambda p: (
-            p.get("traits", {}).get("name") or p.get("traits", {}).get("kbo_name") or ""
-        ),
-        "email": lambda p: (
-            p.get("traits", {}).get("email") or p.get("traits", {}).get("contact_email") or ""
-        ),
-        "phone": lambda p: (
-            p.get("traits", {}).get("phone") or p.get("traits", {}).get("contact_phone") or ""
-        ),
-        "city": lambda p: (
-            p.get("traits", {}).get("city") or p.get("traits", {}).get("kbo_city") or ""
-        ),
-        "zip_code": lambda p: (
-            p.get("traits", {}).get("zip_code") or p.get("traits", {}).get("kbo_zip_code") or ""
-        ),
-        "status": lambda p: p.get("traits", {}).get("status") or "",
-        "nace_code": lambda p: p.get("traits", {}).get("nace_code") or "",
-        "juridical_form": lambda p: (
-            p.get("traits", {}).get("juridical_form")
-            or p.get("traits", {}).get("kbo_juridical_form")
-            or ""
-        ),
-        "website": lambda p: (
-            p.get("traits", {}).get("website") or p.get("traits", {}).get("url") or ""
-        ),
-        "revenue": lambda p: p.get("traits", {}).get("revenue_eur") or "",
-        "employees": lambda p: p.get("traits", {}).get("employees") or "",
-        "company_size": lambda p: p.get("traits", {}).get("company_size") or "",
-        "founding_year": lambda p: p.get("traits", {}).get("founding_year") or "",
-    }
+    field_mapping = _segment_field_mapping()
 
     try:
         with open(filepath, "w", newline="", encoding="utf-8") as f:
@@ -147,6 +197,7 @@ async def export_segment_to_csv(
             segment=segment_id,
             filename=filename,
             count=len(profiles),
+            backend=backend,
         )
 
         return json.dumps(
@@ -159,6 +210,7 @@ async def export_segment_to_csv(
                 "download_url": download_url,
                 "fields_included": include_fields,
                 "expires_in_hours": 24,
+                "backend": backend,
             },
             ensure_ascii=False,
         )

@@ -101,3 +101,45 @@ Test 5: Coverage stats
   ✅ With email: 190,533 (9.8%)
   ✅ With website: 35,844 (1.85%)
 ```
+
+---
+
+## 2026-03-07 (PostgreSQL-First Canonical Segment Gap Resolved Locally)
+
+### Task: Fix local canonical segment/schema gap exposed by browser scenario
+
+**Type:** app_code
+**Status:** COMPLETE
+**Timestamp:** 2026-03-07 18:36 CET
+**Git HEAD:** a2abd25
+
+**Summary:**
+The compose-managed local PostgreSQL database was missing the support tables needed for PostgreSQL-first segment creation, export, and projection tracking. Added those tables to `schema_local.sql`, added an idempotent runtime bootstrap, implemented a canonical segment service, and rewired segment/export/email tools to prefer PostgreSQL-backed segment membership with Tracardi fallback.
+
+**Verification:**
+
+```text
+Schema/bootstrap:
+  ✅ ensure_runtime_support_schema(connection_url=postgresql://cdpadmin:***@localhost:5432/cdp?sslmode=disable) -> True
+  ✅ SELECT table_name FROM information_schema.tables ... ->
+     activation_projection_state, segment_definitions, segment_memberships, source_identity_links
+
+Compose runtime:
+  ✅ docker compose up -d --build agent
+  ✅ docker compose ps agent -> healthy on :8000
+  ✅ curl -fsS http://127.0.0.1:8000/readinessz -> status ok
+
+Targeted tests:
+  ✅ .venv/bin/pytest tests/unit/test_canonical_segment_service.py tests/unit/test_segment_tools_postgresql_first.py tests/unit/test_ai_email.py tests/unit/test_tracardi.py -q
+  ✅ 32 tests passed
+
+Direct tool alignment check:
+  ✅ search_profiles(keywords=software, city=Brussels) -> authoritative_total 1652
+  ✅ create_segment("Brussels Software Search Aligned", ...) -> PostgreSQL segment with 1652 members
+  ✅ get_segment_stats("Brussels Software Search Aligned") -> profile_count 1652, backend postgresql
+  ✅ export_segment_to_csv("Brussels Software Search Aligned", max_records=3) -> exported_count 3, backend postgresql
+  ✅ Export file: Brussels Software Search Aligned_20260307_173639.csv
+```
+
+**Follow-up discovered during verification:**
+- The earlier browser-driven run reported `1,529` software companies in Brussels, while the direct deterministic `search_profiles` check returned `1,652` in the same session. The segment/export gap is fixed, but the planner/tool-argument mismatch behind that count difference still needs a targeted regression.

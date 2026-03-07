@@ -9,11 +9,52 @@ import httpx
 from langchain_core.tools import tool
 
 from src.core.logger import get_logger
+from src.services.canonical_segments import CanonicalSegmentService
 from src.services.flexmail import FlexmailClient
 from src.services.resend import ResendClient
 from src.services.tracardi import TracardiClient
 
 logger = get_logger(__name__)
+
+
+async def _load_segment_contacts(
+    segment_id: str,
+    *,
+    limit: int = 1000,
+) -> tuple[list[dict], int, str]:
+    """Load contact-capable segment rows from PostgreSQL first, then Tracardi."""
+    try:
+        canonical_service = CanonicalSegmentService()
+        canonical = await canonical_service.get_segment_members(segment_id, limit=limit)
+        if canonical is not None:
+            return canonical["rows"], int(canonical["total_count"]), "postgresql"
+    except Exception as exc:
+        logger.warning("canonical_segment_contact_lookup_failed", segment=segment_id, error=str(exc))
+
+    tracardi = TracardiClient()
+    query = f'segments="{segment_id}"'
+    search_res = await tracardi.search_profiles(query, limit=limit)
+    if not search_res:
+        raise RuntimeError("Failed to retrieve segment data.")
+    profiles = search_res.get("result", []) if search_res else []
+    return profiles, len(profiles), "tracardi"
+
+
+def _extract_segment_email(profile: dict) -> str | None:
+    traits = profile.get("traits") or profile.get("data", {}).get("properties", {})
+    email = (
+        profile.get("main_email")
+        or traits.get("email")
+        or traits.get("contact_email")
+    )
+    if not email and "@" in profile.get("id", ""):
+        email = profile["id"]
+    return email
+
+
+def _extract_segment_name(profile: dict) -> str:
+    traits = profile.get("traits") or profile.get("data", {}).get("properties", {})
+    return profile.get("company_name") or traits.get("name") or traits.get("kbo_name") or ""
 
 
 @tool
@@ -26,14 +67,12 @@ async def push_to_flexmail(segment_id: str) -> str:
     Returns:
         Success message with count of contacts pushed.
     """
-    tracardi = TracardiClient()
     flexmail = FlexmailClient()
-
-    query = f'segments="{segment_id}"'
     logger.info("flexmail_push_start", segment=segment_id)
-
-    search_res = await tracardi.search_profiles(query)
-    profiles_to_push = search_res.get("result", []) if search_res else []
+    try:
+        profiles_to_push, total_count, backend = await _load_segment_contacts(segment_id)
+    except RuntimeError:
+        return f"Failed to retrieve segment '{segment_id}' for Flexmail push."
 
     # Find 'tracardi_segment' custom field
     custom_fields = await flexmail.get_custom_fields()
@@ -58,14 +97,11 @@ async def push_to_flexmail(segment_id: str) -> str:
 
     pushed_count = 0
     for p in profiles_to_push:
-        props = p.get("traits") or p.get("data", {}).get("properties", {})
-        email = props.get("email") or props.get("contact_email")
-        if not email and "@" in p.get("id", ""):
-            email = p["id"]
+        email = _extract_segment_email(p)
         if not email:
             continue
 
-        name = props.get("name", "Unknown")
+        name = _extract_segment_name(p) or "Unknown"
         cf_payload = {segment_field_id: segment_id} if segment_field_id else {}
         contact = await flexmail.create_contact(email, name, custom_fields=cf_payload or None)
 
@@ -77,8 +113,19 @@ async def push_to_flexmail(segment_id: str) -> str:
             pushed_count += 1
 
     interest_name = tracardi_interest["name"] if tracardi_interest else "None"
-    logger.info("flexmail_push_complete", segment=segment_id, pushed=pushed_count)
-    return f"Pushed {pushed_count} profiles to Flexmail. Target Interest: {interest_name}."
+    logger.info(
+        "flexmail_push_complete",
+        segment=segment_id,
+        pushed=pushed_count,
+        backend=backend,
+    )
+    suffix = ""
+    if total_count > len(profiles_to_push):
+        suffix = f" Loaded {len(profiles_to_push)} of {total_count} total members in this run."
+    return (
+        f"Pushed {pushed_count} profiles to Flexmail. Target Interest: {interest_name}."
+        f"{suffix}"
+    )
 
 
 @tool
@@ -181,15 +228,12 @@ async def push_segment_to_resend(segment_id: str, audience_name: str | None = No
     Returns:
         Success message with audience ID and contact count, or error message.
     """
-    tracardi = TracardiClient()
     resend = ResendClient()
-
-    query = f'segments="{segment_id}"'
     logger.info("resend_push_start", segment=segment_id)
-
-    search_res = await tracardi.search_profiles(query, limit=1000)
-    profiles_to_push = search_res.get("result", []) if search_res else []
-    total_count = len(profiles_to_push)
+    try:
+        profiles_to_push, total_count, backend = await _load_segment_contacts(segment_id, limit=1000)
+    except RuntimeError:
+        return f"Failed to retrieve segment '{segment_id}' to push to Resend."
 
     if total_count == 0:
         return f"Segment '{segment_id}' contains no profiles to push."
@@ -208,14 +252,11 @@ async def push_segment_to_resend(segment_id: str, audience_name: str | None = No
         # Add contacts to the audience
         added_count = 0
         for p in profiles_to_push:
-            props = p.get("traits") or p.get("data", {}).get("properties", {})
-            email = props.get("email") or props.get("contact_email")
-            if not email and "@" in p.get("id", ""):
-                email = p["id"]
+            email = _extract_segment_email(p)
             if not email:
                 continue
 
-            name = props.get("name", "")
+            name = _extract_segment_name(p)
             parts = name.split(" ", 1) if name else ["", ""]
             first_name = parts[0]
             last_name = parts[1] if len(parts) > 1 else ""
@@ -247,10 +288,16 @@ async def push_segment_to_resend(segment_id: str, audience_name: str | None = No
             audience_id=audience_id,
             total=total_count,
             added=added_count,
+            backend=backend,
         )
+        suffix = ""
+        if total_count > len(profiles_to_push):
+            suffix = (
+                f" Loaded {len(profiles_to_push)} of {total_count} total members in this tool call."
+            )
         return (
-            f"Pushed {added_count}/{total_count} contacts from segment '{segment_id}' "
-            f"to Resend audience '{audience_name}' (ID: {audience_id})."
+            f"Pushed {added_count}/{len(profiles_to_push)} contacts from segment '{segment_id}' "
+            f"to Resend audience '{audience_name}' (ID: {audience_id}).{suffix}"
         )
     except Exception as exc:
         logger.error("resend_push_error", segment=segment_id, error=str(exc))

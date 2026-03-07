@@ -1,8 +1,8 @@
 """Profile Search Tools - PostgreSQL-First Query Plane.
 
 This module provides tools for searching and aggregating company data in the CDP.
-PostgreSQL is the authoritative source for search, counts, and analytics.
-Tracardi is used only for segment creation, workflow execution, and activation.
+PostgreSQL is the authoritative source for search, counts, analytics, and canonical
+segment membership. Tracardi remains an operational runtime layer.
 
 SEGMENT CREATION NOTE:
 The segment creation flow relies on a persistent checkpointer (SQLite/Postgres)
@@ -41,6 +41,7 @@ from src.services.postgresql_search import (
     CompanySearchFilters,
     get_search_service,
 )
+from src.services.canonical_segments import CanonicalSegmentService
 from src.services.tracardi import TracardiClient
 
 logger = get_logger(__name__)
@@ -628,6 +629,7 @@ async def search_profiles(
         "resolved_nace_codes": resolved_codes,
         "validation": validation_info,
         "applied_filters": {
+            "keywords": original_keyword if used_keyword_fallback else None,
             "city": city,
             "zip_code": zip_code,
             "status": status,
@@ -700,14 +702,21 @@ async def create_segment(
     condition: str | None = None,
     keywords: str | None = None,
     city: str | None = None,
+    zip_code: str | None = None,
     status: str | None = None,
+    nace_codes: list[str] | None = None,
+    juridical_codes: list[str] | None = None,
+    min_start_date: str | None = None,
+    has_phone: bool | None = None,
     has_email: bool | None = None,
+    email_domain: str | None = None,
     use_last_search: bool = True,
 ) -> str:
-    """Create a named segment in Tracardi from search criteria.
+    """Create a named canonical segment from search criteria.
 
-    This tool creates segments in Tracardi for activation workflows.
-    The segment membership is determined by the TQL from the last search.
+    This tool writes the canonical segment definition and membership to PostgreSQL first.
+    When the exact last search context is available, the segment member count matches the
+    authoritative PostgreSQL search results for that search.
 
     Args:
         name: Segment name.
@@ -715,12 +724,19 @@ async def create_segment(
         condition: Raw TQL condition (used if use_last_search=False or no stored search).
         keywords: Industry keyword (only used if condition not provided).
         city: City name (only used if condition not provided).
+        zip_code: Postal code filter.
         status: Company status (only used if condition not provided).
+        nace_codes: Optional list of NACE codes.
+        juridical_codes: Optional list of juridical-form codes.
+        min_start_date: Optional founding-date lower bound.
+        has_phone: Filter to companies with phone.
         has_email: Filter to companies with email (only used if condition not provided).
+        email_domain: Optional email-domain filter.
 
     Returns:
         Success message with profile count, or error string.
     """
+    canonical_service = CanonicalSegmentService()
     client = TracardiClient()
 
     if use_last_search and not condition:
@@ -732,32 +748,45 @@ async def create_segment(
             "Check if checkpointer is persistent (SQLite/Postgres).",
         )
 
+    resolved_nace_codes = list(nace_codes or [])
+    if keywords and not resolved_nace_codes:
+        resolved_nace_codes = _get_nace_codes_from_keyword(keywords)
+
     if not condition:
-        # Build TQL from structured params (fallback path)
-        from src.ai_interface.tools.nace_resolver import _get_nace_codes_from_keyword
-
-        nace_codes = None
-        if keywords:
-            nace_codes = _get_nace_codes_from_keyword(keywords)
-
+        # Build TQL from structured params for traceability and fallback compatibility.
         params = ProfileSearchParams(
-            keywords=None if nace_codes else keywords,
+            keywords=None if resolved_nace_codes else keywords,
             enterprise_number=None,
-            nace_codes=nace_codes,
-            juridical_codes=None,
+            nace_codes=resolved_nace_codes or None,
+            juridical_codes=juridical_codes,
             juridical_keyword=None,
             city=city,
-            zip_code=None,
+            zip_code=zip_code,
             status=status,
-            min_start_date=None,
-            has_phone=None,
+            min_start_date=min_start_date,
+            has_phone=has_phone,
             has_email=has_email,
         )
         queries = QueryFactory.generate_all(params)
         condition = queries["tql"]
         logger.warning("create_segment_fallback_to_manual_params", name=name, tql=condition[:100])
 
-    # Log diagnostic info for debugging segment creation issues
+    filters = CompanySearchFilters(
+        keywords=None if resolved_nace_codes else keywords,
+        enterprise_number=None,
+        nace_codes=resolved_nace_codes or None,
+        juridical_codes=juridical_codes,
+        city=city,
+        zip_code=zip_code,
+        status=status,
+        min_start_date=min_start_date,
+        has_phone=has_phone,
+        has_email=has_email,
+        email_domain=_normalize_email_domain(email_domain),
+        limit=100,
+        offset=0,
+    )
+
     logger.info(
         "create_segment_executing",
         name=name,
@@ -766,26 +795,58 @@ async def create_segment(
         use_last_search=use_last_search,
     )
 
-    res = await client.create_segment(
-        name, description=f"Created by AI: {condition[:200]}", condition=condition
-    )
-    if res:
-        count = res.get("profiles_added", 0)
-        diag_info = f"[DEBUG: use_last_search={use_last_search}, has_condition={bool(condition)}, tql_preview={condition[:80] if condition else 'NONE'}...]"
-        if count == 0:
-            return f"Segment '{name}' created but contains 0 profiles. The TQL query may need adjustment: {condition[:100]}... {diag_info}"
-        return (
-            f"Segment '{name}' created. Added {count} profiles matching the criteria. {diag_info}"
+    try:
+        segment = await canonical_service.upsert_segment(
+            name=name,
+            filters=filters,
+            condition=condition,
+            description=f"Created by AI: {condition[:200]}",
         )
-    return f"Failed to create segment. [DEBUG: use_last_search={use_last_search}, has_condition={bool(condition)}]"
+        count = int(segment["member_count"])
+        if count == 0:
+            return (
+                f"Segment '{name}' created in PostgreSQL with 0 members. "
+                "Broaden the search or verify the filters before exporting or activating it."
+            )
+        return (
+            f"Segment '{name}' created in PostgreSQL with {count} members. "
+            "Use export_segment_to_csv or get_segment_stats for authoritative segment data."
+        )
+    except ValueError as exc:
+        return f"Segment '{name}' was not created: {exc}"
+    except Exception as exc:
+        logger.warning("canonical_segment_create_failed", name=name, error=str(exc))
+
+    # Backward-compatible fallback for environments that only have Tracardi segment state.
+    res = await client.create_segment(
+        name,
+        description=f"Created by AI: {condition[:200]}",
+        condition=condition,
+    )
+    if not res:
+        return (
+            f"Failed to create segment '{name}'. "
+            "The canonical PostgreSQL-first path was unavailable and the Tracardi fallback failed."
+        )
+
+    count = res.get("profiles_added", 0)
+    if count == 0:
+        return (
+            f"Segment '{name}' was created via Tracardi fallback but contains 0 profiles. "
+            "Re-run the search so the canonical PostgreSQL segment path has the filters it needs."
+        )
+    return (
+        f"Segment '{name}' created via Tracardi fallback with {count} profiles. "
+        "For authoritative counts and exports, re-create it through the PostgreSQL-first path."
+    )
 
 
 @tool
 async def get_segment_stats(segment_id: str) -> str:
-    """Get comprehensive statistics for a Tracardi segment.
+    """Get comprehensive statistics for a segment.
 
-    Note: This queries Tracardi for segment membership. For authoritative
-    counts, use search_profiles with the same criteria.
+    PostgreSQL canonical segments are preferred. Tracardi is used only as a
+    backward-compatible fallback when a canonical segment is unavailable.
 
     Args:
         segment_id: Segment name or ID.
@@ -793,12 +854,19 @@ async def get_segment_stats(segment_id: str) -> str:
     Returns:
         JSON string with profile count, email/phone coverage, and city distribution.
     """
-    client = TracardiClient()
-
-    # Query to get profiles in this segment
-    query = f'segments="{segment_id}"'
     logger.info("get_segment_stats_start", segment=segment_id)
 
+    try:
+        canonical_service = CanonicalSegmentService()
+        canonical_stats = await canonical_service.get_segment_stats(segment_id)
+        if canonical_stats is not None:
+            logger.info("get_segment_stats_complete", segment=segment_id, backend="postgresql")
+            return json.dumps(canonical_stats, ensure_ascii=False)
+    except Exception as exc:
+        logger.warning("canonical_segment_stats_failed", segment=segment_id, error=str(exc))
+
+    client = TracardiClient()
+    query = f'segments="{segment_id}"'
     result = await client.search_profiles(query, limit=100)
 
     if not result:

@@ -25,6 +25,7 @@ from src.core.logger import bind_trace_id, clear_trace_id, configure_logging, ge
 from src.core.metrics import ERRORS_TOTAL, QUERY_REQUESTS_TOTAL
 from src.graph.workflow import compile_workflow
 from src.services.postgresql_search import get_search_service
+from src.services.runtime_support_schema import ensure_runtime_support_schema
 from src.services.tracardi import TracardiClient
 from src.ui.actions import build_action_reply, build_welcome_actions
 from src.ui.components import build_chat_profiles, build_starters
@@ -248,6 +249,21 @@ async def readinessz():
             "checks": checks,
         },
     )
+
+
+@chainlit_server_app.on_event("startup")
+async def ensure_runtime_postgresql_support_schema() -> None:
+    """Backfill local/runtime support tables for already-initialized databases."""
+    if not _database_config_source():
+        return
+
+    try:
+        search_service = get_search_service()
+        await search_service.ensure_connected()
+        ensured = await ensure_runtime_support_schema(search_service._client)
+        logger.info("runtime_support_schema_startup", ensured=ensured)
+    except Exception as exc:
+        logger.warning("runtime_support_schema_startup_failed", error=str(exc))
 
 
 @cl.set_chat_profiles
