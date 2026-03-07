@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 import re
 from datetime import UTC, datetime
 from pathlib import Path
@@ -18,6 +19,22 @@ from src.services.postgresql_search import CompanySearchFilters, get_search_serv
 logger = get_logger(__name__)
 
 ARTIFACT_ROOT = Path("output") / "agent_artifacts"
+
+
+def _get_base_url() -> str:
+    """Get the base URL for download links.
+    
+    For local deployment, uses CHAINLIT_URL or falls back to localhost:8000.
+    For Azure deployment, this can be extended to use the deployed URL.
+    """
+    # Check for explicitly configured base URL
+    base_url = os.getenv("CHAINLIT_URL", "").rstrip("/")
+    if base_url:
+        return base_url
+    
+    # Default to localhost for local development
+    port = os.getenv("CHAINLIT_PORT", "8000")
+    return f"http://localhost:{port}"
 SEARCH_RESULT_FIELDS = [
     "kbo_number",
     "company_name",
@@ -106,6 +123,19 @@ def _artifact_path(title: str, output_format: str) -> Path:
     timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     ARTIFACT_ROOT.mkdir(parents=True, exist_ok=True)
     return ARTIFACT_ROOT / f"{_slugify(title)}_{timestamp}.{output_format}"
+
+
+def _build_download_url(filename: str) -> str:
+    """Build the download URL for an artifact file.
+    
+    Args:
+        filename: The artifact filename (not full path)
+    
+    Returns:
+        Full URL to download the artifact via the /download/artifacts endpoint
+    """
+    base_url = _get_base_url()
+    return f"{base_url}/download/artifacts/{filename}"
 
 
 def _write_csv(path: Path, rows: list[dict[str, Any]], fieldnames: list[str]) -> None:
@@ -269,6 +299,8 @@ async def create_data_artifact(
             "artifact_path": str(path.resolve()),
             "artifact_relative_path": str(path),
             "spreadsheet_compatible": output_format == "csv",
+            "download_url": _build_download_url(path.name),
+            "filename": path.name,
         }
 
         if artifact_type == "coverage_report":
