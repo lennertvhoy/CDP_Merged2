@@ -3,7 +3,7 @@
 **Project:** Customer Data Platform (CDP) with AI Chatbot Interface  
 **Repository:** CDP_Merged  
 **Infrastructure:** AZURE (VMs, Container Apps, OpenAI)  
-**Last Updated:** 2026-03-06  
+**Last Updated:** 2026-03-07  
 **Version:** 5.0 (Condensed Live Docs)
 
 ---
@@ -68,6 +68,18 @@ Before editing or verifying anything substantial:
 5. If the worktree is dirty or `main` is moving, isolate the task scope before editing shared docs or claiming success.
 
 The goal is to reduce accidental collisions, unnecessary doc churn, and invalid completion claims.
+
+---
+
+## Cost-Control Operating Mode
+
+The target architecture remains Azure-based, but the active execution mode can be local-only.
+
+When the user has paused Azure deployment to save costs:
+- default to local runtime, local PostgreSQL, local Tracardi, and local verification work
+- do not treat Azure deployment, Azure smoke tests, or cloud verification as the next automatic step
+- keep Azure state in `PROJECT_STATE.yaml` and `STATUS.md` as historical context unless the user explicitly reopens that path
+- local-only tasks may be considered complete after local verification plus the required doc updates; defer push, CI/CD, and Azure deployment verification until cloud work is explicitly back in scope
 
 ---
 
@@ -152,7 +164,7 @@ Avoid speculative large-scope work that has not yet been justified by repo patte
 - **Tracardi** - Operational event/profile projection, workflow automation, score/tag projection, audience activation, and outbound marketing coordination
 - **AI chatbot** - Natural-language operator interface that must answer authoritative data questions from PostgreSQL or a PostgreSQL-backed semantic layer, and may call Tracardi only for workflow/action execution and recent operational context
 
-Repository-managed infrastructure runs on Azure. Source systems remain external. Within the CDP stack, PostgreSQL is the customer-intelligence and analytical system of record, while Tracardi is the activation/runtime layer. PII remains owned by the source systems unless an explicit, verified architecture change says otherwise.
+Repository-managed infrastructure runs on Azure. This is the target or managed architecture, not necessarily the active execution mode for the current session. Within the CDP stack, PostgreSQL is the customer-intelligence and analytical system of record, while Tracardi is the activation/runtime layer. PII remains owned by the source systems unless an explicit, verified architecture change says otherwise.
 
 ### Canonical Role Boundaries
 
@@ -355,15 +367,16 @@ This repo is often worked on by multiple agents or sessions.
 2. Do not revert, reformat, or fold unrelated local edits into your task.
 3. Capture the start-of-session worktree snapshot from `git status --short` and use it to distinguish pre-existing dirty paths from paths touched in the current session.
 4. If shared docs such as `PROJECT_STATE.yaml`, `STATUS.md`, `NEXT_ACTIONS.md`, or `WORKLOG.md` are already dirty, append the smallest safe change possible.
-5. If you cannot update a required shared doc safely because of unrelated local edits, record the blocker in `WORKLOG.md` and explain it in the handoff.
-6. Do not claim the worktree is clean unless you checked it in the current session.
-7. Every handoff for a dirty worktree must explicitly separate:
+5. **CRITICAL:** If you modify any file during the session (even one that was pre-existing dirty), you must commit those specific changes before handoff. Do not leave files dirty that you touched.
+6. If you cannot update a required shared doc safely because of unrelated local edits, record the blocker in `WORKLOG.md` and explain it in the handoff.
+7. Do not claim the worktree is clean unless you checked it in the current session.
+8. Every handoff for a dirty worktree must explicitly separate:
    - pre-existing dirty paths
    - paths touched this session
    - paths left dirty by this session
    - any path ownership that remains unclear
-8. If ownership is unclear, say `ownership_unclear` instead of guessing.
-9. A handoff that omits dirty-worktree ownership when the worktree is dirty is incomplete.
+9. If ownership is unclear, say `ownership_unclear` instead of guessing.
+10. A handoff that omits dirty-worktree ownership when the worktree is dirty is incomplete.
 
 ---
 
@@ -631,6 +644,10 @@ The minimum handoff structure remains:
 
 **MANDATORY:** All code changes must be committed, pushed, and verified through CI/CD before being considered complete.
 
+Temporary local-only exception:
+- When the user has explicitly paused Azure deployment for cost control, local-only tasks do not require a push, GitHub Actions run, or Azure deployment verification to be considered complete.
+- Resume the full push, CI/CD, and deployment protocol only when the task is intended for remote deployment or the user explicitly reopens cloud work.
+
 ### Commit and Push Protocol
 
 1. **Stage Changes** - Add only the files relevant to the current task:
@@ -743,6 +760,8 @@ If a deployment causes issues:
 | 2026-03-03 | Sessions must yield with handoff before context degradation and may hand off long-running CI/CD monitoring after initial verification | Preserve flow, reduce idle waiting, and keep handoffs reliable |
 | 2026-03-03 | Agents should resume autonomously from handoff and queue, introduce new patterns only after repo-fit checks, and interrupt the user only for real uncertainty or serious issues | Maximize verified forward progress across sessions |
 | 2026-03-04 | Track MCP, agent skills, GenAI observability, evals, and Responses alignment as future-value standards; keep A2A conditional and AG-UI/A2UI low-priority | Encourage modularity and future-proofing without trend-chasing |
+| 2026-03-07 | When the user pauses Azure deployment to save costs, agents must switch to local-only execution and treat cloud deployment work as paused until explicitly resumed | Prevent unnecessary spend and stop stale Azure-first assumptions from driving the queue |
+| 2026-03-07 | Any file modified in a session must be committed before handoff, even if pre-existing dirty | Prevent ambiguous dirty state and ensure clean handoffs |
 
 ---
 
