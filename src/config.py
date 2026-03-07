@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     # LLM Provider Configuration (from CDP)
     # ==========================================
     LLM_PROVIDER: str = Field(
-        default="openai", description="LLM provider: ollama, openai, azure_openai, mock"
+        default="openai", description="LLM provider: ollama, openai, azure_openai, moonshot, mock"
     )
     LLM_MODEL: str = Field(
         default="gpt-4o-mini", description="Model name for the selected provider"
@@ -33,6 +33,12 @@ class Settings(BaseSettings):
     # OpenAI Settings
     OPENAI_API_KEY: str | None = Field(default=None, description="API Key for OpenAI")
     OPENAI_BASE_URL: str | None = Field(default=None, description="Base URL for OpenAI API")
+
+    # Moonshot AI (Kimi) Settings
+    MOONSHOT_API_KEY: str | None = Field(default=None, description="API Key for Moonshot AI (Kimi)")
+    MOONSHOT_BASE_URL: str = Field(
+        default="https://api.moonshot.cn/v1", description="Base URL for Moonshot AI API"
+    )
 
     # Ollama Settings (local development)
     OLLAMA_BASE_URL: str = Field(default="http://127.0.0.1:11434", description="Ollama server URL")
