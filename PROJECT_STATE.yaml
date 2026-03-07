@@ -3,14 +3,15 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-07T18:43:00+01:00
+  updated_at: 2026-03-07T18:44:00+01:00
   updated_by: agent
   repo_head:
-    value: 0001ac6
-    status: observed
-    checked_at: 2026-03-07T18:43:00+01:00
+    value: not_rechecked_after_local_commits
+    status: reported
+    checked_at: 2026-03-07T18:44:00+01:00
     evidence:
-      - git log --oneline --decorate -n 3 -> 0001ac6 (HEAD -> main) fix(local): restore postgresql-first canonical segments
+      - git log --oneline --decorate -n 3 -> f0ce453 (HEAD -> main) docs(state): refresh repo metadata after local segment fix
+      - Additional local commits may supersede this block; use the handoff or a fresh `git log` for the exact final SHA.
   branch:
     value: main
     status: observed
