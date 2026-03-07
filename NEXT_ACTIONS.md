@@ -113,28 +113,30 @@ poetry run python scripts/sync_exact_to_postgres.py
 
 #### Follow-up Items - UPDATED 2026-03-08
 
-**Status:** Re-testing completed - prompt enhancement was **insufficient**
+**Status:** ✅ COMPLETED - System prompt restructured to prioritize 360° tools
 
-**Test Results (all failed):**
-| Query | Expected Tool | Actual Result |
-|-------|---------------|---------------|
-| "How well are source systems linked to KBO?" | `get_identity_link_quality` | Used `get_data_coverage_stats` ❌ |
-| "Show me revenue distribution by city" | `get_geographic_revenue_distribution` | Used `aggregate_profiles` ❌ |
-| "Pipeline value for software companies in Brussels?" | `get_industry_summary` | "Can't calculate pipeline value" ❌ |
-
-**Root Cause:**
-- Section 5 (Aggregation) appears before Section 6 (360° tools), causing LLM to anchor on standard tools
+**Problem:**
+- Section 5 (Aggregation) appeared before Section 6 (360° tools), causing LLM to anchor on standard tools
 - CRITICAL guidance in Section 6 not strong enough to override earlier tool descriptions
-- LLM classifies queries as "aggregation" or "coverage" and stops looking for better tools
+- LLM classified queries as "aggregation" or "coverage" and stopped looking for better tools
 
-**New Next Actions:**
+**Solution Implemented:**
+1. ✅ **Restructured system prompt** (`src/graph/nodes.py`):
+   - Added new "1. TOOL SELECTION ROUTING (CRITICAL - READ THIS FIRST)" section at the TOP
+   - Moved 360° tools to Section 1A, BEFORE standard tools (now Section 2+)
+   - Added explicit decision logic: "Check if query involves cross-source concepts FIRST"
+   - Added decision table (STEP 1) listing revenue/pipeline/CRM/financial/KBO linking keywords
+   - Added "MANDATORY" language for 360° tool selection
+   - Added tool selection matrix table showing when to use each tool type
+   - Updated VALID_TOOL_NAMES to include all 360° tools (was missing!)
 
-1. **Restructure system prompt** (HIGH PRIORITY)
-   - Move 360° tools to TOP of tool descriptions (before standard tools)
-   - Add explicit "TOOL SELECTION ROUTING" section at the very beginning
-   - Make 360° tool descriptions more prominent with stronger trigger words
+**Changes Made:**
+- `src/graph/nodes.py`: Restructured SYSTEM_PROMPTS["en"] with 360° tools first
+- `src/graph/nodes.py`: Added 360° tools to VALID_TOOL_NAMES set
 
-2. **Future: Identity Resolution UI/API** - Manual linking interface for unmatched records (from BACKLOG.md)
+**Next Steps:**
+- Re-test the 3 failed queries to verify the fix works
+- Future: Identity Resolution UI/API - Manual linking interface for unmatched records (from BACKLOG.md)
 
 ---
 

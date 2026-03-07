@@ -6,6 +6,66 @@
 
 ---
 
+## 2026-03-08 (System Prompt Restructure - 360° Tools Prioritized)
+
+### Task: Restructure system prompt to prioritize 360° tools at TOP
+
+**Type:** app_code  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 00:47 CET  
+**Git Head:** `af1f8c5`
+
+**Summary:**
+Restructured the system prompt to move 360° tools to the TOP of the tool descriptions, before standard tools. This addresses the root cause where the LLM was anchoring on standard tools due to section ordering bias.
+
+**Changes Made:**
+
+1. **`src/graph/nodes.py` - SYSTEM_PROMPTS["en"] restructured:**
+   - New Section 1: "TOOL SELECTION ROUTING (CRITICAL - READ THIS FIRST)"
+     - STEP 1 checklist for cross-source concepts (revenue, pipeline, CRM, financial, KBO linking)
+     - Decision logic: IF YES → Use 360° tools, IF NO → Use standard tools
+   - New Section 1A: 360° tools MOVED TO TOP
+     - `get_industry_summary` - for pipeline value and industry revenue
+     - `get_geographic_revenue_distribution` - for revenue by city
+     - `get_identity_link_quality` - for KBO matching quality
+     - `query_unified_360` - for complete company profiles
+     - `find_high_value_accounts` - for high-value/risk accounts
+   - New Section 1B: Tool selection matrix table
+     - Clear mapping: "Revenue by city" → `get_geographic_revenue_distribution`
+     - Clear mapping: "Pipeline value" → `get_industry_summary`
+     - Clear mapping: "KBO link quality" → `get_identity_link_quality`
+   - Previous sections renumbered: Search Strategy (2), Field Mapping (3), Count Reliability (4), Proactive Next Steps (5), Aggregation (6), etc.
+
+2. **`src/graph/nodes.py` - VALID_TOOL_NAMES updated:**
+   - Added missing 360° tools to the validation set:
+     - `query_unified_360`
+     - `get_industry_summary`
+     - `find_high_value_accounts`
+   - `get_geographic_revenue_distribution`
+     - `get_identity_link_quality`
+   - This ensures the critic node won't reject 360° tool calls
+
+**Key Improvements:**
+
+| Before | After |
+|--------|-------|
+| 360° tools in Section 6 (after Aggregation) | 360° tools in Section 1A (FIRST) |
+| Generic CRITICAL note | Explicit STEP 1 decision logic |
+| No tool selection matrix | Clear decision table in Section 1B |
+| MANDATORY mentioned once | MANDATORY emphasized with routing logic |
+| 360° tools not in VALID_TOOL_NAMES | All 360° tools validated by critic |
+
+**Syntax Verification:**
+- ✅ `python -m py_compile src/graph/nodes.py` passed
+
+**Next Step:**
+Re-test the 3 failed queries:
+1. "How well are source systems linked to KBO?" → Should use `get_identity_link_quality`
+2. "Show me revenue distribution by city" → Should use `get_geographic_revenue_distribution`
+3. "Pipeline value for software companies in Brussels?" → Should use `get_industry_summary`
+
+---
+
 ## 2026-03-08 (360° Tool Re-Testing - Prompt Enhancement Insufficient)
 
 ### Task: Re-test 360° tools after prompt enhancement
