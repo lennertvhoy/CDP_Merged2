@@ -215,17 +215,34 @@ Tracardi activation layer fully configured:
    - All workflows have Start and End nodes on canvas
    - Event triggers mapped to Resend webhook event types
 
+#### Completed (2026-03-07 20:45 CET)
+
+4. **Fixed Resend event source type**
+   - Changed from `webhook` type to `rest` type to work with `/track` endpoint
+   - Created fix script: `scripts/fix_resend_event_source.py`
+   - Created verification script: `scripts/verify_local_resend_setup.py`
+
+5. **Verified local Resend webhook setup**
+   - ✅ Tracardi authentication working
+   - ✅ Resend event source configured (type: REST)
+   - ✅ All 5 email workflows deployed and active
+   - ✅ Tracker endpoint accepting events
+   - ✅ Event simulation successful (events create profiles)
+
 #### Next Actions
 
-Configure Resend webhooks and test end-to-end:
-1. Run Resend webhook setup script to connect Resend to Tracardi
-2. Configure destinations (Resend, Flexmail) if needed
-3. Send test email and verify events trigger workflows
-4. Verify engagement scores update correctly
+For end-to-end testing with real Resend webhooks:
+1. Configure ngrok (requires auth token): `./ngrok config add-authtoken <token>`
+2. Start tunnel: `./ngrok http 8686`
+3. Set webhook URL: `export RESEND_WEBHOOK_URL=https://<ngrok-url>/track`
+4. Run: `python scripts/setup_resend_webhooks_auto.py`
+5. Send test email and verify events trigger workflows
 
 Resume when:
-- Resend webhooks are configured
-- Ready to test email campaign activation flow
+- ngrok is configured with auth token
+- Ready to test email campaign activation flow with real Resend webhooks
+
+**Note:** Local setup is complete. ngrok configuration requires user action (auth token).
 
 ## Paused
 

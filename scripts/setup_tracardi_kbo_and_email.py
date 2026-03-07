@@ -75,9 +75,9 @@ EVENT_SOURCES = {
     "resend-webhook": {
         "name": "Resend Email Webhook",
         "description": "Email events from Resend (sent, delivered, opened, clicked, bounced)",
-        "type": ["webhook"],
-        "bridge_id": BRIDGE_WEBHOOK,
-        "bridge_name": "Webhook API Bridge",
+        "type": ["rest"],
+        "bridge_id": BRIDGE_REST,
+        "bridge_name": "REST API Bridge",
         "tags": ["email", "resend", "marketing", "engagement"],
     },
     "cdp-api": {

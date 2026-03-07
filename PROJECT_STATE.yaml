@@ -428,14 +428,17 @@ current_state:
           - Browser-based profile creation verified -> profile ddde7ea5-3343-49ce-8e44-f0ab3e5347fa created
           - Event tracking verified -> browser_verification_test event logged
       activation_layer:
-        status: verified_workflows_created
-        verified_at: 2026-03-07T20:00:00+01:00
+        status: verified_resend_ready
+        verified_at: 2026-03-07T20:45:00+01:00
         verification_script: scripts/setup_and_verify_tracardi.py
+        resend_verification: scripts/verify_local_resend_setup.py
         components:
           event_sources:
             status: fully_configured
             count: 4
             api_functional: true
+            resend_source_type: rest
+            resend_source_fixed_at: 2026-03-07T20:35:00+01:00
           workflows:
             status: deployed
             method: gui_configuration
