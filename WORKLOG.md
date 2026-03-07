@@ -48,6 +48,19 @@ Instead of abstract guidance like "use 360° tools for cross-source concepts", t
 
 **Verification:**
 - ✅ `python -m py_compile src/graph/nodes.py` passed
+- ✅ Commit `0a63766` created with changes
+
+**Re-Test Results (2026-03-08 00:01 CET):**
+❌ **ALL 3 TEST QUERIES FAILED** - Screenshot: `chatbot_360_retest_all_failed_2026-03-08.png`
+
+| Query | Expected Tool | Actual Tool | Result |
+|-------|---------------|-------------|--------|
+| "How well are source systems linked to KBO?" | `get_identity_link_quality` | `get_data_coverage_stats` | ❌ FAIL |
+| "Show me revenue distribution by city" | `get_geographic_revenue_distribution` | `aggregate_profiles` | ❌ FAIL |
+| "Pipeline value for software companies in Brussels?" | `get_industry_summary` | None (claimed unavailable) | ❌ FAIL |
+
+**Conclusion:**
+Explicit EXAMPLES and NEGATIVE CONSTRAINTS in the system prompt were **insufficient** to fix tool selection. The LLM continued to select wrong tools despite "DO NOT USE" prohibitions. A more structural approach is needed - likely strengthening individual tool docstrings with "USE WHEN / DO NOT USE WHEN" sections and concrete examples per tool.
 
 **Next Step:**
 🔄 Re-test the 3 failing queries:
