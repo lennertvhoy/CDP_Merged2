@@ -300,15 +300,23 @@ current_state:
       - sandbox_postgres_limits_can_mislead_local_runner_debugging
   source_integrations:
     teamleader:
-      status: reported
-      verified_at: 2026-03-04
-      posture: real_for_current_demo_slice
-      summary: Local OAuth refresh plus live companies, contacts, deals, and events reads are already recorded in the repo.
+      status: observed
+      verified_at: 2026-03-07T21:35:00+01:00
+      posture: real_sync_to_postgresql
+      summary: Production sync pipeline operational. Companies, contacts, deals, activities syncing to PostgreSQL with automatic KBO matching.
+      sync_script: scripts/sync_teamleader_to_postgres.py
+      entities_synced:
+        companies: 1 (with KBO match)
+        contacts: 2
+        deals: 2
+        activities: 2
+      kbo_matching: automatic_via_company_number
+      identity_linking: enabled_via_source_identity_links
     exact:
       status: reported
       verified_at: 2026-03-04
       posture: trial_or_demo_candidate
-      summary: Keep a mock fallback ready because dedicated sandbox certainty is still weaker than Teamleader.
+      summary: User has demo environment available. Needs sync pipeline built (model after Teamleader implementation).
     autotask:
       status: reported
       verified_at: 2026-03-04

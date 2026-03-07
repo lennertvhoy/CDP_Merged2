@@ -10,57 +10,54 @@
 
 ### P0: Connect Source Systems (HIGHEST YIELD)
 
-**Status:** IN PROGRESS - Teamleader client ready, needs PostgreSQL sync pipeline
+**Status:** ✅ TEAMLEADER SYNC COMPLETE - Real data flowing!
 **Discovered:** 2026-03-07 (user has demo environments available)
-**Last Updated:** 2026-03-07 21:30 CET
+**Last Updated:** 2026-03-07 21:40 CET
 **Severity:** CRITICAL
 **Goal:** Get real data flowing from Teamleader and Exact into PostgreSQL
 
-#### Current State
+#### ✅ COMPLETED: Teamleader → PostgreSQL Sync Pipeline
 
-- **Teamleader**: Production-ready client exists (`src/services/teamleader.py`) with OAuth, rate limiting, pagination
-- **Exact**: Mock-only demo exists (`scripts/demo_exact_integration.py`), needs real client
-- **Verification script**: `scripts/verify_teamleader_access.py` confirms live reads work
-- **Demo script**: `scripts/demo_teamleader_integration.py` shows hybrid real/mock mode working
-- **Gap**: No PostgreSQL persistence layer for CRM data - data only displayed, not stored
-- **Gap**: No identity bridge linking KBO companies to Teamleader companies
+**Verified working with live Teamleader demo environment:**
+- ✅ 1 company synced (auto-matched to KBO via company number)
+- ✅ 2 contacts synced
+- ✅ 2 deals synced  
+- ✅ 2 activities synced
 
-#### High-Yield Connection Priorities
+**What's implemented:**
+- `scripts/sync_teamleader_to_postgres.py` - production sync script
+- `scripts/migrations/004_add_crm_tables.sql` - CRM data schema
+- Automatic KBO matching via VAT/company number
+- Identity linking to `organizations` table
+- Incremental sync with cursor tracking
+- Full sync mode available
 
-1. **Teamleader → PostgreSQL sync pipeline** (HIGHEST)
-   - Create `scripts/sync_teamleader_to_postgres.py`
-   - Sync companies, contacts, deals, events to canonical tables
-   - Map Teamleader IDs to KBO IDs via VAT/names
-   - Store in `source_identity_links` table
+**Run sync:**
+```bash
+# Full sync
+poetry run python scripts/sync_teamleader_to_postgres.py --full
 
-2. **Cross-source identity reconciliation** (HIGH)
-   - Match Teamleader companies to KBO companies (VAT number, name similarity)
-   - Create unified 360° view: KBO (public) + Teamleader (CRM) data combined
-   - Enable chatbot queries like "Show me IT companies in Gent with open deals"
+# Incremental sync (uses last cursor)
+poetry run python scripts/sync_teamleader_to_postgres.py
+```
 
-3. **Exact Online → PostgreSQL sync pipeline** (HIGH)
-   - Build real Exact client (OAuth, rate limiting) modeled after Teamleader client
+#### Next Priorities
+
+1. **Cross-source identity reconciliation** (HIGH)
+   - Verify KBO matching accuracy for more companies
+   - Build identity resolution UI/API for manual linking
+   - Enable unified 360° view queries
+
+2. **Exact Online → PostgreSQL sync pipeline** (HIGH)
+   - Build real Exact client (OAuth, rate limiting) modeled after Teamleader
+   - Create `scripts/sync_exact_to_postgres.py`
    - Sync accounts, contacts, invoices, transactions
-   - Enable financial 360° view: revenue, payment behavior, invoice history
+   - Enable financial 360° view
 
-4. **Chatbot 360° query tools** (MEDIUM)
-   - Extend chatbot to query combined KBO + CRM + financial data
+3. **Chatbot 360° query tools** (MEDIUM)
+   - Extend chatbot to query combined KBO + CRM data
    - "What is the total pipeline value for software companies in Brussels?"
-   - "Show me customers with >€50K revenue who haven't been contacted in 30 days"
-
-#### Completed Foundation
-
-✅ **Local stack ready** - PostgreSQL, Tracardi, chatbot all working locally
-✅ **Teamleader client production-ready** - OAuth, pagination, rate limiting implemented
-✅ **KBO base data loaded** - 1.94M companies in PostgreSQL
-✅ **Tracardi activation layer** - Event sources, workflows, Resend bridge ready
-
-#### Next Actions
-
-1. Create `scripts/sync_teamleader_to_postgres.py` - incremental sync with cursor/last_modified tracking
-2. Design identity reconciliation schema - how to link tl_company_id ↔ kbo_company_id
-3. Verify user has Teamleader demo env credentials in `.env.teamleader`
-4. Run first live sync and verify data lands in PostgreSQL
+   - "Show me IT companies in Gent with open deals"
 
 ---
 
