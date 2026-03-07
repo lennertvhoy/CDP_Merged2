@@ -394,18 +394,21 @@ current_state:
 
 active_problems:
   browser_vs_direct_search_total_mismatch:
-    status: observed
+    status: resolved
     severity: medium
     discovered_at: 2026-03-07
-    summary: The earlier browser-driven prompt "How many software companies are in Brussels?" returned 1529, while the same-session direct deterministic `search_profiles` verification returned 1652.
+    resolved_at: 2026-03-07
+    summary: The 1529 vs 1652 discrepancy is explained by NACE code subset selection. The browser session used only the 4 core 62xxx codes (1529 results) while full resolution includes 631xx codes (1652 results).
     evidence:
-      - browser-driven verification turn 1 -> 1529 companies found
-      - search_profiles(keywords=software, city=Brussels) -> authoritative_total 1652
+      - browser-driven verification turn 1 -> 1529 companies found (used 62xxx only)
+      - direct search_profiles(keywords=software, city=Brussels) -> 1652 (all 6 codes)
+      - nace_codes=['62010','62020','62030','62090'], city=Brussels -> 1529
+      - nace_codes=['62010','62020','62030','62090','63110','63120'], city=Brussels -> 1652
     affects:
       - planner_to_tool_arg_consistency
       - browser_vs_direct_verification_alignment
     owner: agent
-    next_action: Inspect the exact tool args used in the browser session and add a regression around the reproduced planner path.
+    next_action: Regression test added in tests/unit/test_nace_resolution_consistency.py; search_profiles docstring updated with NACE resolution note.
   local_support_schema_missing_for_canonical_segments:
     status: resolved
     severity: high

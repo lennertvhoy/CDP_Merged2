@@ -170,3 +170,40 @@ Preservation action:
 Post-clean check:
   git status --short -> clean before editing AGENTS.md / WORKLOG.md
 ```
+---
+
+## 2026-03-07 (Browser-vs-Direct Search Mismatch Explained)
+
+### Task: Explain 1529 vs 1652 software companies count discrepancy
+
+**Type:** app_code  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-07 18:55 CET
+
+**Summary:**
+Investigated and explained the browser-vs-direct search mismatch for "software companies in Brussels". The discrepancy (1529 vs 1652) is caused by NACE code subset selection - the browser session used only the 4 core 62xxx codes while full resolution includes 631xx codes (web portals, data processing).
+
+**Root Cause:**
+- 1529 results: Used NACE codes ['62010', '62020', '62030', '62090'] (4 core 62xxx codes)
+- 1652 results: Used all 6 codes including ['63110', '63120'] (web portals, data processing)
+
+**Verification:**
+```
+docker compose exec -e DATABASE_URL=postgresql://cdpadmin:cdpadmin123@postgres:5432/cdp?sslmode=disable agent python -c "
+nace_codes=['62010', '62020', '62030', '62090'], city=Brussels -> total=1529
+nace_codes=['62010', '62020', '62030', '62090', '63110', '63120'], city=Brussels -> total=1652
+```
+
+**Changes:**
+1. Created `tests/unit/test_nace_resolution_consistency.py` with 5 regression tests documenting expected NACE code resolution
+2. Updated `src/ai_interface/tools/search.py` docstring with NACE resolution consistency note
+3. Updated `NEXT_ACTIONS.md` P2 task status to RESOLVED
+4. Updated `PROJECT_STATE.yaml` active_problems to mark as resolved
+
+**Evidence:**
+- All 5 new regression tests pass
+- Verified database counts directly through container
+- Documented the 62xxx vs 631xx distinction (computer programming vs information services)
+
+---
+
