@@ -258,6 +258,13 @@ async def search_profiles(
     You can provide EITHER 'nace_codes' (if you know them) OR 'keywords'
     (to search by industry name like 'Restaurant').
 
+    NACE CODE RESOLUTION NOTE:
+    When using 'keywords', the system auto-resolves to NACE codes internally.
+    For example, "software" resolves to 6 codes: 62010, 62020, 62030, 62090,
+    63110, 63120. Using a partial subset (e.g., only the 4 62xxx codes without
+    the 631xx codes for web portals/data processing) will yield fewer results.
+    Always rely on the keyword-based auto-resolution for consistent counts.
+
     Args:
         keywords: Industry keyword; auto-resolved to NACE codes.
         enterprise_number: KBO enterprise number.

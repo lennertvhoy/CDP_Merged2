@@ -141,19 +141,36 @@ None - multi-message runtime hardening complete. Local stack verified end-to-end
 
 ### P2: Explain Browser-Vs-Direct Search Mismatch
 
-**Status:** OPEN
+**Status:** RESOLVED
 **Discovered:** 2026-03-07
-**Last Updated:** 2026-03-07 18:36 CET
+**Resolved:** 2026-03-07 18:55 CET
 **Severity:** MEDIUM
 
-#### Current State
+#### Root Cause Analysis
 
-- The earlier browser-driven prompt "How many software companies are in Brussels?" returned `1,529`.
-- The same-session direct deterministic `search_profiles(keywords=software, city=Brussels)` verification returned `1,652`.
-- The canonical segment/export gap is fixed, but the planner/tool-arg mismatch behind the count discrepancy still needs explanation.
+The discrepancy is explained:
+- **1,529 results**: Planner used only the 4 core 62xxx NACE codes (62010, 62020, 62030, 62090)
+- **1,652 results**: Full NACE resolution includes all 6 codes including 63110, 63120 (web portals, data processing)
 
-#### Next Action
-1. Inspect the exact tool arguments used during the earlier browser session and add a regression around the reproduced planner path.
+The keyword "software" auto-resolves to 6 codes, but the LLM/planner in the browser session appears to have selected only the programming/consultancy subset (62xxx), excluding information service activities (631xx).
+
+#### Evidence
+
+```
+nace_codes=['62010', '62020', '62030', '62090'], city=Brussels -> total=1529
+nace_codes=['62010', '62020', '62030', '62090', '63110', '63120'], city=Brussels -> total=1652
+```
+
+#### Resolution
+
+1. Added regression test `tests/unit/test_nace_resolution_consistency.py` documenting the expected 6-code resolution
+2. Updated `search_profiles` docstring with NACE resolution consistency note
+3. Verified full dataset counts: 62xxx only = 1529, all 6 codes = 1652
+
+#### Follow-up
+
+- Monitor for planner behavior that subsets NACE codes without justification
+- Consider adding validation that warns when NACE codes appear to be manually subset
 
 ## Paused
 
