@@ -6,6 +6,67 @@
 
 ---
 
+## 2026-03-08 (360° Tool Re-Testing - Prompt Enhancement Insufficient)
+
+### Task: Re-test 360° tools after prompt enhancement
+
+**Type:** verification_only  
+**Status:** COMPLETE (with findings)  
+**Timestamp:** 2026-03-08 00:10 CET  
+**Git Head:** `70ad287` - docs: Update state files for 360° tool selection enhancement
+
+**Summary:**
+Browser-based re-testing confirmed that the previous prompt enhancement (commit `eae20da`) was **insufficient**. The LLM continues to select standard tools instead of 360° tools for cross-source queries.
+
+**Test Results:**
+
+| Query | Expected Tool | Actual Tool | Result |
+|-------|---------------|-------------|--------|
+| "How well are source systems linked to KBO?" | `get_identity_link_quality` | `get_data_coverage_stats` | ❌ FAIL |
+| "Show me revenue distribution by city" | `get_geographic_revenue_distribution` | `aggregate_profiles` | ❌ FAIL |
+| "What is the pipeline value for software companies in Brussels?" | `get_industry_summary` | "Can't calculate pipeline value" | ❌ FAIL |
+
+**Evidence:**
+- Screenshot: `chatbot_360_tools_test_result.png`
+
+**Root Cause Analysis:**
+
+The prompt enhancement didn't work because:
+
+1. **Section ordering bias:** Section 5 (AGGREGATION & ANALYTICS) appears before Section 6 (360° tools), causing the LLM to anchor on standard tools first
+2. **LLM sees standard tools as sufficient:** For queries like "revenue distribution by city", the LLM classified it as "aggregation question" and immediately selected `aggregate_profiles` without checking for 360° alternatives
+3. **360° tools not visible enough:** The CRITICAL guidance in Section 6 was not strong enough to override the earlier tool descriptions
+4. **Tool descriptions may be too late:** By the time the LLM reads Section 6, it may have already decided on a tool
+
+**Observed LLM Behavior:**
+
+1. For KBO link quality: LLM said "this is a data-coverage question... I will use `get_data_coverage_stats`" - completely missed `get_identity_link_quality`
+2. For revenue distribution: LLM said "this is an aggregation question... I will use `aggregate_profiles`" - acknowledged it doesn't compute revenue but still didn't try the 360° tool
+3. For pipeline value: LLM said "I can't calculate pipeline value... tools don't include pipeline/opportunity table" - didn't see `get_industry_summary` at all
+
+**Recommended Fix:**
+
+1. **Move 360° tools to TOP of tool descriptions** - Place them before standard tools so they're evaluated first
+2. **Add routing section at the very beginning** - Add a "TOOL SELECTION ROUTING" section before all tool descriptions:
+   ```
+   BEFORE selecting a tool, check if the query involves:
+   - Revenue, pipeline, CRM data, or cross-source insights → Use 360° tools
+   - Basic counts/filters → Use standard tools
+   ```
+3. **Rename/refocus tool descriptions** - Make 360° tool descriptions more prominent
+4. **Consider tool naming** - The 360° tools may need more descriptive names that match user query patterns
+
+**Files Referenced:**
+- `src/graph/nodes.py` - System prompt requiring restructuring
+- `chatbot_360_tools_test_result.png` - Browser test screenshot
+
+**Next Actions:**
+1. Restructure system prompt to prioritize 360° tools
+2. Add explicit routing logic at the start of tool descriptions
+3. Re-test after restructuring
+
+---
+
 ## 2026-03-07 (Chatbot 360° Tool Selection Enhancement)
 
 ### Task: Enhance system prompt to improve 360° tool selection
@@ -98,176 +159,3 @@ Added section "6. UNIFIED 360° CUSTOMER VIEWS (CROSS-SOURCE INSIGHTS)" document
 - "What is the total pipeline value for software companies in Brussels?"
 - "Show me IT companies in Gent with open deals over €10k"
 - "Which high-value accounts have overdue invoices?"
-- "Give me a 360° view of company KBO 0123.456.789"
-- "What is our market penetration by city?"
-- "Find companies with high pipeline value in Antwerp"
-
----
-
-## 2026-03-07 (Exact Online Sync Working)
-
-### Task: Activate Exact Online → PostgreSQL sync pipeline
-
-**Type:** data_pipeline  
-**Status:** COMPLETE  
-**Timestamp:** 2026-03-07 22:46 CET  
-
-**Summary:**
-Exact Online OAuth authorization completed successfully. The sync pipeline is now operational and has synced financial data from Exact Online demo environment to PostgreSQL.
-
-**Sync Results:**
-
-| Entity | Count | Status |
-|--------|-------|--------|
-| GL Accounts | 60 | ✅ Synced |
-| Invoices | 60 | ✅ Synced |
-
-**What was completed:**
-- ✅ OAuth authorization flow completed
-- ✅ Tokens saved to `.env.exact`
-- ✅ 60 GL Accounts synced to PostgreSQL (`exact_accounts` table)
-- ✅ 60 Invoices synced to PostgreSQL (`exact_sales_invoices` table)
-- ✅ Full sync pipeline operational
-
-**Run sync anytime:**
-```bash
-poetry run python scripts/sync_exact_to_postgres.py --full
-```
-
-**Architecture Now Complete:**
-```
-Exact Online API (OData)
-    ↓ OAuth2 + Auto Token Refresh
-PostgreSQL Financial Tables
-    ↓ KBO/VAT Matching
-Unified 360° Financial View
-```
-
----
-
-## 2026-03-07 (Cross-Source Identity Reconciliation Infrastructure)
-
-### Task: Build unified 360° views for KBO + CRM + Financial data
-
-**Type:** app_code  
-**Status:** COMPLETE  
-**Timestamp:** 2026-03-07 23:00 CET  
-
-**Summary:**
-Created comprehensive cross-source identity reconciliation infrastructure including unified database views, verification tooling, and query service. This enables the chatbot to answer complex queries combining KBO base data, Teamleader CRM data, and Exact Online financial data.
-
-**What was completed:**
-
-1. **Migration 006: Unified 360° Views** (`scripts/migrations/006_add_unified_360_views.sql`)
-   - `unified_company_360`: Complete 360° profile combining KBO + Teamleader + Exact
-   - `unified_pipeline_revenue`: Combined CRM pipeline + financial revenue metrics
-   - `industry_pipeline_summary`: Industry-level analysis for market insights
-   - `company_activity_timeline`: Chronological activity feed across all systems
-   - `identity_link_quality`: Monitor KBO matching coverage by source
-   - `high_value_accounts`: Prioritized accounts with risk/opportunity scoring
-   - `geographic_revenue_distribution`: Revenue and pipeline by geography
-
-2. **KBO Matching Verification Script** (`scripts/verify_kbo_matching.py`)
-   - Check match rates by source system (Teamleader, Exact)
-   - Identify unmatched records with potential fuzzy matches
-   - Generate data quality recommendations
-   - Export detailed JSON reports
-
-3. **Unified 360° Query Service** (`src/services/unified_360_queries.py`)
-   - Python service for querying unified views
-   - Methods:
-     - `get_company_360_profile()`: Complete company profile
-     - `find_companies_with_pipeline()`: Filter by pipeline/revenue
-     - `get_industry_pipeline_summary()`: Industry analysis
-     - `get_geographic_distribution()`: Geographic insights
-     - `get_company_activity_timeline()`: Activity feed
-     - `get_high_value_accounts()`: Prioritized accounts
-     - `search_companies_unified()`: Cross-source search
-
-**Sample Queries Now Possible:**
-```sql
--- What is the total pipeline value for software companies in Brussels?
-SELECT SUM(total_pipeline_value) 
-FROM industry_pipeline_summary 
-WHERE nace_code LIKE '62%' AND kbo_city ILIKE '%brussel%';
-
--- Show IT companies in Gent with open deals over €10k
-SELECT * FROM unified_pipeline_revenue
-WHERE nace_code LIKE '62%' AND kbo_city ILIKE '%gent%'
-AND tl_pipeline_value > 10000;
-
--- High-value accounts with overdue invoices
-SELECT * FROM high_value_accounts 
-WHERE account_priority = 'high_risk'
-ORDER BY exact_overdue DESC;
-```
-
-**Next Step:**
-Extend chatbot with tools to query these unified views for natural language questions like:
-- "What is the total pipeline value for software companies in Brussels?"
-- "Show me IT companies in Gent with open deals over €10k"
-- "Which high-value accounts have overdue invoices?"
-- Enable queries like "What is the total revenue from software companies in Brussels?"
-
----
-
-## 2026-03-07 (Teamleader Sync Pipeline Complete)
-
-### Task: Build production-ready Teamleader → PostgreSQL sync pipeline
-
-**Type:** app_code  
-**Status:** COMPLETE  
-**Timestamp:** 2026-03-07 21:40 CET  
-**Git Commit:** `ad08be3` - feat: Teamleader → PostgreSQL sync pipeline
-
-**Summary:**
-Built and verified a production-ready sync pipeline that pulls real CRM data from Teamleader demo environment into PostgreSQL. The pipeline includes automatic KBO matching via company number/VAT, identity linking, and incremental sync capabilities.
-
-**Components Built:**
-
-| Component | File | Description |
-|-----------|------|-------------|
-| Database Schema | `scripts/migrations/004_add_crm_tables.sql` | 5 new tables: crm_companies, crm_contacts, crm_deals, crm_activities, crm_deal_phases |
-| Sync Script | `scripts/sync_teamleader_to_postgres.py` | Production sync with OAuth, rate limiting, pagination |
-| Teamleader Client | Inline in sync script | REST API client with automatic token refresh |
-
-**Sync Results (Real Demo Data):**
-
-| Entity | Count | KBO Matched |
-|--------|-------|-------------|
-| Companies | 1 | ✅ Yes - Linked to KBO #1020911934 |
-| Contacts | 2 | N/A |
-| Deals | 2 | N/A |
-| Activities | 2 | N/A |
-
----
-
-## 2026-03-06 (Analytics Aggregation Fix Verified)
-
-### Task: Fix "industry" alias for analytics queries
-
-**Type:** app_code  
-**Status:** COMPLETE  
-**Deployed:** Azure revision `ca-cdpmerged-fast--stg-877f0e9`  
-**Timestamp:** 2026-03-06 20:09 CET
-
-**Summary:**
-Fixed analytics aggregation tool to support "industry" as an alias for "nace_code". The fix was deployed and verified working in production.
-
-**Problem:**
-- "Top industries" queries failed because LLM used `group_by="industry"` which was not in the valid_group_by set
-- Critic_node validation was also missing `legal_form` which was valid in the tool
-
-**Fix Applied:**
-1. Added `"industry": "industry_nace_code"` alias to field_map in `src/services/postgresql_search.py`
-2. Added `"industry"` to valid_group_by in `src/ai_interface/tools/search.py` aggregate_profiles
-3. Added `"industry"` and `"legal_form"` to critic_node validation in `src/graph/nodes.py`
-
-**Verification:**
-- All 519 unit tests pass
-- CI/CD workflows completed successfully
-- Live verification: "What are the top industries in Brussels?" correctly used `group_by='nace_code'`
-
----
-
-*Older entries available in git history*

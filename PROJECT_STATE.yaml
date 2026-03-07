@@ -138,9 +138,11 @@ current_state:
     authoritative_query_plane: postgresql
     deployment_health: historical_azure_revision_877f0e9_not_active_focus
     unified_360_tools:
-      status: implemented
+      status: implemented_tool_selection_failing
       implemented_at: 2026-03-07T23:10:00+01:00
       system_prompt_enhanced_at: 2026-03-07T23:40:00+01:00
+      tool_selection_tested_at: 2026-03-08T00:10:00+01:00
+      tool_selection_status: insufficient
       tools:
         - query_unified_360
         - get_industry_summary
@@ -158,11 +160,25 @@ current_state:
         - "Show me IT companies in Gent with open deals over €10k"
         - "Which high-value accounts have overdue invoices?"
         - "Give me a 360° view of company KBO 0123.456.789"
+      tool_selection_test_results:
+        - query: "How well are source systems linked to KBO?"
+          expected: get_identity_link_quality
+          actual: get_data_coverage_stats
+          passed: false
+        - query: "Show me revenue distribution by city"
+          expected: get_geographic_revenue_distribution
+          actual: aggregate_profiles
+          passed: false
+        - query: "Pipeline value for software companies in Brussels?"
+          expected: get_industry_summary
+          actual: "LLM said can't calculate"
+          passed: false
       tool_selection_improvements:
         - Added CRITICAL guidance distinguishing 360° tools from standard search
         - Added tool selection matrix (when to use which tool)
         - Enhanced parameter mappings for all 360° tools
         - Added get_identity_link_quality examples
+      tool_selection_next_action: Restructure system prompt - move 360° tools to top, add routing section at beginning
     local_dataset:
       status: verified_working
       total_companies: 1940603

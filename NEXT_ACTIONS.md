@@ -111,11 +111,30 @@ poetry run python scripts/sync_exact_to_postgres.py
    - ✅ Added more specific parameter mappings for all 360° tools
    - ✅ Commit: `eae20da` - docs(chatbot): Enhance system prompt for 360° tool selection
 
-#### Follow-up Items
+#### Follow-up Items - UPDATED 2026-03-08
 
-1. **Re-test 360° tools after prompt enhancement** - Verify LLM now correctly selects 360° tools
-2. **Add more sample queries** to system prompt based on real usage patterns
-3. **Future: Identity Resolution UI/API** - Manual linking interface for unmatched records (from BACKLOG.md)
+**Status:** Re-testing completed - prompt enhancement was **insufficient**
+
+**Test Results (all failed):**
+| Query | Expected Tool | Actual Result |
+|-------|---------------|---------------|
+| "How well are source systems linked to KBO?" | `get_identity_link_quality` | Used `get_data_coverage_stats` ❌ |
+| "Show me revenue distribution by city" | `get_geographic_revenue_distribution` | Used `aggregate_profiles` ❌ |
+| "Pipeline value for software companies in Brussels?" | `get_industry_summary` | "Can't calculate pipeline value" ❌ |
+
+**Root Cause:**
+- Section 5 (Aggregation) appears before Section 6 (360° tools), causing LLM to anchor on standard tools
+- CRITICAL guidance in Section 6 not strong enough to override earlier tool descriptions
+- LLM classifies queries as "aggregation" or "coverage" and stops looking for better tools
+
+**New Next Actions:**
+
+1. **Restructure system prompt** (HIGH PRIORITY)
+   - Move 360° tools to TOP of tool descriptions (before standard tools)
+   - Add explicit "TOOL SELECTION ROUTING" section at the very beginning
+   - Make 360° tool descriptions more prominent with stronger trigger words
+
+2. **Future: Identity Resolution UI/API** - Manual linking interface for unmatched records (from BACKLOG.md)
 
 ---
 
