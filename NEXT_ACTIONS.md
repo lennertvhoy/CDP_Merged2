@@ -10,9 +10,9 @@
 
 ### P0: Connect Source Systems (HIGHEST YIELD)
 
-**Status:** ✅ TEAMLEADER SYNC COMPLETE - Real data flowing!
+**Status:** ✅ TEAMLEADER & EXACT ONLINE SYNC COMPLETE - Real data flowing from both!
 **Discovered:** 2026-03-07 (user has demo environments available)
-**Last Updated:** 2026-03-07 21:40 CET
+**Last Updated:** 2026-03-07 22:46 CET
 **Severity:** CRITICAL
 **Goal:** Get real data flowing from Teamleader and Exact into PostgreSQL
 
@@ -41,17 +41,33 @@ poetry run python scripts/sync_teamleader_to_postgres.py --full
 poetry run python scripts/sync_teamleader_to_postgres.py
 ```
 
+#### ✅ COMPLETED: Exact Online → PostgreSQL Sync Pipeline
+
+**Verified working with live Exact Online demo environment:**
+- ✅ OAuth authorization completed
+- ✅ 60 GL Accounts synced
+- ✅ 60 Invoices synced
+- ✅ Tokens saved to `.env.exact`
+
+**What's implemented:**
+- `scripts/sync_exact_to_postgres.py` - production sync script
+- `src/services/exact.py` - OAuth2 client with auto-division discovery
+- `scripts/migrations/005_add_exact_financial_tables.sql` - Financial data schema
+- Automatic KBO/VAT matching
+- Financial summary view for 360° insights
+
+**Run sync:**
+```bash
+# Full sync
+poetry run python scripts/sync_exact_to_postgres.py --full
+
+# Incremental sync (uses last cursor)
+poetry run python scripts/sync_exact_to_postgres.py
+```
+
 #### Next Priorities
 
-1. **Exact Online → PostgreSQL sync pipeline** (HIGH - READY FOR CREDENTIALS)
-   - ✅ Implementation complete: `scripts/sync_exact_to_postgres.py`
-   - ✅ Exact client service: `src/services/exact.py`
-   - ✅ Financial tables migration: `scripts/migrations/005_add_exact_financial_tables.sql`
-   - ⏳ Pending: User provides Exact Online OAuth credentials in `.env.exact`
-   - Once credentials added, run: `poetry run python scripts/sync_exact_to_postgres.py`
-   - Enables financial 360° view (revenue, invoices, payment behavior)
-
-2. **Cross-source identity reconciliation** (HIGH)
+1. **Cross-source identity reconciliation** (HIGH)
    - Verify KBO matching accuracy for more companies
    - Build identity resolution UI/API for manual linking
    - Enable unified 360° view queries combining KBO + Teamleader + Exact

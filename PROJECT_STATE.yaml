@@ -3,7 +3,7 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-07T20:45:00+01:00
+  updated_at: 2026-03-07T22:46:00+01:00
   updated_by: agent
   repo_head:
     value: not_rechecked_after_local_commits
@@ -314,9 +314,9 @@ current_state:
       identity_linking: enabled_via_source_identity_links
     exact:
       status: observed
-      verified_at: 2026-03-07
-      posture: implementation_ready_pending_credentials
-      summary: Exact Online sync pipeline fully implemented. Ready to sync accounts, customers, invoices, transactions. Pending OAuth credentials from user.
+      verified_at: 2026-03-07T22:46:00+01:00
+      posture: real_sync_to_postgresql
+      summary: OAuth authorization completed. Exact Online sync pipeline operational and syncing financial data to PostgreSQL.
       implementation:
         client_service: src/services/exact.py
         sync_script: scripts/sync_exact_to_postgres.py
@@ -334,7 +334,12 @@ current_state:
         - exact_sales_invoices
         - exact_sales_invoice_lines
         - exact_transactions
-      pending: user_credentials_in_env_exact
+      entities_synced:
+        gl_accounts: 60
+        invoices: 60
+      kbo_matching: automatic_via_vat_number
+      identity_linking: enabled_via_source_identity_links
+      run_command: poetry run python scripts/sync_exact_to_postgres.py --full
     autotask:
       status: reported
       verified_at: 2026-03-04
