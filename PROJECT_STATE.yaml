@@ -138,11 +138,12 @@ current_state:
     authoritative_query_plane: postgresql
     deployment_health: historical_azure_revision_877f0e9_not_active_focus
     unified_360_tools:
-      status: implemented_tool_selection_failing
+      status: implemented_prompt_restructured_pending_retest
       implemented_at: 2026-03-07T23:10:00+01:00
       system_prompt_enhanced_at: 2026-03-07T23:40:00+01:00
       tool_selection_tested_at: 2026-03-08T00:10:00+01:00
-      tool_selection_status: insufficient
+      system_prompt_restructured_at: 2026-03-08T00:47:00+01:00
+      tool_selection_status: restructured_pending_retest
       tools:
         - query_unified_360
         - get_industry_summary
@@ -165,20 +166,27 @@ current_state:
           expected: get_identity_link_quality
           actual: get_data_coverage_stats
           passed: false
+          notes: "Retest needed after prompt restructure"
         - query: "Show me revenue distribution by city"
           expected: get_geographic_revenue_distribution
           actual: aggregate_profiles
           passed: false
+          notes: "Retest needed after prompt restructure"
         - query: "Pipeline value for software companies in Brussels?"
           expected: get_industry_summary
           actual: "LLM said can't calculate"
           passed: false
+          notes: "Retest needed after prompt restructure"
       tool_selection_improvements:
         - Added CRITICAL guidance distinguishing 360° tools from standard search
         - Added tool selection matrix (when to use which tool)
         - Enhanced parameter mappings for all 360° tools
         - Added get_identity_link_quality examples
-      tool_selection_next_action: Restructure system prompt - move 360° tools to top, add routing section at beginning
+        - "2026-03-08: Restructured system prompt - 360° tools moved to TOP (Section 1A)"
+        - "2026-03-08: Added TOOL SELECTION ROUTING section at beginning with STEP 1 decision logic"
+        - "2026-03-08: Added tool selection matrix table in Section 1B"
+        - "2026-03-08: Updated VALID_TOOL_NAMES to include all 360° tools"
+      tool_selection_next_action: Re-test the 3 failed queries to verify the fix works
     local_dataset:
       status: verified_working
       total_companies: 1940603
