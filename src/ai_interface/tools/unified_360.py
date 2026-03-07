@@ -27,8 +27,12 @@ logger = get_logger(__name__)
 
 def _serialize_for_json(obj: Any) -> Any:
     """Serialize objects for JSON output."""
+    from datetime import date, datetime
+    
     if isinstance(obj, Decimal):
         return float(obj)
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
     if isinstance(obj, list):
         return [_serialize_for_json(item) for item in obj]
     if isinstance(obj, dict):
@@ -552,14 +556,15 @@ to KBO/PostgreSQL companies.
 
     try:
         quality = await service.get_identity_link_quality()
+        quality_serialized = _serialize_for_json(quality)
 
         return json.dumps({
             "status": "ok",
-            "source_count": len(quality),
-            "quality_metrics": _serialize_for_json(quality),
+            "source_count": len(quality_serialized),
+            "quality_metrics": quality_serialized,
             "summary": {
-                "teamleader": next((q for q in quality if q.get('source_system') == 'teamleader'), None),
-                "exact": next((q for q in quality if q.get('source_system') == 'exact'), None),
+                "teamleader": next((q for q in quality_serialized if q.get('source_system') == 'teamleader'), None),
+                "exact": next((q for q in quality_serialized if q.get('source_system') == 'exact'), None),
             }
         }, ensure_ascii=False, indent=2)
 

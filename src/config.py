@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", ".env.local"),
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="ignore",
@@ -204,6 +204,18 @@ class Settings(BaseSettings):
     AZURE_KEY_VAULT_URL: str | None = Field(
         default=None,
         description="Key Vault URL used to resolve secret references, e.g. https://<vault>.vault.azure.net",
+    )
+
+    # ==========================================
+    # PostgreSQL Database Configuration
+    # ==========================================
+    DATABASE_URL: str | None = Field(
+        default=None,
+        description="PostgreSQL connection URL (e.g., postgresql://user:pass@host:5432/db?sslmode=require)",
+    )
+    POSTGRES_CONNECTION_STRING: str | None = Field(
+        default=None,
+        description="Alternative PostgreSQL connection string (fallback to DATABASE_URL)",
     )
 
 
