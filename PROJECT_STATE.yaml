@@ -369,28 +369,120 @@ current_state:
       note: Local chatbot verification is now anchored to the full local dataset and is the active quality gate. The earlier Tracardi-only 0-profile segment/export gap has been replaced locally by canonical PostgreSQL segment creation, stats, and export. Do not treat Azure prompt rechecks as required while the local-only cost-control mode remains in effect.
     local_tracardi_stack:
       status: observed
-      verified_at: 2026-03-07T15:35:00+01:00
+      verified_at: 2026-03-07T19:29:00+01:00
       containers_up:
         - cdp_merged_elasticsearch
         - cdp_merged_redis
         - cdp_merged_mysql
         - cdp_merged_tracardi_api
         - cdp_merged_tracardi_gui
+      all_containers_healthy: true
       auth:
         status: observed
-        checked_at: 2026-03-07T15:35:00+01:00
+        checked_at: 2026-03-07T19:29:00+01:00
         evidence:
           - curl -fsS -o /tmp/tracardi_local_token.json -w '%{http_code}' -X POST "$TRACARDI_API_URL/user/token" ... -> 200
+      event_sources:
+        status: verified
+        count: 4
+        sources:
+          - id: cdp-api
+            name: CDP API
+            type: rest
+            enabled: true
+            description: Internal CDP API for profile and event ingestion
+          - id: kbo-batch-import
+            name: KBO Batch Import
+            type: rest
+            enabled: true
+            description: Batch import of KBO enterprise data
+          - id: kbo-realtime
+            name: KBO Real-time Updates
+            type: webhook
+            enabled: true
+            description: Real-time updates from KBO publications
+          - id: resend-webhook
+            name: Resend Email Webhook
+            type: webhook
+            enabled: true
+            description: Email events from Resend
+      data_counts:
+        profiles: 28
+        events: 49
+        sessions: 28
+        event_types:
+          session_start: 44
+          profile.updated: 2
+          browser_test: 1
+          browser_verification_test: 1
+          kbo.enterprise.imported: 1
       chat_bootstrap:
         status: observed
-        checked_at: 2026-03-07T15:35:00+01:00
+        checked_at: 2026-03-07T19:28:00+01:00
         source_id_from_env: cdp-api
         result: success_profile_created
         http_status: 200
         evidence:
           - TracardiClient().get_or_create_profile(session_id=...) -> returns profile with id
           - direct /track probe with source_id cdp-api -> returns profile object
-      note: Local Tracardi is fully functional for chat-session bootstrap. Event sources created via setup_tracardi_kbo_and_email.py.
+          - Browser-based profile creation verified -> profile ddde7ea5-3343-49ce-8e44-f0ab3e5347fa created
+          - Event tracking verified -> browser_verification_test event logged
+      activation_layer:
+        status: verified_workflows_created
+        verified_at: 2026-03-07T20:00:00+01:00
+        verification_script: scripts/setup_and_verify_tracardi.py
+        components:
+          event_sources:
+            status: fully_configured
+            count: 4
+            api_functional: true
+          workflows:
+            status: created_gui_pending_deployment
+            method: gui_configuration
+            count: 5
+            created_at: 2026-03-07T19:57:00+01:00
+            confirmed_at: 2026-03-07T20:02:00+01:00
+            list:
+              - id: 1b5233f9-241c-49b0-b2c6-60b3c010f4de
+                name: Email Engagement Processor
+                description: Processes email open and click events from Resend to track engagement scores
+                deployed: false
+              - name: Email Bounce Processor
+                description: Handles email bounce events to mark emails as invalid and maintain list hygiene
+                deployed: false
+              - name: Email Delivery Processor
+                description: Tracks email sent and delivered events to maintain email validity status
+                deployed: false
+              - name: High Engagement Segment
+                description: Automatically assigns VIP tags to highly engaged users when engagement score reaches 5+
+                deployed: false
+              - name: Email Complaint Processor
+                description: Handles spam complaints by suppressing profiles and protecting sender reputation
+                deployed: false
+            next_step: configure_nodes_and_deploy
+          destinations:
+            status: not_configured
+            method_required: gui_configuration
+            reason: api_needs_specific_payload_format
+            recommended:
+              - resend_email
+              - flexmail
+          segments:
+            status: not_configured
+            method_required: gui_or_api
+        verification_results:
+          authentication: working
+          event_sources_list: working
+          flows_list: working
+          destinations_list: working
+          profile_queries: working
+          track_endpoint: working
+      configuration_gaps:
+        workflows: 5 created but not deployed (need node configuration)
+        segments: 0 configured
+        destinations: 0 configured (need GUI)
+        licenses: none (community edition limitations apply)
+      note: Local Tracardi workflows created via GUI. All 5 Resend email processing workflows are created but need node configuration and deployment. Event sources fully functional. GUI accessible at http://localhost:8787. Screenshots saved - tracardi_workflows_created.png, tracardi_workflow_editor.png, tracardi_event_sources_list.png.
 
 active_problems:
   browser_vs_direct_search_total_mismatch:

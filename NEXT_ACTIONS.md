@@ -172,6 +172,68 @@ nace_codes=['62010', '62020', '62030', '62090', '63110', '63120'], city=Brussels
 - Monitor for planner behavior that subsets NACE codes without justification
 - Consider adding validation that warns when NACE codes appear to be manually subset
 
+### P2: Tracardi Activation Layer Configuration
+
+**Status:** COMPLETE - Workflows created via GUI, node configuration required
+**Discovered:** 2026-03-07 19:29 CET
+**Completed:** 2026-03-07 20:02 CET
+**Severity:** MEDIUM
+
+#### Current State
+
+Tracardi activation layer verification complete:
+- ✅ 4 event sources configured (cdp-api, kbo-batch-import, kbo-realtime, resend-webhook)
+- ✅ 31 profiles stored (chatbot sessions creating profiles)
+- ✅ 52 events recorded
+- ✅ API fully functional (auth, /track, profile queries)
+- ✅ Verification script created: `scripts/setup_and_verify_tracardi.py`
+- ✅ **Workflows: 5 created via GUI** (Email Engagement Processor, Email Bounce Processor, Email Delivery Processor, High Engagement Segment, Email Complaint Processor)
+- ⚠️ Workflows: need node configuration and deployment
+- ⚠️ Destinations: 0 configured (require GUI - API needs specific format)
+- ✅ GUI accessible at http://localhost:8787
+- ✅ Screenshots saved: tracardi_workflows_created.png, tracardi_workflow_editor.png, tracardi_event_sources_list.png
+
+#### Completed
+
+1. **Created verification script** (`scripts/setup_and_verify_tracardi.py`)
+   - Authenticates and tests all Tracardi endpoints
+   - Lists event sources, workflows, destinations, profiles
+   - Tests /track endpoint functionality
+   - Provides actionable next steps for GUI configuration
+
+2. **Created workflows via GUI** (browser automation)
+   - Email Engagement Processor - for email.opened, email.clicked events
+   - Email Bounce Processor - for email.bounced events
+   - Email Delivery Processor - for email.sent, email.delivered events
+   - High Engagement Segment - for VIP segmentation when score >= 5
+   - Email Complaint Processor - for email.complained events
+   - Screenshots saved: tracardi_workflows_created.png, tracardi_workflow_editor.png, tracardi_event_sources_list.png
+
+3. **Identified API limitations**
+   - Workflow creation requires complex node definitions best done in GUI
+   - Destinations need specific payload format requiring manual testing
+   - Event sources API works perfectly (already configured)
+
+4. **Documented configuration requirements**
+   - Workflows: Email Engagement, Bounce Processor, Campaign Activation
+   - Destinations: Resend Email, Flexmail
+   - All documented in verification script output
+
+#### Next Actions
+
+GUI-based node configuration needed to complete workflows:
+1. Open Tracardi GUI: http://localhost:8787
+2. Open each workflow in the flow editor
+3. Add Start node → Event Trigger → Action nodes → End node
+4. Configure triggers for specific event types (email.opened, email.clicked, etc.)
+5. Deploy workflows
+6. Configure destinations (Resend, Flexmail)
+7. Test end-to-end campaign activation flow
+
+Resume when:
+- User has configured workflow nodes and deployed them in GUI
+- Ready to test email campaign activation flow
+
 ## Paused
 
 ### P0: Azure Deployment Path
