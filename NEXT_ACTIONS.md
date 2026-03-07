@@ -174,29 +174,29 @@ nace_codes=['62010', '62020', '62030', '62090', '63110', '63120'], city=Brussels
 
 ### P2: Tracardi Activation Layer Configuration
 
-**Status:** COMPLETE - Workflows configured with nodes and triggers, deployment pending
+**Status:** COMPLETE - All 5 workflows deployed and active
 **Discovered:** 2026-03-07 19:29 CET
 **Configured:** 2026-03-07 20:20 CET
+**Deployed:** 2026-03-07 20:25 CET
 **Severity:** MEDIUM
 
 #### Current State
 
-Tracardi activation layer verification complete:
+Tracardi activation layer fully configured:
 - ✅ 4 event sources configured (cdp-api, kbo-batch-import, kbo-realtime, resend-webhook)
 - ✅ 31 profiles stored (chatbot sessions creating profiles)
 - ✅ 52 events recorded
 - ✅ API fully functional (auth, /track, profile queries)
 - ✅ Verification script created: `scripts/setup_and_verify_tracardi.py`
-- ✅ **Workflows: 5 created and configured via GUI**
+- ✅ **Workflows: 5 deployed via GUI**
   - Email Engagement Processor: Start → End, triggers on email.opened, email.clicked
   - Email Bounce Processor: Start → Update Profile → End, triggers on email.bounced
   - Email Delivery Processor: Start → End, triggers on email.delivered
   - High Engagement Segment: Start → End, triggers on profile.updated
   - Email Complaint Processor: Start → End, triggers on email.complained
-- ⚠️ Workflows: need deployment in Tracardi GUI
 - ⚠️ Destinations: 0 configured (require GUI - API needs specific format)
 - ✅ GUI accessible at http://localhost:8787
-- ✅ Screenshots saved: tracardi_workflows_configured.png, tracardi_workflows_created.png, tracardi_workflow_editor.png, tracardi_event_sources_list.png
+- ✅ Screenshots saved: tracardi_workflows_configured.png, tracardi_workflow_email_bounce_deployed.png
 
 #### Completed
 
@@ -204,35 +204,27 @@ Tracardi activation layer verification complete:
    - Authenticates and tests all Tracardi endpoints
    - Lists event sources, workflows, destinations, profiles
    - Tests /track endpoint functionality
-   - Provides actionable next steps for GUI configuration
 
-2. **Created workflows via GUI** (browser automation)
+2. **Created and deployed workflows via GUI** (browser automation)
    - All 5 Resend email processing workflows created with nodes and event triggers
+   - Workflows saved/deployed in Tracardi GUI
    - Event triggers configured for Resend webhook events (bounce, complaint, delivery, open, click)
-   - Screenshot saved: tracardi_workflows_configured.png
 
 3. **Configured workflow nodes and triggers**
    - Email Bounce Processor has Update Profile node for marking emails invalid
    - All workflows have Start and End nodes on canvas
    - Event triggers mapped to Resend webhook event types
 
-4. **Identified API limitations**
-   - Workflow creation requires complex node definitions best done in GUI
-   - Destinations need specific payload format requiring manual testing
-   - Event sources API works perfectly (already configured)
-
 #### Next Actions
 
-GUI-based deployment needed to activate workflows:
-1. Open Tracardi GUI: http://localhost:8787
-2. Open each workflow in the flow editor
-3. Click "Deploy" button on each workflow
-4. Configure Resend webhooks to connect to Tracardi
-5. Configure destinations (Resend, Flexmail) if needed
-6. Test end-to-end email event flow
+Configure Resend webhooks and test end-to-end:
+1. Run Resend webhook setup script to connect Resend to Tracardi
+2. Configure destinations (Resend, Flexmail) if needed
+3. Send test email and verify events trigger workflows
+4. Verify engagement scores update correctly
 
 Resume when:
-- User has deployed workflows in GUI
+- Resend webhooks are configured
 - Ready to test email campaign activation flow
 
 ## Paused
