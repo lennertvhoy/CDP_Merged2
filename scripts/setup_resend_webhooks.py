@@ -2,14 +2,24 @@
 """
 Setup Resend Event Webhooks for CDP_Merged.
 Configures webhooks to receive email engagement events from Resend.
+
+Usage:
+    python scripts/setup_resend_webhooks.py
+
+Environment Variables:
+    RESEND_API_KEY - Your Resend API key
+    RESEND_WEBHOOK_URL - URL endpoint for receiving webhooks (default: Tracardi tracker)
+    TRACARDI_TRACKER_URL - Tracardi tracker URL for event forwarding
 """
 
 import asyncio
 import os
 import sys
-from typing import Any
+from pathlib import Path
 
-sys.path.insert(0, "/home/ff/.openclaw/workspace/repos/CDP_Merged")
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
 from src.services.resend import ResendClient
 from src.core.logger import get_logger
@@ -18,69 +28,106 @@ logger = get_logger(__name__)
 
 # Configuration
 TRACARDI_IP = os.getenv("TRACARDI_IP", "137.117.212.154")
-TRACARDI_TRACKER_URL = f"http://{TRACARDI_IP}:8686/tracker"
+TRACARDI_TRACKER_URL = os.getenv("TRACARDI_TRACKER_URL", f"http://{TRACARDI_IP}:8686/tracker")
+WEBHOOK_ENDPOINT = os.getenv("RESEND_WEBHOOK_URL", TRACARDI_TRACKER_URL)
 
-# Webhook events to subscribe to
+# All webhook events to subscribe to
 EMAIL_EVENTS = [
     "email.sent",
-    "email.delivered",
-    "email.opened",
-    "email.clicked",
+    "email.delivered", 
+    "email.delivery_delayed",
     "email.bounced",
     "email.complained",
-    "email.delivery_delayed",
+    "email.opened",
+    "email.clicked",
 ]
 
 # Key events for engagement tracking
 ENGAGEMENT_EVENTS = [
     "email.opened",
-    "email.clicked",
+    "email.clicked", 
     "email.bounced",
+    "email.complained",
 ]
 
 
-async def list_existing_webhooks(client: ResendClient) -> list[dict[str, Any]]:
+def print_header(title: str) -> None:
+    """Print a formatted header."""
+    print("\n" + "=" * 60)
+    print(f"  {title}")
+    print("=" * 60)
+
+
+def print_section(title: str) -> None:
+    """Print a section divider."""
+    print(f"\n📋 {title}")
+    print("-" * 40)
+
+
+async def list_existing_webhooks(client: ResendClient) -> list[dict]:
     """List all existing webhooks in Resend."""
-    logger.info("listing_existing_webhooks")
-    webhooks = await client.get_webhooks()
+    print_section("Checking Existing Webhooks")
     
-    if not webhooks:
-        print("\n📭 No webhooks configured yet.")
-    else:
-        print(f"\n📋 Found {len(webhooks)} webhook(s):")
-        for wh in webhooks:
-            print(f"  • {wh.get('name', 'Unnamed')} ({wh.get('id')})")
-            print(f"    URL: {wh.get('url')}")
-            print(f"    Events: {', '.join(wh.get('events', []))}")
-    
-    return webhooks
+    try:
+        webhooks = await client.get_webhooks()
+        
+        if not webhooks:
+            print("  📭 No webhooks configured yet.")
+        else:
+            print(f"  Found {len(webhooks)} webhook(s):\n")
+            for i, wh in enumerate(webhooks, 1):
+                print(f"  {i}. {wh.get('name', 'Unnamed')}")
+                print(f"     ID: {wh.get('id')}")
+                print(f"     URL: {wh.get('url')}")
+                events = wh.get('events', [])
+                print(f"     Events: {', '.join(events[:3])}", end="")
+                if len(events) > 3:
+                    print(f" (+{len(events) - 3} more)")
+                else:
+                    print()
+                print()
+        
+        return webhooks
+        
+    except Exception as e:
+        logger.error("failed_to_list_webhooks", error=str(e))
+        print(f"  ❌ Error listing webhooks: {e}")
+        return []
 
 
-async def create_engagement_webhook(
+async def create_webhook(
     client: ResendClient,
-    endpoint_url: str = TRACARDI_TRACKER_URL,
-    name: str = "CDP Engagement Tracker",
-) -> dict[str, Any] | None:
-    """Create a webhook for email engagement events."""
-    logger.info("creating_engagement_webhook", endpoint=endpoint_url, name=name)
-    
+    endpoint_url: str,
+    events: list[str],
+    name: str,
+) -> dict | None:
+    """Create a webhook in Resend."""
     print(f"\n🔧 Creating webhook: {name}")
     print(f"   Endpoint: {endpoint_url}")
-    print(f"   Events: {', '.join(ENGAGEMENT_EVENTS)}")
+    print(f"   Events: {', '.join(events)}")
     
     try:
         result = await client.create_webhook(
             endpoint_url=endpoint_url,
-            events=ENGAGEMENT_EVENTS,
+            events=events,
             name=name,
         )
         
         webhook_id = result.get("id")
+        token = result.get("token", "N/A")
+        
         print(f"\n✅ Webhook created successfully!")
         print(f"   ID: {webhook_id}")
-        print(f"   Token: {result.get('token', 'N/A')}")
+        print(f"   Secret Token: {token[:20]}..." if len(token) > 20 else f"   Secret Token: {token}")
         
-        logger.info("engagement_webhook_created", webhook_id=webhook_id)
+        logger.info("webhook_created", webhook_id=webhook_id, name=name)
+        
+        # Print configuration instructions
+        print(f"\n📝 Configuration Instructions:")
+        print(f"   Add this to your .env file:")
+        print(f"   RESEND_WEBHOOK_SECRET={token}")
+        print(f"   RESEND_WEBHOOK_URL={endpoint_url}")
+        
         return result
         
     except Exception as e:
@@ -89,42 +136,8 @@ async def create_engagement_webhook(
         return None
 
 
-async def create_full_tracking_webhook(
-    client: ResendClient,
-    endpoint_url: str = TRACARDI_TRACKER_URL,
-    name: str = "CDP Full Email Tracking",
-) -> dict[str, Any] | None:
-    """Create a webhook for all email events."""
-    logger.info("creating_full_tracking_webhook", endpoint=endpoint_url, name=name)
-    
-    print(f"\n🔧 Creating webhook: {name}")
-    print(f"   Endpoint: {endpoint_url}")
-    print(f"   Events: {', '.join(EMAIL_EVENTS)}")
-    
-    try:
-        result = await client.create_webhook(
-            endpoint_url=endpoint_url,
-            events=EMAIL_EVENTS,
-            name=name,
-        )
-        
-        webhook_id = result.get("id")
-        print(f"\n✅ Webhook created successfully!")
-        print(f"   ID: {webhook_id}")
-        
-        logger.info("full_tracking_webhook_created", webhook_id=webhook_id)
-        return result
-        
-    except Exception as e:
-        logger.error("failed_to_create_full_webhook", error=str(e))
-        print(f"\n❌ Failed to create webhook: {e}")
-        return None
-
-
-async def delete_existing_webhook(client: ResendClient, webhook_id: str) -> bool:
+async def delete_webhook(client: ResendClient, webhook_id: str) -> bool:
     """Delete an existing webhook."""
-    logger.info("deleting_webhook", webhook_id=webhook_id)
-    
     print(f"\n🗑️  Deleting webhook: {webhook_id}")
     
     try:
@@ -139,57 +152,103 @@ async def delete_existing_webhook(client: ResendClient, webhook_id: str) -> bool
         return False
 
 
-async def setup_webhooks():
+async def setup_engagement_webhook(client: ResendClient) -> dict | None:
+    """Setup webhook for engagement tracking (opened, clicked, bounced)."""
+    return await create_webhook(
+        client=client,
+        endpoint_url=WEBHOOK_ENDPOINT,
+        events=ENGAGEMENT_EVENTS,
+        name="CDP Email Engagement Tracking",
+    )
+
+
+async def setup_full_tracking_webhook(client: ResendClient) -> dict | None:
+    """Setup webhook for full email tracking (all events)."""
+    return await create_webhook(
+        client=client,
+        endpoint_url=WEBHOOK_ENDPOINT,
+        events=EMAIL_EVENTS,
+        name="CDP Full Email Tracking",
+    )
+
+
+async def test_webhook(client: ResendClient) -> None:
+    """Test the webhook configuration by sending a test email."""
+    print_section("Testing Webhook Configuration")
+    
+    test_email = input("Enter email address for test (or press Enter to skip): ").strip()
+    
+    if not test_email:
+        print("  ⏭️  Skipping test.")
+        return
+    
+    print(f"\n📧 Sending test email to: {test_email}")
+    
+    try:
+        result = await client.send_email(
+            to=test_email,
+            subject="🧪 Resend Webhook Test",
+            html="""
+            <html>
+                <body>
+                    <h1>🧪 Test Email</h1>
+                    <p>This is a test email to verify webhook configuration.</p>
+                    <p><a href="https://resend.com">Click here to test click tracking</a></p>
+                    <p>Open and click this email to see events in your CDP!</p>
+                </body>
+            </html>
+            """,
+        )
+        
+        print(f"✅ Test email sent!")
+        print(f"   Email ID: {result.get('id')}")
+        print(f"\n📋 Next steps:")
+        print(f"   1. Check your inbox ({test_email})")
+        print(f"   2. Open the email (should trigger 'email.opened' event)")
+        print(f"   3. Click the link (should trigger 'email.clicked' event)")
+        print(f"   4. Check Tracardi dashboard for incoming events")
+        
+    except Exception as e:
+        print(f"❌ Failed to send test email: {e}")
+
+
+async def main():
     """Main setup function for Resend webhooks."""
-    print("=" * 60)
-    print("🚀 Resend Webhook Configuration")
-    print("=" * 60)
+    print_header("🚀 Resend Webhook Configuration")
+    
+    # Check configuration
+    print("\n📊 Current Configuration:")
+    print(f"   Webhook Endpoint: {WEBHOOK_ENDPOINT}")
+    print(f"   Tracardi Tracker: {TRACARDI_TRACKER_URL}")
     
     client = ResendClient()
     
     # Step 1: List existing webhooks
-    print("\n📊 Step 1: Checking existing webhooks...")
     existing = await list_existing_webhooks(client)
     
-    # Step 2: Ask user what to do
-    print("\n" + "-" * 60)
+    # Step 2: Show options
+    print("\n" + "=" * 60)
     print("Options:")
     print("  1. Create engagement tracking webhook (opened, clicked, bounced)")
     print("  2. Create full email tracking webhook (all events)")
     print("  3. Delete existing webhook")
-    print("  4. Exit without changes")
-    print("-" * 60)
+    print("  4. Test webhook with test email")
+    print("  5. Exit without changes")
+    print("=" * 60)
     
-    choice = input("\nEnter choice (1-4): ").strip()
+    choice = input("\nEnter choice (1-5): ").strip()
     
     if choice == "1":
-        # Create engagement webhook
-        result = await create_engagement_webhook(client)
-        
+        result = await setup_engagement_webhook(client)
         if result:
-            print("\n" + "=" * 60)
-            print("✅ Configuration Complete!")
-            print("=" * 60)
-            print("\nNext steps:")
-            print("  1. Configure Tracardi to process incoming events")
-            print("  2. Create workflow for engagement scoring")
-            print("  3. Send test email and verify events are received")
+            await test_webhook(client)
             
     elif choice == "2":
-        # Create full tracking webhook
-        result = await create_full_tracking_webhook(client)
-        
+        result = await setup_full_tracking_webhook(client)
         if result:
-            print("\n" + "=" * 60)
-            print("✅ Configuration Complete!")
-            print("=" * 60)
-            print("\nNext steps:")
-            print("  1. Configure Tracardi to process incoming events")
-            print("  2. Create workflow for engagement scoring")
-            print("  3. Send test email and verify events are received")
+            await test_webhook(client)
             
     elif choice == "3":
-        # Delete webhook
         if not existing:
             print("\n❌ No webhooks to delete.")
             return
@@ -201,11 +260,14 @@ async def setup_webhooks():
         idx = input("\nEnter number: ").strip()
         try:
             webhook_id = existing[int(idx) - 1]["id"]
-            await delete_existing_webhook(client, webhook_id)
+            await delete_webhook(client, webhook_id)
         except (ValueError, IndexError):
             print("\n❌ Invalid selection.")
             
     elif choice == "4":
+        await test_webhook(client)
+            
+    elif choice == "5":
         print("\n👋 Exiting without changes.")
         
     else:
@@ -214,7 +276,11 @@ async def setup_webhooks():
 
 if __name__ == "__main__":
     try:
-        asyncio.run(setup_webhooks())
+        asyncio.run(main())
     except KeyboardInterrupt:
         print("\n\n👋 Interrupted by user.")
         sys.exit(0)
+    except Exception as e:
+        logger.error("setup_failed", error=str(e))
+        print(f"\n❌ Setup failed: {e}")
+        sys.exit(1)
