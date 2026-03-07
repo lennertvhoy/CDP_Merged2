@@ -272,7 +272,7 @@ curl -fsS -H "Accept: application/json" \
 
 ## Docker Compose (Recommended)
 
-The included `docker-compose.yml` starts all infrastructure services.
+The included `docker-compose.yml` now starts the full local stack: PostgreSQL, Tracardi, and the chatbot. Only the OpenAI API remains remote.
 
 ### 1. Prerequisites
 
@@ -283,10 +283,12 @@ The included `docker-compose.yml` starts all infrastructure services.
 ### 2. Start Infrastructure
 
 ```bash
-# Start all services (detached)
+# Start all local services (detached)
 make docker-up
 
 # Services started:
+# - Chatbot:        http://localhost:8000
+# - PostgreSQL:     localhost:5432
 # - Elasticsearch: http://localhost:9200
 # - Tracardi API:  http://localhost:8686
 # - Tracardi GUI:  http://localhost:8787
@@ -298,23 +300,20 @@ make docker-up
 ### 3. Configure Environment
 
 ```bash
-# Copy example env
-cp .env.example .env
+# Copy local override example
+cp .env.local.example .env.local
 
 # Required changes:
-# LLM_PROVIDER=openai
 # OPENAI_API_KEY=sk-...    ← your key
-# Or set LLM_PROVIDER=ollama and install Ollama locally
+# TRACARDI_USERNAME=...
+# TRACARDI_PASSWORD=...
 ```
 
-### 4. Run the Application
+### 4. Verify the Application
 
 ```bash
-# Development mode (hot-reload)
-make dev
-
-# Or directly:
-poetry run chainlit run src/app.py --watch
+curl http://localhost:8000/healthz
+curl http://localhost:8000/readinessz
 ```
 
 The chat interface will be available at **http://localhost:8000**.

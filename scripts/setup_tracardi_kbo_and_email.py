@@ -21,11 +21,11 @@ from src.core.logger import get_logger
 logger = get_logger(__name__)
 
 # Configuration
-TRACARDI_API_URL = os.getenv("TRACARDI_API_URL", "http://137.117.212.154:8686")
+TRACARDI_API_URL = os.getenv("TRACARDI_API_URL", "http://localhost:8686")
 TRACARDI_USERNAME = os.getenv("TRACARDI_USERNAME", "admin@admin.com")
 TRACARDI_PASSWORD = os.getenv("TRACARDI_PASSWORD")
 
-if not TRACARDI_PASSWORD:
+if not TRACARDI_PASSWORD and "localhost" not in TRACARDI_API_URL and "127.0.0.1" not in TRACARDI_API_URL:
     # Try to get from terraform output
     import subprocess
     try:
@@ -340,7 +340,7 @@ async def setup_tracardi():
         print("  2. Run KBO sync to test kbo-batch-import source:")
         print("     TRACARDI_SOURCE_ID=kbo-batch-import python scripts/sync_kbo_to_tracardi.py")
         print("  3. Verify event sources in Tracardi GUI:")
-        print(f"     http://137.117.212.154:8787")
+        print(f"     {TRACARDI_API_URL.replace(':8686', ':8787')}")
         print("  4. Create workflows manually in GUI (workflow API requires complex node definitions)")
         return 0
     elif total_created == 0 and total_failed == 0:

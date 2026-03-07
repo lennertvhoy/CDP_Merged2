@@ -1,5 +1,37 @@
 services:
   # ==========================================
+  # PostgreSQL query plane for the chatbot
+  # ==========================================
+  postgres:
+    image: postgis/postgis:15-3.4-alpine
+    container_name: cdp-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cdpadmin
+      POSTGRES_PASSWORD: cdpadmin123
+      POSTGRES_DB: cdp
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./schema_local.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U cdpadmin -d cdp" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    command: >
+      postgres
+      -c shared_buffers=512MB
+      -c effective_cache_size=1536MB
+      -c work_mem=16MB
+      -c maintenance_work_mem=128MB
+      -c max_connections=200
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+
+  # ==========================================
   # Elasticsearch for Tracardi
   # ==========================================
   elasticsearch:
@@ -25,7 +57,7 @@ services:
   redis:
     image: redis:alpine
     container_name: cdp_merged_redis
-    restart: always
+    restart: unless-stopped
 
   # ==========================================
   # MySQL for Tracardi
@@ -33,9 +65,7 @@ services:
   mysql:
     image: mysql:8.0
     container_name: cdp_merged_mysql
-    restart: always
-    env_file:
-      - .env
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-changeme}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-tracardi}
@@ -52,7 +82,7 @@ services:
   tracardi-api:
     image: tracardi/tracardi-api:1.0.0
     container_name: cdp_merged_tracardi_api
-    restart: always
+    restart: unless-stopped
     ports:
       - "8686:80"
     environment:
@@ -65,7 +95,9 @@ services:
       - MYSQL_PASSWORD=${MYSQL_PASSWORD:-changeme}
       - MYSQL_DATABASE=${MYSQL_DATABASE:-tracardi}
       - LOGGING_LEVEL=info
-      - INSTALLATION_TOKEN=mytoken
+      - INSTALLATION_TOKEN=${TRACARDI_INSTALLATION_TOKEN:-mytoken}
+      - API_URL=${TRACARDI_PUBLIC_URL:-http://localhost:8686}
+      - TRACKER_URL=${TRACARDI_PUBLIC_URL:-http://localhost:8686}
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -80,12 +112,12 @@ services:
   tracardi-gui:
     image: tracardi/tracardi-gui:1.0.0
     container_name: cdp_merged_tracardi_gui
-    restart: always
+    restart: unless-stopped
     ports:
       - "8787:80"
     environment:
-      - API_URL=http://localhost:8686
-      - TRACKER_URL=http://localhost:8686
+      - API_URL=${TRACARDI_PUBLIC_URL:-http://localhost:8686}
+      - TRACKER_URL=${TRACARDI_PUBLIC_URL:-http://localhost:8686}
     depends_on:
       - tracardi-api
 
@@ -105,20 +137,45 @@ services:
   agent:
     build: .
     container_name: cdp_merged_agent
-    restart: always
+    restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "${CHATBOT_HOST_PORT:-8000}:8000"
     env_file:
-      - .env
+      - .env.local
     environment:
+      - LLM_PROVIDER=openai
+      - DATABASE_URL=postgresql://cdpadmin:cdpadmin123@postgres:5432/cdp?sslmode=disable
       - TRACARDI_API_URL=http://cdp_merged_tracardi_api:80
       - ELASTICSEARCH_URL=http://cdp_merged_elasticsearch:9200
+      - CHAINLIT_HOST=0.0.0.0
+      - CHAINLIT_PORT=8000
     depends_on:
-      - tracardi-api
-      - elasticsearch
+      postgres:
+        condition: service_healthy
+      tracardi-api:
+        condition: service_started
+      elasticsearch:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+      - ./logs:/app/logs
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=5)",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
 volumes:
+  postgres_data:
   es_data:
   mysql_data:

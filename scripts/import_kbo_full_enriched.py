@@ -497,7 +497,7 @@ import httpx
 
 async def get_tracardi_token() -> str:
     """Get Tracardi authentication token."""
-    tracardi_url = os.getenv("TRACARDI_API_URL", "http://137.117.212.154:8686")
+    tracardi_url = os.getenv("TRACARDI_API_URL", "http://localhost:8686")
     username = os.getenv("TRACARDI_USERNAME", "admin@admin.com")
     password = os.getenv("TRACARDI_PASSWORD", "")
     
@@ -570,7 +570,7 @@ async def sync_to_tracardi(
     token: str,
 ) -> tuple[int, int]:
     """Sync companies to Tracardi."""
-    tracardi_url = os.getenv("TRACARDI_API_URL", "http://137.117.212.154:8686")
+    tracardi_url = os.getenv("TRACARDI_API_URL", "http://localhost:8686")
     headers = {"Authorization": f"Bearer {token}"}
     
     profiles = [transform_to_tracardi(c) for c in companies]

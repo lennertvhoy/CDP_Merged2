@@ -19,31 +19,54 @@ cd CDP_Merged
 # 2. Install dependencies
 make install
 
-# 3. Start infrastructure (Tracardi, Elasticsearch, Redis, MySQL)
+# 3. Create local overrides with your real OpenAI key
+cp .env.local.example .env.local
+# Edit .env.local: set OPENAI_API_KEY and your local Tracardi credentials
+
+# 4. Start the full local stack (PostgreSQL, Tracardi, chatbot)
 make docker-up
 
-# 4. Configure environment (copy .env.development → .env)
-cp .env.development .env
-# Edit .env: set OPENAI_API_KEY or switch LLM_PROVIDER=ollama
-
-# 5. Launch the app
-make dev
-# → Opens at http://localhost:8000
+# 5. Open the services
+# → Chatbot:  http://localhost:8000
+# → Tracardi: http://localhost:8787
 ```
 
 ## Environment Configuration
 
 | Variable | Default | Description |
 |---|---|---|
-| `LLM_PROVIDER` | `openai` | `openai`, `azure_openai`, `ollama`, `mock` |
+| `LLM_PROVIDER` | `openai` | Local Docker stack forces `openai`; host-only dev can still use `openai`, `azure_openai`, `ollama`, or `mock` |
 | `LLM_MODEL` | `gpt-4o-mini` | Model name for the provider |
 | `OPENAI_API_KEY` | — | Required for OpenAI provider |
 | `TRACARDI_API_URL` | `http://localhost:8686` | Tracardi API endpoint |
+| `DATABASE_URL` | `postgresql://cdpadmin:cdpadmin123@localhost:5432/cdp?sslmode=disable` | Local PostgreSQL query plane |
 | `FLEXMAIL_ENABLED` | `false` | Enable Flexmail integration |
 | `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` |
 | `DEBUG` | `false` | Enable debug mode |
 
-See `.env.example` for full list.
+Use `.env.local` for machine-local secrets and local runtime overrides. `.env.example` remains the broad reference file.
+
+## Local Deployment Modes
+
+### Full Docker stack
+
+```bash
+make docker-up
+docker compose ps
+curl http://localhost:8000/healthz
+curl http://localhost:8000/readinessz
+```
+
+This starts PostgreSQL, Tracardi, and the chatbot locally. Only the OpenAI API stays remote.
+
+### Host-side chatbot for code iteration
+
+```bash
+docker compose up -d postgres tracardi-api tracardi-gui elasticsearch redis mysql
+./start_chatbot.sh
+```
+
+Use this path when you want the app on the host for faster edit/run cycles.
 
 ## Using Ollama (Local LLM)
 
@@ -85,6 +108,9 @@ poetry run pytest tests/unit/test_validation.py -v
 
 # Run with a specific marker
 poetry run pytest -m unit -v
+
+# Local stack regression
+.venv/bin/python scripts/regression_local_chatbot.py
 ```
 
 ### Eval suite artifact and gate semantics

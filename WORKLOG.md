@@ -10,9 +10,9 @@
 
 ### Task: Test chatbot against full 1.94M KBO dataset
 
-**Type:** verification_only  
-**Status:** COMPLETE  
-**Timestamp:** 2026-03-07 17:05 CET  
+**Type:** verification_only
+**Status:** COMPLETE
+**Timestamp:** 2026-03-07 17:05 CET
 **Git HEAD:** 36007b1
 
 **Summary:**
@@ -65,9 +65,9 @@ Test 5: Coverage stats
 
 ### Task: Re-run chatbot quality prompts on 10k slice and verify behavior
 
-**Type:** verification_only  
-**Status:** COMPLETE  
-**Timestamp:** 2026-03-07 16:40 CET  
+**Type:** verification_only
+**Status:** COMPLETE
+**Timestamp:** 2026-03-07 16:40 CET
 **Git HEAD:** 36007b1
 
 **Summary:**
@@ -80,7 +80,7 @@ Test 1: Restaurants in Sint-Niklaas
   ✅ Backend: postgresql
   ✅ Found: 0 restaurants (correct - none in 10k slice)
 
-Test 2: Restaurants in Gent  
+Test 2: Restaurants in Gent
   ✅ Backend: postgresql
   ✅ Found: 6 restaurants
 
@@ -110,9 +110,9 @@ The LLM sometimes passes `status="AC"` even when not explicitly asked, due to in
 
 ### Task: Align AGENTS and live state docs with current local-only operating mode
 
-**Type:** docs_or_process_only  
-**Status:** COMPLETE  
-**Timestamp:** 2026-03-07 17:12 CET  
+**Type:** docs_or_process_only
+**Status:** COMPLETE
+**Timestamp:** 2026-03-07 17:12 CET
 **Git HEAD:** 36007b1
 
 **Summary:**
@@ -140,9 +140,9 @@ User clarified that the project is currently being worked completely locally and
 
 ### Task: Clean helper scripts with stale .openclaw paths and package local regression checks
 
-**Type:** app_code  
-**Status:** COMPLETE  
-**Timestamp:** 2026-03-07 17:35 CET  
+**Type:** app_code
+**Status:** COMPLETE
+**Timestamp:** 2026-03-07 17:35 CET
 **Git HEAD:** 36007b1
 
 **Summary:**
@@ -207,9 +207,9 @@ Fixed all stale `.openclaw` path references in active source code and created a 
 
 ### Task: Harden the local chatbot tool layer for richer prompts and artifact generation
 
-**Type:** app_code  
-**Status:** COMPLETE  
-**Timestamp:** 2026-03-07 17:40 CET  
+**Type:** app_code
+**Status:** COMPLETE
+**Timestamp:** 2026-03-07 17:40 CET
 **Git HEAD:** 36007b1
 
 **Summary:**
@@ -324,3 +324,69 @@ Started chatbot on port 8000 and tested full flow via Playwright:
 - Local chatbot runtime: OPERATIONAL
 - Full flow: 2/4 steps fully working, 1 partial, 1 blocked by external dependency (Tracardi sync)
 
+## 2026-03-07 (Compose-Managed Local Stack Verified)
+
+### Task: Make the default local deployment path fully local and verify it end to end
+
+**Type:** app_code
+**Status:** COMPLETE
+**Timestamp:** 2026-03-07 18:09 CET
+**Git HEAD:** fb607dd
+
+**Summary:**
+Converted the default local deployment path into a compose-managed stack that now runs PostgreSQL, Tracardi, and the chatbot locally with only the OpenAI API remaining remote. Fixed the last local helper and smoke-test assumptions that still pointed at cloud Tracardi URLs or old PostgreSQL column names.
+
+**Changes Made:**
+
+1. **Compose and container runtime**
+   - Updated `docker-compose.yml` to include local PostgreSQL, route the chatbot container to local PostgreSQL and local Tracardi, mount `data/`, `output/`, and `logs/`, and expose a healthy compose-managed chatbot on port `8000`
+   - Updated `Dockerfile` to run `uvicorn src.app:chainlit_server_app` so the container matches the working host-side launcher and serves `/healthz` and `/readinessz`
+   - Removed hardcoded public Tracardi URLs from `docker-compose-tracardi.yml` and `docker-compose-tracardi-es.yml`
+
+2. **Local setup and helper scripts**
+   - Updated `scripts/setup.sh` and `Makefile` so the supported local path now uses `.env.local` and `docker compose up -d --build`
+   - Switched active local helper defaults from Azure Tracardi IPs to `http://localhost:8686` in `scripts/run_full_kbo_import.py`, `scripts/import_kbo_full_enriched.py`, `scripts/setup_tracardi_kbo_and_email.py`, `scripts/smoke_test_tracardi_e2e.py`, `scripts/verify_profile_range_endpoint.py`, and `scripts/webhook_gateway.py`
+
+3. **Smoke-test correctness**
+   - Updated `scripts/demo_smoke_test.py` to probe `/healthz`/`/project/healthz` and to use the current PostgreSQL schema (`main_email`, `main_phone`, `website_url`) instead of stale `email`, `phone`, and `website` columns
+   - Fixed the quick-mode final summary so "Demo data available" falls back to the database readiness result when the deeper demo-data check is skipped
+
+**Verification:**
+- `docker compose config --services`
+- `docker compose config`
+- `python3 -m compileall scripts/demo_smoke_test.py scripts/run_full_kbo_import.py scripts/import_kbo_full_enriched.py scripts/setup_tracardi_kbo_and_email.py scripts/smoke_test_tracardi_e2e.py scripts/verify_profile_range_endpoint.py scripts/webhook_gateway.py`
+- `docker compose up -d --build`
+- `docker compose ps`
+- `curl -fsS http://127.0.0.1:8000/healthz`
+- `curl -fsS http://127.0.0.1:8000/readinessz`
+- `curl -fsS http://127.0.0.1:8686/healthcheck`
+- `bash -lc '.venv/bin/python scripts/regression_local_chatbot.py'` -> passed 7/7
+- `bash -lc 'set -a; source .env.local; set +a; .venv/bin/python scripts/demo_smoke_test.py --quick'` -> passed 8/8 and reported demo-ready
+- `.venv/bin/pytest --version`
+- `.venv/bin/uvicorn --version`
+
+**Files touched:**
+- `Dockerfile`
+- `docker-compose.yml`
+- `docker-compose.postgres.yml`
+- `docker-compose-tracardi.yml`
+- `docker-compose-tracardi-es.yml`
+- `Makefile`
+- `scripts/setup.sh`
+- `scripts/demo_smoke_test.py`
+- `scripts/run_full_kbo_import.py`
+- `scripts/import_kbo_full_enriched.py`
+- `scripts/setup_tracardi_kbo_and_email.py`
+- `scripts/smoke_test_tracardi_e2e.py`
+- `scripts/verify_profile_range_endpoint.py`
+- `scripts/webhook_gateway.py`
+- `docs/development.md`
+- `docs/deployment.md`
+- `STATUS.md`
+- `PROJECT_STATE.yaml`
+- `NEXT_ACTIONS.md`
+- `WORKLOG.md`
+
+**Next actions:**
+1. Drive a real threaded browser/session flow through the compose-managed chatbot for search → artifact/export → segment → Resend/Tracardi follow-ups
+2. Keep Azure deployment work paused unless the user explicitly reopens the cloud path

@@ -1,17 +1,18 @@
-# NEXT_ACTIONS - CDP_Merged - AZURE INFRASTRUCTURE
+# NEXT_ACTIONS - CDP_Merged - Local-First Working Queue
 
-**Platform:** AZURE (VMs, Container Apps, OpenAI)  
-**Date:** 2026-03-06  
-**Owner:** AI Agent / Developer  
+**Platform:** Azure target architecture with local-only execution mode
+**Current Execution Mode:** Local-only (`Azure deployment path paused to save costs`)
+**Date:** 2026-03-07
+**Owner:** AI Agent / Developer
 **Purpose:** Active queue only. Older completions now live in `WORKLOG.md`; roadmap items live in `BACKLOG.md`.
 
 ## Active
 
 ### P0: Finalize Offline Local Development Stack
 
-**Status:** ACTIVE - runtime fixed, 1000-row local smoke dataset loaded, full-truth dataset still pending
+**Status:** COMPLETE - runtime fixed, full 1.94M dataset loaded and verified
 **Discovered:** 2026-03-07
-**Last Updated:** 2026-03-07 16:10 CET
+**Last Updated:** 2026-03-07 18:09 CET
 **Severity:** HIGH
 
 #### Current State
@@ -20,15 +21,18 @@
 - Local PostgreSQL now starts cleanly from `docker-compose.postgres.yml` using `schema_local.sql`.
 - `start_chatbot.sh` now launches the local app via `uvicorn`, sources `.env` plus `.env.local`, and the runtime is using real OpenAI successfully.
 - Local Tracardi containers are up, auth succeeds, and event sources have been created via `setup_tracardi_kbo_and_email.py`.
+- `docker compose up -d --build` now brings up the full local stack by default: PostgreSQL, Tracardi, Wiremock, and the chatbot.
+- `docker compose ps` now shows the chatbot container healthy on `:8000`, and `/healthz` plus `/readinessz` both return `status: ok`.
 - Chat-session bootstrap now works: `TracardiClient().get_or_create_profile()` returns profiles successfully.
 - `.env.local` has been updated with `TRACARDI_SOURCE_ID=cdp-api`.
-- The local `public.companies` table currently has `1,000` rows from a PostgreSQL-only smoke import, so local prompts are no longer blocked by an empty dataset.
+- The local `public.companies` table now holds the full `1,940,603`-row PostgreSQL-first KBO dataset, so local count and aggregation prompts are now business-truth capable.
 - The chatbot query contract has been corrected so generic searches no longer default to `status=AC`, and zero-result searches now expose an empty-dataset diagnostic instead of offering segments/campaigns blindly.
 - The main importer path defect is fixed: `scripts/import_kbo_full_enriched.py` now resolves the KBO zip from `KBO_ZIP_PATH` or the active repo, and `scripts/run_full_kbo_import.py` uses the same resolver.
 - The main importer now writes canonical `companies` columns directly, including `status`, `juridical_situation`, `legal_form_code`, `type_of_enterprise`, `main_fax`, `establishment_count`, `all_names`, `all_nace_codes`, and `nace_descriptions`.
-- Local direct SQL verification on the 1000-row smoke slice showed `status=1000`, `juridical_situation=1000`, `legal_form_code=1000`, `type_of_enterprise=1000`, `all_names=1000`, `all_nace_codes=687`, `nace_descriptions=687`, and `establishment_count>0=682`.
+- Same-day local full-dataset verification found 1,105 restaurants in Gent, 41,290 companies in Brussels, 62,831 companies in Antwerpen, and a successful Brussels industry aggregation.
 - The importer retry path was also fixed in this session: an off-by-one record-limit bug and a COPY fallback INSERT placeholder mismatch no longer block idempotent reruns.
 - Bulk full-dataset Tracardi sync during initial import is lower priority than a correct PostgreSQL-first load; use Tracardi projection selectively after the canonical dataset is trustworthy.
+- Azure deployment and Azure verification work are paused by user direction while the project stays in a local-only cost-control mode.
 
 #### Completed
 
@@ -37,68 +41,101 @@
 - Verified `/track` endpoint works and returns profiles
 - `TracardiClient` bootstrap now functional
 
-#### Next Actions
+✅ **Chatbot quality prompts verified on 10k dataset** (2026-03-07 16:45 CET)
+- Verified restaurant queries in Gent (6 found) and Sint-Niklaas (0 found - correct)
+- Verified Brussels companies query returns 356 without status filter
+- Backend correctly treats `status=None` as "all statuses"
+- Note: LLM occasionally infers `status="AC"` despite schema instructions; this is LLM-level behavior, not a code bug
 
-1. **Expand the local PostgreSQL-first import beyond the 1000-row smoke slice, or point local `DATABASE_URL` at a populated PostgreSQL instance.**
-   - Current direct localhost probe shows `companies.total = 1000`
-   - Until the local dataset is representative, local count answers still verify behavior more than business truth
-2. **Re-run the chatbot quality prompts on the now non-empty local dataset.**
-   - Start with `How many restaurants are in Sint-Niklaas?`
-   - Verify the answer no longer says `active` unless the user asked for it
-3. **Smoke the deployed environment with the same prompt.**
-   - Confirm production uses the same no-default-status behavior and does not regress on populated data
-4. **Carry the KBO zip resolver and canonical-column mapping discipline into the remaining helper scripts that still assume `.openclaw` paths or older insert shapes.**
+✅ **Full 1.94M dataset import complete and verified** (2026-03-07 17:05 CET)
+- Total: 1,940,603 records imported to local PostgreSQL
+- Restaurants in Gent: 1,105 (verified via search tool)
+- Companies in Brussels: 41,290 (verified)
+- Companies in Antwerpen: 62,831 (verified)
+- Aggregation queries working (top industries in Brussels: 70200 at 4.8%)
+- All queries execute in <3 seconds
 
-### P1: PostgreSQL City Query Performance Investigation - PARTIALLY RESOLVED
+#### Completed
 
-**Status:** ACTIVE - Root causes identified and partially fixed  
-**Discovered:** 2026-03-06  
-**Last Updated:** 2026-03-06 20:35 CET  
-**Severity:** HIGH (partially mitigated)
+✅ **Stale path cleanup completed** (2026-03-07 17:35 CET)
+- Fixed 12 Python scripts with stale `.openclaw` path references
+- Fixed 3 shell scripts with stale `.openclaw` path references
+- Fixed `src/ingestion/kbo_ingest.py` and `infra/scripts/shutdown-restart-test.sh`
+- All active source code now uses repo-relative paths or `resolve_kbo_zip_path()`
 
-#### Problems Identified & Fixes Applied
+✅ **Local regression script hardened and verified** (2026-03-07 17:38 CET)
+- `scripts/regression_local_chatbot.py` now covers 7 host-side checks
+- Tests: Gent restaurants, Brussels companies, Antwerpen aggregation, NACE search, email domain, city counts, local artifact export
+- Verified via `bash -lc '.venv/bin/python scripts/regression_local_chatbot.py'` against host PostgreSQL
 
-**1. Table Bloat - FIXED ✅**
-- Root cause: 231,766 dead tuples (12% bloat) causing 267 MB heap reads per query
-- Fix: `VACUUM ANALYZE companies` executed
-- Result: Count queries improved from 18s → 0.088s
-
-**2. Missing Composite Index - FIXED ✅**
-- Root cause: Existing `idx_companies_city_status` was on `(city, sync_status)`, not `(city, status)`
-- Fix: Created `idx_companies_city_status_real` on `(city, status)`  
-- Schema updated: `schema_optimized.sql`
-
-**3. Status Column Empty - IMPORT/BACKFILL ISSUE ⚠️**
-- Discovery: Both `status` and `juridical_situation` columns are NULL for all 1.94M records
-- Impact: Status filtering (`status='AC'`) returns 0 results (not a performance issue)
-- Action needed: Correct the KBO import/backfill path so those dedicated columns are populated from source data
-
-#### Current Performance (After All Fixes)
-
-| Query Type | Brussels (41k) | Antwerp (62k) | Ghent (29k) |
-|------------|----------------|---------------|-------------|
-| Count | 0.088s ✅ | <1s ✅ | <1s ✅ |
-| Aggregation | 25.3s ⚠️ | TBD | 0.168s ✅ |
-
-**Root cause for aggregation slowness:** Large cities require processing 40K+ rows for GROUP BY. Ghent now fast due to covering index. Brussels/Antwerp need application-layer LIMIT.
-
-#### Fixes Applied
-1. ✅ **VACUUM ANALYZE** - Removed 231K dead tuples, count queries now 0.07s
-2. ✅ **Composite index** - Created idx_companies_city_status_real on (city, status)
-3. ✅ **Covering index** - Created idx_companies_city_nace on (city, industry_nace_code)
+✅ **Compose-managed local stack verified** (2026-03-07 18:08 CET)
+- Replaced the ad-hoc host `uvicorn` process with the compose-managed chatbot container on `:8000`
+- Verified `docker compose ps`, `curl http://localhost:8000/healthz`, and `curl http://localhost:8000/readinessz`
+- Fixed `scripts/demo_smoke_test.py` to use the current health endpoints and PostgreSQL schema; quick mode now passes 8/8 and reports demo-ready
 
 #### Next Actions
-1. **Application fix:** Add LIMIT to aggregation queries to cap processing time
-2. **Data fix:** Backfill `status` and `juridical_situation` via a corrected KBO import/backfill path
-3. **Test:** Verify live chatbot behavior (Ghent should work, Brussels may need LIMIT fix)
-4. **Background:** Schedule periodic VACUUM to prevent future bloat
+
+All P0 items complete. Ready for next local-only task or user direction.
+
+### P1: Local Helper Script Hardening
+
+**Status:** COMPLETE
+**Discovered:** 2026-03-07
+**Last Updated:** 2026-03-07 17:38 CET
+**Severity:** HIGH
+
+#### Current State
+
+- The main local importer path and canonical-column mapping are fixed.
+- Same-day local verification shows the full 1.94M-row dataset and key chatbot prompts are working.
+- The remaining active helper/setup/demo scripts that mattered for local execution no longer assume the stale `.openclaw` workspace path or old KBO zip locations.
+- Azure deployment verification is paused by user direction while the project stays in local-only cost-control mode.
+
+#### Completed
+- ✅ Replaced stale workspace assumptions with repo-relative imports
+- ✅ Created and re-verified fast local-only regression script (`scripts/regression_local_chatbot.py`)
+- ✅ Exposed export, coverage, and local artifact tools to the chatbot runtime
+- ✅ Added `nace_code` alias and `email_domain` filter support to the local query tool contract
+
+#### Next Actions
+None for this work item.
+
+### P1: Local Multi-Message Runtime Hardening
+
+**Status:** ACTIVE
+**Discovered:** 2026-03-07
+**Last Updated:** 2026-03-07 18:09 CET
+**Severity:** HIGH
+
+#### Current State
+
+- The local chatbot now exposes `create_data_artifact`, `get_data_coverage_stats`, `export_segment_to_csv`, and `email_segment_export` in the agent tool layer.
+- Stable harness coverage now includes a tool-heavy multi-turn story with local artifact generation.
+- Compose-managed regression and quick demo smoke now confirm the local PostgreSQL path, NACE alias search, email-domain filtering, artifact export, and top-level demo readiness checks all work.
+- The local-only target is now less about missing tool surface and more about proving broader real-runtime operator flows with the live model.
+
+#### Next Actions
+1. Drive longer local multi-message scenarios through the real runtime, especially search → artifact/export → segment → Resend/Tracardi follow-ups.
+2. Exercise the compose-managed chatbot with a real threaded browser/session flow instead of only direct tool invocations and quick smoke checks.
 
 ## Paused
 
+### P0: Azure Deployment Path
+
+**Status:** PAUSED
+**Paused:** 2026-03-07
+**Reason:** The user explicitly paused Azure deployment and cloud verification work to save costs. Current work is completely local.
+
+Resume when:
+- the user explicitly asks to resume Azure deployment or cloud verification work
+
+Next action:
+1. Re-check the latest Azure revision and deployment health only after the user reopens the cloud path.
+
 ### P1: Reconcile Canonical Enrichment Truth And Runner Behavior
 
-**Status:** PAUSED  
-**Paused:** 2026-03-06  
+**Status:** PAUSED
+**Paused:** 2026-03-06
 **Reason:** The enrichment runners are currently active and PostgreSQL remains usable; user priority shifted to chatbot performance work.
 
 Resume when:
@@ -109,8 +146,8 @@ Next action:
 
 ### P1: Chatbot Performance Tracing
 
-**Status:** PAUSED  
-**Paused:** 2026-03-06  
+**Status:** PAUSED
+**Paused:** 2026-03-06
 **Reason:** The user redirected the active task toward answer quality, scenario utility, and multi-session behavior.
 
 Resume when:
@@ -121,8 +158,8 @@ Next action:
 
 ### P1: Production UX And Operator Layer
 
-**Status:** PAUSED  
-**Paused:** 2026-03-06  
+**Status:** PAUSED
+**Paused:** 2026-03-06
 **Reason:** The current priority is trustworthy data and runtime behavior, not broader operator-surface expansion.
 
 Resume when:
@@ -133,8 +170,8 @@ Next action:
 
 ### P1: Azure Observability And RG Cleanup
 
-**Status:** PAUSED  
-**Paused:** 2026-03-06  
+**Status:** PAUSED
+**Paused:** 2026-03-06
 **Reason:** The 2026-03-06 resource audit found only narrow cleanup candidates in `rg-cdpmerged-fast`, while website-runner durability is still the higher-leverage blocker.
 
 Resume when:
@@ -146,10 +183,16 @@ Next action:
 
 ## Recently Closed
 
+### 2026-03-07: Local Full-Dataset Chatbot Verification
+
+- Full 1.94M local PostgreSQL dataset verified for chatbot use
+- Gent restaurant count, Brussels and Antwerpen city counts, and Brussels aggregation all reported working locally
+- This supersedes the older local 10k-only posture for current local execution work
+
 ### 2026-03-06: Chatbot Analytics Aggregation Tool Debugging - VERIFIED ✅
 
-**Status:** COMPLETE (FIX VERIFIED)  
-**Deployed:** Revision `ca-cdpmerged-fast--stg-877f0e9`  
+**Status:** COMPLETE (FIX VERIFIED)
+**Deployed:** Revision `ca-cdpmerged-fast--stg-877f0e9`
 **Fixed:** Analytics aggregation tool now supports "industry" as an alias for "nace_code"
 
 Problem:
