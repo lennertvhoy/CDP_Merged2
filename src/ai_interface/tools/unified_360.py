@@ -59,13 +59,38 @@ async def query_unified_360(
 ) -> str:
     """Query unified 360° customer data combining KBO, Teamleader, and Exact Online.
 
-    This tool provides comprehensive cross-source insights for sales, finance, and operations.
+    USE THIS TOOL WHEN:
+    - User asks for a "360° view" or "complete profile" of a specific company
+    - User asks to search for companies by name across all source systems
+    - User asks for detailed company information with cross-source data (KBO + CRM + financials)
+    - User asks for activity timeline for a specific company
+    - User asks about a specific company by KBO number
+
+    DO NOT USE THIS TOOL WHEN:
+    - User asks for aggregated industry statistics (use get_industry_summary instead)
+    - User asks for geographic revenue distribution (use get_geographic_revenue_distribution instead)
+    - User asks for simple company counts or lists without 360° context (use search_profiles)
+    - User asks about high-value accounts with risk indicators (use find_high_value_accounts)
+    - User asks about identity link quality (use get_identity_link_quality)
 
     QUERY TYPES:
     - "company_profile": Get complete 360° profile for a specific company (requires kbo_number)
     - "pipeline_summary": Find companies with pipeline/revenue data (optionally filter by city/NACE)
     - "activity_timeline": Get chronological activity for a company (requires kbo_number)
     - "search_by_name": Search companies across all source systems by name
+
+    QUERY PATTERNS THAT REQUIRE THIS TOOL:
+    - "Give me a 360° view of company KBO 0123.456.789"
+    - "Show me the complete profile for company X"
+    - "Search for company named Acme Corp"
+    - "What is the activity timeline for KBO 0123.456.789?"
+    - "Show me companies with pipeline in Brussels"
+
+    QUERY PATTERNS THAT DO NOT REQUIRE THIS TOOL:
+    - "What is the total pipeline for software companies?" → use get_industry_summary
+    - "Revenue distribution by city" → use get_geographic_revenue_distribution
+    - "How many restaurants in Gent?" → use search_profiles
+    - "Which accounts have overdue invoices?" → use find_high_value_accounts
 
     Args:
         query_type: Type of query - "company_profile", "pipeline_summary", "activity_timeline", or "search_by_name"
@@ -82,9 +107,12 @@ async def query_unified_360(
         JSON string with query results including company data, pipeline, financials, and activities.
 
     Examples:
-        - query_unified_360(query_type="company_profile", kbo_number="0123.456.789")
-        - query_unified_360(query_type="pipeline_summary", city="Brussels", nace_prefix="62")
-        - query_unified_360(query_type="search_by_name", company_name="Acme Corp")
+        >>> query_unified_360(query_type="company_profile", kbo_number="0123.456.789")
+        # Returns complete 360° profile with KBO, Teamleader, and Exact data
+        >>> query_unified_360(query_type="pipeline_summary", city="Brussels", nace_prefix="62")
+        # Returns companies with pipeline data in Brussels, NACE 62xxx
+        >>> query_unified_360(query_type="search_by_name", company_name="Acme Corp")
+        # Returns search results for company name across all source systems
     """
     service = Unified360Service(database_url=_get_database_url())
 
@@ -238,12 +266,35 @@ async def get_industry_summary(
     city: str | None = None,
     limit: int = 20,
 ) -> str:
-    """Get industry-level pipeline and revenue summary across all companies.
+    """Get industry-level pipeline value and revenue summary (cross-source: KBO + CRM + Exact).
 
-    Use this for questions like:
+    USE THIS TOOL WHEN:
+    - User asks about "pipeline value" for an industry or category of companies
+    - User asks about "total pipeline" or "pipeline summary" by industry
+    - User asks about industry-level revenue, deals, or financial aggregates
+    - User asks about "software companies" or any industry category with pipeline/revenue context
+    - Query combines industry filtering with financial/pipeline metrics across sources
+
+    DO NOT USE THIS TOOL WHEN:
+    - User asks to search for specific companies by name (use search_profiles or query_unified_360)
+    - User asks for simple company counts without pipeline/revenue (use search_profiles)
+    - User asks about geographic distribution only (use get_geographic_revenue_distribution)
+    - User asks about individual company details (use query_unified_360)
+    - User asks to group by non-industry fields (use aggregate_profiles)
+
+    QUERY PATTERNS THAT REQUIRE THIS TOOL:
     - "What is the total pipeline value for software companies in Brussels?"
-    - "Show me industry breakdown for IT companies"
-    - "Which industries have the most revenue in Antwerp?"
+    - "Pipeline value for software companies in Brussels?"
+    - "Show me the pipeline summary for IT companies"
+    - "What is the total revenue for retail companies?"
+    - "Which industries have the most pipeline?"
+    - "Show me industry breakdown with deal values"
+
+    QUERY PATTERNS THAT DO NOT REQUIRE THIS TOOL:
+    - "How many software companies are in Brussels?" → use search_profiles
+    - "Show me software companies in Brussels" → use search_profiles
+    - "Revenue distribution by city" → use get_geographic_revenue_distribution
+    - "Find company named Acme" → use query_unified_360 with query_type="search_by_name"
 
     INDUSTRY CATEGORIES (auto-resolved from keywords):
     - "software" or "IT" -> NACE 62xxx (Software/IT Services)
@@ -270,9 +321,12 @@ async def get_industry_summary(
         - total_overdue: Total overdue amounts
 
     Examples:
-        - get_industry_summary(industry_category="software", city="Brussels")
-        - get_industry_summary(nace_prefix="62")
-        - get_industry_summary(industry_category="restaurant", city="Gent")
+        >>> get_industry_summary(industry_category="software", city="Brussels")
+        # Returns pipeline and revenue for software companies in Brussels
+        >>> get_industry_summary(nace_prefix="62")
+        # Returns summary for NACE code 62xxx (IT/software)
+        >>> get_industry_summary(industry_category="restaurant", city="Gent")
+        # Returns summary for restaurants in Gent
     """
     service = Unified360Service(database_url=_get_database_url())
 
@@ -360,11 +414,20 @@ async def find_high_value_accounts(
 ) -> str:
     """Find high-value accounts with revenue, pipeline, or risk indicators.
 
-    Use this for questions like:
-    - "Which high-value accounts have overdue invoices?"
-    - "Show me companies with high pipeline value"
-    - "Find high-risk accounts in Brussels"
-    - "List companies with total exposure over €50k"
+    USE THIS TOOL WHEN:
+    - User asks about "high-value accounts" or "high-value customers"
+    - User asks about accounts with "overdue invoices" or "outstanding amounts"
+    - User asks about "high-risk" or "at-risk" accounts
+    - User asks about companies with "high pipeline" or "big deals"
+    - User asks about accounts by exposure, risk level, or opportunity level
+    - User mentions specific financial thresholds (€50k, €100k, etc.)
+
+    DO NOT USE THIS TOOL WHEN:
+    - User asks for simple company searches without risk/value context (use search_profiles)
+    - User asks about industry-level aggregates (use get_industry_summary)
+    - User asks about geographic distribution (use get_geographic_revenue_distribution)
+    - User asks about a specific company by name/KBO (use query_unified_360)
+    - User asks for identity link quality (use get_identity_link_quality)
 
     ACCOUNT PRIORITIES:
     - "high_risk": Accounts with >€10k overdue
@@ -373,6 +436,19 @@ async def find_high_value_accounts(
     - "medium_opportunity": Accounts with >€10k pipeline
     - "high_value": Accounts with >€100k revenue YTD
     - "standard": Other accounts with data
+
+    QUERY PATTERNS THAT REQUIRE THIS TOOL:
+    - "Which high-value accounts have overdue invoices?"
+    - "Show me companies with high pipeline value"
+    - "Find high-risk accounts in Brussels"
+    - "List companies with total exposure over €50k"
+    - "Show me accounts with overdue amounts"
+    - "Find our biggest opportunities"
+
+    QUERY PATTERNS THAT DO NOT REQUIRE THIS TOOL:
+    - "How many companies in Brussels?" → use search_profiles
+    - "What is the pipeline for software companies?" → use get_industry_summary
+    - "Show me revenue by city" → use get_geographic_revenue_distribution
 
     Args:
         min_exposure: Minimum total exposure (pipeline + outstanding invoices) in euros
@@ -390,9 +466,12 @@ async def find_high_value_accounts(
         - Data completeness score
 
     Examples:
-        - find_high_value_accounts(has_overdue=True)
-        - find_high_value_accounts(min_exposure=50000, city="Brussels")
-        - find_high_value_accounts(account_priority="high_opportunity")
+        >>> find_high_value_accounts(has_overdue=True)
+        # Returns accounts with overdue invoices
+        >>> find_high_value_accounts(min_exposure=50000, city="Brussels")
+        # Returns high-exposure accounts in Brussels
+        >>> find_high_value_accounts(account_priority="high_opportunity")
+        # Returns accounts classified as high opportunity
     """
     from decimal import Decimal
 
@@ -457,12 +536,34 @@ async def get_geographic_revenue_distribution(
     min_companies: int = 1,
     limit: int = 50,
 ) -> str:
-    """Get geographic distribution of companies with pipeline and revenue data.
+    """Get geographic distribution of revenue, pipeline, and companies across cities.
 
-    Use this for questions like:
+    USE THIS TOOL WHEN:
+    - User asks about "revenue distribution by city"
+    - User asks about "geographic distribution" of customers/revenue/pipeline
+    - User asks "which cities have the most revenue?"
+    - User asks about "market penetration by city"
+    - User asks about revenue, pipeline, or companies grouped by location
+    - Query involves cross-source data (KBO + CRM + financials) aggregated by city
+
+    DO NOT USE THIS TOOL WHEN:
+    - User asks to aggregate/group companies by non-geographic fields (use aggregate_profiles instead)
+    - User asks about industry breakdown (use get_industry_summary instead)
+    - User asks for simple city counts without revenue context (use search_profiles instead)
+    - User asks about a specific company or list of companies (use query_unified_360 or search_profiles)
+
+    QUERY PATTERNS THAT REQUIRE THIS TOOL:
+    - "Show me revenue distribution by city"
     - "Which cities have the most revenue?"
-    - "Show me geographic distribution of our customers"
-    - "What is our market penetration by city?"
+    - "What is our geographic distribution of customers?"
+    - "Show me pipeline by city"
+    - "What is the market penetration by location?"
+    - "How is our revenue spread across different cities?"
+
+    QUERY PATTERNS THAT DO NOT REQUIRE THIS TOOL:
+    - "Group companies by industry" → use aggregate_profiles with group_by="industry"
+    - "Show me software companies in Brussels" → use search_profiles
+    - "What is the total pipeline for software companies?" → use get_industry_summary
 
     Args:
         min_companies: Minimum number of companies to include a city
@@ -480,8 +581,10 @@ async def get_geographic_revenue_distribution(
         - market_penetration_pct: Percentage with CRM/financial data
 
     Examples:
-        - get_geographic_revenue_distribution()
-        - get_geographic_revenue_distribution(min_companies=100, limit=20)
+        >>> get_geographic_revenue_distribution()
+        # Returns revenue and pipeline distribution across all cities
+        >>> get_geographic_revenue_distribution(min_companies=100, limit=20)
+        # Returns top 20 cities with at least 100 companies
     """
     service = Unified360Service(database_url=_get_database_url())
 
@@ -536,10 +639,32 @@ async def get_geographic_revenue_distribution(
 
 @tool
 async def get_identity_link_quality() -> str:
-    """Get identity link quality metrics showing KBO matching coverage.
+    """Get identity link quality metrics showing how well source systems are linked to KBO.
 
-    Use this to monitor how well Teamleader and Exact records are linked
-to KBO/PostgreSQL companies.
+    USE THIS TOOL WHEN:
+    - User asks about "linkage" between systems and KBO
+    - User asks "how well are source systems linked to KBO?"
+    - User asks about "identity link quality" or "matching coverage"
+    - User asks about KBO matching rates for Teamleader or Exact
+    - User asks how many CRM/financial records are matched to KBO companies
+
+    DO NOT USE THIS TOOL WHEN:
+    - User asks about data coverage statistics (use get_data_coverage_stats instead)
+    - User asks about general database completeness (use get_data_coverage_stats instead)
+    - User asks about field-level data quality (use get_data_coverage_stats instead)
+    - User asks about enrichment progress (use get_data_coverage_stats instead)
+
+    QUERY PATTERNS THAT REQUIRE THIS TOOL:
+    - "How well are source systems linked to KBO?"
+    - "What is the KBO match rate for Teamleader?"
+    - "How many Exact records are matched to KBO companies?"
+    - "Show me identity link quality"
+    - "What percentage of CRM companies have KBO numbers?"
+
+    QUERY PATTERNS THAT DO NOT REQUIRE THIS TOOL:
+    - "What is the data coverage?" → use get_data_coverage_stats
+    - "How complete is our data?" → use get_data_coverage_stats
+    - "What percentage of companies have websites?" → use get_data_coverage_stats
 
     Returns:
         JSON string with quality metrics per source system:
@@ -550,7 +675,8 @@ to KBO/PostgreSQL companies.
         - oldest_sync/newest_sync: Sync time range
 
     Examples:
-        - get_identity_link_quality()
+        >>> get_identity_link_quality()
+        # Returns: {"status": "ok", "source_count": 2, "quality_metrics": [...]}
     """
     service = Unified360Service(database_url=_get_database_url())
 

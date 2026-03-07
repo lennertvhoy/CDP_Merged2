@@ -335,3 +335,90 @@ Added section "6. UNIFIED 360° CUSTOMER VIEWS (CROSS-SOURCE INSIGHTS)" document
 - "What is the total pipeline value for software companies in Brussels?"
 - "Show me IT companies in Gent with open deals over €10k"
 - "Which high-value accounts have overdue invoices?"
+
+---
+
+## 2026-03-08 (Tool-Level Docstring Enhancements - USE WHEN/DO NOT USE WHEN)
+
+### Task: Enhance all 5 unified 360° tool docstrings with explicit routing guidance
+
+**Type:** app_code  
+**Status:** COMPLETE (ready for re-test)  
+**Timestamp:** 2026-03-08 00:10 CET  
+**Git Head:** `52b70d9`
+
+**Summary:**
+Implemented Option B + C from the previous analysis - enhanced individual tool docstrings with "USE WHEN / DO NOT USE WHEN" sections and concrete query pattern examples. The system prompt-level changes (EXAMPLES and NEGATIVE CONSTRAINTS) were insufficient because the LLM may not fully process the system prompt before making tool selection decisions. Tool-level docstrings are more directly visible during the tool selection phase.
+
+**Changes Made to `src/ai_interface/tools/unified_360.py`:**
+
+Enhanced all 5 unified 360° tools with structured docstrings:
+
+1. **query_unified_360** - Now clearly distinguished from:
+   - `search_profiles` (simple counts/lists without 360° context)
+   - `get_industry_summary` (aggregated industry statistics)
+   - `get_geographic_revenue_distribution` (geographic aggregates)
+
+2. **get_industry_summary** - Explicitly for:
+   - "pipeline value" queries (e.g., "Pipeline value for software companies in Brussels?")
+   - Industry-level financial aggregates
+   - Cross-source industry summaries (KBO + CRM + Exact)
+   - NOT for simple company counts (use `search_profiles`)
+
+3. **get_geographic_revenue_distribution** - Explicitly for:
+   - "revenue distribution by city" queries
+   - Geographic distribution of customers/revenue/pipeline
+   - Market penetration by location
+   - NOT for general aggregation (use `aggregate_profiles`)
+
+4. **get_identity_link_quality** - Explicitly for:
+   - "How well are source systems linked to KBO?"
+   - KBO matching quality/rate questions
+   - Identity link coverage monitoring
+   - NOT for general data coverage (use `get_data_coverage_stats`)
+
+5. **find_high_value_accounts** - Explicitly for:
+   - High-value accounts with risk indicators
+   - Accounts with overdue invoices
+   - High-exposure or high-opportunity accounts
+   - NOT for general company search (use `search_profiles`)
+
+**Docstring Structure Applied to All Tools:**
+```
+"""Brief description.
+
+USE THIS TOOL WHEN:
+- Specific positive conditions
+- Exact query patterns
+
+DO NOT USE THIS TOOL WHEN:
+- Specific negative conditions  
+- Wrong query patterns with correct tool pointer
+
+QUERY PATTERNS THAT REQUIRE THIS TOOL:
+- "Example query 1"
+- "Example query 2"
+
+QUERY PATTERNS THAT DO NOT REQUIRE THIS TOOL:
+- "Wrong query" → use correct_tool instead
+
+Args / Returns / Examples...
+"""
+```
+
+**Verification:**
+- ✅ `python -m py_compile src/ai_interface/tools/unified_360.py` passed
+- ✅ All 5 tool docstrings enhanced with USE WHEN/DO NOT USE WHEN sections
+- ✅ Each tool now has explicit query pattern examples
+- ✅ Each tool points to correct alternatives for misclassifications
+
+**Next Step:**
+🔄 Re-test the 3 failing queries:
+1. "How well are source systems linked to KBO?" → Should use `get_identity_link_quality`
+2. "Show me revenue distribution by city" → Should use `get_geographic_revenue_distribution`
+3. "Pipeline value for software companies in Brussels?" → Should use `get_industry_summary`
+
+**If this fails:**
+- Option D: Add parameter validation that fails if wrong tool is selected
+- Option A: Implement explicit routing layer before tool selection
+

@@ -65,13 +65,13 @@ poetry run python scripts/sync_exact_to_postgres.py --full
 poetry run python scripts/sync_exact_to_postgres.py
 ```
 
-#### ⚠️ CRITICAL ISSUE: Tool Selection Still Failing After Prompt Updates
+#### 🔄 CRITICAL ISSUE: Tool Selection Fix - Tool-Level Docstrings Enhanced
 
-**Status:** ❌ RE-TEST FAILED - All 3 test queries used wrong tools  
-**Tested:** 2026-03-08 00:01 CET  
-**Screenshot:** `chatbot_360_retest_all_failed_2026-03-08.png`
+**Status:** ✅ TOOL-LEVEL DOCSTRINGS ENHANCED - Ready for re-test  
+**Implemented:** 2026-03-08  
+**Screenshot:** `chatbot_360_retest_all_failed_2026-03-08.png` (previous failure)
 
-**Test Results:**
+**Previous Test Results (before fix):**
 
 | Query | Expected Tool | Actual Tool Used | Result |
 |-------|---------------|------------------|--------|
@@ -79,21 +79,27 @@ poetry run python scripts/sync_exact_to_postgres.py
 | "Show me revenue distribution by city" | `get_geographic_revenue_distribution` | `aggregate_profiles` | ❌ FAIL |
 | "Pipeline value for software companies in Brussels?" | `get_industry_summary` | None (claimed unavailable) | ❌ FAIL |
 
-**Root Cause:**
-The EXAMPLES section (1C) and NEGATIVE CONSTRAINTS section (1D) added to the system prompt were **insufficient** to guide the LLM's tool selection. Despite explicit "DO NOT USE" prohibitions and exact query→tool mappings, the LLM continued to select incorrect tools.
+**Fix Applied:**
+Enhanced all 5 unified 360° tool docstrings in `src/ai_interface/tools/unified_360.py` with:
 
-**Next Approach Required:**
-Need to implement a more structural fix:
-1. **Option A:** Add explicit routing layer before tool selection (classify query type first)
-2. **Option B:** Restructure tool descriptions to be more explicit about when NOT to use them
-3. **Option C:** Add tool selection examples directly in the tool function docstrings
-4. **Option D:** Implement validation layer that checks if the right tool was selected
+1. **USE THIS TOOL WHEN** sections - Clear positive conditions for using each tool
+2. **DO NOT USE THIS TOOL WHEN** sections - Explicit negative conditions with correct alternatives
+3. **QUERY PATTERNS THAT REQUIRE THIS TOOL** - Exact query patterns that map to each tool
+4. **QUERY PATTERNS THAT DO NOT REQUIRE THIS TOOL** - Common misclassifications with correct tool guidance
 
-**Immediate Next Step:**
-Implement Option B + C - strengthen individual tool descriptions with:
-- Clear "USE WHEN" and "DO NOT USE WHEN" sections per tool
-- Concrete examples in each tool's docstring
-- More specific parameter requirements that would fail validation if wrong tool is selected
+**Enhanced Tools:**
+- `query_unified_360` - Now clearly distinguished from search_profiles and get_industry_summary
+- `get_industry_summary` - Explicitly handles "pipeline value" queries, directs city-only queries elsewhere
+- `get_geographic_revenue_distribution` - Clearly for revenue/pipeline by city, not general aggregation
+- `get_identity_link_quality` - Specifically for KBO linkage questions, not general data coverage
+- `find_high_value_accounts` - For risk/opportunity accounts, not general company search
+
+**Next Step:**
+🔄 **Re-test the 3 failing queries** to verify the tool-level docstring enhancements fix the issue.
+
+**If this fails:**
+- Option D: Add parameter validation that fails if wrong tool is selected
+- Option A: Implement explicit routing layer before tool selection
 
 #### Next Priorities
 
