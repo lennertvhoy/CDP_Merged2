@@ -99,6 +99,9 @@ poetry run python scripts/sync_exact_to_postgres.py
      - "Which high-value accounts have overdue invoices?"
      - "Give me a 360° view of company KBO 0123.456.789"
    - ✅ Tool count: 15 → 20 tools
+   - ✅ All 5 tools tested and working locally
+   - ✅ Fixed database schema issues (migration 006)
+   - ✅ Fixed JSON serialization (datetime/Decimal handling)
 
 ---
 

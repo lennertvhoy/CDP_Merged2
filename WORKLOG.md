@@ -423,3 +423,44 @@ Unified 360° View (exact_customer_financial_summary)
 - Enable chatbot financial 360° queries
 
 ---
+
+## 2026-03-07: 360° Query Tools Testing and Fixes
+
+**Status:** COMPLETE - All 5 tools tested and working
+
+### Changes Made
+1. **Config fixes** (`src/config.py`):
+   - Added DATABASE_URL and POSTGRES_CONNECTION_STRING settings
+   - Updated SettingsConfigDict to load from .env.local in addition to .env
+
+2. **Migration fixes** (`scripts/migrations/006_add_unified_360_views.sql`):
+   - Added missing exact_customer_financial_summary helper view
+   - Fixed column references: country_code -> country, removed province
+   - Fixed data type mismatches (text vs uuid, exact_customer_id join)
+   - Fixed ambiguous column references in geographic_revenue_distribution
+
+3. **Tool serialization fixes** (`src/ai_interface/tools/unified_360.py`):
+   - Added datetime serialization to _serialize_for_json
+   - Fixed get_identity_link_quality to use serialized data for summary
+
+4. **Service fixes** (`src/services/unified_360_queries.py`):
+   - Made province optional in GeographicSummary dataclass
+   - Updated query to not select province
+
+### Verification Results
+All 5 unified 360° query tools now working:
+- ✓ query_unified_360 - Complete 360° company profiles
+- ✓ get_industry_summary - Industry-level pipeline/revenue analysis
+- ✓ find_high_value_accounts - High-value/risk account identification
+- ✓ get_geographic_revenue_distribution - Revenue by geography
+- ✓ get_identity_link_quality - KBO matching coverage monitoring
+
+Sample output:
+```
+Teamleader: 1 with KBO (100.0%)
+Exact: 0 with KBO (None%)
+Cities returned: 5
+```
+
+### Commit
+`44de464` - fix(360-tools): Fix database schema and serialization issues for 360° query tools
