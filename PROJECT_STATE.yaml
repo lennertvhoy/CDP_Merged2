@@ -313,10 +313,28 @@ current_state:
       kbo_matching: automatic_via_company_number
       identity_linking: enabled_via_source_identity_links
     exact:
-      status: reported
-      verified_at: 2026-03-04
-      posture: trial_or_demo_candidate
-      summary: User has demo environment available. Needs sync pipeline built (model after Teamleader implementation).
+      status: observed
+      verified_at: 2026-03-07
+      posture: implementation_ready_pending_credentials
+      summary: Exact Online sync pipeline fully implemented. Ready to sync accounts, customers, invoices, transactions. Pending OAuth credentials from user.
+      implementation:
+        client_service: src/services/exact.py
+        sync_script: scripts/sync_exact_to_postgres.py
+        migration: scripts/migrations/005_add_exact_financial_tables.sql
+        env_template: .env.exact
+      features:
+        - oauth2_token_refresh
+        - auto_division_discovery
+        - incremental_sync_with_cursor
+        - kbo_vat_matching
+        - financial_summary_view
+      tables_created:
+        - exact_accounts
+        - exact_customers
+        - exact_sales_invoices
+        - exact_sales_invoice_lines
+        - exact_transactions
+      pending: user_credentials_in_env_exact
     autotask:
       status: reported
       verified_at: 2026-03-04

@@ -43,16 +43,18 @@ poetry run python scripts/sync_teamleader_to_postgres.py
 
 #### Next Priorities
 
-1. **Cross-source identity reconciliation** (HIGH)
+1. **Exact Online → PostgreSQL sync pipeline** (HIGH - READY FOR CREDENTIALS)
+   - ✅ Implementation complete: `scripts/sync_exact_to_postgres.py`
+   - ✅ Exact client service: `src/services/exact.py`
+   - ✅ Financial tables migration: `scripts/migrations/005_add_exact_financial_tables.sql`
+   - ⏳ Pending: User provides Exact Online OAuth credentials in `.env.exact`
+   - Once credentials added, run: `poetry run python scripts/sync_exact_to_postgres.py`
+   - Enables financial 360° view (revenue, invoices, payment behavior)
+
+2. **Cross-source identity reconciliation** (HIGH)
    - Verify KBO matching accuracy for more companies
    - Build identity resolution UI/API for manual linking
-   - Enable unified 360° view queries
-
-2. **Exact Online → PostgreSQL sync pipeline** (HIGH)
-   - Build real Exact client (OAuth, rate limiting) modeled after Teamleader
-   - Create `scripts/sync_exact_to_postgres.py`
-   - Sync accounts, contacts, invoices, transactions
-   - Enable financial 360° view
+   - Enable unified 360° view queries combining KBO + Teamleader + Exact
 
 3. **Chatbot 360° query tools** (MEDIUM)
    - Extend chatbot to query combined KBO + CRM data
