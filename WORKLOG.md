@@ -207,3 +207,49 @@ nace_codes=['62010', '62020', '62030', '62090', '63110', '63120'], city=Brussels
 
 ---
 
+---
+
+## 2026-03-07 (PostgreSQL Aggregation Query Performance Verification)
+
+### Task: Verify and document resolution of city aggregation query timeouts
+
+**Type:** verification_only  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-07 18:58 CET
+
+**Summary:**
+Verified that PostgreSQL aggregation queries for large cities now perform well within acceptable limits. The previously reported timeout issue (25+ seconds for Brussels aggregation) is fully resolved.
+
+**Root Cause (from 2026-03-06):**
+- Table bloat: 231,766 dead tuples (12% bloat) causing 267 MB heap reads
+- Missing composite index: idx_companies_city_status was on (city, sync_status) not (city, status)
+
+**Fixes Applied (2026-03-06):**
+- VACUUM ANALYZE companies
+- CREATE INDEX CONCURRENTLY idx_companies_city_status_real ON companies(city, status) WHERE city IS NOT NULL
+- schema_optimized.sql updated with new index
+
+**Current Performance (2026-03-07 Verification):**
+```
+Brussels  (41,290 rows): 0.13s  (was 25.3s timeout)
+Antwerpen (62,831 rows): 0.31s
+Gent      (29K rows):    0.09s
+```
+
+**Test Query:**
+```python
+filters = CompanySearchFilters(city='Brussels')
+result = await service.aggregate_by_field(
+    group_by='industry_nace_code',
+    filters=filters,
+    limit=10
+)
+```
+
+**Documentation Updates:**
+1. Updated `PROJECT_STATE.yaml` - postgresql_city_query_timesouts status changed to `resolved`
+2. Updated `STATUS.md` - Added note about resolved aggregation queries to Top Risks
+3. `aggregate_profiles` tool already has `limit_results=20` to prevent excessive result sets
+
+---
+

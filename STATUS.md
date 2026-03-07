@@ -50,8 +50,9 @@
 - All stale `.openclaw` path assumptions have been cleaned from active helper/setup scripts; they now use repo-relative imports or `resolve_kbo_zip_path()`.
 - The compose-managed chatbot requires a populated `.env.local` and exclusive use of port `8000`; any leftover host-side `uvicorn` process will block the default local stack until it is stopped.
 - `sync_status` is still misleading as an enrichment-completion signal because every row is marked enriched while field coverage remains sparse.
+- **PostgreSQL aggregation queries resolved** - Brussels (0.13s), Antwerpen (0.31s), and Gent (0.09s) all now perform well within limits; the timeout issue from 2026-03-06 is closed.
 - Local regression script (`scripts/regression_local_chatbot.py`) now verifies 7 host-side checks, including artifact generation, but real interactive multi-message runs with the live model still need broader local operator scenarios.
-- The earlier browser phrasing "software companies in Brussels" produced `1,529`, while the same-session direct deterministic `search_profiles` check produced `1,652`; the segment/export gap is fixed, but the planner/tool-argument mismatch behind that search discrepancy still needs a targeted regression.
+- The earlier browser phrasing "software companies in Brussels" produced `1,529`, while the same-session direct deterministic `search_profiles` check produced `1,652`; the segment/export gap is fixed, and the NACE resolution discrepancy has been explained and regression-tested (see PROJECT_STATE.yaml active_problems.browser_vs_direct_search_total_mismatch).
 - Tracardi-native projection of canonical PostgreSQL segments is still a future workflow concern, but authoritative local segment stats and exports no longer depend on Tracardi profile membership.
 - The main local-only CBE runner is no longer spending a third of each chunk on NACE-less records, but `688,581` structurally NACE-less companies are now an explicit separate/API-backed backlog bucket.
 - Website discovery coverage is still very low at `36,091` (about 1.9% of 1.94M), even though two supervised outside-sandbox chunks are now verified.
