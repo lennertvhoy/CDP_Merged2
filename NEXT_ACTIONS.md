@@ -229,20 +229,49 @@ Tracardi activation layer fully configured:
    - ✅ Tracker endpoint accepting events
    - ✅ Event simulation successful (events create profiles)
 
+#### Completed (2026-03-07 20:45 CET)
+
+4. **Fixed Resend event source type**
+   - Changed from `webhook` type to `rest` type to work with `/track` endpoint
+   - Created fix script: `scripts/fix_resend_event_source.py`
+   - Created verification script: `scripts/verify_local_resend_setup.py`
+
+5. **Verified local Resend webhook setup**
+   - ✅ Tracardi authentication working
+   - ✅ Resend event source configured (type: REST)
+   - ✅ All 5 email workflows deployed and active
+   - ✅ Tracker endpoint accepting events
+   - ✅ Event simulation successful (events create profiles)
+
+#### Completed (2026-03-07 20:45 CET) - Webhook Secret Configured
+
+6. **Resend webhook secret configured**
+   - Webhook signing secret added to `.env` and `.env.local`
+   - Localtunnel URL configured: `https://chilly-ghosts-melt.loca.lt/track?source=resend-webhook`
+   - Ready for signature verification when Resend sends webhooks
+
+#### Completed (2026-03-07 21:00 CET) - Bridge Script Fixed
+
+7. **Resend to Tracardi bridge script fixed and tested**
+   - Fixed `scripts/resend_to_tracardi_bridge.py` with proper async FastAPI implementation
+   - Correctly translates Resend webhook format (`{"type": "...", "data": {...}}`) to Tracardi `/track` format
+   - Signature verification using Svix format (v1,timestamp,signature)
+   - Properly handles Tracardi's `events` array (not single `event` object)
+   - Returns deterministic profile IDs based on email hash
+   - Run with: `poetry run python scripts/resend_to_tracardi_bridge.py [port]`
+   - Webhook endpoint: `POST /webhook/resend`
+   - Health check: `GET /health`
+
 #### Next Actions
 
 For end-to-end testing with real Resend webhooks:
-1. Configure ngrok (requires auth token): `./ngrok config add-authtoken <token>`
-2. Start tunnel: `./ngrok http 8686`
-3. Set webhook URL: `export RESEND_WEBHOOK_URL=https://<ngrok-url>/track`
-4. Run: `python scripts/setup_resend_webhooks_auto.py`
-5. Send test email and verify events trigger workflows
+1. Start the bridge: `poetry run python scripts/resend_to_tracardi_bridge.py`
+2. Configure webhook URL in Resend dashboard: `http://your-server:5000/webhook/resend`
+3. Subscribe to events: email.sent, email.delivered, email.opened, email.clicked, email.bounced, email.complained
+4. Send test email via Resend and verify events trigger Tracardi workflows
+5. Verify webhook signatures are validated using `RESEND_WEBHOOK_SECRET`
 
-Resume when:
-- ngrok is configured with auth token
-- Ready to test email campaign activation flow with real Resend webhooks
-
-**Note:** Local setup is complete. ngrok configuration requires user action (auth token).
+**Note:** Local setup is complete. For external webhooks from Resend servers, use ngrok or deploy the bridge to a publicly accessible server.
 
 ## Paused
 
