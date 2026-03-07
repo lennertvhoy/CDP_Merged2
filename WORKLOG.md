@@ -4,6 +4,59 @@
 
 ---
 
+## 2026-03-08 (Added Explicit Examples and Negative Constraints to System Prompt)
+
+### Task: Add explicit query→tool examples and DO NOT USE constraints
+
+**Type:** app_code  
+**Status:** COMPLETE (ready for re-test)  
+**Timestamp:** 2026-03-08 01:00 CET  
+**Git Head:** `604ee7b`
+
+**Summary:**
+Enhanced the system prompt with explicit EXAMPLES section (1C) and NEGATIVE CONSTRAINTS section (1D) to fix the 360° tool selection failures. The previous restructure wasn't sufficient - the LLM needs exact query patterns mapped to tools, plus strong "DO NOT USE" prohibitions.
+
+**Changes Made to `src/graph/nodes.py`:**
+
+1. **New Section 1C: EXAMPLES - EXACT QUERY → TOOL MAPPINGS**
+   - **KBO Linkage Examples:**
+     - "How well are source systems linked to KBO?" → `get_identity_link_quality`
+     - "What is the KBO match rate?" → `get_identity_link_quality`
+     - "Are Teamleader and Exact records linked?" → `get_identity_link_quality`
+   
+   - **Revenue/Geographic Examples:**
+     - "Show me revenue distribution by city" → `get_geographic_revenue_distribution`
+     - "Which cities have the most revenue?" → `get_geographic_revenue_distribution`
+     - "Revenue by location" → `get_geographic_revenue_distribution`
+   
+   - **Pipeline/Industry Examples:**
+     - "Pipeline value for software companies in Brussels?" → `get_industry_summary`
+     - "What is the total pipeline value for restaurants?" → `get_industry_summary`
+     - "Which industries have the most revenue?" → `get_industry_summary`
+
+2. **New Section 1D: NEGATIVE CONSTRAINTS - WHAT NOT TO DO**
+   - ❌ NEVER use `get_data_coverage_stats` for KBO matching quality
+   - ❌ NEVER use `aggregate_profiles` for revenue distribution
+   - ❌ NEVER use `search_profiles` for pipeline value calculations
+   - Each prohibition includes the correct alternative tool
+
+**Key Improvement:**
+Instead of abstract guidance like "use 360° tools for cross-source concepts", the prompt now has:
+- Exact query string → exact tool mapping
+- Strong "DO NOT USE X for Y" prohibitions
+- Clear alternatives for each prohibited use
+
+**Verification:**
+- ✅ `python -m py_compile src/graph/nodes.py` passed
+
+**Next Step:**
+🔄 Re-test the 3 failing queries:
+1. "How well are source systems linked to KBO?" → Should use `get_identity_link_quality`
+2. "Show me revenue distribution by city" → Should use `get_geographic_revenue_distribution`
+3. "Pipeline value for software companies in Brussels?" → Should use `get_industry_summary`
+
+---
+
 ## 2026-03-08 (360° Tool Re-Test After Prompt Restructure - ALL FAILED)
 
 ### Task: Re-test 3 failed queries after system prompt restructure
