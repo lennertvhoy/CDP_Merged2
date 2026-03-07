@@ -437,39 +437,41 @@ current_state:
             count: 4
             api_functional: true
           workflows:
-            status: configured_pending_deployment
+            status: deployed
             method: gui_configuration
             count: 5
             created_at: 2026-03-07T19:57:00+01:00
             configured_at: 2026-03-07T20:20:00+01:00
+            deployed_at: 2026-03-07T20:25:00+01:00
+            deployed_via: browser_verification
             list:
               - id: 1b5233f9-241c-49b0-b2c6-60b3c010f4de
                 name: Email Engagement Processor
                 description: Processes email open and click events from Resend to track engagement scores
                 nodes: Start → End
                 triggers: [email.opened, email.clicked]
-                deployed: false
+                deployed: true
               - name: Email Bounce Processor
                 description: Handles email bounce events to mark emails as invalid and maintain list hygiene
                 nodes: Start → Update Profile → End
                 triggers: [email.bounced]
-                deployed: false
+                deployed: true
               - name: Email Delivery Processor
                 description: Tracks email sent and delivered events to maintain email validity status
                 nodes: Start → End
                 triggers: [email.delivered]
-                deployed: false
+                deployed: true
               - name: High Engagement Segment
                 description: Automatically assigns VIP tags to highly engaged users when engagement score reaches 5+
                 nodes: Start → End
                 triggers: [profile.updated]
-                deployed: false
+                deployed: true
               - name: Email Complaint Processor
                 description: Handles spam complaints by suppressing profiles and protecting sender reputation
                 nodes: Start → End
                 triggers: [email.complained]
-                deployed: false
-            next_step: deploy_workflows_in_gui
+                deployed: true
+            next_step: configure_resend_webhooks_and_test
           destinations:
             status: not_configured
             method_required: gui_configuration
