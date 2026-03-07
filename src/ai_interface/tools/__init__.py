@@ -34,6 +34,15 @@ from src.ai_interface.tools.search import (
     search_profiles,
 )
 
+# Unified 360° View tools
+from src.ai_interface.tools.unified_360 import (
+    find_high_value_accounts,
+    get_geographic_revenue_distribution,
+    get_identity_link_quality,
+    get_industry_summary,
+    query_unified_360,
+)
+
 __all__ = [
     "create_data_artifact",
     # Search
@@ -54,4 +63,10 @@ __all__ = [
     # Export
     "export_segment_to_csv",
     "email_segment_export",
+    # Unified 360° Views
+    "query_unified_360",
+    "get_industry_summary",
+    "find_high_value_accounts",
+    "get_geographic_revenue_distribution",
+    "get_identity_link_quality",
 ]

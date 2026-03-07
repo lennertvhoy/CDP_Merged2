@@ -134,9 +134,29 @@ current_state:
     note: No broad waste was observed inside rg-cdpmerged-fast. The strongest storage-account cleanup candidate is stcdpmergedprtnlp because the group currently holds three nearly identical es-snapshots storage accounts while the repo's current Terraform footprint defines two, and stcdpmergedprtnlp uniquely carries the tag temporary_containerapp_exception=true. The Application Insights Smart Detection action group also looks orphaned because rg-cdpmerged-fast has no App Insights component or smartDetectorAlertRules.
   chatbot:
     status: observed
-    verified_at: 2026-03-07T18:20:00+01:00
+    verified_at: 2026-03-07T23:10:00+01:00
     authoritative_query_plane: postgresql
     deployment_health: historical_azure_revision_877f0e9_not_active_focus
+    unified_360_tools:
+      status: implemented
+      implemented_at: 2026-03-07T23:10:00+01:00
+      tools:
+        - query_unified_360
+        - get_industry_summary
+        - find_high_value_accounts
+        - get_geographic_revenue_distribution
+        - get_identity_link_quality
+      capabilities:
+        - Cross-source company profiles (KBO + Teamleader + Exact)
+        - Industry-level pipeline and revenue analysis
+        - High-value/risk account identification
+        - Geographic revenue distribution
+        - Identity link quality monitoring
+      sample_queries:
+        - "What is the total pipeline value for software companies in Brussels?"
+        - "Show me IT companies in Gent with open deals over €10k"
+        - "Which high-value accounts have overdue invoices?"
+        - "Give me a 360° view of company KBO 0123.456.789"
     local_dataset:
       status: verified_working
       total_companies: 1940603
@@ -343,9 +363,16 @@ current_state:
     unified_360_views:
       status: implemented
       implemented_at: 2026-03-07T23:00:00+01:00
+      chatbot_tools_completed_at: 2026-03-07T23:10:00+01:00
       migration: scripts/migrations/006_add_unified_360_views.sql
       query_service: src/services/unified_360_queries.py
       verification_script: scripts/verify_kbo_matching.py
+      chatbot_tools:
+        - query_unified_360
+        - get_industry_summary
+        - find_high_value_accounts
+        - get_geographic_revenue_distribution
+        - get_identity_link_quality
       views_created:
         - unified_company_360
         - unified_pipeline_revenue
@@ -365,7 +392,7 @@ current_state:
         - "What is the total pipeline value for software companies in Brussels?"
         - "Show me IT companies in Gent with open deals over €10k"
         - "Which high-value accounts have overdue invoices?"
-      next_step: Extend chatbot with 360° query tools
+      status: Complete - Views, query service, and chatbot tools all operational
     autotask:
       status: reported
       verified_at: 2026-03-04

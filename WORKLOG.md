@@ -6,6 +6,66 @@
 
 ---
 
+## 2026-03-07 (Chatbot 360° Query Tools)
+
+### Task: Add chatbot tools for unified 360° customer insights
+
+**Type:** app_code  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-07 23:10 CET  
+**Git Commit:** `81a87df` - feat: Add chatbot 360° query tools for unified cross-source insights
+
+**Summary:**
+Extended the chatbot with 5 new tools that enable natural language queries against unified 360° views combining KBO, Teamleader CRM, and Exact Online financial data. The chatbot can now answer complex cross-source questions like "What is the total pipeline value for software companies in Brussels?"
+
+**New Tools Added:**
+
+| Tool | Purpose | Example Queries |
+|------|---------|-----------------|
+| `query_unified_360` | Complete 360° company profiles | "Show me the 360° view of company KBO 0123.456.789" |
+| `get_industry_summary` | Industry-level pipeline/revenue analysis | "What is the total pipeline value for software companies in Brussels?" |
+| `find_high_value_accounts` | High-value/risk accounts | "Which high-value accounts have overdue invoices?" |
+| `get_geographic_revenue_distribution` | Revenue by geography | "Which cities have the most revenue?" |
+| `get_identity_link_quality` | KBO matching coverage | "How well are our source systems linked?" |
+
+**Files Modified:**
+- `src/ai_interface/tools/unified_360.py` (new) - 5 chatbot tools for 360° queries
+- `src/ai_interface/tools/__init__.py` - Export new tools
+- `src/graph/nodes.py` - Register tools and update system prompt
+
+**System Prompt Updated:**
+Added section "6. UNIFIED 360° CUSTOMER VIEWS (CROSS-SOURCE INSIGHTS)" documenting:
+- When to use each unified tool
+- Parameter mapping for common queries
+- Example natural language → tool parameter conversions
+
+**Tool Count:**
+- Previous: 15 tools
+- Now: 20 tools (+5 unified 360° tools)
+
+**Verification:**
+```bash
+# Tools successfully imported and registered
+✅ query_unified_360
+✅ get_industry_summary  
+✅ find_high_value_accounts
+✅ get_geographic_revenue_distribution
+✅ get_identity_link_quality
+
+# Chatbot health check passed
+✅ GET /healthz -> {"status":"ok"}
+```
+
+**Sample Queries Now Supported:**
+- "What is the total pipeline value for software companies in Brussels?"
+- "Show me IT companies in Gent with open deals over €10k"
+- "Which high-value accounts have overdue invoices?"
+- "Give me a 360° view of company KBO 0123.456.789"
+- "What is our market penetration by city?"
+- "Find companies with high pipeline value in Antwerp"
+
+---
+
 ## 2026-03-07 (Exact Online Sync Working)
 
 ### Task: Activate Exact Online → PostgreSQL sync pipeline

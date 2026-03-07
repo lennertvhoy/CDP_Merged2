@@ -85,13 +85,20 @@ poetry run python scripts/sync_exact_to_postgres.py
      - Methods: `get_company_360_profile()`, `find_companies_with_pipeline()`, 
        `get_industry_pipeline_summary()`, `get_geographic_distribution()`, etc.
 
-2. **Chatbot 360° query tools** (MEDIUM - NEXT PRIORITY)
-   - Extend chatbot to query the new unified views
-   - Enable queries like:
+2. **✅ COMPLETED: Chatbot 360° query tools** (2026-03-07)
+   - ✅ Extended chatbot with 5 new unified 360° tools:
+     - `query_unified_360` - Complete 360° company profiles
+     - `get_industry_summary` - Industry-level pipeline/revenue analysis
+     - `find_high_value_accounts` - High-value/risk account identification
+     - `get_geographic_revenue_distribution` - Revenue by geography
+     - `get_identity_link_quality` - KBO matching coverage monitoring
+   - ✅ System prompt updated with new section "6. UNIFIED 360° CUSTOMER VIEWS"
+   - ✅ Natural language queries now supported:
      - "What is the total pipeline value for software companies in Brussels?"
      - "Show me IT companies in Gent with open deals over €10k"
      - "Which high-value accounts have overdue invoices?"
-   - Add new tools: `query_unified_360`, `get_industry_summary`, `find_high_value_accounts`
+     - "Give me a 360° view of company KBO 0123.456.789"
+   - ✅ Tool count: 15 → 20 tools
 
 ---
 
