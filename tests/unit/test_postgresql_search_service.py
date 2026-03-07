@@ -66,16 +66,19 @@ def test_build_where_clause_normalizes_all_supported_filters(service_setup):
     where_clause, params = service._build_where_clause(filters)
 
     assert where_clause == (
-        "company_name ILIKE $1 AND kbo_number = $2 AND industry_nace_code IN ($3, $4) "
-        "AND legal_form IN ($5) AND city IN ($6, $7, $8) AND postal_code = $9 "
-        "AND status = $10 "
+        "company_name ILIKE $1 AND kbo_number = $2 AND "
+        "(industry_nace_code IN ($3, $4) OR all_nace_codes && ARRAY[$5, $6]::varchar[]) "
+        "AND legal_form IN ($7) AND city IN ($8, $9, $10) AND postal_code = $11 "
+        "AND status = $12 "
         "AND main_phone IS NOT NULL AND main_phone != '' "
         "AND main_email IS NOT NULL AND main_email != ''"
     )
     assert params == [
         "%acme%",
         "0123456789",
-        "62010",
+        "62010",  # For IN clause
+        "62020",
+        "62010",  # For array overlap
         "62020",
         "014",
         "Gent",

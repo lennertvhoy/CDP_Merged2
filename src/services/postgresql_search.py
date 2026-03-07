@@ -200,10 +200,15 @@ class PostgreSQLSearchService:
             params.append(clean)
 
         # NACE codes (industry classification)
+        # Check both primary column and all_nace_codes array for completeness
         if filters.nace_codes:
             placeholders = ", ".join([next_param() for _ in filters.nace_codes])
-            conditions.append(f"industry_nace_code IN ({placeholders})")
-            params.extend(filters.nace_codes)
+            nace_placeholders_arr = ", ".join([next_param() for _ in filters.nace_codes])
+            conditions.append(
+                f"(industry_nace_code IN ({placeholders}) OR all_nace_codes && ARRAY[{nace_placeholders_arr}]::varchar[])"
+            )
+            params.extend(filters.nace_codes)  # For IN clause
+            params.extend(filters.nace_codes)  # For && array overlap
 
         # Juridical codes (legal form)
         if filters.juridical_codes:

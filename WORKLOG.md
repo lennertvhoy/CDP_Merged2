@@ -4,6 +4,49 @@
 
 ---
 
+---
+
+## 2026-03-07 (Git Repo Reinitialized + NACE Search Bug Fix)
+
+### Task: Reinitialize git repository as CDP_Merged2 and fix NACE search bug
+
+**Type:** infrastructure + app_code  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-07 16:28 CET  
+**Git HEAD:** 4518742 (initial commit to CDP_Merged2)
+
+**Changes made:**
+1. Removed old `.git` folder (22MB of stale history)
+2. Reinitialized fresh git repository with `main` branch
+3. Created `CDP_Merged2` repository on GitHub (https://github.com/lennertvhoy/CDP_Merged2)
+4. Committed 564 files (~122,460 lines) with proper `.gitignore` exclusions
+5. Pushed to origin main successfully
+6. **Bug fix:** NACE code search now checks `all_nace_codes` array in addition to `industry_nace_code` column
+
+**NACE Search Bug Fix Details:**
+- **Problem:** Restaurant searches returned 0 results even when matching companies existed
+- **Root cause:** `_build_where_clause()` only checked `industry_nace_code` column, but restaurants often have NACE codes in `all_nace_codes` array (secondary codes)
+- **Fix:** Updated condition to check both: `(industry_nace_code IN (...) OR all_nace_codes && ARRAY[...]::varchar[])`
+- **Test:** `test_build_where_clause_normalizes_all_supported_filters` updated to expect new SQL format
+
+**Verification:**
+```bash
+# Git push verified
+✅ Repository: https://github.com/lennertvhoy/CDP_Merged2
+✅ Commit: 4518742 Initial commit: CDP_Merged2
+
+# NACE search fix verified  
+✅ Brugge restaurants: 2 found (Stad Brugge, Provincie West-Vlaanderen)
+✅ Sint-Niklaas restaurants: 0 (correct - none in 1000-row dataset)
+✅ No-default-status behavior: status=None returns same as status='all'
+✅ All 15 unit tests pass
+```
+
+**Files changed:**
+- `src/services/postgresql_search.py` - NACE filter now checks both column and array
+- `tests/unit/test_postgresql_search_service.py` - updated test expectation
+
+
 ## 2026-03-07 (Local Tracardi Event Sources Created - Bootstrap Working)
 
 ### Task: Create local Tracardi event sources to unblock chat-session bootstrap
@@ -554,3 +597,100 @@ Even Brussels queries timeout, indicating the issue is NOT limited to large citi
 ### Notes
 - Local chatbot/runtime verification is now on a non-empty dataset, but this is still only a smoke slice and not a business-truth population.
 - The first live rerun also revealed that duplicate-key COPY failures require a working row-by-row fallback path for idempotent reruns; that fallback is now fixed and rechecked.
+# WORKLOG
+
+**Purpose:** Append-only session log for meaningful task updates
+
+---
+
+## 2026-03-07 (Git Repo Reinitialized + NACE Search Bug Fix)
+
+### Task: Reinitialize git repository as CDP_Merged2 and fix NACE search bug
+
+**Type:** infrastructure + app_code  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-07 16:28 CET  
+**Git HEAD:** 4518742 (initial commit to CDP_Merged2)
+
+**Changes made:**
+1. Removed old `.git` folder (22MB of stale history)
+2. Reinitialized fresh git repository with `main` branch
+3. Created `CDP_Merged2` repository on GitHub (https://github.com/lennertvhoy/CDP_Merged2)
+4. Committed 564 files (~122,460 lines) with proper `.gitignore` exclusions
+5. Pushed to origin main successfully
+6. **Bug fix:** NACE code search now checks `all_nace_codes` array in addition to `industry_nace_code` column
+
+**NACE Search Bug Fix Details:**
+- **Problem:** Restaurant searches returned 0 results even when matching companies existed
+- **Root cause:** `_build_where_clause()` only checked `industry_nace_code` column, but restaurants often have NACE codes in `all_nace_codes` array (secondary codes)
+- **Fix:** Updated condition to check both: `(industry_nace_code IN (...) OR all_nace_codes && ARRAY[...]::varchar[])`
+- **Test:** `test_build_where_clause_normalizes_all_supported_filters` updated to expect new SQL format
+
+**Verification:**
+```bash
+# Git push verified
+✅ Repository: https://github.com/lennertvhoy/CDP_Merged2
+✅ Commit: 4518742 Initial commit: CDP_Merged2
+
+# NACE search fix verified  
+✅ Brugge restaurants: 2 found (Stad Brugge, Provincie West-Vlaanderen)
+✅ Sint-Niklaas restaurants: 0 (correct - none in 1000-row dataset)
+✅ No-default-status behavior: status=None returns same as status='all'
+✅ All 15 unit tests pass
+```
+
+**Files changed:**
+- `src/services/postgresql_search.py` - NACE filter now checks both column and array
+- `tests/unit/test_postgresql_search_service.py` - updated test expectation
+
+**Next steps:**
+1. Expand local PostgreSQL import beyond 1000-row smoke slice
+2. Update remaining helper scripts with stale `.openclaw` paths
+3. Verify chatbot UI behavior with fixed NACE search
+
+---
+
+## 2026-03-07 (Local Tracardi Event Sources Created - Bootstrap Working)
+
+### Task: Create local Tracardi event sources to unblock chat-session bootstrap
+
+**Type:** infrastructure  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-07 15:26 CET
+
+**Problem identified:**
+- Local Tracardi auth was working but `/track` returned `406 Invalid event source`
+- No event sources existed on the fresh local Tracardi instance
+- Tested source IDs `cdp-api`, `kbo-source`, `kbo-batch-import`, `resend-webhook` all failed
+
+**Changes made:**
+1. Ran `scripts/setup_tracardi_kbo_and_email.py` against local Tracardi (http://localhost:8686)
+2. Created 4 event sources: `kbo-batch-import`, `kbo-realtime`, `resend-webhook`, `cdp-api`
+3. Updated `.env.local` with `TRACARDI_SOURCE_ID=cdp-api`
+4. Verified `/track` now returns profile successfully
+
+**Verification:**
+- `setup_tracardi_kbo_and_email.py` -> 4 sources created, 0 failed, 2 tested ✅
+- Direct `/track` probe with `cdp-api` source -> returns profile_id ✅
+- `TracardiClient().get_or_create_profile()` -> returns profile ✅
+- Local health checks (`/healthz`, `/readinessz`) -> both `ok` ✅
+
+**Files changed:**
+- `.env.local` - added `TRACARDI_SOURCE_ID=cdp-api`
+
+**Next steps:**
+1. Replace `LLM_PROVIDER=mock` with real provider for local development
+2. Decide if local work needs real dataset import
+
+---
+
+## 2026-03-06 (Chatbot Analytics Aggregation Fix - DEPLOYED)
+
+### Task: Debug, fix, and deploy chatbot analytics aggregation tool for "top industries" queries
+
+**Type:** app_code  
+**Status:** COMPLETE (fully deployed and verified)  
+**Timestamp:** 2026-03-06 20:09 CET  
+**Git HEAD:** 877f0e9
+
+**Problem identified:**
