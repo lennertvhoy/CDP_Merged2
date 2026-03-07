@@ -26,7 +26,9 @@ As of 2026-03-04, the roadmap is intentionally two-stage:
 Current constraints that shape this roadmap:
 - no Tracardi license yet
 - Azure budget is approximately `EUR 150/month`
-- no live Exact, Teamleader, or Autotask tenant yet
+- Azure deployment currently PAUSED for cost control (local-only mode active)
+- **DEMO ENVIRONMENTS AVAILABLE:** Teamleader and Exact demo envs accessible for integration
+- Autotask remains mock-first unless vendor access is granted
 - the user must do the final verification and wants at least one stable week before sign-off
 
 Near-term planning rule:
@@ -114,7 +116,9 @@ These are included only where they appear likely to add real future value to thi
 
 | Priority | Item | Status | What still needs to happen |
 |----------|------|--------|-----------------------------|
-| Critical | Acquire at least one real source-system tenant | In progress | Pursue Teamleader first, then Exact; record Autotask as mock-first unless access is granted |
+| Critical | **CONNECT Teamleader demo environment** | Ready to start | User has demo env available. Build real OAuth flow, sync companies/contacts/deals to PostgreSQL, establish identity bridge |
+| Critical | **CONNECT Exact Online demo environment** | Ready to start | User has demo env available. Build real OAuth flow, sync accounting/transactions/invoices to PostgreSQL |
+| Critical | **Real/mock/hybrid source matrix documentation** | In progress | Document which systems are real vs mock vs hybrid; make provenance explicit in all current docs |
 | Critical | Define a hyperrealistic integration standard | Pending | Preserve realistic auth, IDs, pagination, webhook payloads, and failure modes across mocks |
 | Critical | Stabilize the public demo flow | Pending | Eliminate prompt hangs and prove repeatable end-to-end demo success |
 | High | Build a real/mock/hybrid source matrix | Pending | Keep every current doc aligned on provenance so the repo tells one accurate story |
@@ -226,10 +230,10 @@ These are included only where they appear likely to add real future value to thi
 
 | Priority | Item | Status | What still needs to happen |
 |----------|------|--------|-----------------------------|
-| Critical | Build production Teamleader API client | **BLOCKED** | Need OAuth implementation, rate limiting, pagination |
-| Critical | Build production Exact API client | **BLOCKED** | Need OAuth, error handling, webhook processing |
-| Critical | Build production Autotask API client | **BLOCKED** | Need zone discovery, authentication, API mapping |
-| Critical | Replace demo scripts with production flows | **BLOCKED** | Build real clients first |
+| Critical | **Teamleader → PostgreSQL sync pipeline** | **READY** | Build OAuth flow for demo env, implement incremental sync for companies/contacts/deals/events, map to canonical schema |
+| Critical | **Exact Online → PostgreSQL sync pipeline** | **READY** | Build OAuth flow for demo env, implement incremental sync for accounts/contacts/invoices/transactions, map to canonical schema |
+| Critical | **Cross-source identity reconciliation** | **READY** | Once Teamleader + Exact data flows in, implement identity matching (company name, VAT, email domain) to create unified 360° view |
+| Critical | Build production Autotask API client | **BLOCKED** | No demo env available yet; keep mock-first unless access granted |
 | High | Build canonical identity reconciliation | **BLOCKED** | Needs source system data first |
 | High | Implement consent/suppression flow | **BLOCKED** | Needs source system integrations |
 | Medium | Build PII resolution service | Pending | Can be designed in parallel |
