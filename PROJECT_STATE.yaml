@@ -340,6 +340,32 @@ current_state:
       kbo_matching: automatic_via_vat_number
       identity_linking: enabled_via_source_identity_links
       run_command: poetry run python scripts/sync_exact_to_postgres.py --full
+    unified_360_views:
+      status: implemented
+      implemented_at: 2026-03-07T23:00:00+01:00
+      migration: scripts/migrations/006_add_unified_360_views.sql
+      query_service: src/services/unified_360_queries.py
+      verification_script: scripts/verify_kbo_matching.py
+      views_created:
+        - unified_company_360
+        - unified_pipeline_revenue
+        - industry_pipeline_summary
+        - company_activity_timeline
+        - identity_link_quality
+        - high_value_accounts
+        - geographic_revenue_distribution
+      capabilities:
+        - Query combined KBO + CRM + Financial data
+        - Industry-level pipeline analysis
+        - Geographic revenue distribution
+        - Company activity timeline across systems
+        - Identity link quality monitoring
+        - High-value account identification
+      sample_queries:
+        - "What is the total pipeline value for software companies in Brussels?"
+        - "Show me IT companies in Gent with open deals over €10k"
+        - "Which high-value accounts have overdue invoices?"
+      next_step: Extend chatbot with 360° query tools
     autotask:
       status: reported
       verified_at: 2026-03-04

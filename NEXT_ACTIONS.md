@@ -67,15 +67,31 @@ poetry run python scripts/sync_exact_to_postgres.py
 
 #### Next Priorities
 
-1. **Cross-source identity reconciliation** (HIGH)
-   - Verify KBO matching accuracy for more companies
-   - Build identity resolution UI/API for manual linking
-   - Enable unified 360° view queries combining KBO + Teamleader + Exact
+1. **✅ COMPLETED: Cross-source identity reconciliation infrastructure** (2026-03-07)
+   - ✅ Created unified 360° views (migration 006)
+     - `unified_company_360`: Complete company profile combining KBO + Teamleader + Exact
+     - `unified_pipeline_revenue`: Combined CRM pipeline + financial revenue
+     - `industry_pipeline_summary`: Industry-level analysis for queries like "software companies in Brussels"
+     - `company_activity_timeline`: Chronological activity feed across all systems
+     - `identity_link_quality`: Monitor KBO matching coverage
+     - `high_value_accounts`: Prioritized accounts with risk/opportunity indicators
+     - `geographic_revenue_distribution`: Revenue by location
+   - ✅ Created KBO matching verification script (`scripts/verify_kbo_matching.py`)
+     - Checks match rates by source system
+     - Identifies unmatched records with potential matches
+     - Generates recommendations for improvement
+   - ✅ Created 360° query service (`src/services/unified_360_queries.py`)
+     - Python API for unified queries
+     - Methods: `get_company_360_profile()`, `find_companies_with_pipeline()`, 
+       `get_industry_pipeline_summary()`, `get_geographic_distribution()`, etc.
 
-3. **Chatbot 360° query tools** (MEDIUM)
-   - Extend chatbot to query combined KBO + CRM data
-   - "What is the total pipeline value for software companies in Brussels?"
-   - "Show me IT companies in Gent with open deals"
+2. **Chatbot 360° query tools** (MEDIUM - NEXT PRIORITY)
+   - Extend chatbot to query the new unified views
+   - Enable queries like:
+     - "What is the total pipeline value for software companies in Brussels?"
+     - "Show me IT companies in Gent with open deals over €10k"
+     - "Which high-value accounts have overdue invoices?"
+   - Add new tools: `query_unified_360`, `get_industry_summary`, `find_high_value_accounts`
 
 ---
 

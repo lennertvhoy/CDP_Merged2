@@ -45,9 +45,70 @@ PostgreSQL Financial Tables
 Unified 360° Financial View
 ```
 
-**Next Steps:**
-- Cross-source identity reconciliation (KBO matching verification)
-- Chatbot 360° query tools for financial data
+---
+
+## 2026-03-07 (Cross-Source Identity Reconciliation Infrastructure)
+
+### Task: Build unified 360° views for KBO + CRM + Financial data
+
+**Type:** app_code  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-07 23:00 CET  
+
+**Summary:**
+Created comprehensive cross-source identity reconciliation infrastructure including unified database views, verification tooling, and query service. This enables the chatbot to answer complex queries combining KBO base data, Teamleader CRM data, and Exact Online financial data.
+
+**What was completed:**
+
+1. **Migration 006: Unified 360° Views** (`scripts/migrations/006_add_unified_360_views.sql`)
+   - `unified_company_360`: Complete 360° profile combining KBO + Teamleader + Exact
+   - `unified_pipeline_revenue`: Combined CRM pipeline + financial revenue metrics
+   - `industry_pipeline_summary`: Industry-level analysis for market insights
+   - `company_activity_timeline`: Chronological activity feed across all systems
+   - `identity_link_quality`: Monitor KBO matching coverage by source
+   - `high_value_accounts`: Prioritized accounts with risk/opportunity scoring
+   - `geographic_revenue_distribution`: Revenue and pipeline by geography
+
+2. **KBO Matching Verification Script** (`scripts/verify_kbo_matching.py`)
+   - Check match rates by source system (Teamleader, Exact)
+   - Identify unmatched records with potential fuzzy matches
+   - Generate data quality recommendations
+   - Export detailed JSON reports
+
+3. **Unified 360° Query Service** (`src/services/unified_360_queries.py`)
+   - Python service for querying unified views
+   - Methods:
+     - `get_company_360_profile()`: Complete company profile
+     - `find_companies_with_pipeline()`: Filter by pipeline/revenue
+     - `get_industry_pipeline_summary()`: Industry analysis
+     - `get_geographic_distribution()`: Geographic insights
+     - `get_company_activity_timeline()`: Activity feed
+     - `get_high_value_accounts()`: Prioritized accounts
+     - `search_companies_unified()`: Cross-source search
+
+**Sample Queries Now Possible:**
+```sql
+-- What is the total pipeline value for software companies in Brussels?
+SELECT SUM(total_pipeline_value) 
+FROM industry_pipeline_summary 
+WHERE nace_code LIKE '62%' AND kbo_city ILIKE '%brussel%';
+
+-- Show IT companies in Gent with open deals over €10k
+SELECT * FROM unified_pipeline_revenue
+WHERE nace_code LIKE '62%' AND kbo_city ILIKE '%gent%'
+AND tl_pipeline_value > 10000;
+
+-- High-value accounts with overdue invoices
+SELECT * FROM high_value_accounts 
+WHERE account_priority = 'high_risk'
+ORDER BY exact_overdue DESC;
+```
+
+**Next Step:**
+Extend chatbot with tools to query these unified views for natural language questions like:
+- "What is the total pipeline value for software companies in Brussels?"
+- "Show me IT companies in Gent with open deals over €10k"
+- "Which high-value accounts have overdue invoices?"
 - Enable queries like "What is the total revenue from software companies in Brussels?"
 
 ---
