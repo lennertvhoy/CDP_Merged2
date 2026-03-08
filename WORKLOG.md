@@ -992,3 +992,86 @@ def get_database_url() -> str:
 - Credentials properly isolated to `.env.local` (untracked)
 
 ---
+
+---
+
+## 2026-03-08 (Enrichment Health Check & Supervisor Fix)
+
+### Task: Enrichment Health Check and Runner Repair
+
+**Type:** verification_only  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 13:58 CET  
+**Git Head:** `61f57db`
+
+**Summary:**
+Performed canonical PostgreSQL enrichment health check following security fix handoff. Discovered enrichment runners have been stuck in restart loop since 2026-03-06 due to supervisor script configuration issues. Identified root cause and applied fix.
+
+**Health Check Results:**
+
+| Metric | Previous (Mar 6) | Current (Mar 8) | Change |
+|--------|------------------|-----------------|--------|
+| Total Companies | 1,940,603 | 1,940,603 | - |
+| website_url | 36,091 | 35,844 | -247 |
+| geo_latitude | 8,609 | 0 | -8,609* |
+| ai_description | 0 | 0 | - |
+| Updated (last 10m) | 11,697 | 0 | -11,697 |
+| Updated (last hour) | 78,983 | 0 | -78,983 |
+
+*geo_latitude showing 0 may indicate data stored in JSONB `enrichment_data` column rather than dedicated column
+
+**Root Cause Analysis:**
+
+The enrichment runners (CBE, geocoding, website_discovery) have been failing since 2026-03-06 18:53 CET with this pattern:
+1. "Connecting to enrichment database" 
+2. 60-second timeout
+3. "Fatal error: Chunk X failed with return code 1"
+4. Supervisor restarts the runner
+5. Loop repeats
+
+Log analysis revealed:
+- Last successful website discovery chunk: 2026-03-06 18:53:03 (250 processed, 5 discoveries)
+- Connection errors: "Status update failed: connection is closed"
+- Supervisor then entered infinite restart loop
+
+**Root Cause:** `scripts/run_enrichment_persistent.sh` had two issues:
+1. `WORKSPACE` pointed to stale `.openclaw` path: `/home/ff/.openclaw/workspace/repos/CDP_Merged`
+2. Script did NOT source `.env.local` before running Python, so `DATABASE_URL` was not set
+
+The security fix earlier removed hardcoded fallback credentials, making environment variable loading critical.
+
+**Fix Applied:**
+
+Updated `scripts/run_enrichment_persistent.sh`:
+```bash
+# Before:
+WORKSPACE="/home/ff/.openclaw/workspace/repos/CDP_Merged"
+
+# After:
+WORKSPACE="/home/ff/Documents/CDP_Merged"
+
+# Added environment loading:
+if [ -f "$WORKSPACE/.env.local" ]; then
+    set -a
+    source "$WORKSPACE/.env.local"
+    set +a
+fi
+```
+
+**Files Modified:**
+- `scripts/run_enrichment_persistent.sh` - Fixed workspace path and added .env.local loading
+- `PROJECT_STATE.yaml` - Updated enrichment status to `blocked` with detailed notes
+
+**Next Steps:**
+1. Restart enrichment runners to resume background enrichment
+2. Verify runners can now connect to database
+3. Monitor for progress in next session
+
+**Runner Status:**
+| Runner | Status | Cursor | Blocked Since |
+|--------|--------|--------|---------------|
+| CBE | blocked | 0f18ea22-e37e-4386-88db-172f160664f0 | 2026-03-06 18:42 |
+| Geocoding | blocked | 01f9634b-935b-418b-88f0-fa298fe11513 | 2026-03-06 18:27 |
+| Website Discovery | blocked | 009ff8d5-daa6-4f74-9a23-3add91d3d156 | 2026-03-06 19:05 |
+
+---
