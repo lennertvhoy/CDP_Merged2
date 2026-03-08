@@ -173,16 +173,17 @@ Use the "Recommended Demo Flow" above as slide order.
 
 The following screenshots require manual login and would benefit from a browser-capable agent:
 
-| Missing Screenshot | Platform | Login Required |
-|-------------------|----------|----------------|
-| Resend dashboard | resend.com | Email + Password |
-| Resend audience list | resend.com | Already logged in |
-| Resend campaign sent | resend.com | Already logged in |
-| Teamleader companies | teamleader.eu | OAuth demo account |
-| Teamleader contacts | teamleader.eu | Already logged in |
-| Exact Online accounts | exactonline.com | OAuth demo account |
-| Exact Online invoices | exactonline.com | Already logged in |
-| Tracardi workflow execution | localhost:8787 | Local auth |
+| Missing Screenshot | Platform | Status |
+|-------------------|----------|--------|
+| Resend dashboard | resend.com | ✅ Captured |
+| Resend audience list | resend.com | ✅ Captured |
+| Resend campaign sent | resend.com | ✅ Captured |
+| Teamleader companies | teamleader.eu | ✅ Captured |
+| Teamleader contacts | teamleader.eu | ✅ Captured |
+| Exact Online accounts | exactonline.com | ✅ Captured |
+| Exact Online invoices | exactonline.com | ✅ Captured |
+| Exact Online terminal sync| localhost | ❌ BLOCKED (401 Auth) |
+| Tracardi workflow execution | localhost:8787 | Pending |
 
 ---
 
