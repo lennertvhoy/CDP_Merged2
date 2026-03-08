@@ -23,6 +23,7 @@ import time
 from collections.abc import Callable
 from datetime import UTC, datetime
 from functools import wraps
+from urllib.parse import urlparse
 
 from azure.eventhub import EventData, EventHubProducerClient
 from dotenv import load_dotenv
@@ -103,6 +104,91 @@ def verify_signature(payload: bytes, signature: str | None, secret: str) -> bool
 
     expected = hmac.new(secret.encode("utf-8"), payload, hashlib.sha256).hexdigest()
     return hmac.compare_digest(expected, signature)
+
+
+def normalize_email_address(value: str | None) -> str | None:
+    """Normalize an email-like value for hashing and domain extraction."""
+    if not value:
+        return None
+    normalized = value.strip().lower()
+    return normalized or None
+
+
+def hash_identifier(value: str | None) -> str | None:
+    """Create a deterministic opaque identifier for privacy-safe projection."""
+    if not value:
+        return None
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def extract_email_domain(value: str | None) -> str | None:
+    """Extract the email domain without preserving the full address."""
+    normalized = normalize_email_address(value)
+    if not normalized or "@" not in normalized:
+        return None
+    return normalized.split("@", 1)[1]
+
+
+def sanitize_resend_event_data(event_data: dict) -> dict:
+    """Strip raw email/subject fields before forwarding webhook events downstream."""
+    recipient = normalize_email_address(event_data.get("to"))
+    sender = normalize_email_address(event_data.get("from"))
+    subject = (event_data.get("subject") or "").strip().lower()
+    click = event_data.get("click")
+    click_url = ""
+    if isinstance(click, dict):
+        click_url = str(click.get("link") or click.get("url") or "").strip()
+    elif isinstance(click, str):
+        click_url = click.strip()
+
+    click_domain = urlparse(click_url).netloc.lower() if click_url else None
+
+    sanitized = {
+        "email_id": event_data.get("email_id"),
+        "recipient_hash": hash_identifier(recipient),
+        "recipient_domain": extract_email_domain(recipient),
+        "sender_domain": extract_email_domain(sender),
+        "subject_hash": hash_identifier(subject) if subject else None,
+        "click_domain": click_domain or None,
+        "user_agent": event_data.get("user_agent"),
+    }
+
+    return {key: value for key, value in sanitized.items() if value not in (None, "")}
+
+
+def build_resend_event(data: dict, request_id: str) -> dict:
+    """Build a privacy-safe canonical event from a Resend webhook payload."""
+    event_type = data.get("type", "unknown")
+    event_data = data.get("data", {})
+    sanitized_payload = sanitize_resend_event_data(event_data)
+    event_uid = (
+        sanitized_payload.get("recipient_hash")
+        or event_data.get("email_id")
+        or f"resend::{request_id}"
+    )
+
+    return {
+        "source": "resend",
+        "event_type": event_type,
+        "uid": event_uid,
+        "timestamp": data.get("created_at", datetime.now(UTC).isoformat()),
+        "payload": sanitized_payload,
+        "request_id": request_id,
+    }
+
+
+def build_tracardi_forward_payload(event: dict) -> dict:
+    """Translate a canonical event into a Tracardi-safe tracker payload."""
+    payload = event.get("payload", {})
+    traits = {}
+    if payload.get("recipient_domain"):
+        traits["recipient_domain"] = payload["recipient_domain"]
+
+    return {
+        "source": {"id": event["source"]},
+        "profile": {"id": event["uid"], "traits": traits},
+        "events": [{"type": event["event_type"], "properties": payload}],
+    }
 
 
 def verify_resend_svix_signature(
@@ -592,29 +678,7 @@ async def resend_webhook(
         ) from None
 
     try:
-        # Extract event type and email from Resend payload
-        event_type = data.get("type", "unknown")
-        event_data = data.get("data", {})
-
-        # Map to profile using email address
-        email = event_data.get("to", "")
-
-        # Transform to standard CDP event format
-        event = {
-            "source": "resend",
-            "event_type": event_type,  # email.opened, email.clicked, etc.
-            "uid": email,  # Email address as identifier
-            "timestamp": data.get("created_at", datetime.now(UTC).isoformat()),
-            "payload": {
-                "email_id": event_data.get("email_id"),
-                "from": event_data.get("from"),
-                "to": event_data.get("to"),
-                "subject": event_data.get("subject"),
-                "click": event_data.get("click"),  # For click events
-                "user_agent": event_data.get("user_agent"),
-            },
-            "request_id": request_id,
-        }
+        event = build_resend_event(data, request_id)
 
         # Also forward to Tracardi if configured
         await forward_to_tracardi(event)
@@ -623,7 +687,7 @@ async def resend_webhook(
         send_to_eventhub(event)
 
         logger.info(
-            f"resend_webhook_received: {request_id}, event_type={event_type}, email={email}"
+            f"resend_webhook_received: {request_id}, event_type={event['event_type']}, uid={event['uid'][:12]}..."
         )
 
         return JSONResponse({"status": "received", "request_id": request_id})
@@ -693,19 +757,14 @@ async def forward_to_tracardi(event: dict):
 
     try:
         async with httpx.AsyncClient() as client:
-            # Transform CDP event to Tracardi tracker format
-            tracardi_event = {
-                "source": {"id": event["source"]},
-                "profile": {"traits": {"email": event["uid"]}},
-                "events": [{"type": event["event_type"], "properties": event["payload"]}],
-            }
+            tracardi_event = build_tracardi_forward_payload(event)
 
             response = await client.post(tracardi_url, json=tracardi_event, timeout=10.0)
 
             if response.status_code == 200:
                 logger.info(
                     f"event_forwarded_to_tracardi: {request_id}, "
-                    f"event_type={event['event_type']}, email={event['uid']}"
+                    f"event_type={event['event_type']}, uid={event['uid'][:12]}..."
                 )
             else:
                 logger.warning(

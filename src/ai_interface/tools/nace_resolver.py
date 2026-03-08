@@ -317,7 +317,7 @@ DOMAIN_SYNONYMS: dict[str, set[str]] = {
 
 
 DOMAIN_HINT_CODES: dict[str, list[str]] = {
-    "it": ["62010", "62020", "62030", "62090", "63110", "63120"],
+    "it": ["62100", "62200", "62900", "63100"],
     "restaurant": ["56101", "56102"],
     "pita": ["56101", "56102", "56103", "56290"],  # Restaurants, cafes, fast food
     "barber": ["96021"],
@@ -338,7 +338,7 @@ DOMAIN_HINT_CODES: dict[str, list[str]] = {
 }
 
 DOMAIN_CODE_PREFIX_FILTERS: dict[str, tuple[str, ...]] = {
-    "it": ("62", "63"),
+    "it": ("621", "622", "629", "6310"),
     "restaurant": ("56",),
     "pita": ("56",),  # Food and beverage service activities
     "barber": ("9602",),
@@ -356,6 +356,12 @@ DOMAIN_CODE_PREFIX_FILTERS: dict[str, tuple[str, ...]] = {
     "construction": ("41", "42", "43"),
     "electrician": ("432",),
     "painter": ("433",),
+}
+
+DOMAIN_ALLOWED_CODES_EXACT: dict[str, set[str]] = {
+    # Current verified KBO-backed IT segment. The older 62010/62020/62030/62090/63110/63120
+    # software set does not exist in the Brussels dataset used for the current demo/story.
+    "it": {"62100", "62200", "62900", "63100"},
 }
 
 GENERIC_ACTIVITY_TERMS: set[str] = {
@@ -452,6 +458,7 @@ def _get_nace_codes_from_keyword(keyword: str) -> list[str]:
 
     hint_codes = list(DOMAIN_HINT_CODES.get(domain_key or "", []))
     allowed_prefixes = DOMAIN_CODE_PREFIX_FILTERS.get(domain_key or "")
+    allowed_codes_exact = DOMAIN_ALLOWED_CODES_EXACT.get(domain_key or "")
     expanded_terms = _expand_search_terms(keyword_normalized)
 
     scored: list[tuple[int, str]] = []
@@ -471,6 +478,8 @@ def _get_nace_codes_from_keyword(keyword: str) -> list[str]:
 
     for score, code in scored:
         if score < 4:
+            continue
+        if allowed_codes_exact and code not in allowed_codes_exact:
             continue
         if allowed_prefixes and not code.startswith(allowed_prefixes):
             continue
@@ -493,7 +502,7 @@ def lookup_nace_code(keyword: str) -> list[str]:
         List of relevant NACE codes (max 12 best matches).
 
     Example:
-        Input: 'IT' -> Returns ['62010', '62020', '62030', '63110']
+        Input: 'IT' -> Returns ['62100', '62200', '62900', '63100']
     """
     return _get_nace_codes_from_keyword(keyword)
 
@@ -529,5 +538,6 @@ __all__ = [
     "DOMAIN_SYNONYMS",
     "DOMAIN_HINT_CODES",
     "DOMAIN_CODE_PREFIX_FILTERS",
+    "DOMAIN_ALLOWED_CODES_EXACT",
     "GENERIC_ACTIVITY_TERMS",
 ]

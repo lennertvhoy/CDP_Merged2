@@ -260,9 +260,10 @@ async def search_profiles(
 
     NACE CODE RESOLUTION NOTE:
     When using 'keywords', the system auto-resolves to NACE codes internally.
-    For example, "software" resolves to 6 codes: 62010, 62020, 62030, 62090,
-    63110, 63120. Using a partial subset (e.g., only the 4 62xxx codes without
-    the 631xx codes for web portals/data processing) will yield fewer results.
+    For the current verified IT/services story, "software" and "IT" resolve to
+    4 codes: 62100, 62200, 62900, 63100. These match the verified Brussels
+    dataset slice used in the local demo and avoid the older 62010/62020/62030/
+    62090/63110/63120 software set that is not present in that dataset.
     Always rely on the keyword-based auto-resolution for consistent counts.
 
     Args:

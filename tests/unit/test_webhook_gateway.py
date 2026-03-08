@@ -19,7 +19,7 @@ import os
 import sys
 import time
 from datetime import UTC, datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -544,6 +544,34 @@ class TestBrevoWebhook:
 class TestResendWebhook:
     """Tests for Resend webhook endpoint with Svix signatures."""
 
+    def test_build_tracardi_forward_payload_uses_anonymous_profile_id(self):
+        """The Tracardi payload should use opaque IDs and sanitized properties."""
+        from scripts.webhook_gateway import build_tracardi_forward_payload
+
+        event = {
+            "source": "resend",
+            "event_type": "email.clicked",
+            "uid": "opaque-uid-123",
+            "payload": {
+                "email_id": "email-123",
+                "recipient_hash": "abc123",
+                "recipient_domain": "example.com",
+                "sender_domain": "resend.dev",
+                "subject_hash": "deadbeef",
+                "click_domain": "resend.com",
+            },
+        }
+
+        payload = build_tracardi_forward_payload(event)
+
+        assert payload["profile"]["id"] == "opaque-uid-123"
+        assert payload["profile"]["traits"] == {"recipient_domain": "example.com"}
+        properties = payload["events"][0]["properties"]
+        assert properties["recipient_hash"] == "abc123"
+        assert "to" not in properties
+        assert "from" not in properties
+        assert "subject" not in properties
+
     def test_resend_valid_svix_signature(self, client):
         """Test Resend webhook with valid Svix signature."""
         payload = {
@@ -569,6 +597,47 @@ class TestResendWebhook:
         assert response.status_code == 200
         assert response.json()["status"] == "received"
         assert "request_id" in response.json()
+
+    def test_resend_webhook_sanitizes_payload_before_forwarding(self, client):
+        """The projected event should not retain raw email or subject fields."""
+        payload = {
+            "type": "email.clicked",
+            "created_at": "2024-01-01T00:00:00.000Z",
+            "data": {
+                "email_id": "test-id",
+                "to": "target@example.com",
+                "from": "sender@resend.dev",
+                "subject": "Sensitive Subject",
+                "click": {"url": "https://resend.com/docs"},
+                "user_agent": "pytest",
+            },
+        }
+        body = json.dumps(payload).encode()
+
+        secret = "test-resend-secret"
+        timestamp = str(int(time.time()))
+        signed_payload = f"{timestamp}.".encode() + body
+        signature = hmac.new(secret.encode("utf-8"), signed_payload, hashlib.sha256).hexdigest()
+        svix_header = f"v1,{timestamp},{signature}"
+
+        with (
+            patch("scripts.webhook_gateway.send_to_eventhub") as send_to_eventhub,
+            patch("scripts.webhook_gateway.forward_to_tracardi", new=AsyncMock()) as forward_to_tracardi,
+        ):
+            response = client.post(
+                "/webhook/resend", content=body, headers={"X-Resend-Signature": svix_header}
+            )
+
+        assert response.status_code == 200
+        event = send_to_eventhub.call_args.args[0]
+        assert event["uid"] != "target@example.com"
+        assert event["payload"]["recipient_domain"] == "example.com"
+        assert event["payload"]["sender_domain"] == "resend.dev"
+        assert event["payload"]["click_domain"] == "resend.com"
+        assert "to" not in event["payload"]
+        assert "from" not in event["payload"]
+        assert "subject" not in event["payload"]
+        forward_to_tracardi.assert_awaited_once()
 
     def test_resend_invalid_svix_signature(self, client):
         """Test Resend webhook with invalid Svix signature."""

@@ -156,9 +156,7 @@ class TestGetNaceCodesFromKeyword:
     def test_lookup_it_codes(self):
         """Test looking up IT-related codes."""
         result = _get_nace_codes_from_keyword("IT")
-        # Should return IT-related NACE codes
-        assert len(result) > 0
-        assert all(code.isdigit() and len(code) == 5 for code in result)
+        assert result == ["62100", "62200", "62900", "63100"]
 
     def test_lookup_restaurant_codes(self):
         """Test looking up restaurant codes."""
@@ -319,3 +317,4 @@ class TestConstants:
         for _domain, codes in DOMAIN_HINT_CODES.items():
             assert isinstance(codes, list)
             assert all(isinstance(c, str) for c in codes)
+        assert DOMAIN_HINT_CODES["it"] == ["62100", "62200", "62900", "63100"]

@@ -3,7 +3,7 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-08T21:20:00+01:00
+  updated_at: 2026-03-08T22:18:00+01:00
   updated_by: agent
   repo_head:
     value: fe9d51a
@@ -961,6 +961,43 @@ current_state:
       note: Local Tracardi still has working authentication, event sources, and `/track`, but the current truth is draft repair plus runtime blockage. `scripts/setup_tracardi_workflows.py` repaired the 5 email workflow drafts through `/flow/draft`, yet the engagement rules remain `running=false` / `production=false` and local event probes still produce zero flow logs. GUI accessible at http://localhost:8787.
 
 active_problems:
+  legacy_it_nace_mapping_in_codebase:
+    status: resolved
+    severity: high
+    discovered_at: 2026-03-08
+    resolved_at: 2026-03-08
+    summary: The codebase still resolved `software` / `IT` to the legacy 62010/62020/62030/62090/63110/63120 set even though the current Brussels demo dataset uses 62100/62200/62900/63100.
+    evidence:
+      - command: SELECT industry_nace_code, COUNT(*) FROM companies WHERE city IN ('Brussels','Brussel','Bruxelles') AND industry_nace_code IN ('62010','62020','62030','62090','62100','62200','62900','63100','63110','63120') GROUP BY industry_nace_code ORDER BY industry_nace_code
+      - result: 62100=375; 62200=402; 62900=163; 63100=151; old 62010/62020/62030/62090/63110/63120 set returned 0 rows
+      - command: SELECT COUNT(*) FROM companies WHERE city IN ('Brussels','Brussel','Bruxelles') AND industry_nace_code IN ('62100','62200','62900','63100')
+      - result: 1091
+      - command: SELECT COUNT(*) FROM companies WHERE city IN ('Brussels','Brussel','Bruxelles') AND industry_nace_code IN ('62100','62200','62900','63100') AND COALESCE(main_email, '') <> ''
+      - result: 191
+      - verification: poetry run pytest tests/unit/test_nace_resolution_consistency.py tests/unit/ai_interface/tools/test_nace_resolver.py -q
+      - result: passed
+    affects:
+      - nace_keyword_resolution
+      - canonical_brussels_it_segment
+      - illustrated_guide_scope_consistency
+    owner: agent
+    next_action: Update the guide/spec so the canonical IT segment language matches the corrected resolver and the verified Brussels code set.
+  combined_webhook_event_processor_test_timeout:
+    status: observed
+    severity: medium
+    discovered_at: 2026-03-08
+    summary: The combined unit run for `tests/unit/test_webhook_gateway.py` and `tests/unit/test_cdp_event_processor.py` does not finish within a 30-second bounded run even though it prints 27 passing tests first.
+    evidence:
+      - command: timeout 30 poetry run pytest tests/unit/test_webhook_gateway.py tests/unit/test_cdp_event_processor.py -q
+      - result: exit 124 after printing 27 dots (`...........................`)
+      - command: poetry run pytest tests/unit/test_nace_resolution_consistency.py tests/unit/ai_interface/tools/test_nace_resolver.py tests/unit/test_canonical_segment_service.py tests/unit/test_segment_tools_postgresql_first.py -q
+      - result: 52 passed
+    affects:
+      - local_verification_confidence_for_privacy_hardening
+      - webhook_gateway_test_harness
+      - event_processor_test_harness
+    owner: agent
+    next_action: Re-run the gateway and event-processor suites separately with `-vv`/`-x` to identify the hanging test and capture a clean green run after the root cause is fixed.
   resend_audience_sparse_emails:
     status: observed
     severity: high
