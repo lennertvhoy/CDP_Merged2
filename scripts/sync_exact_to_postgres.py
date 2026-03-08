@@ -516,8 +516,8 @@ class ExactOnlineSync:
                 source_id = invoice_number
                 modified = record.get("Modified", "")
                 
-                amount_excl = record.get("AmountDC", 0) or 0
-                vat_amount = record.get("VATAmountDC", 0) or 0
+                amount_excl = float(record.get("AmountDC", 0) or 0)
+                vat_amount = float(record.get("VATAmountDC", 0) or 0)
                 amount_incl = amount_excl + vat_amount
                 
                 async with self.pool.acquire() as conn:

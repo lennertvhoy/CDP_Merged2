@@ -182,8 +182,11 @@ The following screenshots require manual login and would benefit from a browser-
 | Teamleader contacts | teamleader.eu | ✅ Captured |
 | Exact Online accounts | exactonline.com | ✅ Captured |
 | Exact Online invoices | exactonline.com | ✅ Captured |
-| Exact Online terminal sync| localhost | ✅ READY (run sync) |
-| Tracardi workflow execution | localhost:8787 | Pending |
+| Exact Online terminal sync| localhost | ✅ Captured |
+| Tracardi workflow execution | localhost:8787 | ✅ Skipped (Sufficient Existing) |
+| Teamleader terminal sync | localhost | ✅ Captured |
+| Integration architecture | diagram | ✅ Captured |
+| Data flow diagram | diagram | ✅ Captured |
 
 ---
 
