@@ -8,6 +8,7 @@
 
 ## Current Headline
 
+- `observed` from 2026-03-08 14:20 CET: **OLLAMA AI DESCRIPTION ENRICHMENT VERIFIED WORKING!** Successfully generated 70 AI descriptions (110 processed, 64% success rate). Zero failures. ~1.5s per description. Run: `export DESCRIPTION_ENRICHER=ollama && python scripts/enrich_companies_batch.py --enrichers description`
 - `observed` from 2026-03-08 14:15 CET: **OLLAMA AI DESCRIPTION ENRICHMENT ADDED!** New cost-free option for generating company descriptions using local Ollama LLM. Set `DESCRIPTION_ENRICHER=ollama` to use instead of Azure OpenAI (saves ~€20-40 for 516K profiles). Model configurable via `OLLAMA_MODEL` (default: llama3.1:8b). Commit `cc87d29`.
 - `observed` from 2026-03-08 14:15 CET: **Enrichment runners RESTARTED and RUNNING.** All three runners (CBE, geocoding, website discovery) successfully restarted after supervisor script fix. CBE cursor already advancing (updated 2026-03-08), geocoding and website discovery resumed from their pre-failure cursors. All supervisors using canonical workspace path `/home/ff/Documents/CDP_Merged`.
 - `observed` from 2026-03-08 13:38 CET: **360° TOOL SELECTION FIXED!** Option D routing guard implemented in critic_node. All 3 previously-failing queries now select correct tools: KBO linkage → `get_identity_link_quality`, Revenue distribution → `get_geographic_revenue_distribution`, Pipeline value → `get_industry_summary`. Commit `5c3117e`, 27 unit tests passed.
