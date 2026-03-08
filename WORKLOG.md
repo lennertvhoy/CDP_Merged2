@@ -1232,3 +1232,77 @@ SELECT COUNT(*) FROM companies WHERE ai_description IS NOT NULL;
 - Monitor Ollama GPU/CPU usage for performance optimization
 
 ---
+
+---
+
+## 2026-03-08 14:45 CET - Illustrated Guide Audit & Protocol Updates
+
+**Task:** Comprehensive audit of Illustrated Guide PDF against actual system state per user feedback  
+**Type:** docs_or_process_only  
+**Status:** COMPLETE - Audit report created, protocol updated, action items defined
+
+### Work Completed
+
+1. **Created Comprehensive Audit Report** (`docs/ILLUSTRATED_GUIDE_AUDIT.md`)
+   - Identified 5 critical screenshot/caption mismatches
+   - Documented 4 missing core value demonstrations
+   - Defined 3 additional required verifications
+   - Recommended mock data strategy (50+ companies)
+   - Proposed restructured guide flow
+
+2. **Updated AGENTS.md**
+   - Enhanced Screenshot and Demo Integrity section
+   - Added Caption-Content Alignment Protocol
+   - Added Source-of-Truth Documentation Standards
+   - Mandated demonstrations required for CDP source-of-truth status
+
+3. **Updated BACKLOG.md**
+   - Added "Hyperrealistic Mock Data Requirements" section
+   - Specified 50+ companies needed for Teamleader/Exact
+   - Defined cross-system identity bridge requirements
+   - Added new critical items for Illustrated Guide corrections
+
+4. **Updated NEXT_ACTIONS.md**
+   - Added new P0: Illustrated Guide Source-of-Truth Corrections
+   - Listed all critical mismatches with fixes required
+   - Defined exit criteria for source-of-truth status
+
+5. **Updated PROJECT_STATE.yaml**
+   - Added `illustrated_guide_screenshot_mismatches` to active_problems
+   - Documented all critical mismatches with evidence
+   - Listed missing demonstrations with priorities
+   - Specified mock data gaps
+
+### Critical Issues Identified
+
+| Issue | Severity | Current State | Required Fix |
+|-------|----------|---------------|--------------|
+| Exact Online sync numbers | High | Shows 60/60 | Actual: 258/9/78 |
+| Restaurant search results | High | Shows query only | Need results screenshot |
+| Email bounce workflow | Medium | Empty diagram | Need full workflow |
+| 360° Golden Record | Critical | Missing entirely | Must add demonstration |
+| Segment activation | High | Error handling only | Need success with real data |
+
+### 3 Additional Verifications Required
+
+1. **MCP Server Query Logs** - Prove MCP tools actually execute PostgreSQL queries
+2. **Tracardi Workflow Execution** - Show bounce event triggering profile update
+3. **CSV Export Validation** - Opened file showing all 9 fields with real data
+
+### Next Actions (From Handoff)
+
+1. Populate 50+ hyperrealistic companies in Teamleader demo environment
+2. Create matching customers/invoices in Exact Online
+3. Capture 360° Golden Record demonstration screenshot
+4. Push segment to Resend and capture populated audience screenshot
+5. Fix all screenshot/caption mismatches in Illustrated Guide
+6. Generate updated Illustrated Guide Version 2.0
+
+### Files Modified
+
+- `docs/ILLUSTRATED_GUIDE_AUDIT.md` (new)
+- `AGENTS.md`
+- `BACKLOG.md`
+- `NEXT_ACTIONS.md`
+- `PROJECT_STATE.yaml`
+

@@ -178,12 +178,16 @@ poetry run python scripts/test_poc_activation.py --mock
 
 | Priority | Item | Status | What still needs to happen |
 |----------|------|--------|-----------------------------|
-| Critical | **CONNECT Teamleader demo environment** | Ready to start | User has demo env available. Build real OAuth flow, sync companies/contacts/deals to PostgreSQL, establish identity bridge |
-| Critical | **CONNECT Exact Online demo environment** | Ready to start | User has demo env available. Build real OAuth flow, sync accounting/transactions/invoices to PostgreSQL |
-| Critical | **Real/mock/hybrid source matrix documentation** | In progress | Document which systems are real vs mock vs hybrid; make provenance explicit in all current docs |
-| Critical | Define a hyperrealistic integration standard | Pending | Preserve realistic auth, IDs, pagination, webhook payloads, and failure modes across mocks |
+| Critical | **CONNECT Teamleader demo environment** | ✅ COMPLETE | Production sync operational with real demo data flowing |
+| Critical | **CONNECT Exact Online demo environment** | ✅ COMPLETE | Production sync ready - OAuth tokens renewed 2026-03-08 |
+| Critical | **Real/mock/hybrid source matrix documentation** | ✅ COMPLETE | See PROJECT_STATE.yaml source_integrations section |
+| Critical | **POPULATE Hyperrealistic mock data** | NEW | Create 50+ realistic Belgian companies in Teamleader with matching Exact invoices |
+| Critical | Define a hyperrealistic integration standard | ✅ COMPLETE | Autotask mock with 5 companies, 5 tickets, 3 contracts complete |
+| Critical | **CAPTURE 360° Golden Record demonstration** | NEW | Screenshot showing unified KBO + CRM + Financial data for single company |
+| Critical | **CAPTURE Segment activation to Resend** | NEW | Screenshot showing 1,652+ contacts actually pushed to Resend audience |
+| Critical | **FIX Illustrated Guide mismatches** | NEW | Update stale Exact Online numbers, add missing result screenshots |
 | Critical | Stabilize the public demo flow | Pending | Eliminate prompt hangs and prove repeatable end-to-end demo success |
-| High | Build a real/mock/hybrid source matrix | Pending | Keep every current doc aligned on provenance so the repo tells one accurate story |
+| High | Build a real/mock/hybrid source matrix | ✅ COMPLETE | Documented in PROJECT_STATE.yaml |
 | High | Add a cleanup/organization queue for demo assets and stale narratives | Pending | Consolidate fixtures, sample payloads, and current-state summaries |
 | High | Require user-owned final verification | Pending | Hold final demo sign-off until the user has tested it and seen one stable week |
 
@@ -191,6 +195,8 @@ poetry run python scripts/test_poc_activation.py --mock
 - At least one real source-system connection or a clearly justified fallback plan exists
 - All missing systems have hyperrealistic mocks with explicit provenance
 - The user can run and trust the demo story end to end
+- **NEW:** Illustrated Guide screenshots match actual system state (see docs/ILLUSTRATED_GUIDE_AUDIT.md)
+- **NEW:** 360° Golden Record demonstration proves unified customer intelligence
 
 ### Milestone 1: Finish Data Coverage And Enrichment
 
@@ -270,6 +276,63 @@ poetry run python scripts/test_poc_activation.py --mock
 - The chatbot is deterministic for counts, search, and analytics
 - Mutating actions are gated and auditable
 - Query-plane regressions are covered by tests, not just manual verification
+
+---
+
+## Hyperrealistic Mock Data Requirements
+
+**Why this matters:** Current demo data is too minimal (1 company in Teamleader, 9 in Exact) to demonstrate the CDP's value. The Illustrated Guide audit identified this as a credibility gap.
+
+**Current State:**
+| Source | Current Count | Required for Credibility |
+|--------|---------------|-------------------------|
+| Teamleader | 1 company, 2 contacts | 50+ companies, 100+ contacts |
+| Exact Online | 9 customers, 78 invoices | 50+ customers, 200+ invoices |
+| Resend | 9 test emails | 1,000+ contact audience |
+
+**Mock Data Specification:**
+
+### Teamleader Mock Data (50+ Companies)
+| Field | Specification |
+|-------|--------------|
+| Company Names | Realistic Belgian business names (e.g., "Bakkerij De Gouden Croissant", "TechFlow Belgium BV", "Bouwbedrijf Janssens NV") |
+| VAT Numbers | Valid BE format (BE0123456789) - use test numbers |
+| Addresses | Real Belgian addresses in Gent, Brussels, Antwerp, Leuven |
+| Deal Values | €5,000 - €500,000 range |
+| Deal Stages | Lead (20%), Proposal (30%), Won (40%), Lost (10%) |
+| Industries | Mix of Software, Construction, Retail, Manufacturing, Services |
+| Contacts | 2-3 contacts per company with realistic names/emails |
+
+### Exact Online Mock Data (50+ Customers)
+| Field | Specification |
+|-------|--------------|
+| VAT Matching | Same VAT numbers as Teamleader for identity linking |
+| Invoice Count | 3-10 invoices per customer |
+| Invoice Amounts | €1,000 - €50,000 matching deal values |
+| Payment Status | 70% Paid, 20% Outstanding, 10% Overdue |
+| Invoice Dates | Spread across last 24 months |
+| GL Accounts | Realistic chart of accounts for Belgian businesses |
+
+### Cross-System Identity Bridge
+| Requirement | Implementation |
+|-------------|----------------|
+| VAT Linkage | Every Teamleader company has matching Exact customer via VAT |
+| KBO Matching | VAT numbers correspond to real KBO records in the 1.94M dataset |
+| Data Consistency | Company names aligned across systems (minor variations allowed) |
+
+**Demonstration Value:**
+With 50+ connected records:
+- "Show me all companies with open deals over €10k" returns meaningful list
+- "Which customers have overdue invoices?" shows actual risk accounts
+- "What is total pipeline for software companies in Brussels?" aggregates real data
+- 360° view shows rich unified profile instead of sparse single-company view
+
+**Implementation Path:**
+1. Create companies in Teamleader demo environment via API/script
+2. Create matching customers/invoices in Exact Online
+3. Run sync scripts to populate PostgreSQL
+4. Verify identity linking via `source_identity_links` table
+5. Re-capture Illustrated Guide screenshots with rich data
 
 ---
 

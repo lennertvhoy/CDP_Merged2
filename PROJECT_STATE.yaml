@@ -1172,9 +1172,71 @@ active_problems:
       - local_development_security
     owner: agent
     next_action: None - fixed in commit. Scripts now fail fast with clear error if DATABASE_URL not set.
-      - demo_reliability
+  illustrated_guide_screenshot_mismatches:
+    status: observed
+    severity: high
+    discovered_at: 2026-03-08
+    summary: Illustrated Guide contains critical mismatches between screenshots and captions, stale data numbers, and missing core value demonstrations.
+    evidence:
+      - Audit report: docs/ILLUSTRATED_GUIDE_AUDIT.md
+      - Exact Online sync shows "60 GL accounts, 60 invoices" but actual is 258 GL accounts, 9 customers, 78 invoices
+      - Restaurant search screenshot shows query entry only, not the 1,105 results claimed
+      - Email bounce processor shows empty workflow diagram
+      - Data scale inconsistency - Phase 2 shows 1,652 software companies, Phase 3 shows 1,897
+      - Missing: 360° Golden Record demonstration (unified KBO + CRM + Financial view)
+      - Missing: Segment activation with real data (Resend audience with 1,652 contacts)
+      - Missing: Real-time sync verification
+    critical_mismatches:
+      - issue: exact_online_sync_numbers_stale
+        current: "60 GL accounts, 60 invoices"
+        actual: "258 GL accounts, 9 customers, 78 invoices"
+        fix: Update screenshot and caption
+      - issue: restaurant_search_no_results
+        current: Shows query entry only
+        caption: "Results showing companies with details"
+        fix: Capture screenshot with actual 1,105 count visible
+      - issue: email_bounce_empty_workflow
+        current: White space with single node
+        caption: "Automated bounce handling workflow"
+        fix: Show full workflow diagram
+    missing_demonstrations:
+      - demonstration: 360_golden_record
+        priority: critical
+        description: Single company query showing unified data from all sources
+        status: not_started
+      - demonstration: segment_activation_real_data
+        priority: high
+        description: Resend audience actually containing 1,652 contacts from CDP
+        status: not_started
+      - demonstration: csv_export_validation
+        priority: high
+        description: Opened CSV showing all 9 claimed fields with real data
+        status: not_started
+      - demonstration: realtime_sync
+        priority: medium
+        description: Data change flowing from source to chatbot within 15-min window
+        status: not_started
+    mock_data_gaps:
+      - source: teamleader
+        current: 1 company, 2 contacts
+        required: 50+ companies, 100+ contacts
+      - source: exact_online
+        current: 9 customers, 78 invoices
+        required: 50+ customers, 200+ invoices
+      - source: resend
+        current: 9 test emails
+        required: 1,000+ contact audience
+    affects:
+      - documentation_credibility
+      - demo_readiness
+      - source_of_truth_status
     owner: agent
-    next_action: Monitor Azure OpenAI costs at capacity 100; reduce to 50-70 if budget concerns arise (retries provide resilience).
+    next_action: 
+      - Fix critical screenshot/caption mismatches
+      - Populate 50+ hyperrealistic companies in source systems
+      - Capture 360° Golden Record demonstration
+      - Capture segment activation with real data
+      - Update Illustrated Guide to Version 2.0
   postgresql_city_query_timeouts:
     status: resolved
     severity: high

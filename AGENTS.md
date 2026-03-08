@@ -789,6 +789,22 @@ If a deployment causes issues:
    - "Captured 2026-03-08 from staging environment"
    - Never imply test data is production data
 
+### Caption-Content Alignment Protocol
+
+**Every screenshot caption must accurately describe what is visible:**
+
+1. **No aspirational captions:** If the screenshot shows an error, caption must say "Error" not "Success"
+2. **No future-state captions:** Caption describes what IS shown, not what SHOULD BE shown
+3. **Counts must match:** If caption says "1,652 companies", the screenshot must show 1,652
+4. **Context must be clear:** Test data vs production data must be explicitly stated
+
+**Pre-publication checklist:**
+- [ ] Screenshot reviewed side-by-side with caption
+- [ ] Numbers in caption verified against database/query results
+- [ ] Error states captioned as errors, not successes
+- [ ] Test data explicitly labeled
+- [ ] Dates/times in screenshot are recent (within 24h for operational claims)
+
 ### Consequences of Violation
 
 If you create fake screenshots or synthetic demo content:
@@ -805,6 +821,23 @@ If a screenshot is needed but cannot be captured:
 2. **Document the blocker:** "Screenshot pending - authentication required"
 3. **Create a task:** Add to NEXT_ACTIONS.md for future capture
 4. **Never fake it:** Leave the gap rather than create false evidence
+
+### Source-of-Truth Documentation Standards
+
+When documentation is designated as "source of truth" for the project:
+
+1. **Every claim must be verified:** Run the actual query/command to verify counts
+2. **Screenshots must be current:** Recapture if system state has changed
+3. **Data must be realistic:** Use hyperrealistic mock data, not trivial test data (1 company → 50+ companies)
+4. **End-to-end must be proven:** Show the full flow, not just component existence
+5. **Contradictions must be resolved:** If two docs disagree, verify against implementation
+
+**Mandatory demonstrations for CDP source-of-truth status:**
+- 360° Golden Record: Single company query showing unified data from ALL sources
+- Segment Activation: Actual segment push to email tool with populated audience
+- Real-time Sync: Data change flowing from source → sync → chatbot within window
+- CSV Export Validation: Opened file showing all claimed fields with real data
+- Workflow Execution: Event triggering workflow with visible state changes
 
 **Remember:** A missing screenshot is better than a fake screenshot.
 

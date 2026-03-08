@@ -8,6 +8,54 @@
 
 ## Active
 
+### P0: Illustrated Guide Source-of-Truth Corrections
+
+**Status:** 🔄 IN PROGRESS - Critical mismatches identified, awaiting implementation  
+**Discovered:** 2026-03-08 (detailed audit completed)  
+**Last Updated:** 2026-03-08 14:45 CET  
+**Severity:** CRITICAL - Documentation credibility at risk  
+**Audit Report:** `docs/ILLUSTRATED_GUIDE_AUDIT.md`
+
+#### Critical Mismatches to Fix
+
+| Issue | Location | Current State | Required Fix |
+|-------|----------|---------------|--------------|
+| Exact Online sync numbers | Page 10 | Shows "60 GL accounts, 60 invoices" | Update to "258 GL accounts, 9 customers, 78 invoices" |
+| Restaurant search results | Page 15 | Shows query entry only | Capture screenshot showing actual 1,105 count and results |
+| Email bounce processor | Page 17 | Shows empty workflow | Capture full workflow diagram |
+| Data scale inconsistency | Page 19-20 | 1,652 vs 1,897 software companies | Explain NACE resolution difference or use consistent number |
+
+#### Missing Demonstrations Required
+
+| Demonstration | Priority | Status |
+|---------------|----------|--------|
+| **360° Golden Record View** | CRITICAL | Not started - Query single company showing KBO + CRM + Financial unified |
+| **Segment Activation to Resend** | HIGH | Not started - Show 1,652 contacts actually in Resend audience |
+| **CSV Export Validation** | HIGH | Not started - Screenshot of opened CSV with all 9 fields |
+| **Real-time Sync Verification** | MEDIUM | Not started - Show data change flowing through system |
+| **MCP Server Query Logs** | MEDIUM | Not started - Prove MCP tools hit PostgreSQL |
+| **Tracardi Workflow Execution** | MEDIUM | Not started - Show bounce event triggering profile update |
+
+#### Mock Data Population Required
+
+| Source | Current | Target | Action |
+|--------|---------|--------|--------|
+| Teamleader | 1 company | 50+ companies | Create hyperrealistic Belgian companies via API |
+| Exact Online | 9 customers | 50+ customers | Create matching customers with invoices |
+| Resend | 9 emails | 1,000+ audience | Push actual segment data |
+
+#### Exit Criteria
+
+- [ ] All screenshot/caption mismatches resolved
+- [ ] 360° Golden Record demonstration captured
+- [ ] Segment activation shows real populated audience
+- [ ] 50+ hyperrealistic companies in source systems
+- [ ] CSV export shows actual data fields
+- [ ] Illustrated Guide updated to Version 2.0
+- [ ] User confirms guide is credible source of truth
+
+---
+
 ### P0: POC Resend Activation Tests (RECOMMENDED)
 
 **Status:** ✅ COMPLETE - All 6 tests passing, **Resend recommended over Flexmail**
