@@ -8,41 +8,78 @@
 
 ## Active
 
-### P0: POC Activation End-to-End Tests
+### P0: POC Resend Activation Tests (RECOMMENDED)
 
-**Status:** ✅ COMPLETE - All 3 critical tests passing
-**Discovered:** 2026-03-08 (from BACKLOG.md Milestone POC)
-**Last Updated:** 2026-03-08 12:05 CET
+**Status:** ✅ COMPLETE - All 6 tests passing, **Resend recommended over Flexmail**
+**Discovered:** 2026-03-08 (Flexmail lacks campaign API)
+**Last Updated:** 2026-03-08 12:15 CET
 **Severity:** CRITICAL
 
 #### Current State
 
-All POC activation tests are now passing. The full activation cycle is verified:
-- Segment Creation: ✅ 0.34s (1,529 software companies in Brussels)
-- Segment → Flexmail: ✅ 0.25s (8 contacts pushed to mock Flexmail)
-- Engagement Writeback: ✅ 1.19s (4/4 events tracked in Tracardi)
+All Resend activation tests are now passing. Resend is **recommended** for POC because it has:
+- ✅ Full webhook management API (create/update/delete)
+- ✅ Direct campaign sending API (no GUI required)
+- ✅ Batch email support
+- ✅ Simpler integration model
 
-#### Test Script
+**Test Results:**
+- Feature Parity: ✅ 3 equivalent, 3 Resend superior, 2 Flexmail advantage (custom fields)
+- Segment Creation: ✅ 0.32s (1,529 software companies in Brussels)
+- Segment → Resend: ✅ 0.24s (8 contacts pushed to audience)
+- Campaign Send: ✅ 0.00s (campaign sent via Resend API)
+- Webhook Setup: ✅ 0.00s (6 engagement events subscribed)
+- Engagement Writeback: ✅ 0.83s (4/4 events tracked)
+
+#### Test Script (RECOMMENDED)
 
 ```bash
-# Run full POC test with mock Flexmail
+# Run Resend POC test (uses mock if no API key)
 export DATABASE_URL="postgresql://cdpadmin:cdpadmin123@localhost:5432/cdp?sslmode=disable"
-poetry run python scripts/test_poc_activation.py --mock
+poetry run python scripts/test_poc_resend_activation.py --mock
+
+# Run with real Resend
+export RESEND_API_KEY="your-api-key"
+poetry run python scripts/test_poc_resend_activation.py
 ```
 
-#### POC Gap Status
+#### POC Gap Status (Resend)
 
 | Requirement | Status | Result |
 |-------------|--------|--------|
-| NL → Segment (≥95%) | ✅ VERIFIED | 0.34s segment creation |
-| Segment → Flexmail ≤60s | ✅ VERIFIED | 0.25s latency (mock) |
+| NL → Segment (≥95%) | ✅ VERIFIED | 0.32s segment creation |
+| Segment → Resend ≤60s | ✅ VERIFIED | 0.24s latency (mock) |
+| Campaign Send | ✅ VERIFIED | Resend API direct (Flexmail requires GUI) |
+| Webhook Setup | ✅ VERIFIED | 6 events subscribed via API |
 | Engagement → CDP | ✅ VERIFIED | 4 events tracked |
 
 #### Exit Criteria
 
-- ✅ Segment created via chatbot appears in Flexmail within 60 seconds (0.25s achieved)
-- ✅ Engagement events flow back to Tracardi (email.sent, email.delivered, email.opened, email.clicked)
+- ✅ Segment created via chatbot appears in Resend within 60 seconds (0.24s achieved)
+- ✅ Campaign sent via Resend API (no GUI required)
+- ✅ Webhooks configured via API for engagement tracking (6 events)
+- ✅ Engagement events flow back to Tracardi (4 events tracked)
 - ✅ End-to-end latency measured and documented
+
+---
+
+### P0: POC Flexmail Activation Tests (Alternative)
+
+**Status:** ✅ COMPLETE - All 3 tests passing (alternative to Resend)
+**Discovered:** 2026-03-08 (from BACKLOG.md Milestone POC)
+**Last Updated:** 2026-03-08 12:05 CET
+**Severity:** MEDIUM
+
+#### Current State
+
+Flexmail tests pass but **Resend is recommended**. Flexmail requires GUI for campaigns and lacks full webhook management API.
+
+#### Test Script
+
+```bash
+# Run Flexmail POC test (alternative)
+poetry run python scripts/test_poc_activation.py --mock
+```
 
 ---
 
