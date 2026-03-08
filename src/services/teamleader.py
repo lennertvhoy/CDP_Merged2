@@ -360,3 +360,64 @@ class TeamleaderClient:
             "window_seconds": self.rate_limiter.window_seconds,
             "remaining_calls": self.rate_limiter.max_calls - len(self.rate_limiter.calls),
         }
+
+    def create_record(
+        self,
+        endpoint: str,
+        data: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Create a new record via Teamleader API.
+        
+        Args:
+            endpoint: API endpoint (e.g., "companies.add", "contacts.add", "deals.add")
+            data: Record data to create
+            
+        Returns:
+            Created record with ID
+        """
+        response = self._request_with_retry(
+            "POST",
+            f"{TEAMLEADER_API_BASE_URL}/{endpoint}",
+            json=data,
+        )
+        return response.json()
+
+    def add_company(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Create a new company in Teamleader.
+        
+        Args:
+            data: Company data with name, address, etc.
+            
+        Returns:
+            Created company record
+        """
+        return self.create_record("companies.add", data)
+
+    def add_contact(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Create a new contact in Teamleader.
+        
+        Args:
+            data: Contact data with first_name, last_name, email, etc.
+            
+        Returns:
+            Created contact record
+        """
+        return self.create_record("contacts.add", data)
+
+    def add_deal(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Create a new deal in Teamleader.
+        
+        Args:
+            data: Deal data with title, estimated_value, company_id, etc.
+            
+        Returns:
+            Created deal record
+        """
+        return self.create_record("deals.add", data)
+
+    async def initialize(self) -> None:
+        """Initialize the client by refreshing access token.
+        
+        This is a convenience method for async initialization.
+        """
+        self.refresh_access_token()
