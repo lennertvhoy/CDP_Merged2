@@ -2,7 +2,7 @@
 
 **Platform:** AZURE (VMs, Container Apps, OpenAI)  
 **Architecture:** Source systems PII truth + PostgreSQL intelligence truth + Tracardi activation runtime + AI chatbot  
-**Last Updated:** 2026-03-08 (v3.0 feedback incorporated; 80-90% of source-of-truth issues resolved per user review; v3.1 precision improvements now tracked)
+**Last Updated:** 2026-03-08 (v3.0 content direction validated; 80-90% source-of-truth issues resolved; v3.1 now tracking 4 precision fixes + 7 formatting improvements per user formatting review)
 **Purpose:** Medium-term roadmap from the current repo state to a credible demo first and production readiness later
 
 ## How To Use This File
@@ -227,6 +227,17 @@ poetry run python scripts/test_poc_activation.py --mock
 - Strict CSV export integrity proof with validation and checksum
 - Maturity label system (Live/Local/Demo-backed/Planned)
 - Privacy statement wording aligned exactly with divergence table
+
+**v3.1 Formatting Improvements (content direction good, formatting still rough):**
+| Priority | Item | Status | What needs to happen |
+|----------|------|--------|----------------------|
+| Critical | **Rebuild page 9 screenshot inventory table** | Pending | Fix overlapping text, unreadable rows; wider columns, wrapped text, smaller filename strings, consistent alignment |
+| Critical | **Rebuild page 10 sync-latency table** | Pending | Fix column collisions with company names/timestamps; better column sizing and text wrapping |
+| High | **Split page 1 into two pages** | Pending | Page 1 = title + purpose + audience + companion docs; Page 2 = contents + overview table |
+| High | **Standardize phase page pattern** | Pending | Heading → business claim → screenshot/evidence → verification bullets → conclusion line; apply consistently across all phase pages |
+| Medium | **Shaded code boxes for API/JSON** | Pending | Replace raw monospaced text dumps with contained shaded code blocks (pages 5-7) |
+| Medium | **Fix blank space waste** | Pending | Tighten or combine pages 4 and 11 with adjacent content |
+| Medium | **Standardize visual hierarchy** | Pending | Consistent screenshot sizing/centering, caption spacing, section rhythm across entire PDF |
 
 ### Milestone 1: Finish Data Coverage And Enrichment
 
