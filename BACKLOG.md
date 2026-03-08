@@ -391,7 +391,7 @@ This milestone blocks:
 
 | Priority | Item | Status | What still needs to happen |
 |----------|------|--------|-----------------------------|
-| Critical | Remove inline secrets from repo-tracked code and scripts | Pending | `scripts/enrich_monitor.py` currently contains an inline PostgreSQL connection string and must be moved to env/local config/Key Vault references |
+| Critical | Remove inline secrets from repo-tracked code and scripts | Partial | `scripts/enrich_monitor.py` was already fixed before this session; the 2026-03-08 re-audit removed the remaining active local DSN fallbacks from `src/mcp_server.py`, `scripts/start_mcp_server.sh`, and `scripts/reconcile_teamleader_identities.py`. Continue the broader sweep for unsafe real secrets and production credential paths. |
 | Critical | Sweep live scripts for unsafe credential fallbacks | Pending | Example: admin-style defaults still appear in operational code paths such as `src/ingestion/kbo_ingest.py` |
 | High | Align all operational tooling on env/Key Vault/secret refs instead of local inline values | Pending | Prevent machine-local behavior from masquerading as repo-safe configuration |
 | High | Audit current docs and scripts for stale operational claims and unsafe examples | Pending | Current ADR/history still referenced a nonexistent sync job before this audit |
@@ -429,7 +429,7 @@ These items were important enough to shape the roadmap directly:
 
 1. `BACKLOG.md` was stale and still marked several implemented P0 items as pending.
 2. During this audit, `docs/ARCHITECTURE_DECISION_RECORD.md` had to be corrected because it still claimed a `scripts/sync_tracardi_to_postgres.py` job existed.
-3. `scripts/enrich_monitor.py` contains an inline PostgreSQL connection string and should be treated as a secret-handling defect.
+3. The earlier `scripts/enrich_monitor.py` secret-handling claim was stale; the real residual 2026-03-08 DSN fallbacks in MCP and reconciliation helpers were removed, but the broader credential audit still remains.
 4. `NEXT_ACTIONS.md` contains conflicting enrichment-progress numbers and needs re-verification from PostgreSQL before another exact percentage claim is trusted.
 5. `src/models/` exists, but the repo audit found no direct `sqlalchemy` declaration in `pyproject.toml` and no dedicated tests using the new models.
 

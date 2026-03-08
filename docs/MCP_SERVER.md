@@ -45,24 +45,24 @@ Example configuration format (client-dependent):
       "command": "bash",
       "args": [
         "/home/ff/Documents/CDP_Merged/scripts/start_mcp_server.sh"
-      ],
-      "env": {
-        "DATABASE_URL": "postgresql://cdpadmin:cdpadmin123@localhost:5432/cdp?sslmode=disable"
-      }
+      ]
     }
   }
 }
 ```
 
+The server resolves PostgreSQL connectivity from shell environment variables first, then local repo config files in this order: `.env.local`, `.env`, `.env.database`.
+
 ## Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATABASE_URL` | Built from parts | Full PostgreSQL connection string |
-| `DB_HOST` | localhost | Database host |
-| `DB_NAME` | cdp | Database name |
-| `DB_USER` | cdpadmin | Database user |
-| `DB_PASSWORD` | cdpadmin123 | Database password |
+| `DATABASE_URL` | None | Full PostgreSQL connection string |
+| `POSTGRES_CONNECTION_STRING` | None | Alternate PostgreSQL connection string |
+| `DB_HOST` | None | Database host when building from parts |
+| `DB_NAME` | None | Database name when building from parts |
+| `DB_USER` | None | Database user when building from parts |
+| `DB_PASSWORD` | None | Database password when building from parts |
 | `DB_PORT` | 5432 | Database port |
 | `DB_SSLMODE` | disable | SSL mode |
 

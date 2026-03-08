@@ -3,18 +3,16 @@
 
 import asyncio
 import asyncpg
-import os
+
+from src.core.database_url import resolve_database_url
 
 
 async def reconcile_identities():
     """Link Teamleader companies to KBO records based on VAT numbers."""
-    database_url = os.getenv(
-        "DATABASE_URL",
-        "postgresql://cdpadmin:cdpadmin123@localhost:5432/cdp?sslmode=disable"
-    )
-    
+    database_url = resolve_database_url()
+
     pool = await asyncpg.create_pool(database_url, min_size=1, max_size=3)
-    
+
     async with pool.acquire() as conn:
         # Find Teamleader companies with VAT numbers
         crm_records = await conn.fetch(
@@ -119,7 +117,7 @@ async def reconcile_identities():
         print(f"\nCurrent identity link status:")
         for row in stats:
             print(f"  {row['identity_link_status']}: {row['count']}")
-    
+
     await pool.close()
 
 
