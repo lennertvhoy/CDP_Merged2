@@ -2233,3 +2233,12 @@ Re-verified the local Tracardi privacy/runtime path to resolve a contradiction b
 - The guide no longer overclaims a fully UID-only runtime
 - The privacy documentation path is closed for the guide task
 - Remaining Illustrated Guide blockers are now populated Resend audience proof, guide-ready event-processor captures, and website-behavior evidence
+
+## 2026-03-08 - Session: Resend Audience Population Attempt
+
+**Task:** Populate Resend audience for canonical segment (1,652 companies)
+**Outcome:** BLOCKED / PAUSED
+
+- **Verified:** Logged into Resend via browser tool; canonical audience is empty/not present.
+- **Discovered Block:** Attempted to push the segment via API script, but found that very few companies in the `1000-1299` IT sector actually have a `main_email` populated in PostgreSQL.
+- **Action:** Paused the effort. The guide's 1,652-count scope cannot currently be matched with a 1,652-contact Resend audience until email coverage is improved or the requirement is adjusted.
