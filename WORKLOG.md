@@ -4,6 +4,62 @@
 
 ---
 
+## 2026-03-08 (MCP Server Implemented - 7 Tools Exposed)
+
+### Task: Implement MCP (Model Context Protocol) server for standardized tool access
+
+**Type:** app_code  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 11:45 CET  
+
+**Summary:**
+Implemented a Model Context Protocol (MCP) server that exposes the core PostgreSQL-backed read-only tools via standardized MCP interface. Enables MCP-compatible clients (Claude Desktop, etc.) to query the CDP database.
+
+**Files Created:**
+- `src/mcp_server.py` - Main MCP server implementation (7 tools, 2 resources)
+- `scripts/start_mcp_server.sh` - Startup script for stdio or SSE mode
+- `docs/MCP_SERVER.md` - Complete documentation
+- `.mcp/claude_desktop_config.json` - Claude Desktop configuration template
+
+**Tools Exposed (7):**
+| Tool | Purpose |
+|------|---------|
+| `search_companies` | Search by keywords, city, NACE, status |
+| `aggregate_companies` | Industry/city/legal form analytics |
+| `get_company_360_profile` | Complete 360° view (KBO + CRM + Financial) |
+| `get_industry_summary` | Pipeline/revenue by industry |
+| `get_geographic_revenue_distribution` | Revenue by city |
+| `get_identity_link_quality` | KBO matching coverage |
+| `find_high_value_accounts` | Risk/opportunity accounts |
+
+**Resources Exposed (2):**
+- `cdp://schema/companies` - Companies table schema
+- `cdp://stats/summary` - Database statistics
+
+**Transport Modes:**
+- **Stdio**: For Claude Desktop integration
+- **SSE**: HTTP API on configurable port (default 8001)
+
+**Verification:**
+- ✅ Server starts successfully in both modes
+- ✅ Health endpoint returns: `{"status":"ok","server":"cdp-postgresql-query-server","version":"1.0.0"}`
+- ✅ Uses existing PostgreSQLSearchService and Unified360Service
+- ✅ Read-only access (no mutations exposed)
+
+**Usage:**
+```bash
+# Stdio mode (Claude Desktop)
+./scripts/start_mcp_server.sh
+
+# SSE mode (HTTP API)
+./scripts/start_mcp_server.sh --sse 8001
+
+# Health check
+curl http://localhost:8001/health
+```
+
+---
+
 ## 2026-03-08 (Option D Routing Guard Implemented - ALL TESTS PASS)
 
 ### Task: Implement Option D - Routing guard in critic_node for 360° tool selection

@@ -8,6 +8,58 @@
 
 ## Active
 
+### P0: MCP Server Implementation
+
+**Status:** ✅ COMPLETE - MCP server operational with 7 core tools
+**Discovered:** 2026-03-08 (from BACKLOG.md Milestone 0A)
+**Last Updated:** 2026-03-08
+**Severity:** HIGH
+
+#### Current State
+
+- MCP server implemented in `src/mcp_server.py`
+- 7 core read-only tools exposed via Model Context Protocol
+- Supports both stdio (Claude Desktop) and SSE (HTTP) transports
+- Uses existing PostgreSQLSearchService and Unified360Service
+- Health endpoint verified working
+
+#### Tools Exposed
+
+| Tool | Purpose |
+|------|---------|
+| `search_companies` | Search by keywords, city, NACE, status |
+| `aggregate_companies` | Industry/city/legal form analytics |
+| `get_company_360_profile` | Complete 360° view (KBO + CRM + Financial) |
+| `get_industry_summary` | Pipeline/revenue by industry |
+| `get_geographic_revenue_distribution` | Revenue by city |
+| `get_identity_link_quality` | KBO matching coverage |
+| `find_high_value_accounts` | Risk/opportunity accounts |
+
+#### Resources Exposed
+
+- `cdp://schema/companies` - Companies table schema
+- `cdp://stats/summary` - Database statistics
+
+#### Usage
+
+```bash
+# Stdio mode (Claude Desktop)
+./scripts/start_mcp_server.sh
+
+# SSE mode (HTTP API on port 8001)
+./scripts/start_mcp_server.sh --sse
+
+# Health check
+curl http://localhost:8001/health
+```
+
+#### Documentation
+
+- `docs/MCP_SERVER.md` - Full documentation
+- `.mcp/claude_desktop_config.json` - Claude Desktop configuration template
+
+---
+
 ### P0: Connect Source Systems (HIGHEST YIELD)
 
 **Status:** ✅ TEAMLEADER & EXACT ONLINE SYNC COMPLETE - Real data flowing from both!
