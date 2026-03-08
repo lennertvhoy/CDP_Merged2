@@ -4,6 +4,54 @@
 
 ---
 
+## 2026-03-08 (Chrome CDP Browser Integration)
+
+### Task: Illustrated Guide Screenshot Capture via Chrome DevTools Protocol
+
+**Type:** docs / verification  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 15:05 CET  
+**Git Head:** `2499d6b`
+
+**Summary:**
+Discovered Chrome is running with remote debugging on port 9222. Successfully connected Playwright via CDP to capture real screenshots of logged-in sessions for the Illustrated Guide v2.0.
+
+**Key Discovery:**
+Chrome was already running with `--remote-debugging-port=9222`, allowing direct access to all logged-in sessions (Exact Online, Teamleader, Tracardi, Resend) without separate authentication.
+
+**Screenshots Captured:**
+
+| Screenshot | Source | Data Visible |
+|------------|--------|--------------|
+| `exact_online_dashboard.png` | Chrome CDP | Financial cockpit with €757,937.61 balance, €118,460.21 outstanding |
+| `teamleader_dashboard.png` | Chrome CDP | Logged-in Teamleader Focus view |
+| `teamleader_companies.png` | Chrome CDP | 57 companies with emails, phones, websites |
+| `tracardi_dashboard_live.png` | Chrome CDP | 131 events, 79 profiles, email engagement metrics |
+| `resend_dashboard.png` | Chrome CDP | Delivered emails, CDP test campaigns |
+| `chatbot_restaurants_gent_1105.png` | Chrome CDP | **"1,105 restaurant companies in Gent"** - correct count! |
+| `chatbot_360_*.png` | Chrome CDP | 360° query flow demonstration |
+
+**Technical Implementation:**
+```python
+# Connect to existing Chrome
+browser = await p.chromium.connect_over_cdp("http://localhost:9222")
+context = browser.contexts[0]
+pages = context.pages
+
+# Access any tab with full session
+page = pages[2]  # Exact Online tab
+await page.screenshot(path="exact_online_dashboard.png")
+```
+
+**Remaining for 360° Golden Record:**
+The 360° tool requires identity linking between CRM/Exact and KBO. Current status:
+- Teamleader has 57 companies with VAT numbers
+- PostgreSQL has 1.94M KBO records
+- Identity linking table (`source_identity_links`) is empty
+- Next: Run identity reconciliation to link CRM → KBO via VAT numbers
+
+---
+
 ## 2026-03-08 (Enrichment Runners Restarted)
 
 ### Task: Restart Enrichment Runners After Supervisor Fix
@@ -44,53 +92,6 @@ setsid env ENRICHERS=website RUN_NAME=website_discovery CHUNK_SIZE=250 BATCH_SIZ
 ```
 
 ---
-
-## 2026-03-08 (Ollama AI Description Enrichment)
-
-### Task: Add Ollama-based AI Description Enrichment (Cost-Free)
-
-**Type:** app_code  
-**Status:** COMPLETE  
-**Timestamp:** 2026-03-08 14:15 CET  
-**Git Head:** `cc87d29`
-
-**Summary:**
-Created Ollama-based AI description enrichment as a cost-free alternative to Azure OpenAI. Ollama is already installed and running with `llama3.1:8b`. The new enricher generates professional business descriptions from NACE codes using local inference.
-
-**Cost Comparison:**
-
-| Option | Cost for 516K profiles | Quality | Speed |
-|--------|----------------------|---------|-------|
-| Azure OpenAI | ~€20-40 | High | Fast |
-| **Ollama (NEW)** | **FREE** | Good | Medium |
-
-**Files Created:**
-- `src/enrichment/descriptions_ollama.py` - New Ollama-based enricher
-
-**Files Modified:**
-- `scripts/enrich_companies_batch.py` - Added DESCRIPTION_ENRICHER selection logic
-
-**Configuration:**
-```bash
-# Use Azure OpenAI (default, paid)
-python scripts/enrich_companies_batch.py --enrichers description
-
-# Use Ollama (FREE, local)
-export DESCRIPTION_ENRICHER=ollama
-export OLLAMA_MODEL=llama3.1:8b  # or llama3.2:3b, mistral
-python scripts/enrich_companies_batch.py --enrichers description
-```
-
-**Verification:**
-- ✅ Tested description generation with sample profile
-- ✅ Verified caching works (same NACE codes = cache hit)
-- ✅ Confirmed environment variable selection works
-- ✅ Git commit `cc87d29` pushed
-
-**Example Output:**
-```
-Description: Test Software BV provides software and IT services to businesses, 
-offering expertise in development, implementation, and maintenance of technology 
 solutions.
 Source: ollama:llama3.1:8b
 ```
