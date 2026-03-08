@@ -17,6 +17,7 @@ from langchain_core.tools import tool
 from src.core.logger import get_logger
 from src.services.resend import ResendClient
 from src.services.canonical_segments import CanonicalSegmentService
+from src.services.postgresql_search import PostgreSQLSearchService
 from src.services.tracardi import TracardiClient
 
 logger = get_logger(__name__)
@@ -99,6 +100,8 @@ async def _load_segment_rows(
         "segment_id": segment_id,
         "postgresql_checked": False,
         "postgresql_count": 0,
+        "segment_key": None,
+        "definition_json": {},
         "tracardi_checked": False,
         "tracardi_count": 0,
         "errors": [],
@@ -112,6 +115,8 @@ async def _load_segment_rows(
         if canonical is not None:
             pg_count = int(canonical["total_count"])
             diagnostics["postgresql_count"] = pg_count
+            diagnostics["segment_key"] = canonical.get("segment_key")
+            diagnostics["definition_json"] = canonical.get("definition_json") or {}
             if pg_count > 0:
                 return canonical["rows"], pg_count, "postgresql", diagnostics
             # PostgreSQL has segment but it's empty - continue to check Tracardi
@@ -157,6 +162,98 @@ async def _load_segment_rows(
             f"Failed to retrieve segment '{segment_id}' from any source. "
             f"Errors: {diagnostics['errors']}"
         )
+
+
+def _row_matches_canonical_filters(
+    row: dict[str, Any],
+    filters: dict[str, Any],
+) -> tuple[bool, list[str]]:
+    """Validate that an exported canonical row still satisfies the stored segment filters."""
+    mismatches: list[str] = []
+
+    keywords = (filters.get("keywords") or "").strip().lower()
+    if keywords:
+        company_name = str(row.get("company_name") or "").lower()
+        if keywords not in company_name:
+            mismatches.append("keywords")
+
+    enterprise_number = (filters.get("enterprise_number") or "").strip()
+    if enterprise_number:
+        if str(row.get("kbo_number") or "") != enterprise_number:
+            mismatches.append("enterprise_number")
+
+    nace_codes = [str(code) for code in filters.get("nace_codes") or [] if code]
+    if nace_codes:
+        row_codes = {
+            str(code)
+            for code in [
+                row.get("industry_nace_code"),
+                *(row.get("all_nace_codes") or []),
+            ]
+            if code
+        }
+        if not row_codes.intersection(nace_codes):
+            mismatches.append("nace_codes")
+
+    city = (filters.get("city") or "").strip()
+    if city:
+        row_city = str(row.get("city") or "")
+        if row_city not in PostgreSQLSearchService._city_candidates(city):
+            mismatches.append("city")
+
+    zip_code = (filters.get("zip_code") or "").strip()
+    if zip_code and str(row.get("postal_code") or "") != zip_code:
+        mismatches.append("zip_code")
+
+    status = PostgreSQLSearchService._normalize_status_filter(filters.get("status"))
+    if status and str(row.get("status") or "").upper() != status:
+        mismatches.append("status")
+
+    has_phone = filters.get("has_phone")
+    if has_phone is True and not str(row.get("main_phone") or "").strip():
+        mismatches.append("has_phone")
+
+    has_email = filters.get("has_email")
+    if has_email is True and not str(row.get("main_email") or "").strip():
+        mismatches.append("has_email")
+
+    email_domain = PostgreSQLSearchService._normalize_email_domain(filters.get("email_domain"))
+    if email_domain:
+        row_email = str(row.get("main_email") or "").strip().lower()
+        if not row_email.endswith(f"@{email_domain}"):
+            mismatches.append("email_domain")
+
+    return not mismatches, mismatches
+
+
+def _validate_canonical_segment_rows(
+    rows: list[dict[str, Any]],
+    definition_json: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Check exported canonical rows against stored segment metadata filters."""
+    filters = (definition_json or {}).get("filters") or {}
+    if not filters:
+        return {"validated": False, "checked_rows": 0, "invalid_rows": 0, "filters": {}}
+
+    invalid_rows: list[dict[str, Any]] = []
+    for row in rows:
+        matches, mismatches = _row_matches_canonical_filters(row, filters)
+        if not matches:
+            invalid_rows.append(
+                {
+                    "company_name": row.get("company_name"),
+                    "kbo_number": row.get("kbo_number"),
+                    "failed_filters": mismatches,
+                }
+            )
+
+    return {
+        "validated": True,
+        "checked_rows": len(rows),
+        "invalid_rows": len(invalid_rows),
+        "filters": filters,
+        "sample_invalid_rows": invalid_rows[:5],
+    }
 
 
 @tool
@@ -235,6 +332,38 @@ async def export_segment_to_csv(
             ensure_ascii=False,
         )
 
+    validation_summary: dict[str, Any] | None = None
+    if backend == "postgresql":
+        validation_summary = _validate_canonical_segment_rows(
+            profiles,
+            diagnostics.get("definition_json"),
+        )
+        if validation_summary.get("validated") and validation_summary.get("invalid_rows", 0) > 0:
+            error_msg = (
+                f"Export aborted: canonical segment '{segment_id}' has "
+                f"{validation_summary['invalid_rows']} row(s) that do not satisfy the stored filters."
+            )
+            logger.error(
+                "csv_export_validation_failed",
+                segment=segment_id,
+                invalid_rows=validation_summary["invalid_rows"],
+            )
+            return json.dumps(
+                {
+                    "status": "error",
+                    "error": error_msg,
+                    "segment_id": segment_id,
+                    "backend": backend,
+                    "validation": validation_summary,
+                    "suggestions": [
+                        "Rebuild the canonical segment from the current search filters",
+                        "Inspect the stored segment definition and member rows for drift",
+                        "Do not use this export as demo evidence until the mismatch is resolved",
+                    ],
+                },
+                ensure_ascii=False,
+            )
+
     # Create CSV file
     export_dir = Path(tempfile.gettempdir()) / "cdp_exports"
     export_dir.mkdir(parents=True, exist_ok=True)
@@ -281,6 +410,7 @@ async def export_segment_to_csv(
                 "fields_included": include_fields,
                 "expires_in_hours": 24,
                 "backend": backend,
+                "validation": validation_summary,
             },
             ensure_ascii=False,
         )

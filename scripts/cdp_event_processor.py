@@ -63,6 +63,13 @@ EVENT_WEIGHTS = {
     "email.complained": -10,
 }
 
+ENGAGEMENT_THRESHOLDS = {
+    "medium": 20,
+    "high": 50,
+}
+
+SCORING_MODEL_VERSION = "2026-03-08"
+
 # Industry cross-sell mappings (NACE code → recommended services)
 CROSS_SELL_MAP = {
     # IT services
@@ -75,6 +82,29 @@ CROSS_SELL_MAP = {
     # Construction
     "41101": ["project_management_software", "site_monitoring", "equipment_leasing"],
     "43210": ["electrical_maintenance", "energy_audit", "smart_building"],
+}
+
+RECOMMENDATION_RULES = {
+    "sales_opportunity": {
+        "trigger": "engagement_score >= 50 and open_deals == 0",
+        "priority": "high",
+    },
+    "cross_sell": {
+        "trigger": "nace_code in CROSS_SELL_MAP",
+        "priority": "medium",
+    },
+    "multi_division": {
+        "trigger": "source_systems < 3",
+        "priority": "medium",
+    },
+    "support_expansion": {
+        "trigger": "open_tickets > 0",
+        "priority": "medium",
+    },
+    "re_activation": {
+        "trigger": "engagement_score < 20",
+        "priority": "medium",
+    },
 }
 
 
@@ -142,6 +172,28 @@ def extract_kbo_from_event(event_data: dict[str, Any]) -> str | None:
                     return normalized
 
     return None
+
+
+def get_scoring_model() -> dict[str, Any]:
+    """Return the deterministic scoring weights, thresholds, and rule triggers."""
+    return {
+        "version": SCORING_MODEL_VERSION,
+        "event_weights": EVENT_WEIGHTS,
+        "engagement_thresholds": {
+            "low": {
+                "min_inclusive": 0,
+                "max_exclusive": ENGAGEMENT_THRESHOLDS["medium"],
+            },
+            "medium": {
+                "min_inclusive": ENGAGEMENT_THRESHOLDS["medium"],
+                "max_exclusive": ENGAGEMENT_THRESHOLDS["high"],
+            },
+            "high": {
+                "min_inclusive": ENGAGEMENT_THRESHOLDS["high"],
+            },
+        },
+        "recommendation_rules": RECOMMENDATION_RULES,
+    }
 
 
 def lookup_company(cursor, email: str | None, event_data: dict[str, Any]) -> tuple[Any, ...] | None:
@@ -321,9 +373,9 @@ def update_engagement_score(email: str, event_type: str, event_data: dict) -> di
             score_row = cursor.fetchone()
             total_score, opens, clicks, last_activity = score_row
 
-            if total_score >= 50:
+            if total_score >= ENGAGEMENT_THRESHOLDS["high"]:
                 engagement_level = "high"
-            elif total_score >= 20:
+            elif total_score >= ENGAGEMENT_THRESHOLDS["medium"]:
                 engagement_level = "medium"
             else:
                 engagement_level = "low"
@@ -401,6 +453,7 @@ def generate_next_best_action(engagement_data: dict) -> dict:
         
         # Build recommendation
         recommendations = []
+        rule_trace = []
         priority = "medium"
         
         # High engagement + no open deals = sales opportunity
@@ -409,6 +462,11 @@ def generate_next_best_action(engagement_data: dict) -> dict:
                 "type": "sales_opportunity",
                 "action": "Schedule sales call - high engagement with no active deals",
                 "reason": f"Engagement score {score} indicates strong interest but no open opportunities"
+            })
+            rule_trace.append({
+                "rule": "sales_opportunity",
+                "matched": True,
+                "inputs": {"engagement_score": score, "open_deals": open_deals or 0},
             })
             priority = "high"
         
@@ -420,6 +478,11 @@ def generate_next_best_action(engagement_data: dict) -> dict:
                 "action": f"Propose {', '.join(services)} services",
                 "reason": f"Industry {nace_code} typically needs these complementary services"
             })
+            rule_trace.append({
+                "rule": "cross_sell",
+                "matched": True,
+                "inputs": {"nace_code": nace_code, "services": services},
+            })
         
         # Multi-division opportunity (only linked to 1-2 sources)
         if source_count and source_count < 3:
@@ -427,6 +490,11 @@ def generate_next_best_action(engagement_data: dict) -> dict:
                 "type": "multi_division",
                 "action": "Introduce other IT1 Group divisions",
                 "reason": f"Company only connected to {source_count} source(s) - cross-division opportunity"
+            })
+            rule_trace.append({
+                "rule": "multi_division",
+                "matched": True,
+                "inputs": {"source_systems": source_count},
             })
         
         # Support issue opportunity
@@ -436,6 +504,11 @@ def generate_next_best_action(engagement_data: dict) -> dict:
                 "action": "Review support contract for expansion",
                 "reason": f"{open_tickets} open ticket(s) indicate support needs"
             })
+            rule_trace.append({
+                "rule": "support_expansion",
+                "matched": True,
+                "inputs": {"open_tickets": open_tickets},
+            })
         
         # Low engagement re-activation
         if engagement_level == "low":
@@ -443,6 +516,15 @@ def generate_next_best_action(engagement_data: dict) -> dict:
                 "type": "re_activation",
                 "action": "Send re-engagement campaign with special offer",
                 "reason": "Low engagement - risk of churn"
+            })
+            rule_trace.append({
+                "rule": "re_activation",
+                "matched": True,
+                "inputs": {
+                    "engagement_level": engagement_level,
+                    "engagement_score": score,
+                    "medium_threshold": ENGAGEMENT_THRESHOLDS["medium"],
+                },
             })
         
         return {
@@ -453,6 +535,8 @@ def generate_next_best_action(engagement_data: dict) -> dict:
             "engagement_score": score,
             "source_systems": source_count,
             "priority": priority,
+            "scoring_model_version": SCORING_MODEL_VERSION,
+            "rule_trace": rule_trace,
             "recommendations": recommendations,
             "timestamp": datetime.now(UTC).isoformat()
         }
@@ -602,9 +686,9 @@ async def get_next_best_action(kbo_number: str):
         if row:
             total_score, opens, clicks, last_activity = row
             
-            if total_score >= 50:
+            if total_score >= ENGAGEMENT_THRESHOLDS["high"]:
                 engagement_level = "high"
-            elif total_score >= 20:
+            elif total_score >= ENGAGEMENT_THRESHOLDS["medium"]:
                 engagement_level = "medium"
             else:
                 engagement_level = "low"
@@ -676,10 +760,15 @@ async def get_engaged_leads(min_score: int = 30):
             "min_score": min_score,
             "leads": leads
         })
-        
     finally:
         cursor.close()
         conn.close()
+
+
+@app.get("/api/scoring-model")
+async def get_scoring_model_endpoint():
+    """Expose the deterministic engagement scoring and NBA rule model."""
+    return JSONResponse(get_scoring_model())
 
 
 @app.get("/")
@@ -700,6 +789,7 @@ async def root():
             "POST /webhook/resend": "Receive Resend email events",
             "GET /api/next-best-action/{kbo_number}": "Get recommendations for company",
             "GET /api/engagement/leads": "Get engaged leads for sales",
+            "GET /api/scoring-model": "Inspect deterministic scoring weights and rule thresholds",
             "GET /health": "Health check",
         },
     }

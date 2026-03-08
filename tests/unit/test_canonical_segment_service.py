@@ -112,7 +112,7 @@ async def test_get_segment_members_returns_rows_and_total():
             "segment_name": "Brussels Software",
             "description": "Created by AI",
             "definition_type": "metadata",
-            "definition_json": {},
+            "definition_json": {"filters": {"city": "Brussels", "has_email": True}},
         },
         [2],
     ]
@@ -140,6 +140,7 @@ async def test_get_segment_members_returns_rows_and_total():
     assert result is not None
     assert result["total_count"] == 2
     assert result["segment_key"] == "brussels-software"
+    assert result["definition_json"] == {"filters": {"city": "Brussels", "has_email": True}}
     assert result["rows"][0]["company_name"] == "Acme BV"
 
 

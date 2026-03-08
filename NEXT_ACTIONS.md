@@ -12,7 +12,7 @@
 
 **Status:** IN PROGRESS - Core demo proof is complete; the remaining work is presentation integrity, wording clarity, and a few missing proof chains before calling the package presentation-perfect.
 **Discovered:** 2026-03-08 (initial audit), reopened 2026-03-08 via direct user feedback and source-of-truth review
-**Last Updated:** 2026-03-08 21:40 CET
+**Last Updated:** 2026-03-08 22:18 CET
 **Severity:** HIGH
 **Guide:** `docs/ILLUSTRATED_GUIDE.md` v2.0  
 **Audit Report:** `docs/ILLUSTRATED_GUIDE_AUDIT.md`
@@ -38,12 +38,14 @@
 
 | Gap | Priority | Status |
 |-----|----------|--------|
+| Split the project docs into business case / system spec / illustrated evidence guide | HIGH | Pending - the current guide still carries source-of-truth, evidence, and future-state roles at the same time |
 | Clarify reused Resend audience naming/captioning | HIGH | Pending - make it explicit that `KBO Companies - Test Audience` contains the Brussels IT subset, or capture a better-named audience when plan limits allow |
 | Clarify Autotask wording as `hybrid` | HIGH | Pending - the client and unified 360 linkage are production-capable, but the currently verified local data still runs in demo mode until vendor credentials exist |
-| Surface NBA scoring weights and thresholds | HIGH | Pending - make the logic behind `engagement_score=15`, `support_expansion`, and `re_activation` visible in the guide or appendix |
+| Surface NBA scoring weights and thresholds | HIGH | In progress - `scripts/cdp_event_processor.py` now exposes `/api/scoring-model` and `rule_trace`, but the guide/spec still need to reference it |
 | Add explicit cross-division revenue aggregation proof | HIGH | Pending - show one account with revenue rolled up across divisions, not just recommendation output |
 | Capture timestamped sync-latency proof | HIGH | Pending - prove one source update reaches the 360/query plane within the claimed sync window |
-| Harden privacy boundary in runtime | MEDIUM | Pending - strip raw email fields from Tracardi event properties; important technical debt, but not a blocker for the current honest demo story |
+| Harden privacy boundary in runtime | MEDIUM | In progress - `scripts/webhook_gateway.py` now strips raw Resend email/subject fields before downstream projection, but the live local runtime still needs a fresh end-to-end recheck |
+| Recheck the late-suite webhook/event-processor test timeout | MEDIUM | Pending - `tests/unit/test_webhook_gateway.py` + `tests/unit/test_cdp_event_processor.py` print 27 passing tests and then hit `timeout 30` |
 
 #### Exit Criteria
 
@@ -59,9 +61,11 @@
 - [x] Capture website-behavior evidence tied to the same UID/business-value story
 - [ ] Clarify Resend audience naming so the screenshot label matches the claim
 - [ ] Clarify Autotask as hybrid/prod-ready linkage plus demo-mode data
-- [ ] Surface NBA weights and threshold logic
+- [ ] Split the current guide into business case / system spec / evidence guide
+- [ ] Surface NBA weights and threshold logic in the guide/spec, using `/api/scoring-model`
 - [ ] Add explicit cross-division revenue aggregation proof
 - [ ] Capture one timestamped sync-latency proof
+- [ ] Recheck the combined webhook/event-processor test hang and capture a clean green run
 
 ---
 

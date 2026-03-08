@@ -57,6 +57,17 @@ def test_extract_kbo_from_event_normalizes_nested_metadata():
     assert event_processor.extract_kbo_from_event(payload) == "0438437723"
 
 
+def test_get_scoring_model_exposes_weights_thresholds_and_rules():
+    model = event_processor.get_scoring_model()
+
+    assert model["version"] == event_processor.SCORING_MODEL_VERSION
+    assert model["event_weights"]["email.opened"] == 5
+    assert model["event_weights"]["email.clicked"] == 10
+    assert model["engagement_thresholds"]["medium"]["min_inclusive"] == 20
+    assert model["engagement_thresholds"]["high"]["min_inclusive"] == 50
+    assert model["recommendation_rules"]["support_expansion"]["trigger"] == "open_tickets > 0"
+
+
 def test_lookup_company_prefers_kbo_number_from_payload():
     cursor = FakeCursor(
         fetchone_results=[

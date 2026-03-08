@@ -2430,6 +2430,59 @@ Re-aligned the roadmap and active queue after a source-of-truth review of the Il
 
 ---
 
+### Task: Harden Canonical IT Segment, Export Validation, And Resend Privacy Projection
+
+**Type:** app_code
+**Status:** PARTIAL
+**Timestamp:** 2026-03-08 22:18 CET
+**Git Head:** Updated during session
+
+**Summary:**
+Started the deeper source-of-truth hardening pass requested after the guide review. Corrected the active IT NACE mapping in code to the verified Brussels set, added canonical export validation so CSV rows cannot silently drift from stored segment filters, hardened the Resend webhook projection to strip raw email/subject fields before downstream projection, and exposed machine-readable NBA scoring metadata. The doc split itself was not started before handoff.
+
+**What Changed:**
+
+- `src/ai_interface/tools/nace_resolver.py`
+  - Switched active IT keyword resolution to `62100`, `62200`, `62900`, `63100`
+  - Added exact-code guard so the old 62010/62020/62030/62090/63110/63120 set is no longer returned for the current IT domain
+- `src/ai_interface/tools/export.py`
+  - Added canonical row validation against stored segment filters before writing CSV
+  - Export now aborts with diagnostics if canonical rows drift from city/NACE/email-domain/etc. filters
+- `src/services/canonical_segments.py`
+  - Exported segment rows now include `all_nace_codes` and `definition_json` so validation can use the stored segment definition
+- `scripts/webhook_gateway.py`
+  - Added privacy-safe Resend payload sanitization (`recipient_hash`, domains, subject hash, click domain)
+  - Tracardi forward payload now uses opaque profile IDs instead of raw email traits
+- `scripts/cdp_event_processor.py`
+  - Added explicit scoring constants, rule metadata, `/api/scoring-model`, and `rule_trace`
+- `src/ai_interface/tools/email.py`
+  - Fixed missing `json` import exposed by the canonical Resend push path test
+
+**Verification:**
+
+```bash
+# Direct data verification for the current Brussels IT code set
+bash -lc 'source .env.local >/dev/null 2>&1 || true; psql "$DATABASE_URL" -Atqc "SELECT industry_nace_code, COUNT(*) FROM companies WHERE city IN ('\''Brussels'\'','\''Brussel'\'','\''Bruxelles'\'') AND industry_nace_code IN ('\''62010'\'','\''62020'\'','\''62030'\'','\''62090'\'','\''62100'\'','\''62200'\'','\''62900'\'','\''63100'\'','\''63110'\'','\''63120'\'') GROUP BY industry_nace_code ORDER BY industry_nace_code;"'
+# Result: 62100=375, 62200=402, 62900=163, 63100=151; legacy 62010/62020/62030/62090/63110/63120 absent
+
+bash -lc 'source .env.local >/dev/null 2>&1 || true; psql "$DATABASE_URL" -Atqc "SELECT COUNT(*) FROM companies WHERE city IN ('\''Brussels'\'','\''Brussel'\'','\''Bruxelles'\'') AND industry_nace_code IN ('\''62100'\'','\''62200'\'','\''62900'\'','\''63100'\'') AND COALESCE(main_email, '\'''\'') <> '\'''\'';"'
+# Result: 191
+
+# Green targeted unit tests for resolver/export/segment service
+poetry run pytest tests/unit/test_nace_resolution_consistency.py tests/unit/ai_interface/tools/test_nace_resolver.py tests/unit/test_canonical_segment_service.py tests/unit/test_segment_tools_postgresql_first.py -q
+# Result: 52 passed
+
+# Remaining verification issue
+timeout 30 poetry run pytest tests/unit/test_webhook_gateway.py tests/unit/test_cdp_event_processor.py -q
+# Result: exit 124 after printing 27 passing tests; follow-up still required
+```
+
+**Next Steps:**
+1. Re-run the webhook/event-processor tests with `-vv` / `-x` to isolate the hanging case.
+2. Split the current guide into business case / system spec / illustrated evidence guide and update the guide to cite `/api/scoring-model` plus the corrected IT code set.
+
+---
+
 ### Task: Make Demo 100% Ready - Export Illustrated Guide to PDF
 
 **Type:** docs_or_process_only + verification_only
