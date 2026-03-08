@@ -1,6 +1,6 @@
 # CDP_Merged Illustrated Guide v2.0
 
-**Status:** Fresh four-source screenshot and scope labels applied; UID-first/privacy and business-value evidence still pending
+**Status:** Fresh four-source screenshot and scope labels applied; UID-first/privacy evidence now documented with runtime screenshot; business-value evidence and populated Resend audience still pending
 **Last Updated:** 2026-03-08  
 **Verification:** Screenshots captured from live systems; four-source backend rechecked via local PostgreSQL on 2026-03-08 19:20 CET
 
@@ -265,6 +265,39 @@ User NL Query → LLM Intent Classification → PostgreSQL Search
 | 360° Profile Lookup | <1s | Single company |
 | Segment Creation | 0.75s | 1,652 members |
 
+### Privacy Boundary: UID-First Operational Layer
+
+**Architecture Principle:** Tracardi stores only UID-first operational data; PII resolution happens at presentation/activation time from source systems or controlled services.
+
+**Runtime Evidence:**
+
+![Tracardi UID-First Evidence](tracardi_uid_first_evidence_2026-03-08.png)
+
+**What's Shown:**
+- 84 operational profiles stored in Tracardi
+- All profiles display as "Anonymous" in dashboard listings
+- No names, emails, or phones visible in the operational runtime layer
+- PII only resolved at authorized presentation or activation step
+
+**Current Divergence (Explicitly Documented):**
+
+| Aspect | Target State | Current Implementation |
+|--------|--------------|------------------------|
+| Profile IDs | Hashed/anonymous UIDs | ✅ Anonymous UUIDs |
+| Dashboard display | No PII in listings | ✅ Shows "Anonymous" |
+| Event payloads | UID-only references | ⚠️ May contain emails in event metadata |
+| Source system links | Lazy resolution | ✅ Resolved at query time from PostgreSQL |
+
+**Verification:**
+```sql
+-- PostgreSQL: Source identity links with controlled references
+SELECT organization_uid, kbo_number, source_system, source_record_id
+FROM source_identity_links
+LIMIT 5;
+```
+
+**Result:** Links use `organization_uid` (controlled reference) and `kbo_number` (business identifier), not personal emails or phone numbers.
+
 ### Tool Selection Routing (Option D Guard)
 
 **Problem Solved:** LLM was selecting wrong tools for 360° queries
@@ -289,6 +322,7 @@ User NL Query → LLM Intent Classification → PostgreSQL Search
 | `chatbot_segment_creation_2026-03-08.png` | NL segment creation flow | 2026-03-08 |
 | `resend_dashboard.png` | Resend dashboard with campaigns | 2026-03-08 |
 | `tracardi_dashboard_live.png` | Tracardi activation layer | 2026-03-08 |
+| `tracardi_uid_first_evidence_2026-03-08.png` | UID-first privacy boundary evidence (84 anonymous profiles) | 2026-03-08 |
 | `teamleader_companies.png` | Teamleader company list | 2026-03-08 |
 | `exact_current.png` | Exact Online dashboard | 2026-03-08 |
 
@@ -310,9 +344,10 @@ User NL Query → LLM Intent Classification → PostgreSQL Search
 ## Next Steps for Production
 
 1. **Scale Teamleader Integration:** Populate 50+ real companies
-2. **Resend Audience Verification:** Capture screenshot with 1,652 populated contacts
+2. **Resend Audience Verification:** ⚠️ PARTIAL - Dashboard shows POC campaigns; populated 1,652-contact audience screenshot still pending
 3. **Real-Time Sync Demo:** Show data change flowing through system
 4. **Email Workflow Execution:** Capture bounce processor with real events
+5. **Privacy Boundary Hardening:** Audit event payloads for any residual PII in metadata
 
 ---
 
