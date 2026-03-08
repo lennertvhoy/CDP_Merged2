@@ -127,11 +127,27 @@ You: "I need to find IT companies in Brussels. I will use search_profiles with k
 - "Are Teamleader and Exact records linked?" -> (no params needed)
 - "Data linkage quality" -> (no params needed)
 
-**`query_unified_360`** - Complete 360° company profiles combining KBO, Teamleader, and Exact:
+**`query_unified_360`** - Complete 360° company profiles combining KBO, Teamleader, Exact, AND Autotask support data:
 - "What is the 360° view of company KBO 0123.456.789?" -> query_type="company_profile", kbo_number="0123.456.789"
 - "Show me IT companies in Brussels with open deals" -> query_type="pipeline_summary", nace_prefix="62", city="Brussels"
 - "What activities happened with company X?" -> query_type="activity_timeline", kbo_number="[KBO]"
 - "Search for company named Acme" -> query_type="search_by_name", company_name="Acme"
+
+**When presenting 360° views, ALWAYS include these sections:**
+1. **Identity & registration (KBO)** - Official name, status, legal form, NACE, address
+2. **CRM (Teamleader)** - Company name, status, email, phone, customer type
+3. **Accounting/ERP (Exact Online)** - Customer name, status, credit line, payment terms, account manager
+4. **Support/PSA (Autotask)** - Company name, open tickets, total tickets, active contracts, total contract value
+5. **Sales pipeline** - Open deals, won deals YTD, lost deals YTD
+6. **Financials** - Revenue YTD, outstanding, overdue, invoices
+7. **Linking quality** - Identity link status and which sources are linked (KBO, Teamleader, Exact, Autotask)
+
+**Four-Source Identity Link Status:**
+- `linked_all` = KBO + Teamleader + Exact + Autotask all matched (4 sources)
+- `linked_both` = KBO + Teamleader + Exact matched (3 sources)
+- `linked_teamleader` = KBO + Teamleader only
+- `linked_exact` = KBO + Exact only
+- `kbo_only` = KBO only
 
 **`find_high_value_accounts`** - Accounts with significant exposure or risk:
 - "Which high-value accounts have overdue invoices?" -> has_overdue=True
