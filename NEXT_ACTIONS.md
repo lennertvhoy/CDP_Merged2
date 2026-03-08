@@ -8,52 +8,60 @@
 
 ## Active
 
-### P0: Illustrated Guide Business-Case Alignment
+### P0: Demo Polish And Source-Of-Truth Hardening
 
-**Status:** ✅ COMPLETE - Demo 100% ready. Illustrated Guide v2.0 exported to PDF with all business-case proof captured.
-**Discovered:** 2026-03-08 (initial audit), reopened 2026-03-08 via direct user feedback
-**Last Updated:** 2026-03-08 21:20 CET
-**Severity:** CRITICAL
+**Status:** IN PROGRESS - Core demo proof is complete; the remaining work is presentation integrity, wording clarity, and a few missing proof chains before calling the package presentation-perfect.
+**Discovered:** 2026-03-08 (initial audit), reopened 2026-03-08 via direct user feedback and source-of-truth review
+**Last Updated:** 2026-03-08 21:40 CET
+**Severity:** HIGH
 **Guide:** `docs/ILLUSTRATED_GUIDE.md` v2.0  
 **Audit Report:** `docs/ILLUSTRATED_GUIDE_AUDIT.md`
 
-#### Accepted Decision
+#### Accepted Decisions
 
-- `Resend` is acceptable for the current POC. Do **not** treat the Flexmail swap as a blocker in the active queue unless the user explicitly reopens it.
+- `Resend` is acceptable for the current POC. Do **not** treat the Flexmail swap as a blocker unless the user explicitly reopens it.
+- Keep the local-only demo posture explicit. Do **not** reopen Azure deployment work just to improve the guide package.
 
 #### What the current guide already proves
 
 | Evidence | Status | Limitation |
 |----------|--------|------------|
-| B.B.S. Entreprise single-story proof | Verified | The guide now ties the same B.B.S. record across the `linked_all` 360 proof, event-processor outputs, populated Resend audience context, and demo-labeled website behavior written to canonical `event_facts` |
-| Privacy boundary | Partial | The guide now truthfully shows anonymous Tracardi profile listings plus the documented event-metadata divergence, but the runtime is not yet fully UID-only |
-| NL segment creation | Verified | The guide now labels `1,652` canonical scope, `1,529` narrower activation-test scope, `101` CSV preview rows, and the exact Brussels IT primary-code subset now has downstream proof in Resend (`190` company rows → `189` unique contacts after one shared-mailbox dedupe) |
-| Resend activation POC tests | Verified | Live populated audience proof now exists: the empty audience `KBO Companies - Test Audience` was reused because the plan is capped at `3` audiences, and now holds `189` unique contacts from the exact `190`-company Brussels IT subset |
-| Event processor business-value proof | Verified | Local API outputs verify B.B.S. Entreprise engagement writeback plus support-expansion NBA and Accountantskantoor Dubois cross-sell + multi-division, and the guide now embeds the live JSON evidence |
-| Website behavior writeback | Verified | A demo-labeled local website session for the real B.B.S. UID now records `2` `page.view` events and `1` `goal.achieved` download in canonical `event_facts` after `001_add_projection_tables.sql` initialized the missing local projection tables |
-| CSV export artifact | Partial | The guide now labels `101` as a preview export, but it still lacks opened-file/spreadsheet proof |
+| B.B.S. Entreprise single-story proof | Verified | The same B.B.S. record is now tied across the `linked_all` 360 proof, event-processor outputs, populated Resend audience context, and demo-labeled website behavior in canonical `event_facts` |
+| Privacy architecture honesty | Verified | The guide now explicitly documents the current divergence: anonymous Tracardi profiles, but email-bearing event metadata still exists |
+| NL segment creation and scope framing | Verified | The guide now labels `1,652` canonical scope, `1,529` narrower activation-test scope, `190` Brussels IT rows, `189` unique Resend contacts, and `101` CSV preview rows |
+| Resend activation proof | Verified | Live populated audience proof exists, but the reused audience name `KBO Companies - Test Audience` still needs better captioning or renaming to avoid ambiguity |
+| Event processor / NBA outputs | Verified | Live JSON evidence exists for B.B.S. support-expansion + re-activation and Accountantskantoor Dubois cross-sell + multi-division, but the scoring thresholds are not yet surfaced clearly |
+| Website behavior writeback | Verified | A demo-labeled local website session for the real B.B.S. UID now records `2` `page.view` events and `1` `goal.achieved` download in canonical `event_facts` |
+| CSV export artifact | Verified | The spreadsheet/opened-file proof is now captured |
 
-#### Remaining Follow-up (COMPLETE)
+#### Remaining Polish Work
 
 | Gap | Priority | Status |
 |-----|----------|--------|
-| CSV export opened-file proof | LOW | ✅ COMPLETE - Screenshot captured showing 190 Brussels IT companies in spreadsheet view |
-| Audit/caption cleanup | LOW | ✅ COMPLETE - Guide v2.0 finalized with all scope labels and current-state captions |
-
-**Demo Readiness Status: 100%**
+| Clarify reused Resend audience naming/captioning | HIGH | Pending - make it explicit that `KBO Companies - Test Audience` contains the Brussels IT subset, or capture a better-named audience when plan limits allow |
+| Clarify Autotask wording as `hybrid` | HIGH | Pending - the client and unified 360 linkage are production-capable, but the currently verified local data still runs in demo mode until vendor credentials exist |
+| Surface NBA scoring weights and thresholds | HIGH | Pending - make the logic behind `engagement_score=15`, `support_expansion`, and `re_activation` visible in the guide or appendix |
+| Add explicit cross-division revenue aggregation proof | HIGH | Pending - show one account with revenue rolled up across divisions, not just recommendation output |
+| Capture timestamped sync-latency proof | HIGH | Pending - prove one source update reaches the 360/query plane within the claimed sync window |
+| Harden privacy boundary in runtime | MEDIUM | Pending - strip raw email fields from Tracardi event properties; important technical debt, but not a blocker for the current honest demo story |
 
 #### Exit Criteria
 
 - [x] Record that Resend is the accepted current POC activation platform
 - [x] Implement Autotask into `unified_company_360` with KBO linking and verify one `linked_all` company
-- [x] Demonstrate UID-only Tracardi/runtime evidence or explicitly document the current privacy divergence
+- [x] Explicitly document the current privacy divergence instead of overclaiming a fully UID-only runtime
 - [x] Show one account with KBO + Teamleader + Exact + Autotask in the same story
-- [x] Resolve the `1,652` / `1,529` / `101` count framing in the guide
-- [x] Capture cross-sell, multi-division, and Next Best Action evidence
+- [x] Resolve the `1,652` / `1,529` / `190` / `189` / `101` count framing in the guide
+- [x] Capture cross-sell, multi-division, and Next Best Action output evidence
 - [x] Capture identity-resolution and engagement-writeback evidence
-- [x] Capture guide-ready event-processor API evidence (live JSON for `/api/next-best-action/0438437723` and `/api/engagement/leads?min_score=5` embedded in guide on 2026-03-08)
+- [x] Capture guide-ready event-processor API evidence (live JSON for `/api/next-best-action/0438437723` and `/api/engagement/leads?min_score=5`)
 - [x] Capture populated Resend audience proof for the selected Brussels IT subset
 - [x] Capture website-behavior evidence tied to the same UID/business-value story
+- [ ] Clarify Resend audience naming so the screenshot label matches the claim
+- [ ] Clarify Autotask as hybrid/prod-ready linkage plus demo-mode data
+- [ ] Surface NBA weights and threshold logic
+- [ ] Add explicit cross-division revenue aggregation proof
+- [ ] Capture one timestamped sync-latency proof
 
 ---
 

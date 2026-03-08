@@ -2404,6 +2404,32 @@ Captured the missing website-behavior proof for the Illustrated Guide by tying a
 
 ---
 
+### Task: Reprioritize demo polish after source-of-truth review
+
+**Type:** docs_or_process_only
+**Status:** COMPLETE
+**Timestamp:** 2026-03-08 21:40 CET
+**Git Head:** 6c13814
+
+**Summary:**
+Re-aligned the roadmap and active queue after a source-of-truth review of the Illustrated Guide package. The core demo proof remains complete, but the next work is now explicitly framed as final polish rather than unresolved architecture.
+
+**What Changed:**
+- `NEXT_ACTIONS.md` now treats the guide/demo package as core-complete with active polish items: Resend audience naming clarity, Autotask hybrid wording, NBA scoring transparency, cross-division revenue proof, sync-latency proof, and privacy hardening.
+- `BACKLOG.md` now marks the resolved Resend/Autotask/business-value proof items complete, adds the remaining source-of-truth polish items, and corrects the false claim that Teamleader and Exact are still demo-only integrations.
+- The Autotask roadmap is now described as `hybrid`: production-capable client/sync path plus demo-mode data in the currently verified local proof until vendor access exists.
+
+**Verification:**
+- Reviewed `AGENTS.md`, `STATUS.md`, `PROJECT_STATE.yaml`, `NEXT_ACTIONS.md`, and `BACKLOG.md` in the required order.
+- Re-read `docs/ILLUSTRATED_GUIDE.md` and `docs/ILLUSTRATED_GUIDE_AUDIT.md` to confirm which items are already proven versus still presentation/polish gaps.
+- Verified the roadmap contradictions with targeted text search before editing (`rg` across guide/state/queue/backlog files).
+
+**Next Steps:**
+1. Clarify the reused Resend audience naming/captioning so the visual evidence matches the Brussels IT claim without explanation debt.
+2. Add explicit NBA scoring/threshold evidence and one timestamped sync-latency proof if the goal is a presentation-perfect demo package.
+
+---
+
 ### Task: Make Demo 100% Ready - Export Illustrated Guide to PDF
 
 **Type:** docs_or_process_only + verification_only
@@ -2479,4 +2505,3 @@ The Illustrated Guide v2.0 now contains all required business-case proof:
 - Any future work is optional polish or scaling, not core proof gaps
 
 ---
-
