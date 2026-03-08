@@ -4,6 +4,47 @@
 
 ---
 
+## 2026-03-08 (Enrichment Runners Restarted)
+
+### Task: Restart Enrichment Runners After Supervisor Fix
+
+**Type:** infrastructure  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 14:05 CET  
+**Git Head:** `3eb9ec1`
+
+**Summary:**
+Restarted all three enrichment runners (CBE, geocoding, website discovery) after fixing the supervisor script in commit `3eb9ec1`. The fix corrected the workspace path from stale `.openclaw` to canonical `/home/ff/Documents/CDP_Merged` and added `.env.local` sourcing to properly load `DATABASE_URL`.
+
+**Restart Details:**
+
+| Runner | Supervisor PID | Python PID | Status | Cursor State |
+|--------|---------------|------------|--------|--------------|
+| CBE | 1307938 | 1308756 | ✅ Running | Advanced to 4d4ee4f6... |
+| Geocoding | 1308025 | 1308035 | ✅ Running | Resumed from 02a4bc20... |
+| Website Discovery | 1308060 | 1308070 | ✅ Running | Resumed from 009ff8d5... |
+
+**Verification:**
+- All supervisors now use canonical workspace path (verified in logs)
+- Python batch processes actively running and processing chunks
+- CBE cursor updated today (2026-03-08T13:06:38) confirming progress
+- No database connection errors (previously caused 60s timeouts)
+- All runners recovered from their pre-restart cursors
+
+**Commands Used:**
+```bash
+# CBE runner
+setsid env ENRICHERS=cbe RUN_NAME=cbe_running CHUNK_SIZE=2000 BATCH_SIZE=1000 bash scripts/run_enrichment_persistent.sh
+
+# Geocoding runner  
+setsid env ENRICHERS=geocoding RUN_NAME=geocoding_parallel CHUNK_SIZE=10000 BATCH_SIZE=500 bash scripts/run_enrichment_persistent.sh
+
+# Website discovery runner
+setsid env ENRICHERS=website RUN_NAME=website_discovery CHUNK_SIZE=250 BATCH_SIZE=25 bash scripts/run_enrichment_persistent.sh
+```
+
+---
+
 ## 2026-03-08 (Phase 2 Testing - Multi-Message User Story)
 
 ### Task: Execute Phase 2 of Illustrated Guide Testing

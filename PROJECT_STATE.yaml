@@ -426,18 +426,16 @@ current_state:
     note: Same-day local verification confirmed the default compose-managed stack now boots PostgreSQL, Tracardi, and the chatbot locally with healthy `/healthz` and `/readinessz` probes. Full-dataset counts, aggregation, email-domain filtering, single-NACE-code aliasing, local artifact generation, and the updated quick demo smoke all passed locally. Tool exposure now includes create_data_artifact, get_data_coverage_stats, export_segment_to_csv, and email_segment_export for the local operator/runtime path, and canonical PostgreSQL segment creation/stats/export now work locally after the missing support tables were bootstrapped. Azure deployment follow-up is intentionally deferred while the user keeps the project in local-only cost-control mode.
   enrichment:
     status: observed
-    verified_at: 2026-03-08T13:58:00+01:00
+    verified_at: 2026-03-08T14:15:00+01:00
     health_check_summary: |
-      Enrichment runners have been stuck in restart loop since 2026-03-06 18:53 CET due to
-      supervisor script using stale .openclaw workspace path and not loading DATABASE_URL.
-      Root cause identified: scripts/run_enrichment_persistent.sh had WORKSPACE pointing to
-      stale path and did not source .env.local before launching Python processes.
-      Fix applied: Updated WORKSPACE to canonical repo and added .env.local sourcing.
-      Current counts from canonical PostgreSQL:
-      - Total companies: 1,940,603
-      - website_url: 35,844 (was 36,091)
-      - geo_latitude: 0 (was 8,609 - likely stored in different column/JSONB)
-      - No enrichment activity in last hour (runners offline since Mar 6)
+      All three enrichment runners restarted successfully on 2026-03-08 14:05 CET.
+      Root cause (stale .openclaw path + missing .env.local sourcing) was fixed in
+      commit 3eb9ec1, and runners are now active with correct workspace path.
+      Current state:
+      - CBE runner: Active, cursor advancing (last updated 2026-03-08T13:06:38)
+      - Geocoding runner: Active, resumed from cursor 02a4bc20-94d2-4f11-b7c8-9244efd08d8a
+      - Website discovery runner: Active, resumed from cursor 009ff8d5-daa6-4f74-9a23-3add91d3d156
+      - All supervisors using canonical workspace: /home/ff/Documents/CDP_Merged
     canonical_target:
       database: cdp
       schema: public
@@ -461,59 +459,44 @@ current_state:
     count_scope_note: The 2026-03-06 16:57 CET escalated PostgreSQL recheck recorded total=1940603, website_url=36091, geo_latitude=8609, ai_description=0, and updated_last_10_minutes=11697 while CBE, geocoding, and website supervisors all remained active. The second supervised outside-sandbox website chunk had already completed successfully before this recount; total_companies, industry_nace_code, legal_form, updated_last_hour, and sync_status counts otherwise remain from earlier 2026-03-06 queries.
     runner_state:
       cbe:
-        status: blocked
+        status: running
         mode: repo_supervised_cursor_runner
-        latest_cursor: 0f18ea22-e37e-4386-88db-172f160664f0
+        restarted_at: 2026-03-08T14:05:26+01:00
+        supervisor_pid: 1307938
+        latest_cursor: 4d4ee4f6-1b01-4aea-9890-7b70b7258775
+        cursor_updated_at: 2026-03-08T13:06:38+00:00
         current_main_selector_rows: 1226399
         deferred_no_usable_nace_rows: 688581
-        pre_selector_classification_slice_no_usable_nace: 694
-        pre_selector_classification_slice_with_usable_nace: 1306
-        first_post_selector_edit_chunk_started_after_id: 0e3eb26f-e0c1-4a3a-ab82-ddae2f3ad921
-        first_post_selector_edit_chunk_enriched: 2000
-        first_post_selector_edit_chunk_skipped: 0
-        blocked_since: 2026-03-06T18:42:00+01:00
-        root_cause: Same as website_discovery - supervisor script path/config issues
-        restart_required: true
-        note: At 2026-03-06 14:23 CET the main local-only CBE selector had been tightened in repo to require usable NACE input. A same-session PostgreSQL recheck showed the old selector would still target 1914980 rows while the new selector targets 1226399 and leaves 688581 structurally NACE-less rows for a separate or API-backed path; the first chunk that started after the 14:17:07 CET edit completed 2000 enriched and 0 skipped, and the live cursor later advanced to 0f18ea22-e37e-4386-88db-172f160664f0. Runner offline since Mar 6 due to supervisor config issues (now fixed).
+        first_post_restart_chunk_started_after_id: 4b44fd07-657b-45f9-acb4-5c63077710fc
+        note: Runner restarted 2026-03-08 with corrected supervisor script. Python batch process (PID 1308756) actively processing chunks. Cursor advancing normally.
       geocoding:
-        status: blocked
+        status: running
         mode: repo_supervised_cursor_runner
+        restarted_at: 2026-03-08T14:05:29+01:00
+        supervisor_pid: 1308025
+        current_cursor: 02a4bc20-94d2-4f11-b7c8-9244efd08d8a
         recent_chunk_enrichments:
           - 405
           - 400
           - 397
           - 398
         explicit_429_lines_in_new_log: 0
-        current_cursor: 01f9634b-935b-418b-88f0-fa298fe11513
-        blocked_since: 2026-03-06T18:27:00+01:00
-        root_cause: Same as website_discovery - supervisor script path/config issues
-        restart_required: true
-        note: Post-cutover supervised geocoding was completing clean chunks with zero explicit 429 or unexpected-error lines. A fresh 2026-03-06 16:57 CET PostgreSQL recount raised canonical geo coverage to 8609 while the geocoding runner remained active. Runner offline since Mar 6 due to supervisor config issues (now fixed).
+        note: Runner restarted 2026-03-08 with corrected supervisor script. Python batch process (PID 1308035) actively processing chunks. Pre-restart chunks were clean with zero 429 errors.
       website_discovery:
-        status: blocked
+        status: running
         mode: repo_supervised_cursor_runner
+        restarted_at: 2026-03-08T14:05:30+01:00
+        supervisor_pid: 1308060
+        current_cursor: 009ff8d5-daa6-4f74-9a23-3add91d3d156
         latest_verified_website_url_count: 35844
-        latest_supervisor_start: 2026-03-06T16:39:00+01:00
-        supervisor_last_failure: 2026-03-06T19:05:00+01:00
         first_supervised_chunk_completed_at: 2026-03-06T16:44:09+01:00
         first_supervised_chunk_processed: 250
         first_supervised_chunk_website_discoveries: 67
         second_supervised_chunk_completed_at: 2026-03-06T16:50:31+01:00
         second_supervised_chunk_processed: 250
         second_supervised_chunk_website_discoveries: 62
-        latest_completed_chunk_last_company_id: 00116b74-cd03-45f1-a434-a35cbaee1a60
         current_cursor_file: logs/enrichment/website_discovery_cursor.json
-        root_cause: |
-          Supervisor script used stale .openclaw workspace path and did not source
-          .env.local to load DATABASE_URL. Each chunk failed with 60-second timeout
-          on database connection ("Connecting to enrichment database" -> fail).
-        fix_applied: |
-          Updated scripts/run_enrichment_persistent.sh: WORKSPACE now points to
-          canonical /home/ff/Documents/CDP_Merged and script sources .env.local
-          before launching Python processes.
-        restart_required: true
-        note: Runners stuck in restart loop since 2026-03-06 18:53 CET. Fix applied
-          2026-03-08, but runners need manual restart to resume enrichment.
+        note: Runner restarted 2026-03-08 with corrected supervisor script. Python batch process (PID 1308070) actively processing chunks. Pre-restart chunks averaged ~25% discovery rate (67/250, 62/250).
     truth_notes:
       - sync_status_does_not_equal_field_complete_enrichment
       - canonical_sql_counts_override_stale_dashboard_or_loop_narratives
