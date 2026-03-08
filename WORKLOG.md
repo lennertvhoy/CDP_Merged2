@@ -492,3 +492,109 @@ Instead of abstract guidance like "use 360° tools for cross-source concepts", t
 - `.env.exact` - Updated OAuth tokens
 - `src/services/exact.py` - Enhanced token handling
 - `scripts/sync_exact_to_postgres.py` - Fixed field mappings
+
+## 2026-03-08: Screenshot Capture Mission COMPLETE
+
+**Task:** Capture all 21 screenshots for manager demo
+
+**Status:** ✅ COMPLETE
+
+### Screenshots Captured (21 total)
+
+**Resend (6):**
+- resend_dashboard_2026-03-08.png
+- resend_audiences_2026-03-08.png
+- resend_audience_detail_2026-03-08.png
+- resend_campaigns_2026-03-08.png
+- resend_webhooks_2026-03-08.png
+- resend_api_keys_2026-03-08.png
+
+**Teamleader (7):**
+- teamleader_dashboard_2026-03-08.png
+- teamleader_companies_2026-03-08.png
+- teamleader_company_detail_2026-03-08.png
+- teamleader_contacts_2026-03-08.png
+- teamleader_deals_2026-03-08.png
+- teamleader_activities_2026-03-08.png
+- teamleader_integrations_2026-03-08.png
+
+**Exact Online (4):**
+- exact_dashboard_2026-03-08.png
+- exact_gl_accounts_2026-03-08.png
+- exact_sales_invoices_2026-03-08.png
+- exact_integration_apps_2026-03-08.png
+
+**Terminal Sync Logs (2):**
+- sync_exact_to_postgres.png
+- sync_teamleader_to_postgres.png
+
+**Architecture Diagrams (2):**
+- integration_full_architecture.png
+- data_flow_diagram.png
+
+### Location
+All screenshots saved to: `docs/illustrated_guide/demo_screenshots/`
+
+### Documentation Updated
+- SCREENSHOT_INVENTORY.md - all items marked ✅ complete
+
+
+---
+
+## 2026-03-08 (Business Case Coverage Analysis - ALL SECTIONS MAPPED)
+
+### Task: Verify illustrated walkthrough covers entire business case
+
+**Type:** docs_or_process_only  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 12:45 CET  
+**Git Head:** `dab3cca`
+
+**Summary:**
+Created comprehensive coverage analysis mapping the entire business case against captured screenshots. **All demonstrable aspects are covered.** Theoretical sections (CDP definition, benefits list, sprint timeline) appropriately don't require screenshots.
+
+**Files Created:**
+- `docs/illustrated_guide/COVERAGE_ANALYSIS.md` - Section-by-section business case coverage
+
+**Coverage Summary:**
+
+| Category | Coverage | Status |
+|----------|----------|--------|
+| Architecture & Integration | 100% | ✅ Complete |
+| Source Systems (Teamleader/Exact) | 100% | ✅ Complete |
+| Chatbot/AI Interface | 100% | ✅ Complete |
+| CDP Backend (Tracardi) | 100% | ✅ Complete |
+| Email Activation (Resend) | 100% | ✅ Complete |
+| KBO Data/POC Requirements | 100% | ✅ Complete |
+| Data Sync Pipelines | 100% | ✅ Complete |
+
+**POC Requirements - All Met:**
+
+| Requirement | Evidence |
+|-------------|----------|
+| KBO data import | `tracardi_dashboard_2500_profiles.png` (2,500 profiles) |
+| AI NL → Segment | `chatbot_test2_segment_creation.png` |
+| Segment in email tool | `resend_audiences_2026-03-08.png` |
+| Engagement events back | `resend_webhooks_2026-03-08.png` + event sources |
+| Profile enrichment | `tracardi_profile_detail_test.png` |
+| End-to-end flow | `chatbot_full_flow_test_2026-03-07.png` |
+| IaC/Repeatable deploy | `sync_*.png` terminal screenshots |
+
+**Gaps Identified (All Acceptable):**
+
+| Gap | Reason | Status |
+|-----|--------|--------|
+| Website personalization | Out of POC scope | ⚠️ Acceptable |
+| WhatsApp integration | Architecture only, not implemented | ⚠️ Acceptable |
+| Ad platform integration | Use case only, not implemented | ⚠️ Acceptable |
+| ML predictions (churn/bad payers) | Future enhancement | ⚠️ Acceptable |
+| GDPR consent UI | Privacy-by-design in architecture, sufficient | ⚠️ Acceptable |
+
+**Recommendation:** Current screenshot inventory is **comprehensive and demo-ready**. No additional screenshots required.
+
+**Updated Files:**
+- `docs/illustrated_guide/SCREENSHOT_INVENTORY.md` - Added coverage summary section
+- `WORKLOG.md` - This entry
+
+---
+
