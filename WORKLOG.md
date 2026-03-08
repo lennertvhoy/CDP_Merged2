@@ -37,7 +37,7 @@ Implemented a Model Context Protocol (MCP) server that exposes the core PostgreS
 - `cdp://stats/summary` - Database statistics
 
 **Transport Modes:**
-- **Stdio**: For Claude Desktop integration
+- **Stdio**: Standard input/output for MCP client integration
 - **SSE**: HTTP API on configurable port (default 8001)
 
 **Verification:**
