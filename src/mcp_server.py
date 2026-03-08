@@ -13,7 +13,8 @@ Usage:
     python src/mcp_server.py --transport sse --port 8001
 
 Environment:
-    DATABASE_URL: PostgreSQL connection string
+    DATABASE_URL or POSTGRES_CONNECTION_STRING
+    Or local `.env.local` / `.env` / `.env.database`
     Or: DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, DB_PORT
 """
 
@@ -35,6 +36,7 @@ from mcp.server.stdio import stdio_server
 from mcp.types import TextContent, Tool, Resource
 
 # Import CDP services
+from core.database_url import resolve_database_url
 from services.postgresql_search import PostgreSQLSearchService
 from services.unified_360_queries import Unified360Service
 
@@ -47,14 +49,7 @@ SERVER_VERSION = "1.0.0"
 def _setup_environment():
     """Set up environment variables for database connection."""
     if not os.environ.get("DATABASE_URL"):
-        # Build from individual env vars with defaults for local dev
-        host = os.environ.get("DB_HOST", "localhost")
-        name = os.environ.get("DB_NAME", "cdp")
-        user = os.environ.get("DB_USER", "cdpadmin")
-        password = os.environ.get("DB_PASSWORD", "cdpadmin123")
-        port = os.environ.get("DB_PORT", "5432")
-        sslmode = os.environ.get("DB_SSLMODE", "disable")
-        os.environ["DATABASE_URL"] = f"postgresql://{user}:{password}@{host}:{port}/{name}?sslmode={sslmode}"
+        os.environ["DATABASE_URL"] = resolve_database_url()
 
 
 @asynccontextmanager

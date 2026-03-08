@@ -1158,20 +1158,23 @@ active_problems:
     severity: critical
     discovered_at: 2026-03-08
     resolved_at: 2026-03-08
-    summary: Multiple scripts had hardcoded PostgreSQL credentials in os.getenv fallbacks, creating security risk if scripts were copied/shared with credentials embedded.
+    summary: The initial 2026-03-08 credential cleanup missed residual hardcoded local PostgreSQL URL fallbacks in MCP and reconciliation helpers; a same-day re-audit removed those remaining runtime fallbacks and centralized database URL resolution.
     evidence:
       - scripts/regression_local_chatbot.py - os.environ.setdefault with hardcoded URL
       - scripts/sync_teamleader_to_postgres.py - DEFAULT_DATABASE_URL with hardcoded fallback
       - scripts/sync_exact_to_postgres.py - DEFAULT_DATABASE_URL with hardcoded fallback
       - scripts/verify_kbo_matching.py - DEFAULT_DATABASE_URL with hardcoded fallback
-      - Fixed - all scripts now use src.config.settings.DATABASE_URL or exit with error
-      - Verified - grep finds no hardcoded "postgresql://cdpadmin:cdpadmin123" in active scripts
+      - 2026-03-08 re-audit found residual inline local DSN fallbacks in src/mcp_server.py, scripts/start_mcp_server.sh, and scripts/reconcile_teamleader_identities.py
+      - Added src/core/database_url.py to resolve DATABASE_URL / POSTGRES_CONNECTION_STRING / .env.database / DB_* parts without inline credentials
+      - poetry run pytest tests/unit/test_database_url.py -q
+      - poetry run python -m py_compile src/core/database_url.py src/mcp_server.py scripts/reconcile_teamleader_identities.py
+      - Verified - rg -n "cdpadmin:cdpadmin123" src/mcp_server.py scripts/reconcile_teamleader_identities.py scripts/start_mcp_server.sh .mcp/client_config_example.json docs/MCP_SERVER.md -S returned no matches
     affects:
       - script_security
       - credential_management
       - local_development_security
     owner: agent
-    next_action: None - fixed in commit. Scripts now fail fast with clear error if DATABASE_URL not set.
+    next_action: Keep the broader security sweep focused on unsafe real secrets and stale operational claims rather than the now-resolved enrich_monitor fallback.
   illustrated_guide_screenshot_mismatches:
     status: observed
     severity: high

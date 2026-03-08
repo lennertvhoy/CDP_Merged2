@@ -1515,3 +1515,38 @@ Complete the final demonstrations for the Illustrated Guide v2.0: Resend segment
 All demonstrations completed successfully. Guide is now a credible source of truth with all claims backed by live system evidence.
 
 ---
+
+## 2026-03-08 (Security Re-audit - Remaining DB Fallback Cleanup)
+
+### Task: Remove residual inline database URL fallbacks from MCP/reconciliation helpers
+
+**Type:** app_code  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 16:44 CET  
+**Git Head:** `c0cef1d`
+
+**Summary:**
+The earlier 2026-03-08 secret-handling fix was incomplete. A follow-up audit found three remaining active runtime fallbacks using the local PostgreSQL DSN in the MCP startup path and the Teamleader identity reconciliation helper. Added a shared resolver at `src/core/database_url.py`, updated the MCP runtime and helper script to use it, and removed the inline DSN from the MCP example config/docs.
+
+**Files Modified:**
+
+| File | Change |
+|------|--------|
+| `src/core/database_url.py` | Added centralized DATABASE_URL resolution from env, `.env.local`, `.env`, `.env.database`, or `DB_*` parts |
+| `src/mcp_server.py` | Replaced hardcoded local fallback with centralized resolver |
+| `scripts/start_mcp_server.sh` | Removed shell-level inline DSN export |
+| `scripts/reconcile_teamleader_identities.py` | Replaced hardcoded local fallback with centralized resolver |
+| `.mcp/client_config_example.json` | Removed inline DATABASE_URL from client example |
+| `docs/MCP_SERVER.md` | Updated config guidance and environment-variable semantics |
+| `tests/unit/test_database_url.py` | Added resolver coverage for env, dotenv, `.env.database`, and DB-part paths |
+
+**Verification:**
+- `poetry run pytest tests/unit/test_database_url.py -q`
+- `poetry run python -m py_compile src/core/database_url.py src/mcp_server.py scripts/reconcile_teamleader_identities.py`
+- `rg -n "cdpadmin:cdpadmin123" src/mcp_server.py scripts/reconcile_teamleader_identities.py scripts/start_mcp_server.sh .mcp/client_config_example.json docs/MCP_SERVER.md -S` returned no matches
+
+**Documentation follow-up:**
+- Corrected `PROJECT_STATE.yaml` evidence for `hardcoded_database_credentials`
+- Corrected stale Milestone 6 text in `BACKLOG.md` that still pointed at `scripts/enrich_monitor.py`
+
+---

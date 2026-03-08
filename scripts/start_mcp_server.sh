@@ -12,16 +12,6 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# Load environment
-if [ -f "$PROJECT_ROOT/.env.local" ]; then
-    export $(grep -v '^#' "$PROJECT_ROOT/.env.local" | xargs)
-elif [ -f "$PROJECT_ROOT/.env" ]; then
-    export $(grep -v '^#' "$PROJECT_ROOT/.env" | xargs)
-fi
-
-# Set default database URL if not provided
-export DATABASE_URL="${DATABASE_URL:-postgresql://cdpadmin:cdpadmin123@localhost:5432/cdp?sslmode=disable}"
-
 cd "$PROJECT_ROOT"
 
 # Parse arguments
