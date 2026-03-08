@@ -4,6 +4,86 @@
 
 ---
 
+## 2026-03-08 (Illustrated Guide & Browser Agent Handoff - Ready for Manager Demo)
+
+### Task: Create screenshot inventory and handoff for browser-capable agent
+
+**Type:** docs_or_process_only  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 12:30 CET  
+**Git Head:** `ec9ed37`
+
+**Summary:**
+User requested comprehensive screenshot collection for manager demo presentation. Created complete inventory of existing screenshots (65+ found) and handoff for browser-capable agent to capture additional screenshots requiring manual login.
+
+**Files Created:**
+- `docs/illustrated_guide/SCREENSHOT_INVENTORY.md` - Complete inventory of all 65+ screenshots
+- `docs/illustrated_guide/HANDOFF_BROWSER_AGENT.md` - Handoff for browser-capable agent
+- `docs/illustrated_guide/MANAGER_DEMO_GUIDE.md` - Presentation template with slide order
+
+**Existing Screenshots Catalogued (65 total):**
+
+| Category | Count | Key Screenshots |
+|----------|-------|-----------------|
+| Chatbot UI Demos | 10 | Initial state, success states |
+| Chatbot Test Scenarios | 9 | Multi-turn flows |
+| 360° Tool Demos | 6 | Cross-source queries |
+| Tracardi Dashboard | 7 | Dashboard views |
+| Tracardi Event Sources | 5 | Configuration |
+| Tracardi Workflows | 8 | Workflow editor |
+| Tracardi Profiles | 4 | Profile views |
+| Resend Integration | 2 | Setup complete |
+| Analytics Tests | 5 | Results |
+| Bridge/Integration | 1 | Bridge test |
+| Error States | 5 | For comparison |
+
+**Screenshots Needed (21 pending):**
+
+| Platform | Count | Examples |
+|----------|-------|----------|
+| Resend | 6 | Dashboard, audiences, campaigns, webhooks |
+| Teamleader | 7 | CRM dashboard, companies, contacts, deals |
+| Exact Online | 4 | Dashboard, GL accounts, invoices |
+| Integration Proof | 4 | Architecture diagram, sync scripts |
+
+**Browser Agent Handoff Includes:**
+- ✅ Detailed login instructions for each platform
+- ✅ Specific URLs to capture
+- ✅ Screenshot naming conventions
+- ✅ Quality guidelines (1920x1080, blur secrets)
+- ✅ 34-slide demo presentation outline
+- ✅ Verification checklist
+- ✅ Success criteria
+
+**Manager Demo Guide Includes:**
+- ✅ 9 demo sections
+- ✅ 34 slides with screenshot placeholders
+- ✅ Speaker notes for key slides
+- ✅ Pre-demo checklist
+- ✅ Success metrics
+
+**Recommended Demo Flow (15-20 min):**
+1. Introduction (1 min)
+2. Data Foundation (2 min)
+3. AI Chatbot Demo (5 min)
+4. 360° Customer Views (3 min)
+5. Activation Layer - Tracardi (3 min)
+6. Email Campaign Activation (3 min)
+7. Engagement Tracking (2 min)
+8. Technical Validation (1 min)
+9. Summary & Next Steps (1 min)
+
+**Key Message for Manager:**
+> Complete end-to-end CDP with AI chatbot, 360° views across KBO/Teamleader/Exact, automated segment creation, Resend email activation, and real-time engagement tracking.
+
+**Next Steps:**
+1. Browser-capable agent captures 21 pending screenshots
+2. User assembles presentation from MANAGER_DEMO_GUIDE.md
+3. Practice run-through
+4. Present to manager
+
+---
+
 ## 2026-03-08 (POC Resend Activation Tests - ALL PASSING, Resend RECOMMENDED)
 
 ### Task: Ensure Resend has Flexmail feature parity and test Resend activation flow
