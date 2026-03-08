@@ -1,24 +1,45 @@
-# CDP_Merged Illustrated Evidence Guide
+\thispagestyle{empty}
+\vspace*{2cm}
 
-**Purpose:** Screenshot proofs and verification evidence for the Customer Data Platform  
-**Audience:** Demo observers, auditors, stakeholders needing visual proof  
-**Last Updated:** 2026-03-08  
-**Companion Docs:** 
+# CDP_Merged Illustrated Evidence Guide {.unnumbered .unlisted}
+
+## Evidence pack for the Customer Data Platform demo {.unnumbered .unlisted}
+
+**Purpose:** Screenshot proofs and verification evidence for the Customer Data Platform
+
+**Audience:** Demo observers, auditors, stakeholders needing visual proof
+
+**Last Updated:** 2026-03-08
+
+**Companion Docs:**
+
 - Business context: `docs/BUSINESS_CASE.md`
 - Technical details: `docs/SYSTEM_SPEC.md`
 
----
+**This guide is designed to show:**
+
+- one auditable `linked_all` 360 story anchored on B.B.S. Entreprise
+- a claim -> evidence -> verification flow across segmentation, activation, export, engagement, and integrations
+- where evidence is live, local-runtime, demo-backed, or a generated local artifact
+
+\clearpage
+
+\tableofcontents
+
+\clearpage
 
 ## Evidence Overview
 
 | Claim | Evidence | Location |
 |-------|----------|----------|
-| 360° Golden Record works across 4 sources | Screenshot + SQL proof | Phase 1 below |
-| NL segmentation creates accurate segments | Screenshot | Phase 2 below |
-| Segment → Activation completes in <3s | POC test results | Phase 3 below |
-| CSV export contains all claimed fields | Opened spreadsheet proof | Phase 4 below |
+| 360° Golden Record works across 4 sources | Response excerpt + SQL proof | Phase 1 below |
+| NL segmentation creates accurate segments | Response excerpt + scope table | Phase 2 below |
+| Segment → Activation completes in <3s | POC test results + populated audience proof | Phase 3 below |
+| CSV export contains all claimed fields | Opened spreadsheet artifact + validation checks | Phase 4 below |
 | Engagement scoring generates recommendations | Live JSON API output | Phase 5 below |
-| Privacy boundary is UID-first | Tracardi anonymous profiles | Phase 5 below |
+| Privacy boundary status is documented honestly | Tracardi profile view + divergence table | Phase 5 below |
+
+**Source labels used in this guide:** `Live system`, `Local runtime`, `Demo-backed`, `Local artifact`
 
 ---
 
@@ -28,13 +49,15 @@
 
 **Query:** *"Show me a 360 view of B.B.S. Entreprise"*
 
-### Screenshot Evidence
+### Response Excerpt
 
-![360° Golden Record View](/home/ff/Documents/CDP_Merged/chatbot_360_bbs_four_source_final_2026-03-08.png)
+![360° Golden Record response excerpt](/home/ff/Documents/CDP_Merged/chatbot_360_bbs_four_source_final_2026-03-08.png){ width=72% }
 
 **Visible Proof:**
+
 - `identity_link_status = linked_all`
 - `Sources linked: KBO + Teamleader + Exact + Autotask (4 sources)`
+- Screenshot intentionally shows the linkage summary excerpt; the SQL row below is the authoritative full-record proof
 
 ### Backend Verification
 
@@ -59,20 +82,21 @@ WHERE identity_link_status = 'linked_all';
 
 **Query:** *"Create a segment of IT services companies in Brussels"*
 
-### Screenshot Evidence
+### Response Excerpt
 
-![Segment Creation Flow](/home/ff/Documents/CDP_Merged/chatbot_segment_creation_2026-03-08.png)
+![Segment Creation response excerpt](/home/ff/Documents/CDP_Merged/chatbot_segment_creation_2026-03-08.png){ width=72% }
 
 **Visible Proof:**
+
 - Segment created via chat interface
-- 190 companies with verified emails (17% coverage)
-- NACE codes: 62100, 62200, 62900, 63100
+- Response excerpt shows the Brussels IT segment flow and next-step actions
+- Exact counts and canonical scope are verified in the table below
 
 ### Scope Clarification
 
 | Segment Definition | Company Count | Email Coverage | Status |
 |-------------------|---------------|----------------|--------|
-| IT services - Brussels (62100/62200/62900/63100) | 190 | 17% | ✅ Verified |
+| IT services - Brussels (62100/62200/62900/63100) | 190 | 17% | Verified |
 | IT services - Nationwide (NULL city) | 1,682 | 14.5% | Alternative for scale demo |
 
 **Note:** Original "software companies" claim (NACE 62010-62090, 63110-63120) was corrected when data verification showed these codes don't exist in Brussels KBO data.
@@ -86,11 +110,11 @@ WHERE identity_link_status = 'linked_all';
 ### POC Test Results
 
 ```
-✅ SEGMENT_CREATION: 0.75s - 1,529 members (narrower 62xxx-only test scope)
-✅ SEGMENT_TO_RESEND: 2.20s - 8 contacts pushed
-✅ CAMPAIGN_SEND: 0.00s - Campaign created via API
-✅ WEBHOOK_SETUP: 0.00s - 6 events subscribed
-✅ ENGAGEMENT_WRITEBACK: 0.82s - 4 events tracked
+SEGMENT_CREATION: 0.75s - 1,529 members (narrower 62xxx-only test scope)
+SEGMENT_TO_RESEND: 2.20s - 8 contacts pushed
+CAMPAIGN_SEND: 0.00s - Campaign created via API
+WEBHOOK_SETUP: 0.00s - 6 events subscribed
+ENGAGEMENT_WRITEBACK: 0.82s - 4 events tracked
 ```
 
 ### Resend Audience Evidence
@@ -98,9 +122,10 @@ WHERE identity_link_status = 'linked_all';
 **Audience Name:** `Brussels IT Services - Segment`  
 *(Previously labeled generically as "KBO Companies - Test Audience" - renamed for clarity)*
 
-![Resend Dashboard](/home/ff/Documents/CDP_Merged/resend_dashboard.png)
+![Resend populated audience detail](/home/ff/Documents/CDP_Merged/docs/illustrated_guide/demo_screenshots/resend_audience_detail_populated_2026-03-08.png){ width=88% }
 
 **Verified Counts:**
+
 - 190 company rows from Brussels IT segment (NACE 62100/62200/62900/63100)
 - 189 unique Resend contacts (1 duplicate: shared mailbox `info@nviso.eu`)
 - 0 API failures during upload
@@ -108,23 +133,29 @@ WHERE identity_link_status = 'linked_all';
 
 ---
 
+\clearpage
+
 ## Phase 4: CSV Export Validation Evidence
 
 **Business Claim:** CSV exports contain all claimed fields with real data
 
-### Export Verification
+**Evidence Label:** `Local artifact` generated from verified PostgreSQL segment data
 
 **File:** `output/it_services_brussels_segment.csv`
 
-**Screenshot Evidence:**
-![CSV Export Opened](/home/ff/Documents/CDP_Merged/chatbot_360_demo_attempt.png)
+### Opened Artifact View
 
-**Field Validation:**
-```
-Row count: 101 (first 100 + header)
-Fields present: 26
-Sample data: KBO numbers, company names, addresses, NACE codes
-```
+![CSV export opened in spreadsheet view](/home/ff/Documents/CDP_Merged/docs/illustrated_guide/demo_screenshots/csv_export_opened_spreadsheet_view_2026-03-08.png){ width=84% }
+
+### Validation Summary
+
+| Check | Result |
+|-------|--------|
+| Export scope | Brussels IT Services segment (`62100`, `62200`, `62900`, `63100`) |
+| Opened preview | `101` rows shown (`100` data rows + header) |
+| Field coverage | `26` columns present |
+| Visible columns | KBO, company name, legal form, city, postal code, NACE, email |
+| Artifact traceability | Footer shows filename, generation time (`2026-03-08`), and source (`CDP PostgreSQL Database`) |
 
 ---
 
@@ -239,25 +270,26 @@ curl http://localhost:8780/api/scoring-model
 | email.clicked | +10 | 1 | +10 |
 | email.sent | +1 | 10 | +10 |
 | **Total Score** | | | **25** |
-| **Engagement Level** | | | **Medium** (≥20, <50) |
+| **Engagement Level** | | | **Medium** (>=20, <50) |
 
 ### Privacy Boundary Evidence
 
 ![Tracardi UID-First](/home/ff/Documents/CDP_Merged/tracardi_dashboard_anonymous_profiles_2026-03-08.png)
 
 **Visible Proof:**
+
 - 84 anonymous profiles (no PII in profile traits)
-- Event metadata contains domain + hash only
-- Raw emails removed by gateway sanitization
+- Gateway forward path sanitizes raw email before downstream projection
+- Current local event metadata still carries raw email in some events; the table below documents that known divergence
 
 **Current Divergence (Documented):**
 
 | Layer | Target | Current | Gap |
 |-------|--------|---------|-----|
-| PostgreSQL core | UID-first | UID-first | ✅ |
-| Tracardi profiles | Anonymous | Anonymous | ✅ |
-| Event metadata | Hashed only | Raw email present | ⚠️ Known divergence |
-| Gateway forward | Sanitized | Sanitized | ✅ |
+| PostgreSQL core | UID-first | UID-first | OK |
+| Tracardi profiles | Anonymous | Anonymous | OK |
+| Event metadata | Hashed only | Raw email present | Known divergence |
+| Gateway forward | Sanitized | Sanitized | OK |
 
 **Mitigation:** `scripts/webhook_gateway.py` implements `sanitize_resend_event_data()` before downstream projection.
 
@@ -276,6 +308,7 @@ curl http://localhost:8780/api/scoring-model
 ![Teamleader Dashboard](/home/ff/Documents/CDP_Merged/teamleader_dashboard.png)
 
 **Verified Data:**
+
 - 1 company synced (B.B.S. Entreprise)
 - 2 contacts synced
 - 2 deals synced
@@ -286,6 +319,7 @@ curl http://localhost:8780/api/scoring-model
 ![Exact Online Dashboard](/home/ff/Documents/CDP_Merged/exact_current.png)
 
 **Verified Data:**
+
 - 258 GL Accounts
 - 78 Invoices
 - OAuth tokens active
@@ -293,7 +327,7 @@ curl http://localhost:8780/api/scoring-model
 ### Autotask (Support) - Hybrid Mode
 
 **Linkage Status:** Production-ready  
-**Data Mode:** Demo (pending live tenant credentials)
+**Data Mode:** Demo-backed (pending live tenant credentials)
 
 **Verified via API:**
 - Company: B.B.S. Entreprise
@@ -311,22 +345,24 @@ Use short evidence IDs in the matrix below so the PDF stays readable; the full f
 
 | ID | What it proves | Date | Verification |
 |----|----------------|------|--------------|
-| SG-01 | 360° linked_all profile across 4 sources | 2026-03-08 | ✅ Live backend |
-| SG-02 | NL segment creation for Brussels IT scope | 2026-03-08 | ✅ Live chatbot |
-| SG-03 | Resend dashboard and activation surface | 2026-03-08 | ✅ Live Resend |
-| SG-04 | Anonymous Tracardi profile view | 2026-03-08 | ✅ Local Tracardi |
-| SG-05 | Teamleader CRM snapshot | 2026-03-08 | ✅ Live Teamleader |
-| SG-06 | Exact Online dashboard snapshot | 2026-03-08 | ✅ Live Exact |
-| SG-07 | Opened CSV artifact preview | 2026-03-08 | ✅ Local artifact |
+| SG-01 | 360° response excerpt showing `linked_all` linkage summary | 2026-03-08 | Local chatbot + live backend |
+| SG-02 | NL segment response excerpt for Brussels IT flow | 2026-03-08 | Local chatbot |
+| SG-03 | Populated Resend audience detail | 2026-03-08 | Live Resend |
+| SG-04 | Anonymous Tracardi profile view | 2026-03-08 | Local Tracardi runtime |
+| SG-05 | Teamleader CRM snapshot | 2026-03-08 | Live Teamleader |
+| SG-06 | Exact Online dashboard snapshot | 2026-03-08 | Live Exact |
+| SG-07 | Opened CSV artifact preview | 2026-03-08 | Local artifact |
 
 **Filename Key:**
 - `SG-01` → `chatbot_360_bbs_four_source_final_2026-03-08.png`
 - `SG-02` → `chatbot_segment_creation_2026-03-08.png`
-- `SG-03` → `resend_dashboard.png`
+- `SG-03` → `docs/illustrated_guide/demo_screenshots/resend_audience_detail_populated_2026-03-08.png`
 - `SG-04` → `tracardi_dashboard_anonymous_profiles_2026-03-08.png`
 - `SG-05` → `teamleader_dashboard.png`
 - `SG-06` → `exact_current.png`
-- `SG-07` → `chatbot_360_demo_attempt.png`
+- `SG-07` → `docs/illustrated_guide/demo_screenshots/csv_export_opened_spreadsheet_view_2026-03-08.png`
+
+**Label Note:** The guide intentionally mixes live SaaS screens, local runtime views, demo-backed integration evidence, and generated local artifacts. Each item is labeled by source rather than flattened into a single "live" claim.
 
 ---
 
@@ -344,7 +380,7 @@ Use short evidence IDs in the matrix below so the PDF stays readable; the full f
 - [x] Privacy hardening verified (48 webhook gateway tests pass, PII stripping confirmed)
 - [x] Cross-division revenue aggregation proof captured (B.B.S. Entreprise €15,000 total)
 - [x] Sync latency proof timestamped (Teamleader: 2026-03-08 14:57, Exact: 2026-03-08 11:19)
-- [x] All screenshots captured from live systems
+- [x] Evidence source labels distinguish live systems, local runtime, demo-backed data, and local artifacts
 - [x] No synthetic/fake data claims
 - [x] Resend audience naming clarified (Brussels IT Services - Segment)
 - [x] Autotask hybrid status documented (prod-ready linkage, demo data)
@@ -363,10 +399,10 @@ Use short evidence IDs in the matrix below so the PDF stays readable; the full f
 
 | Source | Current Value | Status |
 |--------|---------------|--------|
-| Teamleader CRM | Pipeline `€0`; won deals YTD `€0` | ✅ Linked |
-| Exact Online | Revenue YTD `€0` | ✅ Linked |
-| Autotask Support | Contract value `€15,000` | ✅ Active |
-| Aggregated total | Cross-source value `€15,000` | ✅ Computed |
+| Teamleader CRM | Pipeline `€0`; won deals YTD `€0` | Linked |
+| Exact Online | Revenue YTD `€0` | Linked |
+| Autotask Support | Contract value `€15,000` | Active |
+| Aggregated total | Cross-source value `€15,000` | Computed |
 
 **Linkage Verification:**
 ```

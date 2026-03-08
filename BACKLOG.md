@@ -2,7 +2,7 @@
 
 **Platform:** AZURE (VMs, Container Apps, OpenAI)  
 **Architecture:** Source systems PII truth + PostgreSQL intelligence truth + Tracardi activation runtime + AI chatbot  
-**Last Updated:** 2026-03-08 (v3.0 content direction validated; v3.1 formatting pass started; critical page 9/10 table rebuilds complete locally; 4 precision fixes + 5 remaining formatting improvements still tracked)
+**Last Updated:** 2026-03-08 (v3.2 local guide polish exported; cover page, CSV proof page, and wording cleanup landed; 3 precision items + 3 formatting items still tracked)
 **Purpose:** Medium-term roadmap from the current repo state to a credible demo first and production readiness later
 
 ## How To Use This File
@@ -112,9 +112,9 @@ These are included only where they appear likely to add real future value to thi
 | High | **Document NBA scoring logic** | ✅ DONE | `/api/scoring-model`, `ENGAGEMENT_THRESHOLDS`, `RECOMMENDATION_RULES`, and `rule_trace` now exist; documented in guide |
 | High | **Split mixed demo/source-of-truth docs** | ✅ DONE | Split into BUSINESS_CASE.md (vision/value), SYSTEM_SPEC.md (architecture/APIs), and streamlined ILLUSTRATED_GUIDE.md (evidence only) |
 | High | **Add canonical count semantics dictionary** | Pending | Define explicit rules: base rows, verified-email rows, deduped activation contacts, test-scope rows (per v3.0 feedback) |
-| High | **Upgrade CSV export integrity proof** | Pending | Add strict export integrity check: row count match, Brussels+NACE validation, checksum/timestamp/query ID (per v3.0 feedback) |
-| Medium | **Implement maturity label system** | Pending | Replace generic "live" language with explicit labels: Live, Local, Demo-backed, Planned (per v3.0 feedback) |
-| Medium | **Fix privacy statement wording precision** | Pending | Align top-line claim with divergence table: "gateway sanitization implemented, with known residual raw-email divergence pending cutover" |
+| High | **Upgrade CSV export integrity proof** | Partial | Opened-artifact page is now self-contained with scope, row count, field coverage, and timestamp/source traceability; checksum/query ID proof still missing |
+| Medium | **Implement maturity label system** | Partial | Guide now labels evidence as Live system, Local runtime, Demo-backed, and Local artifact, but the full maturity system is not yet applied everywhere |
+| Medium | **Fix privacy statement wording precision** | ✅ DONE | Top-line privacy wording now matches the divergence table and no longer implies a fully sanitized runtime |
 | Medium | **Recheck webhook/event-processor test hang** | ✅ DONE | Both suites now pass cleanly (54 tests in 0.33s); issue resolved, likely by prior hardening |
 
 **Accepted platform decision:** Use **RESEND** for the current POC.
@@ -202,9 +202,9 @@ poetry run python scripts/test_poc_activation.py --mock
 | Critical | **Clarify Autotask integration posture** | ✅ COMPLETE | Guide documents hybrid status: production-capable linkage + demo-mode data |
 | Critical | Stabilize the public demo flow | ✅ COMPLETE | End-to-end demo flow verified repeatable |
 | High | **Add canonical count semantics dictionary** | Pending | Per v3.0 feedback: define explicit rules for base rows, verified-email rows, deduped activation contacts, test-scope rows |
-| High | **Upgrade CSV export integrity proof** | Pending | Per v3.0 feedback: add row count match, Brussels+NACE validation, checksum/timestamp/query ID |
-| High | **Implement maturity label system** | Pending | Per v3.0 feedback: replace generic "live" language with explicit labels (Live, Local, Demo-backed, Planned) |
-| High | **Fix privacy statement wording precision** | Pending | Per v3.0 feedback: align top-line claim with table exactly - "gateway sanitization implemented, with known residual raw-email divergence pending cutover" |
+| High | **Upgrade CSV export integrity proof** | Partial | Per v3.0 feedback: page is now self-contained and traceable, but checksum/query ID proof still needs to be added |
+| High | **Implement maturity label system** | Partial | Per v3.0 feedback: guide now uses Live/Local runtime/Demo-backed/Local artifact labels, but the full system is not yet applied everywhere |
+| High | **Fix privacy statement wording precision** | ✅ COMPLETE | Per v3.0 feedback: top-line wording now matches the divergence table and no longer overstates runtime sanitization |
 | High | **Surface NBA scoring and threshold logic** | ✅ COMPLETE | Guide/spec now document `/api/scoring-model`, event weights, thresholds, and the B.B.S. example calculation |
 | High | **Add explicit cross-division revenue proof** | ✅ COMPLETE | B.B.S. Entreprise now shows a timestamped `€15,000` cross-source total in the guide |
 | High | **Capture timestamped sync-latency proof** | ✅ COMPLETE | Guide now records Teamleader sample syncs at `2026-03-08 14:57:55` and Exact sample syncs at `2026-03-08 11:19:39` |
@@ -222,22 +222,22 @@ poetry run python scripts/test_poc_activation.py --mock
 - ✅ The reused Resend audience and Autotask hybrid posture are explained clearly
 - ✅ Recommendation logic and sync-latency proof are documented for the claims that remain in scope
 
-**v3.1 Precision Improvements (tracked above):**
+**v3.2 Remaining Precision Improvements (tracked above):**
 - Canonical count semantics dictionary for all reported numbers
 - Strict CSV export integrity proof with validation and checksum
 - Maturity label system (Live/Local/Demo-backed/Planned)
-- Privacy statement wording aligned exactly with divergence table
+- Privacy statement wording aligned exactly with divergence table - ✅ complete
 
-**v3.1 Formatting Improvements (content direction good, formatting still rough):**
+**v3.2 Remaining Formatting Improvements (content direction good, major layout defects closed):**
 | Priority | Item | Status | What needs to happen |
 |----------|------|--------|----------------------|
 | Critical | **Rebuild page 9 screenshot inventory table** | ✅ COMPLETE | Replaced the long filename table with a short evidence-ID matrix plus filename key; PDF export recheck shows the rows render readably |
 | Critical | **Rebuild page 10 sync-latency table** | ✅ COMPLETE | Replaced the single wide table with source-specific sync proof tables; PDF export recheck shows no timestamp/company collisions |
-| High | **Split page 1 into two pages** | Pending | Page 1 = title + purpose + audience + companion docs; Page 2 = contents + overview table |
-| High | **Standardize phase page pattern** | Pending | Heading → business claim → screenshot/evidence → verification bullets → conclusion line; apply consistently across all phase pages |
+| High | **Split page 1 into two pages** | ✅ COMPLETE | Page 1 is now a cover/introduction page and page 2 holds contents |
+| High | **Standardize phase page pattern** | Partial | Early sections now follow claim → evidence → verification more cleanly; finish the same pattern across the full guide |
 | Medium | **Shaded code boxes for API/JSON** | Pending | Replace raw monospaced text dumps with contained shaded code blocks (pages 5-7) |
 | Medium | **Fix blank space waste** | Pending | Tighten or combine pages 4 and 11 with adjacent content |
-| Medium | **Standardize visual hierarchy** | Pending | Consistent screenshot sizing/centering, caption spacing, section rhythm across entire PDF |
+| Medium | **Standardize visual hierarchy** | Partial | Screenshot sizing and source labels are more controlled, but caption spacing and page rhythm still need a final pass |
 
 ### Milestone 1: Finish Data Coverage And Enrichment
 
