@@ -505,12 +505,146 @@ DESTRUCTIVE_TOOLS = {
     "bulk_delete",  # Future tool
 }
 
+# ─── QUERY INTENT ROUTING RULES ──────────────────────────────────────────────
+# Deterministic guard: if the user query matches a keyword pattern, the LLM
+# MUST call the specified required_tool. Calling a forbidden_tool instead will
+# be rejected by the critic with a corrective error message.
+#
+# Rules are evaluated in order; checking stops at the first keyword match.
+# Each rule only fires when ANY keyword substring is found in the user query.
+QUERY_ROUTING_RULES: list[dict] = [
+    {
+        "name": "identity_link_quality",
+        "keywords": [
+            "linked to kbo",
+            "link to kbo",
+            "kbo link",
+            "source systems linked",
+            "link quality",
+            "match rate",
+            "kbo match",
+            "identity link",
+            "matching quality",
+        ],
+        "required_tool": "get_identity_link_quality",
+        "forbidden_tools": {"get_data_coverage_stats", "search_profiles", "aggregate_profiles"},
+        "error_hint": (
+            "Call get_identity_link_quality (no parameters needed). "
+            "It returns KBO match rates for Teamleader and Exact."
+        ),
+    },
+    {
+        "name": "geographic_revenue_distribution",
+        "keywords": [
+            "revenue distribution",
+            "revenue by city",
+            "revenue by location",
+            "geographic distribution",
+            "geographic revenue",
+            "market penetration by city",
+            "pipeline by city",
+            "revenue spread",
+        ],
+        "required_tool": "get_geographic_revenue_distribution",
+        "forbidden_tools": {"aggregate_profiles", "search_profiles"},
+        "error_hint": (
+            "Call get_geographic_revenue_distribution (no parameters needed). "
+            "It returns cross-source revenue and pipeline aggregated by city."
+        ),
+    },
+    {
+        "name": "industry_pipeline",
+        "keywords": [
+            "pipeline value for",
+            "pipeline value by",
+            "pipeline for software",
+            "pipeline for it",
+            "pipeline for restaurant",
+            "pipeline for retail",
+            "pipeline for construction",
+            "industry pipeline",
+            "industry revenue",
+            "pipeline summary",
+            "total pipeline",
+        ],
+        "required_tool": "get_industry_summary",
+        "forbidden_tools": {"search_profiles", "aggregate_profiles"},
+        "error_hint": (
+            "Call get_industry_summary with industry_category= and optional city=. "
+            "It returns pipeline value and revenue aggregated by industry from CRM + Exact."
+        ),
+    },
+]
+
 
 def _is_valid_nace_code(code: str) -> bool:
     """Validate that a NACE code is a valid 5-digit string."""
     if not isinstance(code, str):
         return False
     return len(code) == 5 and code.isdigit()
+
+
+def _extract_last_user_query(messages: list) -> str:
+    """Return the most recent HumanMessage content as a lowercase string.
+
+    Used by the critic to match routing rules against the user's actual intent
+    without involving the LLM.
+
+    Args:
+        messages: List of messages from AgentState.
+
+    Returns:
+        Lowercase content of the last HumanMessage, or empty string if none found.
+    """
+    for message in reversed(messages):
+        if isinstance(message, HumanMessage):
+            content = getattr(message, "content", "") or ""
+            return content.lower()
+    return ""
+
+
+def _check_routing_rules(tool_name: str, user_query: str) -> tuple[bool, str]:
+    """Check whether tool_name violates any QUERY_ROUTING_RULES for user_query.
+
+    Walks each rule; if ANY keyword substring appears in user_query and tool_name
+    is in that rule's forbidden_tools, returns (False, error_message).
+    If the query matches a rule but the correct tool was chosen, returns (True, "").
+    If no rule matches at all, returns (True, "").
+
+    Args:
+        tool_name: The tool the LLM wants to call.
+        user_query: Lowercase content of the most recent user message.
+
+    Returns:
+        Tuple of (is_valid, error_message).
+    """
+    if not user_query:
+        return True, ""
+
+    for rule in QUERY_ROUTING_RULES:
+        matched_keyword = next(
+            (kw for kw in rule["keywords"] if kw in user_query),
+            None,
+        )
+        if matched_keyword is None:
+            continue  # rule does not apply to this query
+
+        # This query SHOULD use required_tool.
+        if tool_name in rule["forbidden_tools"]:
+            return (
+                False,
+                (
+                    f"WRONG TOOL for this query. "
+                    f"You called '{tool_name}' but the user query "
+                    f"(matched keyword: '{matched_keyword}') requires "
+                    f"'{rule['required_tool']}'. "
+                    f"{rule['error_hint']}"
+                ),
+            )
+        # Correct or at least not forbidden — stop checking rules.
+        break
+
+    return True, ""
 
 
 def _merge_last_search_params(
@@ -531,11 +665,12 @@ def _merge_last_search_params(
     return merged
 
 
-def _validate_tool_call(tool_call: dict) -> tuple[bool, str]:
+def _validate_tool_call(tool_call: dict, user_query: str = "") -> tuple[bool, str]:
     """Validate a single tool call for security and correctness.
 
     Args:
         tool_call: Tool call dict with 'name', 'args', etc.
+        user_query: Lowercase content of the most recent user message (used for routing checks).
 
     Returns:
         Tuple of (is_valid, error_message).
@@ -641,6 +776,11 @@ def _validate_tool_call(tool_call: dict) -> tuple[bool, str]:
                 f"'use_last_search' must be a boolean (true/false), got {type(use_last_search).__name__}",
             )
 
+    # Check 6: Routing guard — deterministic keyword-based 360° tool selection
+    routing_valid, routing_error = _check_routing_rules(name, user_query)
+    if not routing_valid:
+        return False, routing_error
+
     return True, ""
 
 
@@ -673,9 +813,12 @@ async def critic_node(state: AgentState) -> dict:
     tool_calls = last_message.tool_calls
     logger.debug("critic_validating_tool_calls", count=len(tool_calls))
 
+    # Extract the last user query once for routing checks across all tool calls
+    user_query = _extract_last_user_query(list(messages))
+
     validation_errors = []
     for tool_call in tool_calls:
-        is_valid, error = _validate_tool_call(tool_call)
+        is_valid, error = _validate_tool_call(tool_call, user_query=user_query)
         if not is_valid:
             validation_errors.append(f"Tool '{tool_call.get('name', 'unknown')}': {error}")
 
