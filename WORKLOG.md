@@ -2128,3 +2128,64 @@ WHERE segment_id = (SELECT segment_id FROM segment_definitions WHERE segment_nam
 4. Update Illustrated Guide with new evidence
 
 ---
+
+---
+
+### Task: Post-handoff verification of event processor and Resend activation
+
+**Type:** verification_only  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 20:20 CET  
+**Git Head:** `41037b7`
+
+**Summary:**
+Re-verified event processor is running and healthy. Confirmed database state shows B.B.S. Entreprise with 4-source linkage. Ran full Resend activation test suite successfully. Browser-based chatbot screenshot capture was attempted but not achieved due to Chainlit UI interaction issues.
+
+**Verification Performed:**
+
+1. **Event processor health check**
+   ```bash
+   curl -fsS http://127.0.0.1:5001/health
+   # Result: {"status":"ok","service":"cdp-event-processor","database":"ok","signature_verification":true}
+   ```
+
+2. **NBA endpoint verification**
+   ```bash
+   curl -fsS 'http://127.0.0.1:5001/api/next-best-action/0438437723'
+   # Result: B.B.S. Entreprise, engagement_score=15, recommendations=[support_expansion, re_activation]
+   ```
+
+3. **Engagement leads endpoint**
+   ```bash
+   curl -fsS 'http://127.0.0.1:5001/api/engagement/leads?min_score=5'
+   # Result: 2 leads - B.B.S. ENTREPRISE (score 15), Accountantskantoor Dubois (score 5)
+   ```
+
+4. **Database state verification**
+   - B.B.S. Entreprise (0438437723): linked_all, 4 sources
+   - Has Teamleader, Exact, Autotask, KBO linkage
+   - Open tickets: 1, Contracts: 1
+
+5. **Resend activation end-to-end test (mock mode)**
+   ```bash
+   poetry run python scripts/test_poc_resend_activation.py --mock
+   ```
+   Results: 6/6 tests PASSED
+   - Feature parity: 3 equivalent, 3 Resend superior, 2 Flexmail advantage
+   - Segment creation: 1,529 software companies in Brussels (0.32s)
+   - Segment → Resend: 8 contacts pushed to audience (0.24s)
+   - Campaign send: Campaign sent via Resend API
+   - Webhook setup: 6 events subscribed
+   - Engagement writeback: 4/4 events tracked
+
+**Blockers Encountered:**
+- Browser-based chatbot interaction with Chainlit UI not working through Playwright
+  - Text entry works but submission doesn't trigger response
+  - No errors in console, but messages not appearing in chat
+  - This prevents capturing fresh chatbot screenshots for Illustrated Guide
+
+**Recommendation:**
+For guide-ready chatbot screenshots, user should either:
+1. Delegate to an AI agent with browser takeover capability (per AGENTS.md section on browser access)
+2. Manually capture screenshots during a live chatbot session
+
