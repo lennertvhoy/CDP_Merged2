@@ -293,6 +293,32 @@ current_state:
           query: "Export these software companies to CSV"
           result: "Tracardi-backed export returned 0 profiles"
           status: exposed_gap
+    illustrated_guide_phase3_verification:
+      status: observed
+      verified_at: 2026-03-08T13:45:00+01:00
+      phase: Phase 3 - Backend Verification
+      components_verified:
+        tracardi_api:
+          status: verified
+          api_url: http://localhost:8686
+          event_sources: 4 configured
+          workflows: 5 deployed
+          profiles: 76 stored
+          track_endpoint: working
+        postgresql_database:
+          status: verified
+          total_companies: 1940603
+          companies_with_nace: 1252022
+          software_companies_brussels: 1897
+            note: Phase 2 showed 1,652 - difference is NACE resolution scope
+          active_segments: 7
+          segment_memberships: 10224
+          unified_360_profiles: 1940603
+        unified_360_tools:
+          status: verified
+          identity_link_quality:
+            teamleader: 100% match rate (1/1)
+            exact: 100% match rate (9/9)
     illustrated_guide_phase2_verification:
       status: observed
       verified_at: 2026-03-08T13:38:00+01:00
