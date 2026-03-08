@@ -1,8 +1,8 @@
 # CDP_Merged Illustrated Guide v2.0
 
-**Status:** Fresh four-source screenshot, scope labels, UID-first/runtime evidence, and local event-processor business-value proof applied; populated Resend audience and website-behavior evidence still pending
+**Status:** Fresh four-source screenshot, scope labels, anonymous-profile runtime evidence, and local event-processor business-value proof applied; populated Resend audience and website-behavior evidence still pending, and the remaining email-event privacy divergence is now explicit
 **Last Updated:** 2026-03-08  
-**Verification:** Screenshots captured from live systems; four-source backend rechecked via local PostgreSQL on 2026-03-08 19:20 CET; event processor rechecked locally on 2026-03-08 20:06 CET
+**Verification:** Screenshots captured from live systems; four-source backend rechecked via local PostgreSQL on 2026-03-08 19:20 CET; event processor rechecked locally on 2026-03-08 20:06 CET; Tracardi runtime/privacy path rechecked via local API and code inspection on 2026-03-08 20:21 CET
 
 ---
 
@@ -304,9 +304,9 @@ User NL Query → LLM Intent Classification → PostgreSQL Search
 | 360° Profile Lookup | <1s | Single company |
 | Segment Creation | 0.75s | 1,652 members |
 
-### Privacy Boundary: UID-First Operational Layer
+### Privacy Boundary: UID-First Target with Documented Runtime Divergence
 
-**Architecture Principle:** Tracardi stores only UID-first operational data; PII resolution happens at presentation/activation time from source systems or controlled services.
+**Target Architecture:** Tracardi should store UID-first operational data, with PII resolved only at authorized presentation or activation time from source systems or controlled services.
 
 **Runtime Evidence:**
 
@@ -315,27 +315,26 @@ User NL Query → LLM Intent Classification → PostgreSQL Search
 **What's Shown:**
 - 84 operational profiles stored in Tracardi
 - All profiles display as "Anonymous" in dashboard listings
-- No names, emails, or phones visible in the operational runtime layer
-- PII only resolved at authorized presentation or activation step
+- No names, emails, or phones visible in the sampled profile listings
+- This proves anonymous profile rows, not a fully UID-only email-event path
 
 **Current Divergence (Explicitly Documented):**
 
 | Aspect | Target State | Current Implementation |
 |--------|--------------|------------------------|
-| Profile IDs | Hashed/anonymous UIDs | ✅ Anonymous UUIDs |
-| Dashboard display | No PII in listings | ✅ Shows "Anonymous" |
-| Event payloads | UID-only references | ⚠️ May contain emails in event metadata |
-| Source system links | Lazy resolution | ✅ Resolved at query time from PostgreSQL |
+| Profile IDs | Hashed/anonymous UIDs | ✅ Anonymous UUIDs in sampled Tracardi profiles |
+| Projected profile traits | PII-light operational data | ✅ `src/services/projection.py` projects public company traits plus `has_email` / `has_phone` flags, not raw contact values |
+| Dashboard display | No PII in listings | ✅ `/profile/select` samples show `anonymous=true` and null contact emails |
+| Email event properties | UID-only references | ❌ `/event/select` samples still include raw email fields such as `to`, `from`, and `email` |
+| Source system links | Lazy resolution | ✅ Resolved at query time from PostgreSQL/source identity links |
 
 **Verification:**
-```sql
--- PostgreSQL: Source identity links with controlled references
-SELECT organization_uid, kbo_number, source_system, source_record_id
-FROM source_identity_links
-LIMIT 5;
-```
+- `POST /profile/select` returned sampled profiles with `data.anonymous=true` and null `data.contact.email.*`
+- `POST /event/select` with `type="email.opened"` returned properties including `to="simulation@example.com"` and `from="test@example.com"`
+- `POST /event/select` with `type="email.clicked"` returned properties including `email="test-20260308110037@example.com"`
+- `src/services/projection.py` `_build_profile_payload()` projects business traits and `has_*` flags, not raw email/phone values
 
-**Result:** Links use `organization_uid` (controlled reference) and `kbo_number` (business identifier), not personal emails or phone numbers.
+**Conclusion:** The current runtime proves anonymous Tracardi profile listings and a PII-light projection path, but it does **not** yet prove a fully UID-only event stream. This guide therefore documents the current privacy divergence instead of claiming that the target architecture is already fully achieved.
 
 ### Tool Selection Routing (Option D Guard)
 

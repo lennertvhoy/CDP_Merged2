@@ -11,7 +11,7 @@ The Illustrated Guide presents a compelling POC narrative but contains **critica
 
 **Grade: C+** - Components exist but end-to-end integration is not proven with realistic data.
 
-**Update (2026-03-08 20:35 CET):** The guide has since been refreshed with `chatbot_360_bbs_four_source_final_2026-03-08.png`, and the count framing is now explicitly labeled as `1,652` canonical full scope, `1,529` narrower 62xxx activation-test scope, and `101` preview export rows. The remaining active blockers are UID-first/privacy proof, a populated Resend audience, workflow execution evidence, and richer business-value demonstrations.
+**Update (2026-03-08 20:35 CET, using a 20:21 CET runtime/privacy recheck):** The guide has since been refreshed with `chatbot_360_bbs_four_source_final_2026-03-08.png`, and the count framing is now explicitly labeled as `1,652` canonical full scope, `1,529` narrower 62xxx activation-test scope, and `101` preview export rows. The privacy claim is now truthfully narrowed: sampled Tracardi profiles are anonymous and projection is PII-light, but `email.opened` / `email.clicked` events still carry raw email fields in event properties. That closes the documentation mismatch on the privacy claim. The remaining active blockers are a populated Resend audience, workflow execution evidence, guide-ready event-processor captures, and richer business-value demonstrations.
 
 ---
 
@@ -208,6 +208,7 @@ The Illustrated Guide presents a compelling POC narrative but contains **critica
 ### Priority 4: Additional Technical Verifications
 - [ ] Capture MCP server logs showing PostgreSQL queries
 - [ ] Trigger test bounce event, capture workflow execution logs
+- [x] Document current Tracardi privacy divergence (anonymous profiles, email-bearing event metadata)
 - [x] Document NACE resolution discrepancy (`1,652` canonical full scope vs `1,529` narrower activation-test scope)
 
 ---

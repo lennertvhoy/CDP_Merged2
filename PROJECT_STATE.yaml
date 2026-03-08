@@ -3,7 +3,7 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-08T20:10:00+01:00
+  updated_at: 2026-03-08T20:21:52+01:00
   updated_by: agent
   repo_head:
     value: fe9d51a
@@ -191,6 +191,23 @@ current_state:
         - The local workflow drafts are no longer hollow
         - The remaining Tracardi blocker is runtime activation, not draft structure
         - Workflow screenshots alone are insufficient proof until logs or trait updates show real execution
+    tracardi_privacy_boundary_partially_verified:
+      status: observed
+      verified_at: 2026-03-08T20:21:00+01:00
+      evidence:
+        - command: POST /profile/select where metadata.time.create EXISTS limit=3
+        - result: sampled profiles returned data.anonymous=true with null contact email fields
+        - command: POST /event/select where type="email.opened" limit=3
+        - result: sampled event properties included to=simulation@example.com and from=test@example.com
+        - command: POST /event/select where type="email.clicked" limit=3
+        - result: sampled event properties included email=test-20260308110037@example.com
+        - file: src/services/projection.py
+          finding: _build_profile_payload projects public company traits plus has_email/has_phone flags, not raw email or phone values
+      conclusion:
+        - Tracardi profile listings are anonymous in the sampled local runtime
+        - The current projection path is PII-light rather than fully PII-free
+        - The runtime is not yet fully UID-only because email event properties still carry recipient addresses
+        - Guide/state docs should document this divergence instead of claiming the target privacy boundary is fully achieved
     event_processor_nba_and_writeback_verified:
       status: observed
       verified_at: 2026-03-08T20:06:00+01:00
@@ -1341,9 +1358,9 @@ active_problems:
         actual: "Flexmail parity is no longer a near-term blocker unless the user reopens it"
         fix: Keep roadmap/docs aligned to Resend as the accepted activation path for now
       - issue: privacy_uid_boundary_not_demonstrated
-        current: "Guide screenshots show direct PII in the demo/runtime story"
-        actual: "Target architecture requires UID-first operational evidence with PII resolved only at authorized presentation/activation steps"
-        fix: Demonstrate the UID proxy layer or explicitly document the current architectural divergence
+        current: "Guide text must not claim a fully UID-only runtime while the event stream still carries raw email fields"
+        actual: "Observed runtime shows anonymous Tracardi profiles plus a PII-light projection path, but email.opened/email.clicked events still include raw email properties"
+        fix: Keep docs aligned to the partial privacy boundary now verified, and treat a true UID-only event stream as future implementation work
       - issue: autotask_it1_evidence_missing
         current: "Guide now uses a fresh B.B.S. screenshot that shows linked_all and explicit 4-source linkage"
         actual: "Fresh screenshot evidence and backend SQL proof now align on one linked_all profile with ticket/contract data"
@@ -1359,8 +1376,8 @@ active_problems:
     missing_demonstrations:
       - demonstration: uid_first_privacy_layer
         priority: critical
-        description: Show Tracardi/runtime flow using UID-first operational data with PII resolved only at presentation or activation time
-        status: not_started
+        description: Distinguish the anonymous-profile runtime proof from the still-divergent email-event path and keep that privacy boundary explicit in the guide
+        status: divergence_documented_runtime_not_uid_only
       - demonstration: autotask_it1_360_proof
         priority: critical
         description: Show one company linked across KBO + Teamleader + Exact + Autotask in the unified 360 story
@@ -1407,7 +1424,7 @@ active_problems:
     owner: agent
     next_action: 
       - Keep Resend as the accepted current POC activation platform unless the user reopens Flexmail
-      - Demonstrate the UID-first privacy boundary or explicitly document the current divergence
+      - Keep the anonymous-profile proof and email-event divergence explicit until a true UID-only event path is implemented
       - Keep the fresh linked_all screenshot and captioning aligned with the backend proof
       - Convert the verified event-processor outputs into guide-ready screenshot/caption evidence
       - Capture the populated Resend audience for the canonical 1,652-company segment
