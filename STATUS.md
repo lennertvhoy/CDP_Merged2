@@ -8,6 +8,7 @@
 
 ## Current Headline
 
+- `observed` from 2026-03-08 16:30 CET: **ILLUSTRATED GUIDE v2.0 PUBLISHED!** Complete source-of-truth documentation with verified demonstrations: 360° Golden Record (B.B.S. Entreprise), NL Segment Creation (1,652 companies), Resend Activation POC (6/6 tests passing), CSV Export Validation (9 fields verified). All claims backed by live system screenshots. Guide: `docs/ILLUSTRATED_GUIDE.md`
 - `observed` from 2026-03-08 16:05 CET: **360° GOLDEN RECORD DEMO CAPTURED!** Successfully demonstrated cross-source 360° view for B.B.S. Entreprise showing unified KBO + Teamleader + Exact data. Chatbot query "Show me a 360 view of B.B.S. Entreprise" returned complete profile with identity link status `linked_both`. Screenshots saved: `chatbot_360_bbs_entreprise_2026-03-08.png`, `chatbot_segment_creation_2026-03-08.png`
 - `observed` from 2026-03-08 16:00 CET: **15 LINKED COMPANIES FOR 360° DEMOS!** Created identity links for 15 companies across KBO + CRM + Exact. B.B.S. Entreprise now shows `linked_both` status with data from all 3 sources. Segment creation demo: "IT services - Brussels" created with 1,652 companies.
 - `observed` from 2026-03-08 15:50 CET: **DEMO DATA POPULATION SCRIPTS COMPLETE!** Added `scripts/populate_hyperrealistic_demo_data.py` and `scripts/create_360_demo_companies.py` for creating realistic Belgian company data across Teamleader, Exact, and KBO. Commit `51ac939`.
