@@ -822,6 +822,42 @@ If a screenshot is needed but cannot be captured:
 3. **Create a task:** Add to NEXT_ACTIONS.md for future capture
 4. **Never fake it:** Leave the gap rather than create false evidence
 
+### Browser Access Protocol for Authenticated Platforms
+
+**When verification requires browser access to platforms with login barriers:**
+
+Platforms requiring authentication (Teamleader, Exact Online, Resend, ngrok, etc.) often block headless browser automation with OAuth flows, 2FA, or session requirements. Do not waste time trying to automate logins that require human interaction.
+
+**Preferred approach:**
+
+1. **Ask the user to delegate to an AI agent with browser takeover capability**
+   - Request: "Please delegate this screenshot task to an AI agent that can take over your browser (e.g., Claude with computer use, or another agent with active browser control)"
+   - Provide exact steps: URL to visit, what to click, what to verify
+   - Request the screenshot be saved to the repo with a specific filename
+
+2. **Alternative: User provides credentials**
+   - Only if the user explicitly offers credentials or API tokens
+   - Use credentials only for the specific verification task
+   - Do not store credentials in docs or logs
+
+3. **Document the blocker if neither option is available**
+   - Mark the task as `BLOCKED` or `PAUSED` in NEXT_ACTIONS.md
+   - State: "Requires browser access to [platform] - user delegation or credentials needed"
+   - Do not create synthetic screenshots
+
+**Examples of platforms requiring delegation:**
+- Teamleader (OAuth + 2FA)
+- Exact Online (OAuth flow)
+- Resend Dashboard (email/password login)
+- ngrok (web interface with auth)
+- Any platform with "Sign in with Google" or similar OAuth
+
+**Do not:**
+- Attempt to automate OAuth flows headlessly
+- Ask the user to "paste your password here" unless they explicitly offer first
+- Create placeholder/mock screenshots
+- Leave the task silently incomplete
+
 ### Source-of-Truth Documentation Standards
 
 When documentation is designated as "source of truth" for the project:
@@ -876,6 +912,7 @@ For `docs/ILLUSTRATED_GUIDE.md` and any derived guide assets:
 | 2026-03-07 | When the user pauses Azure deployment to save costs, agents must switch to local-only execution and treat cloud deployment work as paused until explicitly resumed | Prevent unnecessary spend and stop stale Azure-first assumptions from driving the queue |
 | 2026-03-07 | Any file modified in a session must be committed before handoff, even if pre-existing dirty | Prevent ambiguous dirty state and ensure clean handoffs |
 | 2026-03-07 | Agents must clean the worktree before handoff; if pre-existing dirty paths block that, they must resolve or escalate instead of handing off a dirty tree | Prevent ambiguous ownership and stop repeated dirty-worktree handoffs |
+| 2026-03-08 | When browser access requires authentication to platforms (Teamleader, Exact, Resend, ngrok), prefer delegation to an AI agent with browser takeover capability over headless automation | Headless browsers cannot handle OAuth, 2FA, or active sessions; user delegation is more reliable and secure than requesting credentials |
 
 ---
 
