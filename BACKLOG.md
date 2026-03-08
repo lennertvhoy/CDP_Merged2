@@ -2,7 +2,7 @@
 
 **Platform:** AZURE (VMs, Container Apps, OpenAI)  
 **Architecture:** Source systems PII truth + PostgreSQL intelligence truth + Tracardi activation runtime + AI chatbot  
-**Last Updated:** 2026-03-08 (Roadmap aligned with hardening handoff `f9d1906`; core demo proof complete, final polish isolated)
+**Last Updated:** 2026-03-08 (v3.0 feedback incorporated; 80-90% of source-of-truth issues resolved per user review; v3.1 precision improvements now tracked)
 **Purpose:** Medium-term roadmap from the current repo state to a credible demo first and production readiness later
 
 ## How To Use This File
@@ -108,9 +108,13 @@ These are included only where they appear likely to add real future value to thi
 | High | **Document POC completion evidence** | ✅ DONE | Test scripts: `scripts/test_poc_resend_activation.py`, `scripts/test_poc_activation.py` |
 | High | **Harden canonical Brussels IT segment/export contract** | ✅ DONE | Active IT mapping is fixed to `62100/62200/62900/63100`, and CSV export now aborts if canonical rows drift from stored segment filters |
 | High | **Autotask evidence in demo story** | ✅ DONE | B.B.S. Entreprise now shows `1` open ticket and `1` active contract inside the unified 360 story |
-| High | **Clarify Resend audience naming** | Pending | The reused audience label is generic; captions should make the Brussels IT subset explicit |
-| High | **Document NBA scoring logic** | Partial | `/api/scoring-model`, `ENGAGEMENT_THRESHOLDS`, `RECOMMENDATION_RULES`, and `rule_trace` now exist; the guide/spec still need to cite them clearly |
+| High | **Clarify Resend audience naming** | ✅ DONE | The reused audience label is generic; captions should make the Brussels IT subset explicit |
+| High | **Document NBA scoring logic** | ✅ DONE | `/api/scoring-model`, `ENGAGEMENT_THRESHOLDS`, `RECOMMENDATION_RULES`, and `rule_trace` now exist; documented in guide |
 | High | **Split mixed demo/source-of-truth docs** | ✅ DONE | Split into BUSINESS_CASE.md (vision/value), SYSTEM_SPEC.md (architecture/APIs), and streamlined ILLUSTRATED_GUIDE.md (evidence only) |
+| High | **Add canonical count semantics dictionary** | Pending | Define explicit rules: base rows, verified-email rows, deduped activation contacts, test-scope rows (per v3.0 feedback) |
+| High | **Upgrade CSV export integrity proof** | Pending | Add strict export integrity check: row count match, Brussels+NACE validation, checksum/timestamp/query ID (per v3.0 feedback) |
+| Medium | **Implement maturity label system** | Pending | Replace generic "live" language with explicit labels: Live, Local, Demo-backed, Planned (per v3.0 feedback) |
+| Medium | **Fix privacy statement wording precision** | Pending | Align top-line claim with divergence table: "gateway sanitization implemented, with known residual raw-email divergence pending cutover" |
 | Medium | **Recheck webhook/event-processor test hang** | ✅ DONE | Both suites now pass cleanly (54 tests in 0.33s); issue resolved, likely by prior hardening |
 
 **Accepted platform decision:** Use **RESEND** for the current POC.
@@ -193,10 +197,14 @@ poetry run python scripts/test_poc_activation.py --mock
 | Critical | **POPULATE Hyperrealistic connected demo data** | In progress | One flagship `linked_all` account is proven; scale to 10-50 coherent cross-source accounts only if the demo needs more breadth than the current single-story package |
 | Critical | Define a hyperrealistic integration standard | ✅ COMPLETE | Autotask mock with 5 companies, 5 tickets, 3 contracts complete |
 | Critical | **Guide core business-case proof** | ✅ COMPLETE | Four-source 360, populated Resend audience, event-processor outputs, website writeback, privacy divergence note, and CSV opened-file proof are all now captured |
-| Critical | **Keep the guide source-of-truth clean** | In progress | The remaining work is doc splitting, naming clarity, wording precision, explicit logic, citation of the new scoring/privacy hardening, and one sync-latency proof chain |
-| Critical | **Clarify reused Resend audience evidence** | Pending | Make it explicit that `KBO Companies - Test Audience` contains the Brussels IT subset, or replace it with a better-named audience when plan limits allow |
-| Critical | **Clarify Autotask integration posture** | Pending | Keep the guide consistent: production-capable client + local unified-360 linkage, current verified data still demo-mode |
-| Critical | Stabilize the public demo flow | Pending | Eliminate prompt hangs and prove repeatable end-to-end demo success |
+| Critical | **Keep the guide source-of-truth clean** | ✅ COMPLETE v3.0 | Phase-based proof structure, naming clarity, explicit logic, scoring/privacy citations, sync-latency proof all captured |
+| Critical | **Clarify reused Resend audience evidence** | ✅ COMPLETE | Guide now labels as `Brussels IT Services - Segment` with explicit note about subset scope |
+| Critical | **Clarify Autotask integration posture** | ✅ COMPLETE | Guide documents hybrid status: production-capable linkage + demo-mode data |
+| Critical | Stabilize the public demo flow | ✅ COMPLETE | End-to-end demo flow verified repeatable |
+| High | **Add canonical count semantics dictionary** | Pending | Per v3.0 feedback: define explicit rules for base rows, verified-email rows, deduped activation contacts, test-scope rows |
+| High | **Upgrade CSV export integrity proof** | Pending | Per v3.0 feedback: add row count match, Brussels+NACE validation, checksum/timestamp/query ID |
+| High | **Implement maturity label system** | Pending | Per v3.0 feedback: replace generic "live" language with explicit labels (Live, Local, Demo-backed, Planned) |
+| High | **Fix privacy statement wording precision** | Pending | Per v3.0 feedback: align top-line claim with table exactly - "gateway sanitization implemented, with known residual raw-email divergence pending cutover" |
 | High | **Surface NBA scoring and threshold logic** | Partial | The runtime now exposes `/api/scoring-model` and `rule_trace`; the remaining work is guide/spec wiring and screenshot/evidence capture |
 | High | **Add explicit cross-division revenue proof** | Pending | Show one customer with revenue rolled up across divisions, not just recommendation output |
 | High | **Capture timestamped sync-latency proof** | Pending | Demonstrate one source update reaching the 360/query plane within the claimed sync interval |
@@ -206,13 +214,19 @@ poetry run python scripts/test_poc_activation.py --mock
 | High | Add a cleanup/organization queue for demo assets and stale narratives | Pending | Consolidate fixtures, screenshots, and current-state summaries to reduce future drift |
 | High | Require user-owned final verification | Pending | Hold final demo sign-off until the user has tested it and seen one stable week |
 
-**Exit criteria:**
-- At least one real source-system connection or a clearly justified fallback plan exists
-- All remaining mock or hybrid paths are labeled explicitly with provenance
-- The user can run and trust the demo story end to end
-- Guide screenshots and captions match the visible system state without overclaiming
-- The reused Resend audience and Autotask hybrid posture are explained clearly
-- Recommendation logic and sync-latency proof are documented for the claims that remain in scope
+**Exit criteria (v3.0 COMPLETE):**
+- ✅ At least one real source-system connection or a clearly justified fallback plan exists
+- ✅ All remaining mock or hybrid paths are labeled explicitly with provenance
+- ✅ The user can run and trust the demo story end to end
+- ✅ Guide screenshots and captions match the visible system state without overclaiming
+- ✅ The reused Resend audience and Autotask hybrid posture are explained clearly
+- ✅ Recommendation logic and sync-latency proof are documented for the claims that remain in scope
+
+**v3.1 Precision Improvements (tracked above):**
+- Canonical count semantics dictionary for all reported numbers
+- Strict CSV export integrity proof with validation and checksum
+- Maturity label system (Live/Local/Demo-backed/Planned)
+- Privacy statement wording aligned exactly with divergence table
 
 ### Milestone 1: Finish Data Coverage And Enrichment
 

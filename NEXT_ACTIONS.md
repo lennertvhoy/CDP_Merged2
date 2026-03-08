@@ -10,12 +10,12 @@
 
 ### P0: Demo Polish And Source-Of-Truth Hardening
 
-**Status:** ✅ COMPLETE - All P0 demo polish items completed. Guide now presentation-ready with clarified naming, hybrid status documentation, NBA scoring surfaced, cross-division revenue proof, sync-latency timestamps, and verified privacy hardening.
+**Status:** ✅ COMPLETE v3.0 - Guide v3.0 presentation-ready per user feedback. 80-90% of source-of-truth issues resolved. Remaining precision improvements (metrics dictionary, CSV integrity proof, maturity labels) deferred to backlog for v3.1.
 **Discovered:** 2026-03-08 (initial audit), reopened 2026-03-08 via direct user feedback and source-of-truth review
-**Last Updated:** 2026-03-08 22:18 CET
+**Last Updated:** 2026-03-08 22:32 CET
 **Severity:** HIGH
-**Guide:** `docs/ILLUSTRATED_GUIDE.md` v2.0  
-**Audit Report:** `docs/ILLUSTRATED_GUIDE_AUDIT.md`
+**Guide:** `docs/ILLUSTRATED_GUIDE.md` v3.0  
+**User Feedback:** v3.0 solves most document-side issues; 4 precision improvements remain for v3.1
 
 #### Accepted Decisions
 
@@ -46,6 +46,17 @@
 | Capture timestamped sync-latency proof | HIGH | ✅ COMPLETE - Sync timestamps documented: Teamleader 2026-03-08 14:57:55, Exact 2026-03-08 11:19:39 |
 | Harden privacy boundary in runtime | MEDIUM | ✅ COMPLETE - 48 webhook gateway tests pass, PII stripping verified, guide updated with verification note |
 | Recheck the late-suite webhook/event-processor test timeout | MEDIUM | ✅ COMPLETE - Both test suites now pass cleanly (54 tests in 0.33s). Issue resolved, likely by commit f9d1906. |
+
+#### Deferred to Backlog (v3.1 Precision Improvements)
+
+Per user feedback on v3.0 guide, these precision improvements remain for future work:
+
+| Gap | Priority | Location |
+|-----|----------|----------|
+| Add canonical count semantics dictionary | P1 | `BACKLOG.md` Milestone 0 |
+| Upgrade CSV export integrity proof | P1 | `BACKLOG.md` Milestone 0 |
+| Implement maturity label system | P2 | `BACKLOG.md` Milestone 0 |
+| Fix privacy statement wording precision | P2 | `BACKLOG.md` Milestone 0 |
 
 #### Exit Criteria
 
