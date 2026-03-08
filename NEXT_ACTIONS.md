@@ -10,12 +10,12 @@
 
 ### P0: Demo Polish And Source-Of-Truth Hardening
 
-**Status:** ✅ COMPLETE v3.0; v3.1 formatting pass in progress. The critical page 9/10 table rebuilds are complete locally, and `4` precision items plus `5` formatting items remain.
+**Status:** ✅ COMPLETE v3.0; v3.2 local polish pass exported. The guide now has a real cover page, a self-contained CSV proof page, and tightened maturity/privacy wording. Remaining work is `3` precision items plus `3` formatting items.
 **Discovered:** 2026-03-08 (initial audit), reopened 2026-03-08 via direct user feedback and source-of-truth review
-**Last Updated:** 2026-03-08 22:46 CET
+**Last Updated:** 2026-03-08 23:10 CET
 **Severity:** HIGH
-**Guide:** `docs/ILLUSTRATED_GUIDE.md` v3.1 draft / `docs/ILLUSTRATED_GUIDE_v3.1.pdf` local export  
-**User Feedback:** v3.0 content direction good; the page 9/10 table failures are now fixed locally, and the remaining work is page 1 breathing room plus overall visual consistency.
+**Guide:** `docs/ILLUSTRATED_GUIDE.md` v3.2 draft / `docs/ILLUSTRATED_GUIDE_v3.2.pdf` local export  
+**User Feedback:** The guide now reads like a deliberate evidence pack, but the follow-up pass needed to fix the page 1 ordering, rebuild the weak CSV page, stop overstating maturity versus the evidence tables, and make the chatbot screenshots read as deliberate response excerpts rather than accidental crops.
 
 #### Accepted Decisions
 
@@ -29,10 +29,10 @@
 | B.B.S. Entreprise single-story proof | Verified | The same B.B.S. record is now tied across the `linked_all` 360 proof, event-processor outputs, populated Resend audience context, and demo-labeled website behavior in canonical `event_facts` |
 | Privacy architecture honesty | Verified | The guide now explicitly documents the current divergence: anonymous Tracardi profiles, but email-bearing event metadata still exists |
 | NL segment creation and scope framing | Verified | The guide now labels `1,652` canonical scope, `1,529` narrower activation-test scope, `190` Brussels IT rows, `189` unique Resend contacts, and `101` CSV preview rows |
-| Resend activation proof | Verified | Live populated audience proof exists, but the reused audience name `KBO Companies - Test Audience` still needs better captioning or renaming to avoid ambiguity |
-| Event processor / NBA outputs | Verified | Live JSON evidence exists for B.B.S. support-expansion + re-activation and Accountantskantoor Dubois cross-sell + multi-division, but the scoring thresholds are not yet surfaced clearly |
+| Resend activation proof | Verified | Live populated audience proof exists, and the guide now captions the reused `KBO Companies - Test Audience` label explicitly as the Brussels IT subset evidence |
+| Event processor / NBA outputs | Verified | Live JSON evidence exists for B.B.S. support-expansion + re-activation and Accountantskantoor Dubois cross-sell + multi-division; remaining work is visual polish rather than missing logic explanation |
 | Website behavior writeback | Verified | A demo-labeled local website session for the real B.B.S. UID now records `2` `page.view` events and `1` `goal.achieved` download in canonical `event_facts` |
-| CSV export artifact | Verified | The spreadsheet/opened-file proof is now captured |
+| CSV export artifact | Verified | The page is now self-contained around the opened spreadsheet artifact and validation summary, but checksum/query-ID proof is still not added |
 
 #### Remaining Polish Work
 
@@ -47,28 +47,28 @@
 | Harden privacy boundary in runtime | MEDIUM | ✅ COMPLETE - 48 webhook gateway tests pass, PII stripping verified, guide updated with verification note |
 | Recheck the late-suite webhook/event-processor test timeout | MEDIUM | ✅ COMPLETE - Both test suites now pass cleanly (54 tests in 0.33s). Issue resolved, likely by commit f9d1906. |
 
-#### v3.1 Improvements Tracking
+#### v3.2 Polish Tracking
 
 Per user feedback on v3.0 guide:
 
-**Precision Improvements (4 items):**
-| Gap | Priority | Location |
-|-----|----------|----------|
-| Add canonical count semantics dictionary | P1 | `BACKLOG.md` Milestone 0 |
-| Upgrade CSV export integrity proof | P1 | `BACKLOG.md` Milestone 0 |
-| Implement maturity label system | P2 | `BACKLOG.md` Milestone 0 |
-| Fix privacy statement wording precision | P2 | `BACKLOG.md` Milestone 0 |
+**Precision Improvements:**
+| Gap | Priority | Status |
+|-----|----------|--------|
+| Add canonical count semantics dictionary | P1 | Pending |
+| Upgrade CSV export integrity proof | P1 | Partial - page is now self-contained and traceable, but checksum/query ID proof is still missing |
+| Implement maturity label system | P2 | Partial - guide now labels `Live system`, `Local runtime`, `Demo-backed`, and `Local artifact`, but the full system is not yet applied everywhere |
+| Fix privacy statement wording precision | P2 | ✅ COMPLETE - top-line privacy wording now matches the divergence table and no longer implies a fully sanitized runtime |
 
-**Formatting Improvements (7 items):**
+**Formatting Improvements:**
 | Gap | Priority | Status |
 |-----|----------|--------|
 | Rebuild page 9 screenshot inventory table | P0 | ✅ COMPLETE - replaced the long filename table with a short evidence-ID matrix plus filename key; verified readable in the PDF export |
 | Rebuild page 10 sync-latency table | P0 | ✅ COMPLETE - split the wide table into source-specific proof tables; verified no column collisions in the PDF export |
-| Split page 1 into two pages | P1 | Pending - title / purpose / companion-doc block still needs more breathing room |
-| Standardize phase page pattern | P1 | Pending - phase sections still need a consistent claim → evidence → verification rhythm |
+| Split page 1 into two pages | P1 | ✅ COMPLETE - page 1 is now a cover/introduction page and page 2 holds contents |
+| Standardize phase page pattern | P1 | Partial - early sections now follow claim → evidence → verification more cleanly, but the full guide is not yet standardized |
 | Shaded code boxes for API/JSON | P2 | Pending - pages 5-7 still read like raw terminal output |
 | Fix blank space waste | P2 | Pending - later pages still have avoidable whitespace after the reflow |
-| Standardize visual hierarchy | P2 | Pending - screenshots, captions, and spacing still need a more consistent system |
+| Standardize visual hierarchy | P2 | Partial - screenshot sizing and source labels are more controlled, but caption spacing and page rhythm still need a final pass |
 
 #### Exit Criteria
 

@@ -2,13 +2,13 @@
 
 **Platform:** Azure target architecture with local-only execution mode
 **Current Execution Mode:** Local-only (`Azure deployment path paused to save costs`)
-**Last Updated:** 2026-03-08 22:46 CET
+**Last Updated:** 2026-03-08 23:10 CET
 **Purpose:** Human-readable current snapshot
 **Structured Source:** `PROJECT_STATE.yaml`
 
 ## Current Headline
 
-- `observed` from 2026-03-08 22:44 CET: **DEMO 100% READY - Illustrated Guide v3.1 PDF exported locally with critical page 9/10 table fixes.** All core business-value proof gaps remain closed, and the screenshot-inventory plus sync-latency tables now render readably in the PDF export.
+- `observed` from 2026-03-08 23:10 CET: **DEMO 100% READY - Illustrated Guide v3.2 PDF exported locally with cover-page, CSV-proof, and wording cleanup.** The PDF now opens with a real cover page, the CSV evidence page is self-contained around the opened artifact, the inventory/sync tables remain readable, and the maturity/privacy wording no longer overclaims beyond the evidence tables.
 - `observed` from 2026-03-08 20:06 CET: **EVENT PROCESSOR ALTERNATIVE VERIFIED LOCALLY.** `scripts/cdp_event_processor.py` now passes targeted unit tests, initializes `company_engagement` in PostgreSQL, serves `/health`, `/api/next-best-action/{kbo}`, and `/api/engagement/leads`, and accepts signed Resend-style webhook events. Verified outputs: B.B.S. Entreprise reached `engagement_score=15` after `email.opened` + `email.clicked` with support-expansion/re-activation recommendations, and Accountantskantoor Dubois produced cross-sell + multi-division recommendations through the same processor.
 - `observed` from 2026-03-08 21:45 CET: **TRACARDI WORKFLOW RUNTIME IS BLOCKED BY CE LIMITATION.** Investigation confirmed that Tracardi Community Edition does not support production workflow execution. The `/deploy/{path}` endpoint is licensed (premium), and rule updates to `production=true`/`running=true` do not persist. Workflow draft screenshots are the maximum verifiable evidence; live execution requires Tracardi Premium or an alternative implementation.
 - `observed` from 2026-03-08 20:21 CET: **TRACARDI PRIVACY BOUNDARY IS ONLY PARTIALLY ACHIEVED.** Live `/profile/select` samples still show anonymous profiles and the Tracardi projection path remains PII-light, but live `/event/select` samples for `email.opened` and `email.clicked` still carry raw email fields in event properties. The Illustrated Guide now explicitly documents that divergence instead of claiming a fully UID-only runtime.
@@ -73,7 +73,7 @@
 ## Top Risks
 
 - If the local-only mode is not kept explicit in the docs, future sessions will keep reopening Azure verification and deployment work that is intentionally paused for cost control.
-- The Illustrated Guide now has the core local-only business-case proof in place and the critical PDF table collisions are fixed, but `4` precision items plus `5` remaining formatting items still separate the current package from a cleaner v3.1 finish.
+- The Illustrated Guide now has the core local-only business-case proof in place and the most credibility-damaging layout issues are fixed, but `3` precision items plus `3` remaining formatting items still separate the current package from a cleaner finish.
 - The current website-behavior proof is explicitly demo-labeled local writeback evidence for a real UID, not live public-site traffic; replace it only if a non-simulated website-tracking demo becomes a requirement.
 - **Tracardi workflow runtime is blocked by Community Edition limitations**: The draft graphs are real, but production workflow execution requires Tracardi Premium (licensed feature). The `/deploy/{path}` endpoint is licensed, and `production=true`/`running=true` rule updates do not persist in CE. The Illustrated Guide should document this limitation.
 - All stale `.openclaw` path assumptions have been cleaned from active helper/setup scripts; they now use repo-relative imports or `resolve_kbo_zip_path()`.
@@ -91,7 +91,7 @@
 ## Immediate Focus
 
 1. **Keep the active work local-only** and avoid Azure deployment, Azure smoke, or cloud verification until the user explicitly reopens that path
-2. **Keep Illustrated Guide alignment stable and finish the remaining v3.1 cleanup**: split page 1, standardize the phase layout, tighten count/export wording, and improve visual hierarchy without reopening Azure work
+2. **Keep Illustrated Guide alignment stable and finish the remaining v3.2 cleanup**: add the count-semantics dictionary, finish the CSV integrity proof and maturity labels, and do one last visual-hierarchy/code-box pass without reopening Azure work
 3. **Treat Resend as the accepted POC activation platform** unless the user later reopens a Flexmail requirement
 4. **Document Tracardi CE limitation** - workflow execution requires Premium license; consider alternative approaches (Python bridge, direct webhook handling) for writeback automation
 5. **Keep the compose-managed stack as the default local runtime** and treat host-side `start_chatbot.sh` as the edit/run fallback rather than the primary deployment path

@@ -4,6 +4,41 @@
 
 ---
 
+### Task: Polish Illustrated Guide v3.2 cover page, CSV proof page, and wording
+
+**Type:** docs_or_process_only
+**Status:** COMPLETE
+**Timestamp:** 2026-03-08 23:10 CET
+**Git Head:** `b134d08` at session start
+
+**Summary:**
+Completed the next local-only Illustrated Guide polish pass based on direct PDF review feedback. The guide now opens with a real cover page instead of `Contents`, the CSV proof page is self-contained around the opened spreadsheet artifact, the populated Resend audience detail is cleaner, and the guide no longer overstates privacy/maturity beyond what the evidence tables actually show.
+
+**Guide updates made:**
+- Reworked `docs/ILLUSTRATED_GUIDE.md` to use a manual cover page plus a separate contents page, exported with `pandoc --pdf-engine=xelatex` instead of relying on the automatic `--toc` placement
+- Reframed the chatbot images as response excerpts, tightened screenshot widths, and added explicit source labels (`Live system`, `Local runtime`, `Demo-backed`, `Local artifact`)
+- Replaced the bad CSV page screenshot with `docs/illustrated_guide/demo_screenshots/csv_export_opened_spreadsheet_view_2026-03-08.png` and rebuilt the section as a single-page artifact + validation summary
+- Softened the privacy and checklist wording so the guide no longer says all screenshots are from live systems or implies raw-email divergence is already fully eliminated
+
+**Verification:**
+```bash
+pandoc --pdf-engine=xelatex docs/ILLUSTRATED_GUIDE.md -o /tmp/ILLUSTRATED_GUIDE_v3_2_test.pdf
+pdfinfo /tmp/ILLUSTRATED_GUIDE_v3_2_test.pdf
+pdftotext -f 1 -l 10 -layout /tmp/ILLUSTRATED_GUIDE_v3_2_test.pdf -
+pdftoppm -f 1 -l 10 -png /tmp/ILLUSTRATED_GUIDE_v3_2_test.pdf /tmp/guide_v32_page
+```
+
+**Observed Results:**
+- The test export succeeded locally and now renders as `15` pages with page 1 = cover, page 2 = contents, and page 7 = self-contained CSV proof
+- The reopened PDF no longer starts with `Contents` before the title block
+- The CSV section now uses the actual opened spreadsheet artifact and keeps the validation summary on the same page
+- The earlier page 9/10 fixes remain intact, and the wording now matches the mixed-maturity evidence inventory
+
+**Next Step:**
+- Finish the last guide pass by adding the count-semantics dictionary, upgrading CSV proof with checksum/query ID traceability, and styling the API/JSON sections more deliberately
+
+---
+
 ### Task: Fix critical v3.1 Illustrated Guide PDF table layout failures
 
 **Type:** docs_or_process_only
