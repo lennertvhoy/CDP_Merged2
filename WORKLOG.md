@@ -4,6 +4,52 @@
 
 ---
 
+## 2026-03-08 (Tracardi Workflow Runtime Investigation)
+
+### Task: Determine how to activate repaired Tracardi workflow drafts for production execution
+
+**Type:** verification_only  
+**Status:** COMPLETE (Root cause identified: CE limitation)  
+**Timestamp:** 2026-03-08 21:45 CET  
+**Git Head:** `d334087` at session start
+
+**Summary:**
+Investigated why repaired Tracardi workflow drafts remain `running=false` and `production=false` despite trigger rules being enabled. Discovered that **Tracardi Community Edition does not support production workflow execution** - this is a licensed (premium) feature.
+
+**Investigation Steps:**
+1. Attempted to update rules via POST /rule with `production=true` and `running=true`
+   - Result: HTTP 200 but values do not persist
+2. Checked OpenAPI spec for deployment endpoints
+   - Found `/deploy/{path}` endpoint marked as "licensed" (premium feature)
+3. Verified via Tracardi GUI at http://localhost:8787
+   - No "Deploy" button visible - only "View Deployed FLOW"
+   - `deploy_timestamp` field shows "none" and cannot be updated
+4. Tested workflow execution via POST /track and POST /flow/debug
+   - Track returns 200 with profile/session IDs but workflow does not execute
+   - Debug returns 200 but nodes={} edges={} (no execution)
+5. Verified Community Edition license status
+   - GET /license returns 404 (no licensing in CE)
+
+**Root Cause:**
+Tracardi Community Edition is intentionally limited. Production workflow execution requires:
+- A valid Tracardi license (Premium/Enterprise)
+- Access to `/deploy/{path}` endpoint
+- Ability to set `deploy_timestamp` on workflows
+
+**Impact:**
+- Illustrated Guide cannot show live workflow execution evidence without Tracardi Premium
+- Resend email event writeback via Tracardi workflows is not possible in CE
+- Draft workflow screenshots are the maximum verifiable evidence
+
+**Next Steps:**
+1. Update Illustrated Guide to document CE limitation
+2. Consider alternative approaches for workflow automation:
+   - Python-based event processor bridge
+   - Direct webhook handling in the chatbot backend
+3. Document that Tracardi Premium would be required for full workflow automation
+
+---
+
 ## 2026-03-08 (Option B - Four-Source 360 Implementation)
 
 ### Task: Implement Autotask into the unified 360 query plane and re-verify live backend proof

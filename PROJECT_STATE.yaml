@@ -923,20 +923,26 @@ active_problems:
     status: observed
     severity: high
     discovered_at: 2026-03-08
-    summary: The local Tracardi email workflows were hollow drafts until repaired, and after repair they still do not show live execution because their rules remain non-running and flow logs stay empty after a direct local event probe.
+    summary: The local Tracardi email workflows were hollow drafts until repaired, and after repair they still do not show live execution because production workflow execution requires a Tracardi license (premium feature). The Community Edition does not support deploying workflows to production.
     evidence:
       - poetry run python scripts/setup_tracardi_workflows.py -> authenticated, loaded 123 plugins, repaired 5 existing drafts
       - GET /flow/draft/5bc7ae58-bd4c-4c56-a275-50165643f9c0 -> nodes Start/Copy data/Update profile, edges=2
       - GET /flow/draft/1b5233f9-241c-49b0-b2c6-60b3c010f4de -> nodes Start/Increment counter/Copy data/Update profile, edges=3
+      - POST /rule to update production=true and running=true returns 200 but values do not persist
+      - GET /rules/by_flow/1b5233f9-241c-49b0-b2c6-60b3c010f4de -> enabled=true, running=false, production=false (unchanged)
       - POST /track with source resend-webhook and event email.opened -> HTTP 200, profile/session IDs returned
-      - GET /flow/logs/1b5233f9-241c-49b0-b2c6-60b3c010f4de -> total=0
-      - GET /rules/by_flow/1b5233f9-241c-49b0-b2c6-60b3c010f4de -> enabled=true, running=false, production=false
+      - GET /flow/logs/1b5233f9-241c-49b0-b2c6-60b3c010f4de -> total=0 (workflow did not execute)
+      - POST /flow/debug -> HTTP 200 but nodes={} edges={} (workflow did not execute)
+      - GET /license endpoint returns 404 (Community Edition has no license endpoint)
+      - /deploy/{path} endpoint is marked as "licensed" in OpenAPI spec
+      - Tracardi GUI shows "View Deployed FLOW" button but no "Deploy" button
+    root_cause: Tracardi Community Edition does not support production workflow execution. The deploy_timestamp field remains "none" and the /deploy endpoint is a licensed (premium) feature.
     affects:
       - local_tracardi_activation_runtime
       - illustrated_guide_workflow_execution_proof
       - resend_event_writeback_verification
     owner: agent
-    next_action: Determine how these repaired drafts are promoted into running production rules, then re-run a local event probe until flow logs or profile trait updates prove execution.
+    next_action: Document the Community Edition limitation and update the Illustrated Guide to reflect that workflow execution proof requires Tracardi Premium or an alternative approach.
   browser_vs_direct_search_total_mismatch:
     status: resolved
     severity: medium
