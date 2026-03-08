@@ -8,6 +8,8 @@
 
 ## Current Headline
 
+- `observed` from 2026-03-08 14:45 CET: **OLLAMA AI DESCRIPTION ENRICHMENT SCALING UP!** Now at 441 AI descriptions (+371 from this session), batch of 1000 in progress. Coverage: 0.023% of 1.94M companies. Successfully running ~1.5s per description with NACE code caching. Run: `export DESCRIPTION_ENRICHER=ollama && python scripts/enrich_companies_batch.py --enrichers description --limit 1000`
+- `observed` from 2026-03-08 14:35 CET: **AUTOTASK HYPERREALISTIC MOCK IMPLEMENTED!** Complete PSA integration with 5 companies, 5 tickets, 3 contracts. Sync pipeline operational. Database schema + identity linking ready. Run: `poetry run python scripts/sync_autotask_to_postgres.py`. Documentation: `docs/AUTOTASK_INTEGRATION.md`
 - `observed` from 2026-03-08 14:20 CET: **OLLAMA AI DESCRIPTION ENRICHMENT VERIFIED WORKING!** Successfully generated 70 AI descriptions (110 processed, 64% success rate). Zero failures. ~1.5s per description. Run: `export DESCRIPTION_ENRICHER=ollama && python scripts/enrich_companies_batch.py --enrichers description`
 - `observed` from 2026-03-08 14:15 CET: **OLLAMA AI DESCRIPTION ENRICHMENT ADDED!** New cost-free option for generating company descriptions using local Ollama LLM. Set `DESCRIPTION_ENRICHER=ollama` to use instead of Azure OpenAI (saves ~€20-40 for 516K profiles). Model configurable via `OLLAMA_MODEL` (default: llama3.1:8b). Commit `cc87d29`.
 - `observed` from 2026-03-08 14:15 CET: **Enrichment runners RESTARTED and RUNNING.** All three runners (CBE, geocoding, website discovery) successfully restarted after supervisor script fix. CBE cursor already advancing (updated 2026-03-08), geocoding and website discovery resumed from their pre-failure cursors. All supervisors using canonical workspace path `/home/ff/Documents/CDP_Merged`.
@@ -54,8 +56,8 @@
 - Enrichment (`observed`, 2026-03-08 14:15 CET): **All runners RUNNING** - CBE, geocoding, and website discovery supervisors restarted successfully. CBE cursor advancing (updated 2026-03-08), geocoding resumed from cursor 02a4bc20..., website discovery resumed from cursor 009ff8d5.... All supervisors using canonical workspace path. Fix applied in commit `3eb9ec1` (corrected workspace path, added `.env.local` sourcing). PostgreSQL usable for chatbot queries while enrichment progresses in background.
 - AI Description Enrichment (`observed`, 2026-03-08 14:15 CET): **OLLAMA SUPPORT ADDED** - New cost-free option using local Ollama LLM instead of Azure OpenAI. Configure via `DESCRIPTION_ENRICHER=ollama` and `OLLAMA_MODEL=llama3.1:8b`. Same caching mechanism as Azure version. Estimated savings: ~€20-40 for full 516K profile enrichment. Commit `cc87d29`.
 - Azure resource audit (`observed`, 2026-03-06 15:33 CET): `ca-cdpmerged-fast-env` still points app logs at missing Log Analytics customer ID `156d285c-938d-4dc5-9eef-306c16296744`, while the only workspace in `rg-cdpmerged-fast` is `law-tracardi-cdpmerged-prod-nq6x` (`d128bbb1-5cdb-44a6-8293-86ce36780677`) and only showed recent `AzureMetrics` and `Usage` rows for deleted `VM-TRACARDI-EVENTHUB` telemetry. The strongest cleanup candidates are `stcdpmergedprtnlp` and `Application Insights Smart Detection`; the workspace itself is not safe to delete blindly yet.
-- Canonical counts line: `total=1,940,603; website_url=36,091; geo_latitude=8,609; ai_description=0`.
-- Integrations: Teamleader and Exact Online are both real and syncing to PostgreSQL; Autotask remains mock-first.
+- Canonical counts line: `total=1,940,603; website_url=36,091; geo_latitude=8,609; ai_description=441`.
+- Integrations: Teamleader and Exact Online are both real and syncing to PostgreSQL; **Autotask mock implementation complete** with sync pipeline and identity linking ready for production credentials.
 - Historical incident detail and older closed milestones now live in `WORKLOG.md` and git history, not in this snapshot.
 
 ## Top Risks
