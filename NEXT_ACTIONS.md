@@ -566,8 +566,8 @@ Evidence:
 
 #### Next Actions
 
-1. **Document the CE limitation** in the Illustrated Guide
-2. **Update guide expectations** - workflow screenshots show draft structure, not live execution
+1. ✅ **Document the CE limitation** in the Illustrated Guide - COMPLETED 2026-03-08
+2. ✅ **Update guide expectations** - workflow screenshots show draft structure, not live execution - COMPLETED 2026-03-08
 3. **Consider alternatives** for workflow execution proof:
    - Implement a simple Python-based event processor as a bridge
    - Use webhook callbacks to update PostgreSQL directly
