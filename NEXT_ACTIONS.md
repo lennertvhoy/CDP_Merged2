@@ -12,7 +12,7 @@
 
 **Status:** REOPENED - Published, but not yet acceptable as the business-case source of truth
 **Discovered:** 2026-03-08 (initial audit), reopened 2026-03-08 via direct user feedback
-**Last Updated:** 2026-03-08 20:10 CET
+**Last Updated:** 2026-03-08 20:21 CET
 **Severity:** CRITICAL
 **Guide:** `docs/ILLUSTRATED_GUIDE.md` v2.0  
 **Audit Report:** `docs/ILLUSTRATED_GUIDE_AUDIT.md`
@@ -25,7 +25,8 @@
 
 | Evidence | Status | Limitation |
 |----------|--------|------------|
-| B.B.S. Entreprise screenshot | Partial | Fresh screenshot now shows `identity_link_status=linked_all` and explicit 4-source linkage, but the guide still does not prove a UID-first runtime path or a richer one-screen business-value story |
+| B.B.S. Entreprise screenshot | Partial | Fresh screenshot now shows `identity_link_status=linked_all` and explicit 4-source linkage, but the guide still needs a tighter single-story business-value presentation alongside the verified event-processor outputs |
+| Privacy boundary | Partial | The guide now truthfully shows anonymous Tracardi profile listings plus the documented event-metadata divergence, but the runtime is not yet fully UID-only |
 | NL segment creation | Partial | The guide now labels `1,652` canonical scope, `1,529` narrower activation-test scope, and `101` CSV preview rows, but it still lacks a populated downstream audience screenshot |
 | Resend activation POC tests | Partial | Technical path exists, but the guide still lacks a populated audience screenshot for the canonical segment |
 | Event processor business-value proof | Partial | Local API outputs now verify B.B.S. Entreprise engagement writeback plus support-expansion NBA and Accountantskantoor Dubois cross-sell + multi-division, but the guide still lacks screenshot/caption evidence for those outputs |
@@ -35,7 +36,7 @@
 
 | Gap | Priority | What still needs to be shown or corrected |
 |-----|----------|-------------------------------------------|
-| UID-first privacy proof | CRITICAL | Show Tracardi/runtime evidence using UID-first operational data, or explicitly document the current privacy divergence |
+| Populated Resend audience proof | CRITICAL | Push the canonical segment to Resend and capture a real audience view rather than only test campaigns |
 | Full 360 proof | HIGH | Keep the four-source B.B.S. story aligned with the new event-processor behavior proof in one coherent guide narrative |
 | Business-value demonstrations | HIGH | Cross-sell, multi-division, and Next Best Action are now locally verified; remaining proof gap is website behavior plus guide-ready capture |
 | Guide-ready event-processor capture | HIGH | Convert the verified API/webhook outputs into screenshots or equivalent guide evidence |
@@ -44,7 +45,7 @@
 
 - [x] Record that Resend is the accepted current POC activation platform
 - [x] Implement Autotask into `unified_company_360` with KBO linking and verify one `linked_all` company
-- [ ] Demonstrate UID-only Tracardi/runtime evidence or explicitly document the current privacy divergence
+- [x] Demonstrate UID-only Tracardi/runtime evidence or explicitly document the current privacy divergence
 - [x] Show one account with KBO + Teamleader + Exact + Autotask in the same story
 - [x] Resolve the `1,652` / `1,529` / `101` count framing in the guide
 - [x] Capture cross-sell, multi-division, and Next Best Action evidence

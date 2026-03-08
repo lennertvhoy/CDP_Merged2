@@ -2189,3 +2189,47 @@ For guide-ready chatbot screenshots, user should either:
 1. Delegate to an AI agent with browser takeover capability (per AGENTS.md section on browser access)
 2. Manually capture screenshots during a live chatbot session
 
+---
+
+### Task: Resolve Illustrated Guide UID-first privacy overclaim against live Tracardi behavior
+
+**Type:** verification_only  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 20:21 CET  
+**Git Head:** `b0ec74b`
+
+**Summary:**
+Re-verified the local Tracardi privacy/runtime path to resolve a contradiction between the Illustrated Guide and the active queue. Confirmed that sampled Tracardi profiles are anonymous and the projection contract is PII-light, but live `email.opened` and `email.clicked` events still carry raw email fields in event properties. Updated the guide, audit, status, queue, and structured state docs to document that divergence explicitly instead of claiming a fully UID-only runtime.
+
+**Verification Performed:**
+
+1. **Tracardi profile sample**
+   ```bash
+   POST /profile/select
+   # Result: sampled profiles returned data.anonymous=true and null contact email fields
+   ```
+
+2. **Tracardi email event sample**
+   ```bash
+   POST /event/select where type="email.opened"
+   POST /event/select where type="email.clicked"
+   # Result: sampled properties still included raw email fields (for example `to`, `from`, `email`)
+   ```
+
+3. **Projection contract check**
+   ```bash
+   sed -n '108,180p' src/services/projection.py
+   # Result: _build_profile_payload projects public company traits plus has_email/has_phone flags, not raw contact values
+   ```
+
+**Docs Updated:**
+- `docs/ILLUSTRATED_GUIDE.md`
+- `docs/ILLUSTRATED_GUIDE_AUDIT.md`
+- `STATUS.md`
+- `PROJECT_STATE.yaml`
+- `NEXT_ACTIONS.md`
+
+**Outcome:**
+- The guide no longer overclaims a fully UID-only runtime
+- The privacy documentation path is closed for the guide task
+- Remaining Illustrated Guide blockers are now populated Resend audience proof, guide-ready event-processor captures, and website-behavior evidence
