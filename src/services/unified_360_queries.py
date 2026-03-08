@@ -1,7 +1,7 @@
 """Unified 360° View Query Service
 
 Provides high-level query interface for cross-source customer insights,
-combining KBO, Teamleader CRM, and Exact Online financial data.
+combining KBO, Teamleader CRM, Exact Online financial data, and Autotask support data.
 
 Example usage:
     service = Unified360Service(database_url)
@@ -12,7 +12,7 @@ Example usage:
         city='Brussels'
     )
     
-    # Query: "Show me IT companies in Gent with open deals over €10k"
+    # Query: "Show me IT companies in Gent with open deals over EUR 10k"
     result = await service.find_companies_with_pipeline(
         nace_codes=['62010', '62020', '62030'],
         city='Gent',
@@ -63,9 +63,27 @@ class Company360Profile:
     exact_credit_line: Decimal | None
     exact_payment_terms: int | None
     exact_account_manager: str | None
-    
+
+    # Autotask Data
+    autotask_company_id: str | None
+    autotask_company_name: str | None
+    autotask_company_type: str | None
+    autotask_phone: str | None
+    autotask_website: str | None
+    autotask_total_tickets: int | None
+    autotask_open_tickets: int | None
+    autotask_last_ticket_at: datetime | None
+    autotask_total_contracts: int | None
+    autotask_active_contracts: int | None
+    autotask_total_contract_value: Decimal | None
+    autotask_last_contract_start: datetime | None
+    has_teamleader: bool
+    has_exact: bool
+    has_autotask: bool
+    total_source_count: int
+
     # Identity Link Status
-    identity_link_status: str  # 'linked_both', 'linked_teamleader', 'linked_exact', 'kbo_only'
+    identity_link_status: str
     last_updated_at: datetime
     
     # Related data (populated on demand)
@@ -236,6 +254,22 @@ class Unified360Service:
                 exact_credit_line=row['exact_credit_line'],
                 exact_payment_terms=row['exact_payment_terms'],
                 exact_account_manager=row['exact_account_manager'],
+                autotask_company_id=row['autotask_company_id'],
+                autotask_company_name=row['autotask_company_name'],
+                autotask_company_type=row['autotask_company_type'],
+                autotask_phone=row['autotask_phone'],
+                autotask_website=row['autotask_website'],
+                autotask_total_tickets=row['autotask_total_tickets'],
+                autotask_open_tickets=row['autotask_open_tickets'],
+                autotask_last_ticket_at=row['autotask_last_ticket_at'],
+                autotask_total_contracts=row['autotask_total_contracts'],
+                autotask_active_contracts=row['autotask_active_contracts'],
+                autotask_total_contract_value=row['autotask_total_contract_value'],
+                autotask_last_contract_start=row['autotask_last_contract_start'],
+                has_teamleader=row['has_teamleader'],
+                has_exact=row['has_exact'],
+                has_autotask=row['has_autotask'],
+                total_source_count=row['total_source_count'],
                 identity_link_status=row['identity_link_status'],
                 last_updated_at=row['last_updated_at']
             )
@@ -635,7 +669,7 @@ class Unified360Service:
     ) -> list[dict[str, Any]]:
         """Search across all company data sources.
         
-        Searches KBO, Teamleader, and Exact Online for matching companies,
+        Searches KBO, Teamleader, Exact Online, and Autotask for matching companies,
         even if they haven't been identity-linked yet.
         
         Args:
@@ -664,6 +698,8 @@ class Unified360Service:
                         tl_company_name,
                         exact_customer_id,
                         exact_company_name,
+                        autotask_company_id,
+                        autotask_company_name,
                         nace_code,
                         kbo_city as city,
                         identity_link_status,
@@ -680,6 +716,7 @@ class Unified360Service:
                         kbo_company_name ILIKE $1
                         OR tl_company_name ILIKE $1
                         OR exact_company_name ILIKE $1
+                        OR autotask_company_name ILIKE $1
                         OR kbo_number ILIKE $1
                 ),
                 crm_matches AS (
@@ -692,10 +729,12 @@ class Unified360Service:
                         cc.company_name as tl_company_name,
                         NULL as exact_customer_id,
                         NULL as exact_company_name,
+                        NULL as autotask_company_id,
+                        NULL as autotask_company_name,
                         NULL as nace_code,
                         cc.city,
                         'crm_only' as identity_link_status,
-                        cc.last_modified_at as last_updated_at,
+                        cc.last_sync_at as last_updated_at,
                         'teamleader' as match_source,
                         CASE WHEN cc.company_name ILIKE $2 THEN 2 ELSE 5 END as match_priority
                     FROM crm_companies cc
@@ -715,10 +754,12 @@ class Unified360Service:
                         NULL as tl_company_name,
                         ec.id::text as exact_customer_id,
                         ec.company_name as exact_company_name,
+                        NULL as autotask_company_id,
+                        NULL as autotask_company_name,
                         NULL as nace_code,
                         ec.city,
                         'exact_only' as identity_link_status,
-                        ec.last_modified_at as last_updated_at,
+                        ec.last_sync_at as last_updated_at,
                         'exact' as match_source,
                         CASE WHEN ec.company_name ILIKE $2 THEN 3 ELSE 6 END as match_priority
                     FROM exact_customers ec
@@ -728,12 +769,39 @@ class Unified360Service:
                             WHERE um.exact_customer_id = ec.id::text
                         )
                 ),
+                autotask_matches AS (
+                    -- Search Autotask companies not yet linked
+                    SELECT
+                        NULL as company_uid,
+                        ac.kbo_number,
+                        ac.name as company_name,
+                        NULL as tl_company_id,
+                        NULL as tl_company_name,
+                        NULL as exact_customer_id,
+                        NULL as exact_company_name,
+                        ac.id::text as autotask_company_id,
+                        ac.name as autotask_company_name,
+                        NULL as nace_code,
+                        ac.city,
+                        'autotask_only' as identity_link_status,
+                        ac.last_sync_at as last_updated_at,
+                        'autotask' as match_source,
+                        CASE WHEN ac.name ILIKE $2 THEN 4 ELSE 7 END as match_priority
+                    FROM autotask_companies ac
+                    WHERE ac.name ILIKE $1
+                        AND NOT EXISTS (
+                            SELECT 1 FROM unified_matches um
+                            WHERE um.autotask_company_id = ac.id::text
+                        )
+                ),
                 all_matches AS (
                     SELECT * FROM unified_matches
                     UNION ALL
-                    SELECT * FROM crm_matches  
+                    SELECT * FROM crm_matches
                     UNION ALL
                     SELECT * FROM exact_matches
+                    UNION ALL
+                    SELECT * FROM autotask_matches
                 )
                 SELECT * FROM all_matches
                 ORDER BY match_priority, company_name

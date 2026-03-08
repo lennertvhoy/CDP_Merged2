@@ -2,18 +2,19 @@
 
 **Platform:** Azure target architecture with local-only execution mode
 **Current Execution Mode:** Local-only (`Azure deployment path paused to save costs`)
-**Last Updated:** 2026-03-08 16:52 CET
+**Last Updated:** 2026-03-08 19:20 CET
 **Purpose:** Human-readable current snapshot
 **Structured Source:** `PROJECT_STATE.yaml`
 
 ## Current Headline
 
-- `reported` from 2026-03-08 16:52 CET via direct user audit: **Illustrated Guide v2.0 is published but not yet acceptable as the business-case source of truth.** The Resend-for-Flexmail swap is accepted for the current POC and is not a blocker, but the guide still lacks required proof for the UID-first privacy boundary, Autotask/IT1 coverage, multi-division and behavioral value demonstrations, and consistent framing of the `1,652` / `1,529` / `101` counts.
-- `observed` from 2026-03-08 16:05 CET: **The current 360° screenshot proves partial KBO + Teamleader + Exact linkage, not the full business-case story.** B.B.S. Entreprise shows `linked_both` and visible financial context, but the current guide does not yet prove UID-only activation/runtime evidence, Autotask ticket/contract coverage, website behavior, or cross-division revenue/cross-sell value.
+- `observed` from 2026-03-08 19:20 CET: **FOUR-SOURCE 360 BACKEND IMPLEMENTED LOCALLY.** Migration `007_add_autotask_to_unified_360.sql` plus a full `scripts/sync_autotask_to_postgres.py --full` run now produce one real `linked_all` company in `unified_company_360`: B.B.S. Entreprise with KBO + Teamleader + Exact + Autotask, `autotask_open_tickets=1`, `autotask_total_contracts=1`, and `total_source_count=4`.
+- `reported` from 2026-03-08 19:20 CET via direct user audit plus live recheck: **Illustrated Guide v2.0 is still not yet acceptable as the business-case source of truth.** The four-source backend contradiction is fixed, and the Resend-for-Flexmail swap remains accepted for the POC, but the guide still needs refreshed linked-all evidence, UID-first privacy proof, multi-division and behavioral value demonstrations, and clearer framing of the `1,652` / `1,529` / `101` counts.
+- `observed` from 2026-03-08 16:05 CET: **The current 360° screenshot is now stale relative to the backend truth.** It still visually proves only KBO + Teamleader + Exact linkage, while the backend now exposes B.B.S. Entreprise as `linked_all` with Autotask support data included in the same query path.
 - `reported` from 2026-03-08 16:52 CET via direct user instruction: **Resend is acceptable as the current activation platform.** Do not treat Flexmail parity as a near-term blocker unless the user explicitly reopens that requirement.
 - `observed` from 2026-03-08 15:50 CET: **DEMO DATA POPULATION SCRIPTS COMPLETE!** Added `scripts/populate_hyperrealistic_demo_data.py` and `scripts/create_360_demo_companies.py` for creating realistic Belgian company data across Teamleader, Exact, and KBO. Commit `51ac939`.
 - `observed` from 2026-03-08 14:45 CET: **OLLAMA AI DESCRIPTION ENRICHMENT SCALING UP!** Now at 441 AI descriptions (+371 from this session), batch of 1000 in progress. Coverage: 0.023% of 1.94M companies. Successfully running ~1.5s per description with NACE code caching. Run: `export DESCRIPTION_ENRICHER=ollama && python scripts/enrich_companies_batch.py --enrichers description --limit 1000`
-- `observed` from 2026-03-08 14:35 CET: **AUTOTASK HYPERREALISTIC MOCK IMPLEMENTED!** Complete PSA integration with 5 companies, 5 tickets, 3 contracts. Sync pipeline operational. Database schema + identity linking ready. Run: `poetry run python scripts/sync_autotask_to_postgres.py`. Documentation: `docs/AUTOTASK_INTEGRATION.md`
+- `observed` from 2026-03-08 19:20 CET: **AUTOTASK NOW IN THE UNIFIED 360 QUERY PLANE.** Local sync still loads 5 companies, 5 tickets, and 3 contracts, but migration `007_add_autotask_to_unified_360.sql` now adds KBO/UID linkage, `autotask_*` fields in `unified_company_360`, Autotask rows in `company_activity_timeline`, and Autotask coverage in `identity_link_quality`.
 - `observed` from 2026-03-08 14:20 CET: **OLLAMA AI DESCRIPTION ENRICHMENT VERIFIED WORKING!** Successfully generated 70 AI descriptions (110 processed, 64% success rate). Zero failures. ~1.5s per description. Run: `export DESCRIPTION_ENRICHER=ollama && python scripts/enrich_companies_batch.py --enrichers description`
 - `observed` from 2026-03-08 14:15 CET: **OLLAMA AI DESCRIPTION ENRICHMENT ADDED!** New cost-free option for generating company descriptions using local Ollama LLM. Set `DESCRIPTION_ENRICHER=ollama` to use instead of Azure OpenAI (saves ~€20-40 for 516K profiles). Model configurable via `OLLAMA_MODEL` (default: llama3.1:8b). Commit `cc87d29`.
 - `observed` from 2026-03-08 14:15 CET: **Enrichment runners RESTARTED and RUNNING.** All three runners (CBE, geocoding, website discovery) successfully restarted after supervisor script fix. CBE cursor already advancing (updated 2026-03-08), geocoding and website discovery resumed from their pre-failure cursors. All supervisors using canonical workspace path `/home/ff/Documents/CDP_Merged`.
@@ -61,13 +62,13 @@
 - AI Description Enrichment (`observed`, 2026-03-08 14:15 CET): **OLLAMA SUPPORT ADDED** - New cost-free option using local Ollama LLM instead of Azure OpenAI. Configure via `DESCRIPTION_ENRICHER=ollama` and `OLLAMA_MODEL=llama3.1:8b`. Same caching mechanism as Azure version. Estimated savings: ~€20-40 for full 516K profile enrichment. Commit `cc87d29`.
 - Azure resource audit (`observed`, 2026-03-06 15:33 CET): `ca-cdpmerged-fast-env` still points app logs at missing Log Analytics customer ID `156d285c-938d-4dc5-9eef-306c16296744`, while the only workspace in `rg-cdpmerged-fast` is `law-tracardi-cdpmerged-prod-nq6x` (`d128bbb1-5cdb-44a6-8293-86ce36780677`) and only showed recent `AzureMetrics` and `Usage` rows for deleted `VM-TRACARDI-EVENTHUB` telemetry. The strongest cleanup candidates are `stcdpmergedprtnlp` and `Application Insights Smart Detection`; the workspace itself is not safe to delete blindly yet.
 - Canonical counts line: `total=1,940,603; website_url=36,091; geo_latitude=8,609; ai_description=441`.
-- Integrations: Teamleader and Exact Online are both real and syncing to PostgreSQL; **Autotask data exists (5 companies, 5 tickets)** but is **NOT integrated into the unified 360 view** (no KBO linking column, not included in unified_company_360). The ILLUSTRATED_GUIDE's claim of "15 companies linked across all sources" is incorrect—verified count is: 1 company with linked_both status (B.B.S. Entreprise), 6 with linked_teamleader, 8 with linked_exact, and 1,940,588 KBO-only.
+- Integrations: Teamleader and Exact Online are both real and syncing to PostgreSQL; **Autotask is now locally integrated into the unified 360 view** via migration `007_add_autotask_to_unified_360.sql` and a full resync. Current verified counts: `linked_all=1` (B.B.S. Entreprise), `linked_exact=8`, `linked_teamleader=6`, `kbo_only=1,940,588`. `identity_link_quality` now shows `autotask total_records=5`, `with_kbo_number=2`, `with_org_uid=1`, `unmatched=3`.
 - Historical incident detail and older closed milestones now live in `WORKLOG.md` and git history, not in this snapshot.
 
 ## Top Risks
 
 - If the local-only mode is not kept explicit in the docs, future sessions will keep reopening Azure verification and deployment work that is intentionally paused for cost control.
-- The Illustrated Guide is published but not yet business-case-safe as a source-of-truth artifact; remaining blockers are the UID/privacy proof, Autotask/IT1 coverage, cross-division and behavioral evidence, and consistent count framing.
+- The Illustrated Guide is published but not yet business-case-safe as a source-of-truth artifact; remaining blockers are refreshed evidence for the new linked-all backend truth, the UID/privacy proof, cross-division and behavioral evidence, and consistent count framing.
 - All stale `.openclaw` path assumptions have been cleaned from active helper/setup scripts; they now use repo-relative imports or `resolve_kbo_zip_path()`.
 - The compose-managed chatbot requires a populated `.env.local` and exclusive use of port `8000`; any leftover host-side `uvicorn` process will block the default local stack until it is stopped.
 - `sync_status` is still misleading as an enrichment-completion signal because every row is marked enriched while field coverage remains sparse.
@@ -83,7 +84,7 @@
 ## Immediate Focus
 
 1. **Keep the active work local-only** and avoid Azure deployment, Azure smoke, or cloud verification until the user explicitly reopens that path
-2. **Re-open Illustrated Guide alignment** around UID-first privacy proof, Autotask/IT1 evidence, count consistency, and explicit business-value demonstrations
+2. **Refresh Illustrated Guide alignment** around the new linked-all backend proof, UID-first privacy evidence, count consistency, and explicit business-value demonstrations
 3. **Treat Resend as the accepted POC activation platform** unless the user later reopens a Flexmail requirement
 4. **Capture richer local runtime evidence** for cross-sell, multi-division rollups, website behavior, identity resolution, and engagement writeback
 5. **Keep the compose-managed stack as the default local runtime** and treat host-side `start_chatbot.sh` as the edit/run fallback rather than the primary deployment path
