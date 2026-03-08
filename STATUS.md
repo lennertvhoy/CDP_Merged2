@@ -2,15 +2,15 @@
 
 **Platform:** Azure target architecture with local-only execution mode
 **Current Execution Mode:** Local-only (`Azure deployment path paused to save costs`)
-**Last Updated:** 2026-03-08 11:00 CET
+**Last Updated:** 2026-03-08 16:52 CET
 **Purpose:** Human-readable current snapshot
 **Structured Source:** `PROJECT_STATE.yaml`
 
 ## Current Headline
 
-- `observed` from 2026-03-08 16:30 CET: **ILLUSTRATED GUIDE v2.0 PUBLISHED!** Complete source-of-truth documentation with verified demonstrations: 360° Golden Record (B.B.S. Entreprise), NL Segment Creation (1,652 companies), Resend Activation POC (6/6 tests passing), CSV Export Validation (9 fields verified). All claims backed by live system screenshots. Guide: `docs/ILLUSTRATED_GUIDE.md`
-- `observed` from 2026-03-08 16:05 CET: **360° GOLDEN RECORD DEMO CAPTURED!** Successfully demonstrated cross-source 360° view for B.B.S. Entreprise showing unified KBO + Teamleader + Exact data. Chatbot query "Show me a 360 view of B.B.S. Entreprise" returned complete profile with identity link status `linked_both`. Screenshots saved: `chatbot_360_bbs_entreprise_2026-03-08.png`, `chatbot_segment_creation_2026-03-08.png`
-- `observed` from 2026-03-08 16:00 CET: **15 LINKED COMPANIES FOR 360° DEMOS!** Created identity links for 15 companies across KBO + CRM + Exact. B.B.S. Entreprise now shows `linked_both` status with data from all 3 sources. Segment creation demo: "IT services - Brussels" created with 1,652 companies.
+- `reported` from 2026-03-08 16:52 CET via direct user audit: **Illustrated Guide v2.0 is published but not yet acceptable as the business-case source of truth.** The Resend-for-Flexmail swap is accepted for the current POC and is not a blocker, but the guide still lacks required proof for the UID-first privacy boundary, Autotask/IT1 coverage, multi-division and behavioral value demonstrations, and consistent framing of the `1,652` / `1,529` / `101` counts.
+- `observed` from 2026-03-08 16:05 CET: **The current 360° screenshot proves partial KBO + Teamleader + Exact linkage, not the full business-case story.** B.B.S. Entreprise shows `linked_both` and visible financial context, but the current guide does not yet prove UID-only activation/runtime evidence, Autotask ticket/contract coverage, website behavior, or cross-division revenue/cross-sell value.
+- `reported` from 2026-03-08 16:52 CET via direct user instruction: **Resend is acceptable as the current activation platform.** Do not treat Flexmail parity as a near-term blocker unless the user explicitly reopens that requirement.
 - `observed` from 2026-03-08 15:50 CET: **DEMO DATA POPULATION SCRIPTS COMPLETE!** Added `scripts/populate_hyperrealistic_demo_data.py` and `scripts/create_360_demo_companies.py` for creating realistic Belgian company data across Teamleader, Exact, and KBO. Commit `51ac939`.
 - `observed` from 2026-03-08 14:45 CET: **OLLAMA AI DESCRIPTION ENRICHMENT SCALING UP!** Now at 441 AI descriptions (+371 from this session), batch of 1000 in progress. Coverage: 0.023% of 1.94M companies. Successfully running ~1.5s per description with NACE code caching. Run: `export DESCRIPTION_ENRICHER=ollama && python scripts/enrich_companies_batch.py --enrichers description --limit 1000`
 - `observed` from 2026-03-08 14:35 CET: **AUTOTASK HYPERREALISTIC MOCK IMPLEMENTED!** Complete PSA integration with 5 companies, 5 tickets, 3 contracts. Sync pipeline operational. Database schema + identity linking ready. Run: `poetry run python scripts/sync_autotask_to_postgres.py`. Documentation: `docs/AUTOTASK_INTEGRATION.md`
@@ -20,7 +20,7 @@
 - `observed` from 2026-03-08 13:38 CET: **360° TOOL SELECTION FIXED!** Option D routing guard implemented in critic_node. All 3 previously-failing queries now select correct tools: KBO linkage → `get_identity_link_quality`, Revenue distribution → `get_geographic_revenue_distribution`, Pipeline value → `get_industry_summary`. Commit `5c3117e`, 27 unit tests passed.
 
 - `observed` from 2026-03-08 11:00 CET: **360° TOOL SELECTION FIXED!** Option D routing guard implemented in critic_node. All 3 previously-failing queries now select correct tools: KBO linkage → `get_identity_link_quality`, Revenue distribution → `get_geographic_revenue_distribution`, Pipeline value → `get_industry_summary`. Commit `5c3117e`, 27 unit tests passed.
-- `observed` from 2026-03-07 22:46 CET: **EXACT ONLINE SYNC WORKING!** OAuth authorization completed. 60 GL Accounts and 60 Invoices synced to PostgreSQL. Tokens saved to `.env.exact`. Run anytime: `poetry run python scripts/sync_exact_to_postgres.py --full`
+- `observed` from 2026-03-07 22:46 CET: **EXACT ONLINE SYNC WORKING!** OAuth authorization completed. Current verified sync state in the guide/audit context is 258 GL accounts, 9 customers, and 78 invoices in PostgreSQL. Tokens saved to `.env.exact`. Run anytime: `poetry run python scripts/sync_exact_to_postgres.py --full`
 - `observed` from 2026-03-07 21:00 CET: **Resend to Tracardi bridge script fixed.** The bridge script (`scripts/resend_to_tracardi_bridge.py`) now uses FastAPI for proper async handling, correctly translates Resend webhook format to Tracardi `/track` format with signature verification, and handles the `events` array properly. Tested and imports successfully.
 - `observed` from 2026-03-07 20:45 CET: **Local Resend webhook setup verified complete.** Resend event source fixed to use REST type (required for `/track` endpoint), all 5 email workflows deployed and active, tracker endpoint accepting events. Created verification script `scripts/verify_local_resend_setup.py` to validate configuration. ngrok not configured (requires auth token), blocking external webhook receipt from Resend servers. Local event simulation confirmed working - events create profiles in Tracardi successfully.
 - `observed` from 2026-03-07 20:00 CET: **Tracardi workflows created via GUI.** All 5 Resend email processing workflows have been created in the Tracardi GUI: Email Engagement Processor, Email Bounce Processor, Email Delivery Processor, High Engagement Segment, and Email Complaint Processor. Workflows are created but not yet deployed (need node configuration). Screenshots saved: tracardi_workflows_created.png, tracardi_workflow_editor.png, tracardi_event_sources_list.png.
@@ -61,12 +61,13 @@
 - AI Description Enrichment (`observed`, 2026-03-08 14:15 CET): **OLLAMA SUPPORT ADDED** - New cost-free option using local Ollama LLM instead of Azure OpenAI. Configure via `DESCRIPTION_ENRICHER=ollama` and `OLLAMA_MODEL=llama3.1:8b`. Same caching mechanism as Azure version. Estimated savings: ~€20-40 for full 516K profile enrichment. Commit `cc87d29`.
 - Azure resource audit (`observed`, 2026-03-06 15:33 CET): `ca-cdpmerged-fast-env` still points app logs at missing Log Analytics customer ID `156d285c-938d-4dc5-9eef-306c16296744`, while the only workspace in `rg-cdpmerged-fast` is `law-tracardi-cdpmerged-prod-nq6x` (`d128bbb1-5cdb-44a6-8293-86ce36780677`) and only showed recent `AzureMetrics` and `Usage` rows for deleted `VM-TRACARDI-EVENTHUB` telemetry. The strongest cleanup candidates are `stcdpmergedprtnlp` and `Application Insights Smart Detection`; the workspace itself is not safe to delete blindly yet.
 - Canonical counts line: `total=1,940,603; website_url=36,091; geo_latitude=8,609; ai_description=441`.
-- Integrations: Teamleader and Exact Online are both real and syncing to PostgreSQL; **Autotask mock implementation complete** with sync pipeline and identity linking ready for production credentials.
+- Integrations: Teamleader and Exact Online are both real and syncing to PostgreSQL; **Autotask remains mock-first** with sync/schema work in place, but the current guide does not yet prove the IT1 division through a unified customer profile with ticket/contract evidence.
 - Historical incident detail and older closed milestones now live in `WORKLOG.md` and git history, not in this snapshot.
 
 ## Top Risks
 
 - If the local-only mode is not kept explicit in the docs, future sessions will keep reopening Azure verification and deployment work that is intentionally paused for cost control.
+- The Illustrated Guide is published but not yet business-case-safe as a source-of-truth artifact; remaining blockers are the UID/privacy proof, Autotask/IT1 coverage, cross-division and behavioral evidence, and consistent count framing.
 - All stale `.openclaw` path assumptions have been cleaned from active helper/setup scripts; they now use repo-relative imports or `resolve_kbo_zip_path()`.
 - The compose-managed chatbot requires a populated `.env.local` and exclusive use of port `8000`; any leftover host-side `uvicorn` process will block the default local stack until it is stopped.
 - `sync_status` is still misleading as an enrichment-completion signal because every row is marked enriched while field coverage remains sparse.
@@ -82,7 +83,7 @@
 ## Immediate Focus
 
 1. **Keep the active work local-only** and avoid Azure deployment, Azure smoke, or cloud verification until the user explicitly reopens that path
-2. **✅ COMPLETED: Fix 360° tool selection with Option D routing guard** - All 3 test queries now PASS (commit `5c3117e`)
-3. **✅ COMPLETED: MCP (Model Context Protocol) server implementation** - Exposes 7 core PostgreSQL-backed read-only tools for standardized agent access
-4. **Expand real local multi-message runtime scenarios** around Tracardi/Resend handoffs, follow-up memory, and artifact/export flows
+2. **Re-open Illustrated Guide alignment** around UID-first privacy proof, Autotask/IT1 evidence, count consistency, and explicit business-value demonstrations
+3. **Treat Resend as the accepted POC activation platform** unless the user later reopens a Flexmail requirement
+4. **Capture richer local runtime evidence** for cross-sell, multi-division rollups, website behavior, identity resolution, and engagement writeback
 5. **Keep the compose-managed stack as the default local runtime** and treat host-side `start_chatbot.sh` as the edit/run fallback rather than the primary deployment path

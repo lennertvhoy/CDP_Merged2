@@ -2,7 +2,7 @@
 
 **Platform:** AZURE (VMs, Container Apps, OpenAI)  
 **Architecture:** Source systems PII truth + PostgreSQL intelligence truth + Tracardi activation runtime + AI chatbot  
-**Last Updated:** 2026-03-06 (Reframed for demo-first delivery under current budget/licensing constraints, with NACE-less CBE residuals moved to backlog)  
+**Last Updated:** 2026-03-08 (Updated after business-case audit; Resend accepted for current POC, guide/business-value gaps reprioritized)
 **Purpose:** Medium-term roadmap from the current repo state to a credible demo first and production readiness later
 
 ## How To Use This File
@@ -29,6 +29,7 @@ Current constraints that shape this roadmap:
 - Azure deployment currently PAUSED for cost control (local-only mode active)
 - **DEMO ENVIRONMENTS AVAILABLE:** Teamleader and Exact demo envs accessible for integration
 - Autotask remains mock-first unless vendor access is granted
+- Resend is the accepted email activation platform for the current POC; Flexmail parity is not a near-term blocker unless the user explicitly reopens it
 - the user must do the final verification and wants at least one stable week before sign-off
 
 Near-term planning rule:
@@ -96,7 +97,7 @@ These are included only where they appear likely to add real future value to thi
 
 **Why this matters:** The POC is not complete until we prove the full activation cycle works: Chatbot → Segment → Email Tool → Engagement → Enriched Profile.
 
-**Status:** ✅ **COMPLETE** (2026-03-08) - All end-to-end tests passing with **RESEND** (recommended)
+**Status:** ✅ **TECHNICAL POC COMPLETE** (2026-03-08) - Resend accepted for the current activation loop; remaining demo/business-case proof gaps are tracked in Milestone 0
 
 | Priority | Item | Status | Result |
 |----------|------|--------|--------|
@@ -104,12 +105,13 @@ These are included only where they appear likely to add real future value to thi
 | Critical | **TEST: Campaign send via Resend** | ✅ PASS | Campaign sent to audience |
 | Critical | **TEST: Webhook setup for engagement** | ✅ PASS | 6 events subscribed |
 | Critical | **TEST: Engagement writeback** | ✅ PASS | 4/4 events tracked (sent, delivered, opened, clicked) |
-| Critical | **TEST: Segment push to Flexmail** | ✅ PASS | 0.25s latency (mock), 8 contacts pushed |
 | High | **Document POC completion evidence** | ✅ DONE | Test scripts: `scripts/test_poc_resend_activation.py`, `scripts/test_poc_activation.py` |
-| High | **Autotask decision** | Blocked | No demo env available; keep mock-only for now |
+| High | **Autotask evidence in demo story** | Pending | Current mock exists, but the business-case story still lacks visible IT1 ticket/contract evidence in the unified profile |
 
-**🎯 RECOMMENDATION: Use RESEND for POC**  
-Resend is superior for the POC because:
+**Accepted platform decision:** Use **RESEND** for the current POC.
+The user explicitly accepted the Resend swap on 2026-03-08, so Flexmail parity should not drive the near-term roadmap.
+
+**Why Resend stays on the active path:**
 - ✅ Full webhook management API (create/update/delete)
 - ✅ Direct campaign sending API (no GUI required)
 - ✅ Batch email support
@@ -183,10 +185,16 @@ poetry run python scripts/test_poc_activation.py --mock
 | Critical | **Real/mock/hybrid source matrix documentation** | ✅ COMPLETE | See PROJECT_STATE.yaml source_integrations section |
 | Critical | **POPULATE Hyperrealistic mock data** | NEW | Create 50+ realistic Belgian companies in Teamleader with matching Exact invoices |
 | Critical | Define a hyperrealistic integration standard | ✅ COMPLETE | Autotask mock with 5 companies, 5 tickets, 3 contracts complete |
-| Critical | **CAPTURE 360° Golden Record demonstration** | NEW | Screenshot showing unified KBO + CRM + Financial data for single company |
-| Critical | **CAPTURE Segment activation to Resend** | NEW | Screenshot showing 1,652+ contacts actually pushed to Resend audience |
-| Critical | **FIX Illustrated Guide mismatches** | NEW | Update stale Exact Online numbers, add missing result screenshots |
+| Critical | **Re-open Illustrated Guide as business-case incomplete** | In progress | Stop treating the published guide as source-of-truth complete until the remaining business-case gaps are closed |
+| Critical | **Demonstrate the UID-first privacy boundary** | Pending | Show UID-only Tracardi/runtime evidence, or explicitly document the current privacy architecture divergence |
+| Critical | **Demonstrate IT1 / Autotask in the 360 story** | Pending | Show tickets/contracts linked into the same account narrative, or explicitly mark IT1 as not yet demonstrated |
+| Critical | **Resolve guide metric inconsistencies** | Pending | Reconcile `1,652` total, `1,529` narrower test scope, and `101` CSV preview rows with exact labels |
+| Critical | **CAPTURE Segment activation to Resend** | Pending | Show a populated Resend audience for the canonical CDP segment; Resend remains the accepted POC platform |
+| Critical | **FIX Illustrated Guide mismatches** | Pending | Update stale numbers and remove claims that exceed the visible evidence |
 | Critical | Stabilize the public demo flow | Pending | Eliminate prompt hangs and prove repeatable end-to-end demo success |
+| High | **Show cross-sell and multi-division value** | Pending | Capture a customer/account story with cross-division revenue and a concrete cross-sell or up-sell insight |
+| High | **Show behavioral data and engagement writeback** | Pending | Add website behavior, engagement events, and profile enrichment evidence tied to the same UID/account |
+| High | **Show Next Best Action and identity resolution depth** | Pending | Demonstrate recommendation generation plus identity links across KBO, CRM, accounting, and support sources |
 | High | Build a real/mock/hybrid source matrix | ✅ COMPLETE | Documented in PROJECT_STATE.yaml |
 | High | Add a cleanup/organization queue for demo assets and stale narratives | Pending | Consolidate fixtures, sample payloads, and current-state summaries |
 | High | Require user-owned final verification | Pending | Hold final demo sign-off until the user has tested it and seen one stable week |
@@ -195,8 +203,10 @@ poetry run python scripts/test_poc_activation.py --mock
 - At least one real source-system connection or a clearly justified fallback plan exists
 - All missing systems have hyperrealistic mocks with explicit provenance
 - The user can run and trust the demo story end to end
-- **NEW:** Illustrated Guide screenshots match actual system state (see docs/ILLUSTRATED_GUIDE_AUDIT.md)
-- **NEW:** 360° Golden Record demonstration proves unified customer intelligence
+- **NEW:** Illustrated Guide screenshots match actual system state and do not overclaim business-case coverage
+- **NEW:** The guide proves the UID/privacy boundary or explicitly documents current divergence
+- **NEW:** The guide proves Autotask/IT1 coverage, or clearly marks it as out of scope for the current demo
+- **NEW:** The guide shows cross-division value, behavioral evidence, and engagement/writeback proof for the claims it makes
 
 ### Milestone 1: Finish Data Coverage And Enrichment
 
@@ -288,7 +298,9 @@ poetry run python scripts/test_poc_activation.py --mock
 |--------|---------------|-------------------------|
 | Teamleader | 1 company, 2 contacts | 50+ companies, 100+ contacts |
 | Exact Online | 9 customers, 78 invoices | 50+ customers, 200+ invoices |
-| Resend | 9 test emails | 1,000+ contact audience |
+| Autotask | 5 companies, 5 tickets, 3 contracts | Linked ticket/contract history for the same demo accounts used in the 360 story |
+| Website behavior | Not yet demonstrated in guide | Visible page views/downloads/events for the same demo accounts |
+| Resend | 9 test emails | Populated audience evidence for the canonical demo segment |
 
 **Mock Data Specification:**
 
@@ -330,9 +342,11 @@ With 50+ connected records:
 **Implementation Path:**
 1. Create companies in Teamleader demo environment via API/script
 2. Create matching customers/invoices in Exact Online
-3. Run sync scripts to populate PostgreSQL
-4. Verify identity linking via `source_identity_links` table
-5. Re-capture Illustrated Guide screenshots with rich data
+3. Link Autotask tickets/contracts to the same demo accounts
+4. Add website-behavior events for a subset of the same demo accounts
+5. Run sync scripts to populate PostgreSQL
+6. Verify identity linking via `source_identity_links` table
+7. Re-capture Illustrated Guide screenshots with rich, cross-source evidence
 
 ---
 
@@ -359,6 +373,7 @@ With 50+ connected records:
 | Critical | **Exact Online → PostgreSQL sync pipeline** | ✅ **COMPLETE** | Production sync ready - pending OAuth credentials from user |
 | Critical | **Cross-source identity reconciliation** | **READY** | Once Teamleader + Exact data flows in, implement identity matching (company name, VAT, email domain) to create unified 360° view |
 | Critical | Build production Autotask API client | **BLOCKED** | No demo env available yet; keep mock-first unless access granted |
+| High | Prove IT1 business value with the current Autotask mock path | Pending | Even before production credentials, the demo story must visibly link tickets/contracts into the unified profile if IT1 remains in scope |
 | High | Build canonical identity reconciliation | **BLOCKED** | Needs source system data first |
 | High | Implement consent/suppression flow | **BLOCKED** | Needs source system integrations |
 | Medium | Build PII resolution service | Pending | Can be designed in parallel |

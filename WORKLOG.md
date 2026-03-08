@@ -4,6 +4,32 @@
 
 ---
 
+## 2026-03-08 (Business-Case Alignment Doc Reopen)
+
+### Task: Re-align live docs and backlog after user audit of the Illustrated Guide
+
+**Type:** docs_or_process_only
+**Status:** COMPLETE
+**Timestamp:** 2026-03-08 16:52 CET
+**Git Head:** `c999ea6`
+
+**Summary:**
+The live docs were overstating the Illustrated Guide as "source-of-truth complete." After the user's business-case audit, I re-opened that status in the current docs, recorded that `Resend` is acceptable for the current POC, and moved the real blockers into the active queue and backlog.
+
+**What changed:**
+- `STATUS.md` now states the guide is published but not yet acceptable as the business-case source of truth
+- `PROJECT_STATE.yaml` now records the real gaps: UID/privacy proof, Autotask/IT1 evidence, multi-division and behavioral value, and the `1,652` / `1,529` / `101` count inconsistency
+- `NEXT_ACTIONS.md` now reopens the Illustrated Guide work and records Resend as the accepted current activation platform
+- `BACKLOG.md` now treats Flexmail parity as non-blocking and elevates privacy, Autotask, business-value, and writeback demonstrations
+- Removed an inline local `DATABASE_URL` credential example from `NEXT_ACTIONS.md` while touching the queue docs
+
+**Evidence Source:**
+- Direct user feedback on 2026-03-08
+- `docs/ILLUSTRATED_GUIDE.md`
+- `docs/ILLUSTRATED_GUIDE_AUDIT.md`
+
+---
+
 ## 2026-03-08 (360° Search Fix)
 
 ### Task: Fix search_companies_unified to Include Unlinked CRM/Exact Records

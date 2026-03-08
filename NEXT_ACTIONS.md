@@ -2,62 +2,66 @@
 
 **Platform:** Azure target architecture with local-only execution mode
 **Current Execution Mode:** Local-only (`Azure deployment path paused to save costs`)
-**Date:** 2026-03-07
+**Date:** 2026-03-08
 **Owner:** AI Agent / Developer
 **Purpose:** Active queue only. Older completions now live in `WORKLOG.md`; roadmap items live in `BACKLOG.md`.
 
 ## Active
 
-### P0: Illustrated Guide Source-of-Truth Corrections
+### P0: Illustrated Guide Business-Case Alignment
 
-**Status:** ✅ COMPLETE - Illustrated Guide v2.0 Published  
-**Discovered:** 2026-03-08 (detailed audit completed)  
-**Last Updated:** 2026-03-08 16:30 CET  
-**Severity:** CRITICAL - RESOLVED  
+**Status:** REOPENED - Published, but not yet acceptable as the business-case source of truth
+**Discovered:** 2026-03-08 (initial audit), reopened 2026-03-08 via direct user feedback
+**Last Updated:** 2026-03-08 16:52 CET
+**Severity:** CRITICAL
 **Guide:** `docs/ILLUSTRATED_GUIDE.md` v2.0  
 **Audit Report:** `docs/ILLUSTRATED_GUIDE_AUDIT.md`
 
-#### Completed Demonstrations ✅
+#### Accepted Decision
 
-| Demonstration | Priority | Status | Evidence |
-|---------------|----------|--------|----------|
-| **360° Golden Record View** | CRITICAL | ✅ COMPLETE | Screenshot: `chatbot_360_bbs_entreprise_2026-03-08.png` - Shows B.B.S. Entreprise with KBO + Teamleader + Exact unified |
-| **Segment Creation NL→Query** | CRITICAL | ✅ COMPLETE | Screenshot: `chatbot_segment_creation_2026-03-08.png` - "IT services - Brussels" segment with 1,652 companies |
-| **Hyperrealistic Demo Data** | HIGH | ✅ COMPLETE | Scripts: `populate_hyperrealistic_demo_data.py`, `create_360_demo_companies.py` |
-| **Cross-source Identity Links** | HIGH | ✅ COMPLETE | 15 companies linked across KBO + CRM + Exact |
-| **Segment Activation to Resend** | HIGH | ✅ COMPLETE | POC Test: 6/6 tests passing, 0.75s segment creation, 2.2s Resend push |
-| **CSV Export Validation** | HIGH | ✅ COMPLETE | File: `output/it_services_brussels_segment.csv` - 100 rows with all 9 fields verified |
+- `Resend` is acceptable for the current POC. Do **not** treat the Flexmail swap as a blocker in the active queue unless the user explicitly reopens it.
 
-#### Data Population Status
+#### What the current guide already proves
 
-| Source | Before | Current | Target | Status |
-|--------|--------|---------|--------|--------|
-| Teamleader | 1 company | **72 companies** | 50+ | ✅ **EXCEEDED** |
-| Exact Online | 9 customers | 9 customers | 50+ | Deferred |
-| Resend | 9 emails | POC verified | 1,000+ | Ready for activation |
+| Evidence | Status | Limitation |
+|----------|--------|------------|
+| B.B.S. Entreprise screenshot | Partial | Shows KBO + Teamleader + Exact linkage, but not the required Autotask/website/UID-first story |
+| NL segment creation | Partial | Shows a canonical `1,652`-company result, but the guide still mixes `1,652`, `1,529`, and `101` without consistent scope labels |
+| Resend activation POC tests | Partial | Technical path exists, but the guide still lacks a populated audience screenshot for the canonical segment |
+| CSV export artifact | Partial | File exists, but the guide still needs explicit sample-vs-total framing |
+
+#### Remaining blockers
+
+| Gap | Priority | What still needs to be shown or corrected |
+|-----|----------|-------------------------------------------|
+| UID-first privacy proof | CRITICAL | Show Tracardi/runtime evidence using UID-first operational data, or explicitly document the current privacy divergence |
+| Autotask / IT1 coverage | CRITICAL | Show ticket and contract data linked into the same 360 profile story, or mark IT1 as not yet demonstrated |
+| Count consistency | CRITICAL | Reconcile and label `1,652` total, `1,529` narrower activation test scope, and `101` CSV preview rows |
+| Full 360 proof | CRITICAL | Show visible KBO + CRM + financial + support/behavior context in one coherent demonstration |
+| Business-value demonstrations | HIGH | Add cross-sell/up-sell, multi-division revenue, and website behavior evidence |
+| Next Best Action / writeback proof | HIGH | Show recommendation generation, multi-source identity resolution, and engagement writeback evidence |
 
 #### Exit Criteria
 
-- [x] 360° Golden Record demonstration captured
-- [x] Hyperrealistic companies in source systems (72 in Teamleader)
-- [x] Cross-source identity links established (15 linked)
-- [x] Segment activation POC verified (6/6 tests passing)
-- [x] CSV export shows actual data fields (9 fields verified)
-- [x] Illustrated Guide updated to Version 2.0
-- [x] Guide published to `docs/ILLUSTRATED_GUIDE.md`
+- [x] Record that Resend is the accepted current POC activation platform
+- [ ] Demonstrate UID-only Tracardi/runtime evidence or explicitly document the current privacy divergence
+- [ ] Show one account with KBO + Teamleader + Exact + Autotask and, if claimed, website behavior in the same story
+- [ ] Resolve the `1,652` / `1,529` / `101` count framing in the guide
+- [ ] Capture cross-sell, multi-division, and Next Best Action evidence
+- [ ] Capture identity-resolution and engagement-writeback evidence
 
 ---
 
 ### P0: POC Resend Activation Tests (RECOMMENDED)
 
-**Status:** ✅ COMPLETE - All 6 tests passing, **Resend recommended over Flexmail**
-**Discovered:** 2026-03-08 (Flexmail lacks campaign API)
-**Last Updated:** 2026-03-08 12:15 CET
+**Status:** ✅ COMPLETE - All 6 tests passing, accepted as the current POC activation path
+**Discovered:** 2026-03-08
+**Last Updated:** 2026-03-08 16:52 CET
 **Severity:** CRITICAL
 
 #### Current State
 
-All Resend activation tests are now passing. Resend is **recommended** for POC because it has:
+All Resend activation tests are now passing. The user accepted Resend as the current POC platform, so Flexmail parity is not a blocker in the active queue. Resend has:
 - ✅ Full webhook management API (create/update/delete)
 - ✅ Direct campaign sending API (no GUI required)
 - ✅ Batch email support
@@ -74,8 +78,9 @@ All Resend activation tests are now passing. Resend is **recommended** for POC b
 #### Test Script (RECOMMENDED)
 
 ```bash
+# Ensure DATABASE_URL / POSTGRES_CONNECTION_STRING is configured via .env.local, .env, or .env.database
+
 # Run Resend POC test (uses mock if no API key)
-export DATABASE_URL="postgresql://cdpadmin:cdpadmin123@localhost:5432/cdp?sslmode=disable"
 poetry run python scripts/test_poc_resend_activation.py --mock
 
 # Run with real Resend
@@ -112,7 +117,7 @@ poetry run python scripts/test_poc_resend_activation.py
 
 #### Current State
 
-Flexmail tests pass but **Resend is recommended**. Flexmail requires GUI for campaigns and lacks full webhook management API.
+Flexmail tests pass but are now strictly optional reference coverage. The current active path is Resend unless the user explicitly reopens a Flexmail requirement.
 
 #### Test Script
 
@@ -212,8 +217,8 @@ poetry run python scripts/sync_teamleader_to_postgres.py
 
 **Verified working with live Exact Online demo environment:**
 - ✅ OAuth authorization completed
-- ✅ 60 GL Accounts synced
-- ✅ 60 Invoices synced
+- ✅ 258 GL Accounts synced
+- ✅ 78 Invoices synced
 - ✅ Tokens saved to `.env.exact`
 
 **What's implemented:**
