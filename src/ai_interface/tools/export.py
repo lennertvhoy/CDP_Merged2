@@ -89,22 +89,74 @@ async def _load_segment_rows(
     segment_id: str,
     *,
     limit: int,
-) -> tuple[list[dict], int, str]:
-    """Load segment rows from PostgreSQL first, then fall back to Tracardi."""
+) -> tuple[list[dict], int, str, dict]:
+    """Load segment rows from PostgreSQL first, then fall back to Tracardi.
+    
+    Returns:
+        Tuple of (rows, total_count, backend, diagnostics)
+    """
+    diagnostics = {
+        "segment_id": segment_id,
+        "postgresql_checked": False,
+        "postgresql_count": 0,
+        "tracardi_checked": False,
+        "tracardi_count": 0,
+        "errors": [],
+    }
+    
+    # Try PostgreSQL first (canonical source)
     try:
         canonical_service = CanonicalSegmentService()
         canonical = await canonical_service.get_segment_members(segment_id, limit=limit)
+        diagnostics["postgresql_checked"] = True
         if canonical is not None:
-            return canonical["rows"], int(canonical["total_count"]), "postgresql"
+            pg_count = int(canonical["total_count"])
+            diagnostics["postgresql_count"] = pg_count
+            if pg_count > 0:
+                return canonical["rows"], pg_count, "postgresql", diagnostics
+            # PostgreSQL has segment but it's empty - continue to check Tracardi
     except Exception as exc:
+        diagnostics["postgresql_checked"] = True
+        diagnostics["errors"].append(f"PostgreSQL lookup failed: {exc}")
         logger.warning("canonical_segment_export_lookup_failed", segment=segment_id, error=str(exc))
 
-    client = TracardiClient()
-    query = f'segments="{segment_id}"'
-    result = await client.search_profiles(query, limit=limit)
-    if not result:
-        raise RuntimeError("Failed to retrieve segment data.")
-    return result.get("result", []) or [], int(result.get("total", 0) or 0), "tracardi"
+    # Fall back to Tracardi
+    try:
+        client = TracardiClient()
+        query = f'segments="{segment_id}"'
+        result = await client.search_profiles(query, limit=limit)
+        diagnostics["tracardi_checked"] = True
+        
+        if result is None:
+            diagnostics["errors"].append("Tracardi returned None - segment may not exist")
+            raise RuntimeError(
+                f"Segment '{segment_id}' not found in PostgreSQL or Tracardi. "
+                f"Diagnostics: {diagnostics}"
+            )
+        
+        tracardi_count = int(result.get("total", 0) or 0)
+        diagnostics["tracardi_count"] = tracardi_count
+        
+        if tracardi_count == 0:
+            # Both sources empty - provide helpful explanation
+            pg_status = f"PostgreSQL: {diagnostics['postgresql_count']} members" if diagnostics["postgresql_checked"] else "PostgreSQL: not checked"
+            raise RuntimeError(
+                f"Segment '{segment_id}' exists but contains no members. "
+                f"{pg_status}, Tracardi: 0 profiles. "
+                f"The segment may need to be rebuilt or the search criteria may be too restrictive."
+            )
+        
+        return result.get("result", []) or [], tracardi_count, "tracardi", diagnostics
+        
+    except RuntimeError:
+        raise
+    except Exception as exc:
+        diagnostics["tracardi_checked"] = True
+        diagnostics["errors"].append(f"Tracardi lookup failed: {exc}")
+        raise RuntimeError(
+            f"Failed to retrieve segment '{segment_id}' from any source. "
+            f"Errors: {diagnostics['errors']}"
+        )
 
 
 @tool
@@ -146,10 +198,22 @@ async def export_segment_to_csv(
     logger.info("csv_export_start", segment=segment_id, fields=include_fields)
 
     try:
-        profiles, total_count, backend = await _load_segment_rows(segment_id, limit=max_records)
-    except RuntimeError:
+        profiles, total_count, backend, diagnostics = await _load_segment_rows(segment_id, limit=max_records)
+    except RuntimeError as exc:
+        error_msg = str(exc)
+        logger.error("csv_export_failed", segment=segment_id, error=error_msg)
         return json.dumps(
-            {"status": "error", "error": "Failed to retrieve segment data."},
+            {
+                "status": "error", 
+                "error": error_msg,
+                "segment_id": segment_id,
+                "suggestions": [
+                    "Verify the segment name is correct",
+                    "Check if the segment has any members with: get_segment_stats",
+                    "Try recreating the segment if it was deleted",
+                    "Check if PostgreSQL and Tracardi are both accessible"
+                ]
+            },
             ensure_ascii=False,
         )
 
@@ -159,8 +223,14 @@ async def export_segment_to_csv(
                 "status": "ok",
                 "segment_id": segment_id,
                 "exported_count": 0,
-                "message": "Segment contains no profiles to export.",
+                "message": "Segment exists but contains no profiles to export.",
                 "backend": backend,
+                "diagnostics": diagnostics,
+                "suggestions": [
+                    "The segment search criteria may be too restrictive",
+                    "Try broadening your search filters",
+                    "Check if companies in the segment have the requested fields"
+                ]
             },
             ensure_ascii=False,
         )
