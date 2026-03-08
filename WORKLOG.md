@@ -1411,3 +1411,54 @@ All tools and services for silent failures, poor error messages, and lack of dia
 
 ---
 
+
+---
+
+## Session: 2026-03-08 15:45-16:05 CET - Hyperrealistic Demo Data + 360° Screenshot Capture
+
+**Task:** Illustrated Guide Source-of-Truth - Create demo data and capture 360° screenshots
+**Status:** ✅ MAJOR PROGRESS - 360° demo working, segment creation demonstrated
+**Git Head:** 51ac939
+
+### Completed
+
+1. **Created Demo Data Population Scripts**
+   - `scripts/populate_hyperrealistic_demo_data.py` - Creates 50+ realistic Belgian companies
+   - `scripts/create_360_demo_companies.py` - Links CRM to KBO for 360° demos
+   - Commit: `51ac939`
+
+2. **Populated Cross-Source Demo Data**
+   - Added 5 companies to Teamleader matching Exact-linked KBOs
+   - Synced to PostgreSQL (72 total CRM companies now)
+   - Created identity links for 15 companies
+   - **B.B.S. Entreprise**: Now shows `linked_both` (KBO + CRM + Exact)
+
+3. **Captured 360° Golden Record Screenshot**
+   - Query: "Show me a 360 view of B.B.S. Entreprise"
+   - Result: Full 360° view with identity link status, KBO data, Teamleader CRM data, Exact financial data
+   - Screenshot: `chatbot_360_bbs_entreprise_2026-03-08.png`
+
+4. **Demonstrated Segment Creation Flow**
+   - Query: "Create a segment of IT services companies in Brussels"
+   - Result: "IT services - Brussels" segment with 1,652 companies
+   - Screenshot: `chatbot_segment_creation_2026-03-08.png`
+
+### Evidence
+
+| File | Description |
+|------|-------------|
+| `chatbot_360_bbs_entreprise_2026-03-08.png` | 360° view showing unified KBO + CRM + Exact data |
+| `chatbot_segment_creation_2026-03-08.png` | Segment creation with 1,652 companies |
+| `chatbot_360_bbs_full_2026-03-08.png` | Full page screenshot of 360° demo |
+| `scripts/populate_hyperrealistic_demo_data.py` | Demo data population script |
+| `scripts/create_360_demo_companies.py` | 360° demo company creator |
+
+### Remaining for Illustrated Guide
+
+1. Push segment to Resend and capture audience screenshot
+2. Download CSV export and validate fields
+3. Update Illustrated Guide documentation with new screenshots
+
+### Handoff Note
+
+The 360° Golden Record demonstration is now complete and working. B.B.S. Entreprise shows the full cross-source unified view as requested in the business case. Next priority is segment activation to Resend for the complete NL→Segment→Activation flow demonstration.
