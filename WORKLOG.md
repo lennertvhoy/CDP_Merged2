@@ -1629,3 +1629,30 @@ The user briefly redirected work to GUI-access verification, then paused that la
 - Validate the same approach for Exact Online, Resend, and Tracardi before depending on it for guide evidence
 
 ---
+
+## 2026-03-08 (Tracardi GUI Login Verification)
+
+### Task: Verify local Tracardi operator access with Playwright and capture fresh dashboard evidence
+
+**Type:** verification_only  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 17:28 CET  
+**Git Head:** `9dc347d`
+
+**Summary:**
+Used a one-off Playwright run against the local Tracardi GUI to verify that operator login now works from this interface with the credentials provided by the user. The GUI first required selecting the local API endpoint, then accepted the login and rendered the dashboard successfully.
+
+**What was verified:**
+- `docker compose ps` showed both `cdp_merged_tracardi_api` and `cdp_merged_tracardi_gui` up locally
+- Playwright opened `http://localhost:8787/dashboard`, which first showed the `Select TRACARDI server` bootstrap screen
+- After selecting `http://localhost:8686`, the GUI rendered the sign-in form and accepted the provided credentials
+- The authenticated dashboard loaded at `http://localhost:8787/dashboard` with `139` events, `83` profiles, and `83` sessions visible
+
+**Artifacts:**
+- `/tmp/tracardi_after_select.png` - bootstrap complete, sign-in form visible
+- `/tmp/tracardi_logged_in_attempt.png` - authenticated local dashboard
+
+**Important limitation:**
+- This closes the GUI-access uncertainty for local Tracardi, but it does **not** close the Illustrated Guide blocker. The dashboard screenshot is activation-layer evidence only and still does not prove the UID-first privacy boundary or a four-source KBO + Teamleader + Exact + Autotask 360 story.
+
+---

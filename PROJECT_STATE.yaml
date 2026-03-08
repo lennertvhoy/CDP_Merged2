@@ -3,7 +3,7 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-08T16:52:00+01:00
+  updated_at: 2026-03-08T17:28:09+01:00
   updated_by: agent
   repo_head:
     value: fe9d51a
@@ -705,6 +705,20 @@ current_state:
         checked_at: 2026-03-07T19:29:00+01:00
         evidence:
           - curl -fsS -o /tmp/tracardi_local_token.json -w '%{http_code}' -X POST "$TRACARDI_API_URL/user/token" ... -> 200
+      gui_login:
+        status: observed
+        checked_at: 2026-03-08T17:28:09+01:00
+        final_url: http://localhost:8787/dashboard
+        screenshot: /tmp/tracardi_logged_in_attempt.png
+        observed_counts:
+          events: 139
+          profiles: 83
+          sessions: 83
+        evidence:
+          - docker compose ps -> cdp_merged_tracardi_api and cdp_merged_tracardi_gui up on localhost
+          - Playwright headless flow against http://localhost:8787/dashboard -> API endpoint select screen rendered, http://localhost:8686 selected, SIGN IN with provided operator credentials succeeded, dashboard loaded
+          - /tmp/tracardi_after_select.png captured the pre-login operator form; /tmp/tracardi_logged_in_attempt.png captured the authenticated dashboard
+        note: This is fresh local activation-layer GUI evidence only. It does not yet prove the UID-first runtime boundary or the four-source business-case story required by the Illustrated Guide.
       event_sources:
         status: verified
         count: 4
@@ -1199,6 +1213,7 @@ active_problems:
       - User feedback 2026-03-08 accepted Resend in place of Flexmail for the current POC, so the email-platform swap is not a blocker
       - User feedback 2026-03-08 flagged the privacy architecture contradiction: guide screenshots expose direct PII while the target architecture requires UID-first operational/runtime evidence
       - User feedback 2026-03-08 flagged missing business-case proof for cross-sell, multi-division revenue visibility, website behavior, next-best-action, and engagement writeback
+      - 2026-03-08 Playwright verification confirmed local Tracardi operator login and dashboard access with fresh GUI evidence, but the dashboard screenshot only shows activation-layer counts/events and does not close the UID-first or four-source 360 proof gaps
     critical_mismatches:
       - issue: resend_platform_mismatch_removed_as_blocker
         current: "User accepted Resend for the current POC on 2026-03-08"
