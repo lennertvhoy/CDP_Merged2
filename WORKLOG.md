@@ -4,6 +4,41 @@
 
 ---
 
+### Task: Fix critical v3.1 Illustrated Guide PDF table layout failures
+
+**Type:** docs_or_process_only
+**Status:** COMPLETE
+**Timestamp:** 2026-03-08 22:46 CET
+**Git Head:** `d782108` at session start
+
+**Summary:**
+Completed the first scoped v3.1 formatting pass on the Illustrated Guide. The two highest-priority PDF defects are fixed locally: the page 9 screenshot inventory no longer overlaps on long filenames, and the sync-latency proof no longer collapses company names and timestamps into each other. I also fixed the nearby malformed markdown tables so pandoc stops dumping raw table syntax in the engagement/privacy and revenue sections.
+
+**Guide updates made:**
+- Reworked `docs/ILLUSTRATED_GUIDE.md` screenshot inventory into a short evidence-ID matrix plus a filename key
+- Rebuilt the sync-latency proof as two source-specific tables (Teamleader and Exact) instead of one overly wide table
+- Added the missing blank lines required for pandoc to render the example-calculation, privacy-divergence, and revenue-summary tables correctly
+- Aligned `STATUS.md`, `PROJECT_STATE.yaml`, `NEXT_ACTIONS.md`, and `BACKLOG.md` so they no longer leave the guide at `v2.0` or claim the page 9/10 table issues are still pending
+
+**Verification:**
+```bash
+pandoc --toc --pdf-engine=xelatex docs/ILLUSTRATED_GUIDE.md -o /tmp/ILLUSTRATED_GUIDE_v3_1_test.pdf
+pdfinfo /tmp/ILLUSTRATED_GUIDE_v3_1_test.pdf
+pdftotext -f 9 -l 13 -layout /tmp/ILLUSTRATED_GUIDE_v3_1_test.pdf -
+pdftoppm -f 9 -l 13 -png /tmp/ILLUSTRATED_GUIDE_v3_1_test.pdf /tmp/guide_pages_v31/v31
+```
+
+**Observed Results:**
+- Export succeeded with `xelatex`; the PDF reflowed from `11` to `13` pages because the narrow tables now wrap instead of colliding
+- Page 10 screenshot inventory renders readably with short IDs and no overlapping filename text
+- Phase 8 sync evidence now renders as two readable tables with intact company names and timestamps
+- The malformed raw-markdown table output in the surrounding sections is gone
+
+**Next Step:**
+- Continue the v3.1 cleanup with the next highest-value formatting task: split page 1 into two pages, then standardize the phase-page pattern
+
+---
+
 ### Task: Align backlog with hardening handoff `f9d1906`
 
 **Type:** docs_or_process_only
@@ -2681,4 +2716,3 @@ git commit -m "docs: split mixed guide into business case / system spec / eviden
 - Cross-references maintain coherence across the three documents
 
 ---
-

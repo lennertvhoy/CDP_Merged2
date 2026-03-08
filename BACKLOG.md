@@ -2,7 +2,7 @@
 
 **Platform:** AZURE (VMs, Container Apps, OpenAI)  
 **Architecture:** Source systems PII truth + PostgreSQL intelligence truth + Tracardi activation runtime + AI chatbot  
-**Last Updated:** 2026-03-08 (v3.0 content direction validated; 80-90% source-of-truth issues resolved; v3.1 now tracking 4 precision fixes + 7 formatting improvements per user formatting review)
+**Last Updated:** 2026-03-08 (v3.0 content direction validated; v3.1 formatting pass started; critical page 9/10 table rebuilds complete locally; 4 precision fixes + 5 remaining formatting improvements still tracked)
 **Purpose:** Medium-term roadmap from the current repo state to a credible demo first and production readiness later
 
 ## How To Use This File
@@ -205,11 +205,11 @@ poetry run python scripts/test_poc_activation.py --mock
 | High | **Upgrade CSV export integrity proof** | Pending | Per v3.0 feedback: add row count match, Brussels+NACE validation, checksum/timestamp/query ID |
 | High | **Implement maturity label system** | Pending | Per v3.0 feedback: replace generic "live" language with explicit labels (Live, Local, Demo-backed, Planned) |
 | High | **Fix privacy statement wording precision** | Pending | Per v3.0 feedback: align top-line claim with table exactly - "gateway sanitization implemented, with known residual raw-email divergence pending cutover" |
-| High | **Surface NBA scoring and threshold logic** | Partial | The runtime now exposes `/api/scoring-model` and `rule_trace`; the remaining work is guide/spec wiring and screenshot/evidence capture |
-| High | **Add explicit cross-division revenue proof** | Pending | Show one customer with revenue rolled up across divisions, not just recommendation output |
-| High | **Capture timestamped sync-latency proof** | Pending | Demonstrate one source update reaching the 360/query plane within the claimed sync interval |
+| High | **Surface NBA scoring and threshold logic** | ✅ COMPLETE | Guide/spec now document `/api/scoring-model`, event weights, thresholds, and the B.B.S. example calculation |
+| High | **Add explicit cross-division revenue proof** | ✅ COMPLETE | B.B.S. Entreprise now shows a timestamped `€15,000` cross-source total in the guide |
+| High | **Capture timestamped sync-latency proof** | ✅ COMPLETE | Guide now records Teamleader sample syncs at `2026-03-08 14:57:55` and Exact sample syncs at `2026-03-08 11:19:39` |
 | High | **Keep privacy hardening on the roadmap** | Partial | `scripts/webhook_gateway.py` now emits privacy-safe downstream payloads, but the live local runtime still needs an end-to-end recheck and Tracardi event-path confirmation |
-| High | **Recheck webhook/event-processor hardening tests** | Pending | Isolate the late-suite timeout in `tests/unit/test_webhook_gateway.py` and `tests/unit/test_cdp_event_processor.py`, then capture a clean green run |
+| High | **Recheck webhook/event-processor hardening tests** | ✅ COMPLETE | Both suites now pass cleanly (`54` tests in `0.33s`); the earlier late-suite timeout is closed |
 | High | Build a real/mock/hybrid source matrix | ✅ COMPLETE | Documented in PROJECT_STATE.yaml |
 | High | Add a cleanup/organization queue for demo assets and stale narratives | Pending | Consolidate fixtures, screenshots, and current-state summaries to reduce future drift |
 | High | Require user-owned final verification | Pending | Hold final demo sign-off until the user has tested it and seen one stable week |
@@ -231,8 +231,8 @@ poetry run python scripts/test_poc_activation.py --mock
 **v3.1 Formatting Improvements (content direction good, formatting still rough):**
 | Priority | Item | Status | What needs to happen |
 |----------|------|--------|----------------------|
-| Critical | **Rebuild page 9 screenshot inventory table** | Pending | Fix overlapping text, unreadable rows; wider columns, wrapped text, smaller filename strings, consistent alignment |
-| Critical | **Rebuild page 10 sync-latency table** | Pending | Fix column collisions with company names/timestamps; better column sizing and text wrapping |
+| Critical | **Rebuild page 9 screenshot inventory table** | ✅ COMPLETE | Replaced the long filename table with a short evidence-ID matrix plus filename key; PDF export recheck shows the rows render readably |
+| Critical | **Rebuild page 10 sync-latency table** | ✅ COMPLETE | Replaced the single wide table with source-specific sync proof tables; PDF export recheck shows no timestamp/company collisions |
 | High | **Split page 1 into two pages** | Pending | Page 1 = title + purpose + audience + companion docs; Page 2 = contents + overview table |
 | High | **Standardize phase page pattern** | Pending | Heading → business claim → screenshot/evidence → verification bullets → conclusion line; apply consistently across all phase pages |
 | Medium | **Shaded code boxes for API/JSON** | Pending | Replace raw monospaced text dumps with contained shaded code blocks (pages 5-7) |

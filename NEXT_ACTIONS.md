@@ -10,12 +10,12 @@
 
 ### P0: Demo Polish And Source-Of-Truth Hardening
 
-**Status:** ✅ COMPLETE v3.0 - Content direction validated; 80-90% of source-of-truth issues resolved. Formatting is now the weakest part (per user: "still amateur-looking"). 4 precision + 7 formatting improvements deferred to backlog for v3.1.
+**Status:** ✅ COMPLETE v3.0; v3.1 formatting pass in progress. The critical page 9/10 table rebuilds are complete locally, and `4` precision items plus `5` formatting items remain.
 **Discovered:** 2026-03-08 (initial audit), reopened 2026-03-08 via direct user feedback and source-of-truth review
-**Last Updated:** 2026-03-08 22:45 CET
+**Last Updated:** 2026-03-08 22:46 CET
 **Severity:** HIGH
-**Guide:** `docs/ILLUSTRATED_GUIDE.md` v3.0  
-**User Feedback:** v3.0 content direction good; formatting needs significant work (page 9/10 tables broken, page 1 overloaded, visual hierarchy inconsistent)
+**Guide:** `docs/ILLUSTRATED_GUIDE.md` v3.1 draft / `docs/ILLUSTRATED_GUIDE_v3.1.pdf` local export  
+**User Feedback:** v3.0 content direction good; the page 9/10 table failures are now fixed locally, and the remaining work is page 1 breathing room plus overall visual consistency.
 
 #### Accepted Decisions
 
@@ -47,7 +47,7 @@
 | Harden privacy boundary in runtime | MEDIUM | ✅ COMPLETE - 48 webhook gateway tests pass, PII stripping verified, guide updated with verification note |
 | Recheck the late-suite webhook/event-processor test timeout | MEDIUM | ✅ COMPLETE - Both test suites now pass cleanly (54 tests in 0.33s). Issue resolved, likely by commit f9d1906. |
 
-#### Deferred to Backlog (v3.1 Improvements)
+#### v3.1 Improvements Tracking
 
 Per user feedback on v3.0 guide:
 
@@ -59,16 +59,16 @@ Per user feedback on v3.0 guide:
 | Implement maturity label system | P2 | `BACKLOG.md` Milestone 0 |
 | Fix privacy statement wording precision | P2 | `BACKLOG.md` Milestone 0 |
 
-**Formatting Improvements (7 items) - formatting is now the weakest part:**
-| Gap | Priority | Issue |
-|-----|----------|-------|
-| Rebuild page 9 screenshot inventory table | P0 | Overlapping text, unreadable rows |
-| Rebuild page 10 sync-latency table | P0 | Column collisions with company names/timestamps |
-| Split page 1 into two pages | P1 | Title overload - needs to breathe |
-| Standardize phase page pattern | P1 | Inconsistent structure across phases |
-| Shaded code boxes for API/JSON | P2 | Pages 5-7 look like raw terminal dumps |
-| Fix blank space waste | P2 | Pages 4 and 11 under-designed |
-| Standardize visual hierarchy | P2 | Screenshots, captions, spacing uneven |
+**Formatting Improvements (7 items):**
+| Gap | Priority | Status |
+|-----|----------|--------|
+| Rebuild page 9 screenshot inventory table | P0 | ✅ COMPLETE - replaced the long filename table with a short evidence-ID matrix plus filename key; verified readable in the PDF export |
+| Rebuild page 10 sync-latency table | P0 | ✅ COMPLETE - split the wide table into source-specific proof tables; verified no column collisions in the PDF export |
+| Split page 1 into two pages | P1 | Pending - title / purpose / companion-doc block still needs more breathing room |
+| Standardize phase page pattern | P1 | Pending - phase sections still need a consistent claim → evidence → verification rhythm |
+| Shaded code boxes for API/JSON | P2 | Pending - pages 5-7 still read like raw terminal output |
+| Fix blank space waste | P2 | Pending - later pages still have avoidable whitespace after the reflow |
+| Standardize visual hierarchy | P2 | Pending - screenshots, captions, and spacing still need a more consistent system |
 
 #### Exit Criteria
 
