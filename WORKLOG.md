@@ -1168,3 +1168,67 @@ fi
 | Website Discovery | blocked | 009ff8d5-daa6-4f74-9a23-3add91d3d156 | 2026-03-06 19:05 |
 
 ---
+
+---
+
+## 2026-03-08 (Ollama AI Description Enrichment - Verified Working)
+
+### Task: Verify Ollama AI Description Enrichment in Production
+
+**Type:** data_pipeline  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 14:20 CET  
+**Git Head:** `1413507`
+
+**Summary:**
+Successfully verified Ollama-based AI description enrichment works in production. Processed 110 companies with 70 AI descriptions generated (64% success rate). All descriptions stored in PostgreSQL `ai_description` column.
+
+**Batch Results:**
+
+| Batch | Processed | Enriched | Skipped | Failed | Time |
+|-------|-----------|----------|---------|--------|------|
+| Test (10) | 10 | 6 (60%) | 4 | 0 | ~10s |
+| Production (100) | 100 | 64 (64%) | 36 | 0 | ~95s |
+| **Total** | **110** | **70** | **40** | **0** | ~105s |
+
+**Key Findings:**
+- ✅ Ollama `llama3.1:8b` generates quality business descriptions (~1.5s per company)
+- ✅ NACE code deduplication caching working (same codes = instant cache hit)
+- ✅ Descriptions properly stored in PostgreSQL `ai_description` column
+- ✅ Skipped records are those without usable NACE codes (expected behavior)
+- ✅ Zero failures - all Ollama inference requests succeeded
+
+**Sample Descriptions Generated:**
+```
+NISHOB: NISHOB is a retail company specializing in the sale of clothing, 
+accessories, and other consumer goods in specialized stores.
+
+MKM: MKM is a construction company specializing in the preparation of 
+construction sites and building construction.
+
+Metriek Architecten: Metriek Architecten en Ingenieurs is an architectural 
+and engineering firm providing specialized design and technical services.
+```
+
+**Commands Used:**
+```bash
+# Verify Ollama running
+curl -s http://localhost:11434/api/tags | grep llama3.1:8b
+
+# Run enrichment with Ollama (FREE)
+export DESCRIPTION_ENRICHER=ollama
+export OLLAMA_MODEL=llama3.1:8b
+export DATABASE_URL="postgresql://cdpadmin:cdpadmin123@localhost:5432/cdp?sslmode=disable"
+python scripts/enrich_companies_batch.py --enrichers description --limit 100 --batch-size 20
+
+# Check count
+SELECT COUNT(*) FROM companies WHERE ai_description IS NOT NULL;
+# Result: 70
+```
+
+**Next Steps:**
+- Scale up to larger batches (500-1000) for faster coverage
+- Consider running as background supervised runner like CBE/geocoding/website
+- Monitor Ollama GPU/CPU usage for performance optimization
+
+---

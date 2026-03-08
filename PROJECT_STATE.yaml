@@ -446,7 +446,7 @@ current_state:
       legal_form: 1176853
       website_url: 35844
       geo_latitude: 0
-      ai_description: 0
+      ai_description: 70
       sync_status_pending: 0
       sync_status_enriched: 1940603
       updated_last_hour: 0
@@ -520,8 +520,23 @@ current_state:
           - nace_code_deduplication
           - model_specific_cache_keys
         verified: true
-        verified_at: 2026-03-08T14:15:00+01:00
+        verified_at: 2026-03-08T14:20:00+01:00
         commit: cc87d29
+        production_test:
+          batch_1:
+            processed: 10
+            enriched: 6
+            skipped: 4
+            failed: 0
+          batch_2:
+            processed: 100
+            enriched: 64
+            skipped: 36
+            failed: 0
+          total_generated: 70
+          success_rate: "64%"
+          avg_time_per_description: "~1.5s"
+          status: working_in_production
     truth_notes:
       - sync_status_does_not_equal_field_complete_enrichment
       - canonical_sql_counts_override_stale_dashboard_or_loop_narratives
