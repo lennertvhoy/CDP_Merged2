@@ -533,9 +533,9 @@ nace_codes=['62010', '62020', '62030', '62090', '63110', '63120'], city=Brussels
 
 ### P2: Tracardi Activation Layer Configuration
 
-**Status:** REOPENED - Drafts repaired, runtime execution still blocked
+**Status:** REOPENED - Drafts repaired, runtime execution blocked by CE limitation
 **Discovered:** 2026-03-07 19:29 CET
-**Last Updated:** 2026-03-08 21:35 CET
+**Last Updated:** 2026-03-08 21:45 CET
 **Severity:** MEDIUM
 
 #### Current State
@@ -547,18 +547,32 @@ Tracardi activation layer is only partially verified:
 - ✅ All 5 workflow drafts repaired locally on 2026-03-08
 - ✅ Bounce draft now shows `Start -> Copy data -> Update profile`
 - ✅ Engagement draft now shows `Start -> Increment counter -> Copy data -> Update profile`
-- ⚠️ Runtime still not proven: `POST /track` with `email.opened` returned `200`, but `GET /flow/logs/1b5233f9-241c-49b0-b2c6-60b3c010f4de` still returned `total=0`
-- ⚠️ Engagement rules remain `enabled=true`, `running=false`, `production=false`
+- ❌ **BLOCKED:** Runtime execution requires Tracardi Premium (licensed feature)
+- ⚠️ Engagement rules remain `enabled=true`, `running=false`, `production=false` (cannot be changed in CE)
 - ✅ Verification script created: `scripts/setup_and_verify_tracardi.py`
 - ✅ GUI accessible at http://localhost:8787
 - ⚠️ Destinations: 0 configured (require GUI - API needs specific format)
 
+#### Root Cause Analysis
+
+**Tracardi Community Edition does not support production workflow execution.**
+
+Evidence:
+- POST /rule to update `production=true` returns 200 but values do not persist
+- `/deploy/{path}` endpoint is marked as "licensed" in OpenAPI spec (premium feature)
+- Tracardi GUI shows no "Deploy" button - only "View Deployed FLOW"
+- `/license` endpoint returns 404 (Community Edition has no licensing)
+- `deploy_timestamp` field remains "none" despite multiple save attempts
+
 #### Next Actions
 
-1. Use `/flow/debug` or the GUI to determine why repaired rules remain `running=false` and `production=false`
-2. Verify one end-to-end local event updates profile traits and produces flow logs
-3. Capture fresh workflow screenshots only after execution is real, not just after draft save
-4. Keep Resend transport setup and webhook secret work as supporting infrastructure, not as proof that workflow automation is active
+1. **Document the CE limitation** in the Illustrated Guide
+2. **Update guide expectations** - workflow screenshots show draft structure, not live execution
+3. **Consider alternatives** for workflow execution proof:
+   - Implement a simple Python-based event processor as a bridge
+   - Use webhook callbacks to update PostgreSQL directly
+   - Document that Tracardi Premium would be required for full workflow automation
+4. Keep Resend transport setup as supporting infrastructure
 
 ## Paused
 
