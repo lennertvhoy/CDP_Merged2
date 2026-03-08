@@ -4,6 +4,48 @@
 
 ---
 
+## 2026-03-08 (360° Search Fix)
+
+### Task: Fix search_companies_unified to Include Unlinked CRM/Exact Records
+
+**Type:** app_code  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 15:25 CET  
+**Git Head:** `ab3ee2d`
+
+**Problem Identified:**
+The `search_companies_unified` method only searched the `unified_company_360` view, which only includes companies with established identity links. When the user asked for a "360° view of Brouwerij Simon", it returned 0 matches even though "Brouwerij Simon & Co" exists in Teamleader CRM.
+
+**Root Cause:**
+- `source_identity_links` table is empty (0 rows)
+- `unified_company_360` view only shows linked companies
+- Teamleader has 57 companies but none are linked to KBO
+
+**Solution:**
+Enhanced `search_companies_unified` to search across ALL sources:
+1. Linked companies in `unified_company_360` view
+2. Unlinked Teamleader companies from `crm_companies`
+3. Unlinked Exact customers from `exact_customers`
+
+**SQL Strategy:**
+```sql
+WITH unified_matches AS (...),    -- Already linked
+crm_matches AS (...),             -- Teamleader only
+exact_matches AS (...)            -- Exact only
+SELECT * FROM all_matches ORDER BY match_priority
+```
+
+**Priority Ranking:**
+1. Exact match on KBO name
+2. Exact match on Teamleader name  
+3. Exact match on Exact name
+4. Partial match on any source
+
+**Impact:**
+Users can now find companies via 360° search even before identity reconciliation is complete. The tool returns partial results with `identity_link_status` indicating which sources are available.
+
+---
+
 ## 2026-03-08 (Chrome CDP Browser Integration)
 
 ### Task: Illustrated Guide Screenshot Capture via Chrome DevTools Protocol
