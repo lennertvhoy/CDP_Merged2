@@ -4,6 +4,44 @@
 
 ---
 
+## 2026-03-08 (Backlog Aligned - Added Milestone POC for Activation Testing)
+
+### Task: Add explicit POC milestone to BACKLOG.md
+
+**Type:** docs_or_process_only  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 12:00 CET  
+
+**Summary:**
+Added "Milestone POC: Close the Loop - Activation End-to-End" to BACKLOG.md to explicitly track the remaining POC gap. All infrastructure exists but end-to-end verification is missing.
+
+**Gap Identified:**
+- ✅ NL → Segment (≥95% accuracy) - DONE
+- ⚠️ Segment → Flexmail ≤60s - INFRASTRUCTURE READY, NOT TESTED
+- ⚠️ Engagement events → CDP - INFRASTRUCTURE READY, NOT TESTED
+- ❌ End-to-end latency - NOT TESTED
+
+**New Milestone POC Tasks:**
+| Priority | Item | Status |
+|----------|------|--------|
+| Critical | TEST: Segment push to Flexmail | Pending |
+| Critical | TEST: Engagement writeback | Pending |
+| Critical | TEST: End-to-end latency | Pending |
+| High | Document POC completion evidence | Pending |
+| High | Autotask decision | Blocked |
+
+**Prerequisites (all complete):**
+- PostgreSQL with 1.94M KBO records
+- Tracardi with 5 email workflows deployed
+- Teamleader + Exact sync pipelines operational
+- Bridge script for Flexmail integration exists
+- AI chatbot with routing guard
+
+**Next Session Should:**
+Run end-to-end activation test or create test script for Flexmail integration.
+
+---
+
 ## 2026-03-08 (MCP Server Implemented - 7 Tools Exposed)
 
 ### Task: Implement MCP (Model Context Protocol) server for standardized tool access
