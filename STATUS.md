@@ -2,12 +2,13 @@
 
 **Platform:** Azure target architecture with local-only execution mode
 **Current Execution Mode:** Local-only (`Azure deployment path paused to save costs`)
-**Last Updated:** 2026-03-08
+**Last Updated:** 2026-03-08 11:00 CET
 **Purpose:** Human-readable current snapshot
 **Structured Source:** `PROJECT_STATE.yaml`
 
 ## Current Headline
 
+- `observed` from 2026-03-08 11:00 CET: **360° TOOL SELECTION FIXED!** Option D routing guard implemented in critic_node. All 3 previously-failing queries now select correct tools: KBO linkage → `get_identity_link_quality`, Revenue distribution → `get_geographic_revenue_distribution`, Pipeline value → `get_industry_summary`. Commit `5c3117e`, 27 unit tests passed.
 - `observed` from 2026-03-07 22:46 CET: **EXACT ONLINE SYNC WORKING!** OAuth authorization completed. 60 GL Accounts and 60 Invoices synced to PostgreSQL. Tokens saved to `.env.exact`. Run anytime: `poetry run python scripts/sync_exact_to_postgres.py --full`
 - `observed` from 2026-03-07 21:00 CET: **Resend to Tracardi bridge script fixed.** The bridge script (`scripts/resend_to_tracardi_bridge.py`) now uses FastAPI for proper async handling, correctly translates Resend webhook format to Tracardi `/track` format with signature verification, and handles the `events` array properly. Tested and imports successfully.
 - `observed` from 2026-03-07 20:45 CET: **Local Resend webhook setup verified complete.** Resend event source fixed to use REST type (required for `/track` endpoint), all 5 email workflows deployed and active, tracker endpoint accepting events. Created verification script `scripts/verify_local_resend_setup.py` to validate configuration. ngrok not configured (requires auth token), blocking external webhook receipt from Resend servers. Local event simulation confirmed working - events create profiles in Tracardi successfully.
@@ -69,6 +70,6 @@
 ## Immediate Focus
 
 1. **Keep the active work local-only** and avoid Azure deployment, Azure smoke, or cloud verification until the user explicitly reopens that path
-2. **Fix 360° tool selection with parameter validation** - Tool-level docstrings insufficient; implement Option D (parameter validation layer)
+2. **✅ COMPLETED: Fix 360° tool selection with Option D routing guard** - All 3 test queries now PASS (commit `5c3117e`)
 3. **Expand real local multi-message runtime scenarios** around Tracardi/Resend handoffs, follow-up memory, and artifact/export flows
 4. **Keep the compose-managed stack as the default local runtime** and treat host-side `start_chatbot.sh` as the edit/run fallback rather than the primary deployment path

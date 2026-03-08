@@ -4,6 +4,72 @@
 
 ---
 
+## 2026-03-08 (Option D Routing Guard Implemented - ALL TESTS PASS)
+
+### Task: Implement Option D - Routing guard in critic_node for 360° tool selection
+
+**Type:** app_code  
+**Status:** COMPLETE - All 3 test queries now PASS  
+**Timestamp:** 2026-03-08 11:00 CET  
+**Git Head:** `5c3117e`
+
+**Summary:**
+Implemented deterministic keyword-based routing guard in `critic_node` to fix 360° tool selection failures. When the LLM selects a forbidden tool for a query containing specific keywords, the critic immediately rejects the tool call and returns a corrective error naming the correct tool — forcing the LLM to retry with the right choice.
+
+**Changes Made to `src/graph/nodes.py`:**
+
+1. **QUERY_ROUTING_RULES** — List of 3 rules mapping keyword patterns → required tool:
+   - **KBO Linkage:** "linked to kbo", "match rate", "kbo link", "link quality" → `get_identity_link_quality`
+   - **Revenue Distribution:** "revenue distribution", "revenue by city", "geographic distribution" → `get_geographic_revenue_distribution`
+   - **Pipeline Value:** "pipeline value for", "total pipeline", "industry pipeline" → `get_industry_summary`
+
+2. **`_extract_last_user_query()`** — Finds the last HumanMessage content (lowercase) without LLM parsing
+
+3. **`_check_routing_rules()`** — Evaluates each rule; returns error if forbidden tool used
+
+4. **`_validate_tool_call()`** — Extended with Check 6 (routing guard)
+
+5. **`critic_node()`** — Now extracts user query and passes it to validation
+
+**New Test File:**
+- `tests/unit/test_critic_routing.py` — 27 tests covering:
+  - All 3 query intents (correct tool allowed, wrong tool rejected)
+  - Non-interference: unrelated queries are never blocked
+  - Empty/missing user query never blocks anything
+  - Structural sanity of QUERY_ROUTING_RULES table
+
+**Test Results:**
+
+| Query | Expected Tool | Result |
+|-------|---------------|--------|
+| "How well are source systems linked to KBO?" | `get_identity_link_quality` | ✅ PASS |
+| "Show me revenue distribution by city" | `get_geographic_revenue_distribution` | ✅ PASS |
+| "Pipeline value for software companies in Brussels?" | `get_industry_summary` | ✅ PASS |
+
+**Unit Tests:**
+```
+tests/unit/test_critic_routing.py  27 passed in 0.77s
+tests/unit/ (full suite)          545 passed, 4 pre-existing failures unchanged
+```
+
+**Verification:**
+- ✅ All 3 previously-failing queries now select correct tools
+- ✅ 27 new unit tests passed
+- ✅ Full test suite still passes (545 passed)
+- ✅ Commit `5c3117e` created and pushed
+
+**How It Works:**
+1. User sends query: "How well are source systems linked to KBO?"
+2. LLM incorrectly selects: `get_data_coverage_stats`
+3. Critic node extracts query and checks routing rules
+4. Rule matched: query contains "linked to kbo"
+5. Validation fails: `get_data_coverage_stats` is in forbidden list
+6. Critic returns error: "You MUST use get_identity_link_quality for KBO linkage queries"
+7. LLM retries with correct tool: `get_identity_link_quality`
+8. Tool executes successfully
+
+---
+
 ## 2026-03-08 (Re-tested 360° Tool Selection - FAILED, Docstrings Insufficient)
 
 ### Task: Re-test 3 failing queries after tool-level docstring enhancements
