@@ -3,7 +3,7 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-08T23:10:00+01:00
+  updated_at: 2026-03-08T23:24:41+01:00
   updated_by: agent
   repo_head:
     value: fe9d51a
@@ -1414,10 +1414,10 @@ active_problems:
     owner: agent
     next_action: Keep the broader security sweep focused on unsafe real secrets and stale operational claims rather than the now-resolved enrich_monitor fallback.
   illustrated_guide_screenshot_mismatches:
-    status: resolved
-    severity: none
+    status: observed
+    severity: medium
     discovered_at: 2026-03-08
-    summary: The Illustrated Guide package now contains the core local-only business-case proof, and the 2026-03-08 v3.2 local polish pass fixed the page-1 ordering, rebuilt the CSV proof page as a self-contained artifact view, and aligned the maturity/privacy wording to the evidence tables. Remaining follow-up is the still-open count-semantics, CSV-integrity, code-box, and final visual-hierarchy cleanup items.
+    summary: The Illustrated Guide is now a credible local-only evidence pack for the core CDP+AI POC slice, but the 2026-03-08 v3.2 review surfaced a narrower v3.3 credibility pass: fix mixed-year timestamps, align screenshot-visible labels with the prose, add the count-semantics dictionary, tighten maturity wording, improve code/API-page styling, clean up the PDF text layer/export quality, and package the business-case acceptance criteria in a reviewer-friendly appendix or matrix.
     evidence:
       - Audit report: docs/ILLUSTRATED_GUIDE_AUDIT.md
       - docs/ILLUSTRATED_GUIDE.md now uses chatbot_360_bbs_four_source_final_2026-03-08.png for the B.B.S. linked_all story
@@ -1436,27 +1436,34 @@ active_problems:
       - '`pandoc --pdf-engine=xelatex docs/ILLUSTRATED_GUIDE.md -o /tmp/ILLUSTRATED_GUIDE_v3_2_test.pdf` completed successfully on 2026-03-08 23:03 CET'
       - '`pdftotext -f 1 -l 10 -layout /tmp/ILLUSTRATED_GUIDE_v3_2_test.pdf` plus page image inspection confirmed that page 1 is now a real cover page, page 2 holds the contents, and the CSV proof page is self-contained around the opened spreadsheet artifact'
       - 'The same v3.2 test export retained the earlier page 9/10 table fixes: the screenshot inventory and sync-latency proof still render without the previous collisions'
+      - User review on 2026-03-08 judged v3.2 as the best version so far, rated it strong as an illustrated evidence guide, but still flagged timestamp inconsistency, screenshot/prose naming mismatch, flat code/API styling, and PDF text-layer quality as the main blockers to a stronger v3.3
+      - The same review concluded the guide conforms well to the core CDP+AI POC logic, but not yet to the full broader business-case scope around live multi-channel marketing, divisional websites, analytics/ads/social, and formal governance criteria
+      - The same review also flagged that the guide does not yet package the business-case acceptance criteria in a reviewer-friendly way: no requirement-by-requirement conformity matrix, no explicit `>=95% on 5 prompts` appendix, no clear audit-log/control appendix, and no deploy/IaC repeatability evidence page
     critical_mismatches:
-      - issue: resend_platform_mismatch_removed_as_blocker
-        current: "User accepted Resend for the current POC on 2026-03-08"
-        actual: "Flexmail parity is no longer a near-term blocker unless the user reopens it"
-        fix: Keep roadmap/docs aligned to Resend as the accepted activation path for now
-      - issue: privacy_uid_boundary_not_demonstrated
-        current: "Guide text must not claim a fully UID-only runtime while the event stream still carries raw email fields"
-        actual: "Observed runtime shows anonymous Tracardi profiles plus a PII-light projection path, but email.opened/email.clicked events still include raw email properties"
-        fix: Keep docs aligned to the partial privacy boundary now verified, and treat a true UID-only event stream as future implementation work
-      - issue: autotask_it1_evidence_missing
-        current: "Guide now uses a fresh B.B.S. screenshot that shows linked_all and explicit 4-source linkage"
-        actual: "Fresh screenshot evidence and backend SQL proof now align on one linked_all profile with ticket/contract data"
-        fix: Keep the screenshot-plus-SQL evidence aligned while closing the remaining UID-first/privacy gap
-      - issue: count_consistency_unresolved
-        current: "Guide now labels 1,652 segment members, 1,529 activation test members, and 101 CSV rows by scope"
-        actual: "The figures are now explicitly framed as canonical full scope vs narrower activation-test scope vs preview export sample"
-        fix: Keep future captions using the same scope labels
-      - issue: business_value_story_incomplete
-        current: "Guide now includes B.B.S.-linked website behavior writeback proof in addition to the four-source, Resend, and event-processor evidence"
-        actual: "A demo-labeled local website session is now written to canonical event_facts for the same B.B.S. UID, closing the last core business-value proof gap"
-        fix: Treat remaining work as formatting/precision cleanup, not as a missing core story
+      - issue: api_timestamp_inconsistency
+        current: "Pages 8-9 still show `2024-03-08` API timestamps while the rest of the guide and screenshot set are dated `2026-03-08`"
+        actual: "The mixed-year evidence reads like an old seeded example and weakens the guide's freshness/canonical-truth posture"
+        fix: Regenerate the API evidence or relabel it explicitly so the guide has one coherent date story
+      - issue: audience_label_screenshot_prose_mismatch
+        current: "The prose explains the renamed Brussels IT subset, but the visible UI screenshot still says `KBO Companies - Test Audience`"
+        actual: "The mismatch is understandable but still visually weakens canonical naming and audit confidence"
+        fix: Either capture a fresh screenshot after renaming or rewrite the caption so the visible label is clearly presented as the historical UI name
+      - issue: count_dictionary_still_missing
+        current: "The guide now frames `1,652`, `1,529`, `190`, `189`, and `101`, but readers still infer the exact meaning of each count"
+        actual: "The count semantics are much better than before, but they are not yet defined in one small canonical metrics dictionary"
+        fix: Add a compact count-semantics dictionary near the evidence overview
+      - issue: autotask_maturity_wording_needs_tightening
+        current: "`Linkage Status: Production-ready` sits next to `Data Mode: Demo-backed`"
+        actual: "The wording is defensible, but a skeptical reader can still read it as over-optimistic without the note"
+        fix: Separate linkage readiness from data maturity or soften the label
+      - issue: business_case_scope_boundary
+        current: "The guide is strong evidence for the core CDP+AI POC"
+        actual: "It does not yet prove the broader future-state business-case scope across live website analytics, ads/social, or group-wide production orchestration"
+        fix: Keep companion-doc framing explicit that this is a credible POC slice, not proof of the entire vision
+      - issue: acceptance_criteria_not_packaged
+        current: "The repo contains routing/tool verification and hardening evidence, but the guide does not yet let a reviewer tick off the business-case acceptance criteria cleanly"
+        actual: "A skeptical reviewer still cannot see a compact conformity matrix for `>=95% on 5 prompts`, audit-log/control evidence, and deploy/IaC repeatability"
+        fix: Add a requirement-by-requirement conformity matrix or appendix and mark each criterion as proven, partial, or future work
     missing_demonstrations:
       - demonstration: uid_first_privacy_layer
         priority: critical
@@ -1472,8 +1479,8 @@ active_problems:
         status: resolved_via_populated_resend_audience_189_unique_contacts
       - demonstration: count_scope_alignment
         priority: critical
-        description: Reconcile and label the 1,652 total, 1,529 narrower test scope, and 101-row CSV preview
-        status: resolved_in_guide_text
+        description: Reconcile and label the 1,652 total, 1,529 narrower test scope, 190 Brussels subset rows, 189 unique activation contacts, and 101-row CSV preview
+        status: partially_resolved_dictionary_still_missing
       - demonstration: cross_sell_multi_division_value
         priority: high
         description: Show cross-sell or up-sell recommendation plus cross-division revenue visibility for the same account
@@ -1484,8 +1491,24 @@ active_problems:
         status: guide_ready_demo_labeled_writeback_proof_recorded
       - demonstration: csv_export_validation
         priority: medium
-        description: Opened CSV showing all 26 fields with real data in spreadsheet view
-        status: complete
+        description: Opened CSV showing all 26 fields with real data in spreadsheet view plus stronger traceability through checksum/query ID
+        status: artifact_view_complete_traceability_still_partial
+      - demonstration: api_evidence_freshness_consistency
+        priority: critical
+        description: Keep the guide's API evidence on the same date story as the rest of the PDF or explicitly label it as seeded/demo output
+        status: pending
+      - demonstration: pdf_export_text_layer_quality
+        priority: high
+        description: Remove the `ffi`/broken-word extraction artifacts so the PDF stays searchable, copyable, and accessible
+        status: pending
+      - demonstration: acceptance_criteria_reporting
+        priority: high
+        description: Package the business-case acceptance criteria as a reviewer-friendly appendix or matrix, including prompt-accuracy proof, audit-log/control evidence, and deploy/IaC repeatability status
+        status: pending
+      - demonstration: broader_multi_channel_scope
+        priority: medium
+        description: Add live evidence for website analytics, ads/social, and wider multi-division channel orchestration if the guide is later expected to prove the full business-case scope
+        status: pending
     mock_data_gaps:
       - source: teamleader
         current: 72 companies
@@ -1506,9 +1529,9 @@ active_problems:
       - privacy_architecture_alignment
       - business_case_alignment
     owner: agent
-    next_action: 
+    next_action:
       - Latest local guide export is `docs/ILLUSTRATED_GUIDE_v3.2.pdf`, with the cover-page, CSV-proof, and wording cleanup verified locally
-      - Next guide cleanup step: add the canonical count-semantics dictionary, finish the CSV checksum/query-ID proof, and do one final visual-hierarchy/code-box pass without changing the verified content claims
+      - Next guide cleanup step is a focused v3.3 credibility pass: fix the 2024/2026 API timestamps, add the count-semantics dictionary, finish the CSV checksum/query-ID proof, tighten the Autotask maturity wording, improve the API/code-page styling plus PDF text-layer/export quality, and then add a short business-case conformity/acceptance-criteria appendix without changing the verified content claims
   local_compose_projection_tables_missing:
     status: resolved
     severity: medium

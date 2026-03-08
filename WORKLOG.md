@@ -4,6 +4,76 @@
 
 ---
 
+### Task: Expand guide backlog from v3.3 polish to business-case conformity tracking
+
+**Type:** docs_or_process_only
+**Status:** COMPLETE
+**Timestamp:** 2026-03-08 23:22 CET
+**Git Head:** `3af6716` at session start
+
+**Summary:**
+Folded the second user review into the planning docs so the project roadmap now distinguishes between two kinds of remaining work: polishing the evidence pack itself, and expanding what the project proves against the broader business case. The review made it clear that the guide is strong for the core POC slice, but still lacks reviewer-friendly acceptance-criteria packaging and broader live-channel coverage if it is later expected to support the full IT1/NewCo vision.
+
+**Doc / queue updates made:**
+- Added explicit business-case conformity and acceptance-criteria work items to `NEXT_ACTIONS.md` and `BACKLOG.md`
+- Downgraded roadmap wording that sounded like the `>=95%` acceptance criterion was already packaged inside the guide
+- Added medium-term backlog items for live website/analytics/ads/social evidence so the broader business-case scope is tracked separately from the current POC slice
+- Updated `PROJECT_STATE.yaml` and `STATUS.md` so the current guide problem record now includes the acceptance-criteria packaging gap
+
+**Verification:**
+```bash
+rg -n "95%|business-case conformity|acceptance-criteria|Matomo|GA|Google Ads|social|website" BACKLOG.md NEXT_ACTIONS.md STATUS.md PROJECT_STATE.yaml
+rg -n "95%|correct tool selection" docs/BUSINESS_CASE.md docs/ILLUSTRATED_GUIDE.md NEXT_ACTIONS.md BACKLOG.md
+```
+
+**Observed Results:**
+- The current guide position is now explicit: strong core-POC proof, partial conformity to the broader business case, and clear backlog separation between packaging gaps vs missing scope
+- The active queue no longer implies that the `>=95%` acceptance criterion is already packaged in a reviewer-friendly way inside the evidence guide
+
+**Next Step:**
+- After the direct v3.3 guide fixes, add a short requirement-by-requirement conformity appendix or matrix against `docs/BUSINESS_CASE.md`
+
+---
+
+### Task: Reclassify Illustrated Guide backlog from v3.2 polish to v3.3 credibility pass
+
+**Type:** docs_or_process_only
+**Status:** COMPLETE
+**Timestamp:** 2026-03-08 23:17 CET
+**Git Head:** `3af6716` at session start
+
+**Summary:**
+Folded the latest user review into the live planning docs so the guide is no longer tracked as generic remaining polish only. The review is positive overall, but it surfaced several specific v3.3 blockers that materially affect credibility: mixed `2024` vs `2026` timestamps in the API evidence, a remaining screenshot/prose audience-name mismatch, Autotask maturity wording that still reads slightly too strong, visually flat API/code pages, and PDF text-layer/export artifacts.
+
+**Doc / queue updates made:**
+- Updated `PROJECT_STATE.yaml` to reopen the Illustrated Guide problem record as an active observed issue instead of a resolved one, with the new v3.3 credibility gaps captured explicitly
+- Updated `NEXT_ACTIONS.md` so the active guide queue now tracks the named v3.3 issues rather than the older generic `3 precision + 3 formatting` summary
+- Updated `BACKLOG.md` so the roadmap now treats the guide as strong proof for the core POC/business-case slice, while keeping the broader multi-channel future-state scope explicitly out of the current evidence claim
+- Updated `STATUS.md` so the human-readable snapshot matches the new guide position and remaining blockers
+
+**Verification:**
+```bash
+pwd
+git status --short
+git log --oneline --decorate -n 5
+sed -n '1,260p' AGENTS.md
+sed -n '1,220p' STATUS.md
+sed -n '1,260p' PROJECT_STATE.yaml
+sed -n '1,260p' NEXT_ACTIONS.md
+sed -n '1,260p' BACKLOG.md
+rg -n "illustrated_guide|timestamp|count semantics|maturity label|text-layer|code boxes|visual hierarchy" PROJECT_STATE.yaml NEXT_ACTIONS.md BACKLOG.md
+```
+
+**Observed Results:**
+- The current worktree started clean and the guide/state docs all pointed at the same local v3.2 export
+- The new user feedback materially changed the active understanding of what is still wrong with the guide, so `PROJECT_STATE.yaml`, `STATUS.md`, `NEXT_ACTIONS.md`, and `BACKLOG.md` all required alignment
+- The queue now clearly distinguishes: strong core-POC evidence already present vs specific v3.3 credibility and export issues still open
+
+**Next Step:**
+- Use the updated v3.3 queue to make the guide changes themselves in `docs/ILLUSTRATED_GUIDE.md`, starting with the timestamp inconsistency and the count-semantics dictionary
+
+---
+
 ### Task: Polish Illustrated Guide v3.2 cover page, CSV proof page, and wording
 
 **Type:** docs_or_process_only
