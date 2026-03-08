@@ -51,6 +51,7 @@ infra/**/terraform.tfvars
 _.zip
 ngrok-*.tgz
 logs/import_kbo_state.json
+logs/enrichment/*_cursor.json
 enrichment_run_result.json
 .enrichment.pid
 

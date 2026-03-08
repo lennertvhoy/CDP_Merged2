@@ -12,7 +12,7 @@
 
 **Status:** REOPENED - Published, but not yet acceptable as the business-case source of truth
 **Discovered:** 2026-03-08 (initial audit), reopened 2026-03-08 via direct user feedback
-**Last Updated:** 2026-03-08 19:20 CET
+**Last Updated:** 2026-03-08 20:35 CET
 **Severity:** CRITICAL
 **Guide:** `docs/ILLUSTRATED_GUIDE.md` v2.0  
 **Audit Report:** `docs/ILLUSTRATED_GUIDE_AUDIT.md`
@@ -25,19 +25,16 @@
 
 | Evidence | Status | Limitation |
 |----------|--------|------------|
-| B.B.S. Entreprise screenshot | Partial | The current screenshot still shows only KBO + Teamleader + Exact, but the backend now verifies the same account as `linked_all` with Autotask support data |
-| NL segment creation | Partial | Shows a canonical `1,652`-company result, but the guide still mixes `1,652`, `1,529`, and `101` without consistent scope labels |
+| B.B.S. Entreprise screenshot | Partial | Fresh screenshot now shows `identity_link_status=linked_all` and explicit 4-source linkage, but the guide still does not prove a UID-first runtime path or a richer one-screen business-value story |
+| NL segment creation | Partial | The guide now labels `1,652` canonical scope, `1,529` narrower activation-test scope, and `101` CSV preview rows, but it still lacks a populated downstream audience screenshot |
 | Resend activation POC tests | Partial | Technical path exists, but the guide still lacks a populated audience screenshot for the canonical segment |
-| CSV export artifact | Partial | File exists, but the guide still needs explicit sample-vs-total framing |
+| CSV export artifact | Partial | The guide now labels `101` as a preview export, but it still lacks opened-file/spreadsheet proof |
 
 #### Remaining blockers
 
 | Gap | Priority | What still needs to be shown or corrected |
 |-----|----------|-------------------------------------------|
-| **Guide refresh after four-source backend fix** | **CRITICAL** | **OBSERVED IMPLEMENTATION FIX (2026-03-08 19:20 CET):** `unified_company_360` now includes Autotask and returns `linked_all=1` for B.B.S. Entreprise with `autotask_open_tickets=1`, `autotask_total_contracts=1`, and `total_source_count=4`. The blocker is now refreshing `docs/ILLUSTRATED_GUIDE.md` so it reflects the new backend truth instead of the old false "15 linked companies" narrative. |
 | UID-first privacy proof | CRITICAL | Show Tracardi/runtime evidence using UID-first operational data, or explicitly document the current privacy divergence |
-| Guide visual refresh for linked-all profile | MEDIUM | The guide now includes SQL-backed four-source proof for B.B.S. Entreprise, but the screenshot itself still visually shows only the three-source portion of the same story |
-| Count consistency | CRITICAL | Reconcile and label `1,652` total, `1,529` narrower activation test scope, and `101` CSV preview rows |
 | Full 360 proof | CRITICAL | Show visible KBO + CRM + financial + support/behavior context in one coherent demonstration |
 | Business-value demonstrations | HIGH | Add cross-sell/up-sell, multi-division revenue, and website behavior evidence |
 | Next Best Action / writeback proof | HIGH | Show recommendation generation, multi-source identity resolution, and engagement writeback evidence |
@@ -48,7 +45,7 @@
 - [x] Implement Autotask into `unified_company_360` with KBO linking and verify one `linked_all` company
 - [ ] Demonstrate UID-only Tracardi/runtime evidence or explicitly document the current privacy divergence
 - [x] Show one account with KBO + Teamleader + Exact + Autotask in the same story
-- [ ] Resolve the `1,652` / `1,529` / `101` count framing in the guide
+- [x] Resolve the `1,652` / `1,529` / `101` count framing in the guide
 - [ ] Capture cross-sell, multi-division, and Next Best Action evidence
 - [ ] Capture identity-resolution and engagement-writeback evidence
 

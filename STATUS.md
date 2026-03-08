@@ -2,15 +2,15 @@
 
 **Platform:** Azure target architecture with local-only execution mode
 **Current Execution Mode:** Local-only (`Azure deployment path paused to save costs`)
-**Last Updated:** 2026-03-08 19:20 CET
+**Last Updated:** 2026-03-08 20:35 CET
 **Purpose:** Human-readable current snapshot
 **Structured Source:** `PROJECT_STATE.yaml`
 
 ## Current Headline
 
 - `observed` from 2026-03-08 19:20 CET: **FOUR-SOURCE 360 BACKEND IMPLEMENTED LOCALLY.** Migration `007_add_autotask_to_unified_360.sql` plus a full `scripts/sync_autotask_to_postgres.py --full` run now produce one real `linked_all` company in `unified_company_360`: B.B.S. Entreprise with KBO + Teamleader + Exact + Autotask, `autotask_open_tickets=1`, `autotask_total_contracts=1`, and `total_source_count=4`.
-- `reported` from 2026-03-08 19:20 CET via direct user audit plus live recheck: **Illustrated Guide v2.0 is still not yet acceptable as the business-case source of truth.** The four-source backend contradiction is fixed, and the Resend-for-Flexmail swap remains accepted for the POC, but the guide still needs refreshed linked-all evidence, UID-first privacy proof, multi-division and behavioral value demonstrations, and clearer framing of the `1,652` / `1,529` / `101` counts.
-- `observed` from 2026-03-08 16:05 CET: **The current 360° screenshot is now stale relative to the backend truth.** It still visually proves only KBO + Teamleader + Exact linkage, while the backend now exposes B.B.S. Entreprise as `linked_all` with Autotask support data included in the same query path.
+- `observed` from 2026-03-08 18:11 CET: **FRESH FOUR-SOURCE CHATBOT EVIDENCE CAPTURED.** `chatbot_360_bbs_four_source_final_2026-03-08.png` now shows B.B.S. Entreprise with `identity_link_status=linked_all` and `Sources linked: KBO + Teamleader + Exact + Autotask (4 sources)`.
+- `reported` from 2026-03-08 20:35 CET via direct user handoff plus local doc alignment: **Illustrated Guide v2.0 is still not yet acceptable as the business-case source of truth.** The four-source screenshot and the `1,652` / `1,529` / `101` count framing are now corrected in the guide, but the remaining blockers are UID-first privacy proof, a populated Resend audience, and richer business-value / writeback demonstrations.
 - `reported` from 2026-03-08 16:52 CET via direct user instruction: **Resend is acceptable as the current activation platform.** Do not treat Flexmail parity as a near-term blocker unless the user explicitly reopens that requirement.
 - `observed` from 2026-03-08 15:50 CET: **DEMO DATA POPULATION SCRIPTS COMPLETE!** Added `scripts/populate_hyperrealistic_demo_data.py` and `scripts/create_360_demo_companies.py` for creating realistic Belgian company data across Teamleader, Exact, and KBO. Commit `51ac939`.
 - `observed` from 2026-03-08 14:45 CET: **OLLAMA AI DESCRIPTION ENRICHMENT SCALING UP!** Now at 441 AI descriptions (+371 from this session), batch of 1000 in progress. Coverage: 0.023% of 1.94M companies. Successfully running ~1.5s per description with NACE code caching. Run: `export DESCRIPTION_ENRICHER=ollama && python scripts/enrich_companies_batch.py --enrichers description --limit 1000`
@@ -68,7 +68,7 @@
 ## Top Risks
 
 - If the local-only mode is not kept explicit in the docs, future sessions will keep reopening Azure verification and deployment work that is intentionally paused for cost control.
-- The Illustrated Guide is published but not yet business-case-safe as a source-of-truth artifact; remaining blockers are refreshed evidence for the new linked-all backend truth, the UID/privacy proof, cross-division and behavioral evidence, and consistent count framing.
+- The Illustrated Guide is published but not yet business-case-safe as a source-of-truth artifact; the fresh linked-all screenshot and count labels are now in place, but UID/privacy proof, populated audience evidence, and cross-division / behavioral value demonstrations are still missing.
 - All stale `.openclaw` path assumptions have been cleaned from active helper/setup scripts; they now use repo-relative imports or `resolve_kbo_zip_path()`.
 - The compose-managed chatbot requires a populated `.env.local` and exclusive use of port `8000`; any leftover host-side `uvicorn` process will block the default local stack until it is stopped.
 - `sync_status` is still misleading as an enrichment-completion signal because every row is marked enriched while field coverage remains sparse.
@@ -84,7 +84,7 @@
 ## Immediate Focus
 
 1. **Keep the active work local-only** and avoid Azure deployment, Azure smoke, or cloud verification until the user explicitly reopens that path
-2. **Refresh Illustrated Guide alignment** around the new linked-all backend proof, UID-first privacy evidence, count consistency, and explicit business-value demonstrations
+2. **Finish Illustrated Guide alignment** around UID-first privacy evidence, populated audience proof, and explicit business-value demonstrations
 3. **Treat Resend as the accepted POC activation platform** unless the user later reopens a Flexmail requirement
 4. **Capture richer local runtime evidence** for cross-sell, multi-division rollups, website behavior, identity resolution, and engagement writeback
 5. **Keep the compose-managed stack as the default local runtime** and treat host-side `start_chatbot.sh` as the edit/run fallback rather than the primary deployment path

@@ -11,6 +11,8 @@ The Illustrated Guide presents a compelling POC narrative but contains **critica
 
 **Grade: C+** - Components exist but end-to-end integration is not proven with realistic data.
 
+**Update (2026-03-08 20:35 CET):** The guide has since been refreshed with `chatbot_360_bbs_four_source_final_2026-03-08.png`, and the count framing is now explicitly labeled as `1,652` canonical full scope, `1,529` narrower 62xxx activation-test scope, and `101` preview export rows. The remaining active blockers are UID-first/privacy proof, a populated Resend audience, workflow execution evidence, and richer business-value demonstrations.
+
 ---
 
 ## Critical Mismatches (Screenshots ≠ Reality)
@@ -29,15 +31,15 @@ The Illustrated Guide presents a compelling POC narrative but contains **critica
 
 ---
 
-### 2. ❌ DATA SCALE TABLE - INCONSISTENT NUMBERS
+### 2. ⚠️ DATA SCALE TABLE - SCOPE LABELS REQUIRED
 | Source | Guide Shows | Actual (PROJECT_STATE.yaml) |
 |--------|-------------|----------------------------|
 | Exact Online invoices | 60 | 78 |
-| Software in Brussels | 1,652 (Phase 2) vs 1,897 (Phase 3) | 1,897 (as of latest verification) |
+| Software in Brussels | 1,652 (canonical full scope) vs 1,529 (narrower activation test) | Both are valid when labeled by scope |
 
-**Issue:** Phase 2 shows 1,652 software companies in Brussels, Phase 3 shows 1,897. The difference is explained in PROJECT_STATE.yaml (NACE code resolution scope), but this discrepancy without explanation undermines credibility.
+**Issue:** Earlier guide revisions mixed these numbers without explaining scope. The current guide now labels `1,652` as the canonical 6-code software segment, `1,529` as the narrower 62xxx-only activation test, and `101` as the preview export file size.
 
-**Fix Required:** Explain the NACE resolution difference or use consistent numbers throughout.
+**Remaining Fix Required:** Keep those scope labels stable in future edits and avoid reverting to unlabeled counts.
 
 ---
 
@@ -81,7 +83,7 @@ The Illustrated Guide presents a compelling POC narrative but contains **critica
    - **Accounting Section (Exact):** Last invoice €8,500 (Paid), Outstanding: €0
    - **Enrichment:** Website, AI description, Geolocation
 
-**Current State:** The `unified_company_360` view exists and query tools are implemented, but NO DEMONSTRATION exists in the guide.
+**Current State:** The guide now contains a fresh B.B.S. Entreprise screenshot that explicitly shows `identity_link_status=linked_all` and `Sources linked: KBO + Teamleader + Exact + Autotask (4 sources)`, plus matching SQL-backed backend proof. The remaining gap is not missing linkage proof; it is the absence of a UID-first runtime presentation and a richer single-shot business-value view.
 
 ---
 
@@ -190,10 +192,10 @@ The Illustrated Guide presents a compelling POC narrative but contains **critica
 - [ ] Update Exact Online sync screenshot/caption to show current state (258 GL accounts, 9 customers, 78 invoices)
 - [ ] Capture restaurant search screenshot showing actual 1,105 count and sample results
 - [ ] Capture email bounce processor showing full workflow diagram
-- [ ] Fix data scale table with current accurate numbers
+- [x] Fix data scale table with current accurate numbers and scope labels
 
 ### Priority 2: Generate Missing Demonstrations
-- [ ] **360° Golden Record:** Run query "Show me complete profile for [specific company]" and capture unified view
+- [x] **360° Golden Record:** Capture fresh B.B.S. Entreprise `linked_all` view and align the guide caption to the four-source backend proof
 - [ ] **Segment Activation:** Push 1,652 software companies segment to Resend, capture populated audience
 - [ ] **CSV Export:** Download and open CSV, screenshot showing all 9 fields with data
 
@@ -206,7 +208,7 @@ The Illustrated Guide presents a compelling POC narrative but contains **critica
 ### Priority 4: Additional Technical Verifications
 - [ ] Capture MCP server logs showing PostgreSQL queries
 - [ ] Trigger test bounce event, capture workflow execution logs
-- [ ] Document NACE resolution discrepancy (1,652 vs 1,897) with explanation
+- [x] Document NACE resolution discrepancy (`1,652` canonical full scope vs `1,529` narrower activation-test scope)
 
 ---
 

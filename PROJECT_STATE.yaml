@@ -3,7 +3,7 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-08T17:28:09+01:00
+  updated_at: 2026-03-08T20:35:00+01:00
   updated_by: agent
   repo_head:
     value: fe9d51a
@@ -1248,12 +1248,12 @@ active_problems:
     status: observed
     severity: critical
     discovered_at: 2026-03-08
-    summary: Illustrated Guide v2.0 is published but still not yet acceptable as the business-case source of truth. The four-source backend contradiction is now fixed in implementation, but the guide still needs refreshed evidence for the linked_all profile, UID-first/privacy proof, business-value demonstrations, and clearer count framing.
+    summary: Illustrated Guide v2.0 is published but still not yet acceptable as the business-case source of truth. The fresh linked_all screenshot and explicit `1,652` / `1,529` / `101` scope labels are now in place, but the guide still lacks UID-first/privacy proof, a populated activation audience, and richer business-value / writeback demonstrations.
     evidence:
       - Audit report: docs/ILLUSTRATED_GUIDE_AUDIT.md
-      - docs/ILLUSTRATED_GUIDE.md still mixes 1,652 segment members, 1,529 activation test members, and 101 CSV rows without a consistent explanatory frame
+      - docs/ILLUSTRATED_GUIDE.md now uses chatbot_360_bbs_four_source_final_2026-03-08.png for the B.B.S. linked_all story
+      - docs/ILLUSTRATED_GUIDE.md now labels 1,652 as the canonical 6-code software scope, 1,529 as the narrower 62xxx activation-test scope, and 101 as the preview export file size
       - docs/ILLUSTRATED_GUIDE.md Phase 3 shows Resend readiness and POC results, but not a populated audience containing the canonical CDP segment
-      - docs/ILLUSTRATED_GUIDE.md still needs refreshed wording/screenshots for the now-live linked_all B.B.S. profile and the current Autotask integration status
       - User feedback 2026-03-08 accepted Resend in place of Flexmail for the current POC, so the email-platform swap is not a blocker
       - User feedback 2026-03-08 flagged the privacy architecture contradiction: guide screenshots expose direct PII while the target architecture requires UID-first operational/runtime evidence
       - User feedback 2026-03-08 flagged missing business-case proof for cross-sell, multi-division revenue visibility, website behavior, next-best-action, and engagement writeback
@@ -1268,13 +1268,13 @@ active_problems:
         actual: "Target architecture requires UID-first operational evidence with PII resolved only at authorized presentation/activation steps"
         fix: Demonstrate the UID proxy layer or explicitly document the current architectural divergence
       - issue: autotask_it1_evidence_missing
-        current: "Guide evidence for Autotask/IT1 is stale and still presented as mock-ready"
-        actual: "Backend proof now exists for one linked_all profile with ticket/contract data, but the guide needs refreshed evidence for the same story"
-        fix: Refresh the guide with the linked_all B.B.S. example and explicit Autotask support fields
+        current: "Guide now uses a fresh B.B.S. screenshot that shows linked_all and explicit 4-source linkage"
+        actual: "Fresh screenshot evidence and backend SQL proof now align on one linked_all profile with ticket/contract data"
+        fix: Keep the screenshot-plus-SQL evidence aligned while closing the remaining UID-first/privacy gap
       - issue: count_consistency_unresolved
-        current: "Guide shows 1,652 segment members, 1,529 activation test members, and 101 CSV rows"
-        actual: "These may be reconcilable, but the guide does not label canonical total vs narrower test scope vs preview sample"
-        fix: Normalize the figures or annotate each number with exact scope
+        current: "Guide now labels 1,652 segment members, 1,529 activation test members, and 101 CSV rows by scope"
+        actual: "The figures are now explicitly framed as canonical full scope vs narrower activation-test scope vs preview export sample"
+        fix: Keep future captions using the same scope labels
       - issue: business_value_story_incomplete
         current: "Current screenshots do not visibly prove cross-sell, multi-division value, website behavior, next-best-action, or engagement writeback"
         actual: "These are part of the stated business case and required demonstrations"
@@ -1287,7 +1287,7 @@ active_problems:
       - demonstration: autotask_it1_360_proof
         priority: critical
         description: Show one company linked across KBO + Teamleader + Exact + Autotask in the unified 360 story
-        status: backend_verified_refresh_pending
+        status: screenshot_and_backend_proof_recorded
       - demonstration: segment_activation_real_data
         priority: high
         description: Resend audience actually containing 1,652 contacts from CDP
@@ -1295,7 +1295,7 @@ active_problems:
       - demonstration: count_scope_alignment
         priority: critical
         description: Reconcile and label the 1,652 total, 1,529 narrower test scope, and 101-row CSV preview
-        status: not_started
+        status: resolved_in_guide_text
       - demonstration: cross_sell_multi_division_value
         priority: high
         description: Show cross-sell or up-sell recommendation plus cross-division revenue visibility for the same account
@@ -1331,8 +1331,7 @@ active_problems:
     next_action: 
       - Keep Resend as the accepted current POC activation platform unless the user reopens Flexmail
       - Demonstrate the UID-first privacy boundary or explicitly document the current divergence
-      - Show Autotask/IT1 evidence in the unified profile story
-      - Align 1,652 vs 1,529 vs 101 counts with explicit scope labels
+      - Keep the fresh linked_all screenshot and captioning aligned with the backend proof
       - Capture cross-sell, multi-division, website-behavior, next-best-action, identity-resolution, and engagement-writeback evidence
   postgresql_city_query_timeouts:
     status: resolved
