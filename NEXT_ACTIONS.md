@@ -568,11 +568,19 @@ Evidence:
 
 1. ✅ **Document the CE limitation** in the Illustrated Guide - COMPLETED 2026-03-08
 2. ✅ **Update guide expectations** - workflow screenshots show draft structure, not live execution - COMPLETED 2026-03-08
-3. **Consider alternatives** for workflow execution proof:
-   - Implement a simple Python-based event processor as a bridge
-   - Use webhook callbacks to update PostgreSQL directly
-   - Document that Tracardi Premium would be required for full workflow automation
-4. Keep Resend transport setup as supporting infrastructure
+3. ✅ **Implement Python-based event processor** - COMPLETED 2026-03-08
+   - Created `scripts/cdp_event_processor.py` with:
+     - Resend webhook processing with signature verification
+     - Engagement score tracking in PostgreSQL
+     - Next Best Action recommendation generation
+     - Cross-sell opportunity detection by NACE code
+     - Multi-division sales insights
+     - REST API: `/api/next-best-action/{kbo}`, `/api/engagement/leads`
+4. **Capture evidence for Illustrated Guide:**
+   - Push 1,652 IT services segment to Resend and capture populated audience
+   - Screenshot NBA recommendations from event processor
+   - Test engagement scoring with simulated events
+5. Keep Resend transport setup as supporting infrastructure
 
 ## Paused
 

@@ -225,7 +225,11 @@ Total Members: 1,652 (canonical full-scope segment)
 
 **Impact:** Workflow screenshots in this guide show the *draft structure* of automation workflows. Live execution of email processing (bounce handling, engagement tracking, etc.) requires either:
 1. Tracardi Premium/Enterprise license, or
-2. Alternative Python-based event processor (bridge script available at `scripts/resend_to_tracardi_bridge.py`)
+2. **Python-based Event Processor** (implemented as alternative - see `scripts/cdp_event_processor.py`)
+   - Resend webhook processing with engagement tracking
+   - Next Best Action recommendation generation
+   - Cross-sell opportunity detection
+   - REST API for sales leads: `/api/engagement/leads`
 
 ### Source System Integration Status
 
