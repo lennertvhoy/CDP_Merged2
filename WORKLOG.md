@@ -1349,3 +1349,65 @@ SELECT COUNT(*) FROM companies WHERE ai_description IS NOT NULL;
 - `NEXT_ACTIONS.md`
 - `PROJECT_STATE.yaml`
 
+
+---
+
+## 2026-03-08 (UX Audit and Fixes)
+
+### Task: Proactive UX Audit - Critical Issues Discovery and Fixes
+
+**Type:** docs / app_code  
+**Status:** PARTIAL (Ongoing)  
+**Timestamp:** 2026-03-08 15:35 CET  
+**Git Head:** `a2a209f`
+
+**User Intervention Required:**
+This audit was triggered after user noted that critical issues were only being fixed when explicitly pointed out. This is unacceptable for production software.
+
+**Audit Scope:**
+All tools and services for silent failures, poor error messages, and lack of diagnostics.
+
+**Issues Found and Fixed:**
+
+### ✅ FIXED: Issue #1 (from previous) - 360° Search Limited to Linked Records
+- **File:** `src/services/unified_360_queries.py`
+- **Fix:** Enhanced `search_companies_unified()` to search across all sources
+- **Commit:** `ab3ee2d`
+
+### ✅ FIXED: Issue #3 - Segment Export Fails Silently  
+- **File:** `src/ai_interface/tools/export.py`
+- **Problem:** Generic RuntimeError when segment not found or empty
+- **Fix:** Added diagnostics dict showing PostgreSQL vs Tracardi status, counts, errors
+- **Commit:** `a2a209f`
+
+### ✅ FIXED: Issue #4 - Resend Push Fails Without Explanation
+- **File:** `src/ai_interface/tools/email.py`
+- **Problem:** Returned plain text with no breakdown of why push failed
+- **Fix:** Added structured JSON response with:
+  - Segment counts from both sources
+  - Email availability statistics
+  - Profiles with/without emails
+  - Actionable suggestions
+- **Commit:** `a2a209f`
+
+### ⚠️ OPEN: Issue #6 - No Fuzzy Matching for Company Names
+- **File:** `src/services/unified_360_queries.py`
+- **Problem:** "Simon Brouwerij" won't match "Brouwerij Simon & Co"
+- **Status:** Documented in UX audit, requires trigram implementation
+
+### ⚠️ OPEN: Issue #2 - Identity Links Empty (from previous)
+- **Status:** Documented, reconciliation script created
+- **File:** `scripts/reconcile_teamleader_identities.py`
+
+**Process Changes Required:**
+1. Add negative path testing to CI/CD
+2. All tools must return structured diagnostics
+3. Empty results must explain WHY not just THAT
+4. Weekly proactive UX audits
+
+**Files Created:**
+- `docs/UX_AUDIT_2026-03-08.md` - Complete audit report
+- `scripts/reconcile_teamleader_identities.py` - Identity reconciliation tool
+
+---
+
