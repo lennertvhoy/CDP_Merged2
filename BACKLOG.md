@@ -2,7 +2,7 @@
 
 **Platform:** AZURE (VMs, Container Apps, OpenAI)  
 **Architecture:** Source systems PII truth + PostgreSQL intelligence truth + Tracardi activation runtime + AI chatbot  
-**Last Updated:** 2026-03-08 (Updated after business-case audit; Resend accepted for current POC, guide/business-value gaps reprioritized)
+**Last Updated:** 2026-03-08 (Roadmap realigned after source-of-truth review; core demo proof complete, final polish isolated)
 **Purpose:** Medium-term roadmap from the current repo state to a credible demo first and production readiness later
 
 ## How To Use This File
@@ -28,7 +28,7 @@ Current constraints that shape this roadmap:
 - Azure budget is approximately `EUR 150/month`
 - Azure deployment currently PAUSED for cost control (local-only mode active)
 - **DEMO ENVIRONMENTS AVAILABLE:** Teamleader and Exact demo envs accessible for integration
-- Autotask remains mock-first unless vendor access is granted
+- Autotask already has a production-capable client/sync path plus local unified-360 linkage, but the currently verified dataset still runs in demo mode until vendor access is granted
 - Resend is the accepted email activation platform for the current POC; Flexmail parity is not a near-term blocker unless the user explicitly reopens it
 - the user must do the final verification and wants at least one stable week before sign-off
 
@@ -97,7 +97,7 @@ These are included only where they appear likely to add real future value to thi
 
 **Why this matters:** The POC is not complete until we prove the full activation cycle works: Chatbot → Segment → Email Tool → Engagement → Enriched Profile.
 
-**Status:** ✅ **TECHNICAL POC COMPLETE** (2026-03-08) - Resend accepted for the current activation loop; remaining demo/business-case proof gaps are tracked in Milestone 0
+**Status:** ✅ **TECHNICAL POC COMPLETE** (2026-03-08) - Resend is accepted for the current activation loop; remaining work is source-of-truth polish, not missing loop closure
 
 | Priority | Item | Status | Result |
 |----------|------|--------|--------|
@@ -106,10 +106,14 @@ These are included only where they appear likely to add real future value to thi
 | Critical | **TEST: Webhook setup for engagement** | ✅ PASS | 6 events subscribed |
 | Critical | **TEST: Engagement writeback** | ✅ PASS | 4/4 events tracked (sent, delivered, opened, clicked) |
 | High | **Document POC completion evidence** | ✅ DONE | Test scripts: `scripts/test_poc_resend_activation.py`, `scripts/test_poc_activation.py` |
-| High | **Autotask evidence in demo story** | Pending | Current mock exists, but the business-case story still lacks visible IT1 ticket/contract evidence in the unified profile |
+| High | **Autotask evidence in demo story** | ✅ DONE | B.B.S. Entreprise now shows `1` open ticket and `1` active contract inside the unified 360 story |
+| High | **Clarify Resend audience naming** | Pending | The reused audience label is generic; captions should make the Brussels IT subset explicit |
+| High | **Document NBA scoring logic** | Pending | Surface the weights and thresholds behind `engagement_score=15`, `support_expansion`, and `re_activation` |
 
 **Accepted platform decision:** Use **RESEND** for the current POC.
 The user explicitly accepted the Resend swap on 2026-03-08, so Flexmail parity should not drive the near-term roadmap.
+
+**Execution note:** Tracardi CE workflow runtime is still licensed/blocked. The current working local automation path is the Python event processor, not live Tracardi workflow execution.
 
 **Why Resend stays on the active path:**
 - ✅ Full webhook management API (create/update/delete)
@@ -120,7 +124,7 @@ The user explicitly accepted the Resend swap on 2026-03-08, so Flexmail parity s
 
 **Prerequisites (all ✅ complete):**
 - PostgreSQL with 1.94M KBO records
-- Tracardi with 5 email workflows deployed
+- Tracardi event intake configured; CE workflow execution remains blocked, and the Python event processor covers the current local automation proof
 - Teamleader + Exact sync pipelines operational
 - Resend API client with full feature parity
 - AI chatbot with routing guard (≥95% accuracy achieved)
@@ -183,30 +187,28 @@ poetry run python scripts/test_poc_activation.py --mock
 | Critical | **CONNECT Teamleader demo environment** | ✅ COMPLETE | Production sync operational with real demo data flowing |
 | Critical | **CONNECT Exact Online demo environment** | ✅ COMPLETE | Production sync ready - OAuth tokens renewed 2026-03-08 |
 | Critical | **Real/mock/hybrid source matrix documentation** | ✅ COMPLETE | See PROJECT_STATE.yaml source_integrations section |
-| Critical | **POPULATE Hyperrealistic mock data** | NEW | Create 50+ realistic Belgian companies in Teamleader with matching Exact invoices |
+| Critical | **POPULATE Hyperrealistic connected demo data** | In progress | One flagship `linked_all` account is proven; scale to 10-50 coherent cross-source accounts only if the demo needs more breadth than the current single-story package |
 | Critical | Define a hyperrealistic integration standard | ✅ COMPLETE | Autotask mock with 5 companies, 5 tickets, 3 contracts complete |
-| Critical | **Re-open Illustrated Guide as business-case incomplete** | In progress | Stop treating the published guide as source-of-truth complete until the remaining business-case gaps are closed |
-| Critical | **Demonstrate the UID-first privacy boundary** | Pending | Show UID-only Tracardi/runtime evidence, or explicitly document the current privacy architecture divergence |
-| Critical | **Demonstrate IT1 / Autotask in the 360 story** | Pending | Show tickets/contracts linked into the same account narrative, or explicitly mark IT1 as not yet demonstrated |
-| Critical | **Resolve guide metric inconsistencies** | Pending | Reconcile `1,652` total, `1,529` narrower test scope, and `101` CSV preview rows with exact labels |
-| Critical | **CAPTURE Segment activation to Resend** | Pending | Show a populated Resend audience for the canonical CDP segment; Resend remains the accepted POC platform |
-| Critical | **FIX Illustrated Guide mismatches** | Pending | Update stale numbers and remove claims that exceed the visible evidence |
+| Critical | **Guide core business-case proof** | ✅ COMPLETE | Four-source 360, populated Resend audience, event-processor outputs, website writeback, privacy divergence note, and CSV opened-file proof are all now captured |
+| Critical | **Keep the guide source-of-truth clean** | In progress | The remaining work is naming clarity, wording precision, explicit logic, and one sync-latency proof chain |
+| Critical | **Clarify reused Resend audience evidence** | Pending | Make it explicit that `KBO Companies - Test Audience` contains the Brussels IT subset, or replace it with a better-named audience when plan limits allow |
+| Critical | **Clarify Autotask integration posture** | Pending | Keep the guide consistent: production-capable client + local unified-360 linkage, current verified data still demo-mode |
 | Critical | Stabilize the public demo flow | Pending | Eliminate prompt hangs and prove repeatable end-to-end demo success |
-| High | **Show cross-sell and multi-division value** | Pending | Capture a customer/account story with cross-division revenue and a concrete cross-sell or up-sell insight |
-| High | **Show behavioral data and engagement writeback** | Pending | Add website behavior, engagement events, and profile enrichment evidence tied to the same UID/account |
-| High | **Show Next Best Action and identity resolution depth** | Pending | Demonstrate recommendation generation plus identity links across KBO, CRM, accounting, and support sources |
+| High | **Surface NBA scoring and threshold logic** | Pending | Show why `engagement_score=15` leads to `support_expansion` + `re_activation` |
+| High | **Add explicit cross-division revenue proof** | Pending | Show one customer with revenue rolled up across divisions, not just recommendation output |
+| High | **Capture timestamped sync-latency proof** | Pending | Demonstrate one source update reaching the 360/query plane within the claimed sync interval |
+| High | **Keep privacy hardening on the roadmap** | Pending | Remove raw email fields from Tracardi event properties while preserving the current honest divergence note |
 | High | Build a real/mock/hybrid source matrix | ✅ COMPLETE | Documented in PROJECT_STATE.yaml |
-| High | Add a cleanup/organization queue for demo assets and stale narratives | Pending | Consolidate fixtures, sample payloads, and current-state summaries |
+| High | Add a cleanup/organization queue for demo assets and stale narratives | Pending | Consolidate fixtures, screenshots, and current-state summaries to reduce future drift |
 | High | Require user-owned final verification | Pending | Hold final demo sign-off until the user has tested it and seen one stable week |
 
 **Exit criteria:**
 - At least one real source-system connection or a clearly justified fallback plan exists
-- All missing systems have hyperrealistic mocks with explicit provenance
+- All remaining mock or hybrid paths are labeled explicitly with provenance
 - The user can run and trust the demo story end to end
-- **NEW:** Illustrated Guide screenshots match actual system state and do not overclaim business-case coverage
-- **NEW:** The guide proves the UID/privacy boundary or explicitly documents current divergence
-- **NEW:** The guide proves Autotask/IT1 coverage, or clearly marks it as out of scope for the current demo
-- **NEW:** The guide shows cross-division value, behavioral evidence, and engagement/writeback proof for the claims it makes
+- Guide screenshots and captions match the visible system state without overclaiming
+- The reused Resend audience and Autotask hybrid posture are explained clearly
+- Recommendation logic and sync-latency proof are documented for the claims that remain in scope
 
 ### Milestone 1: Finish Data Coverage And Enrichment
 
@@ -298,9 +300,9 @@ poetry run python scripts/test_poc_activation.py --mock
 |--------|---------------|-------------------------|
 | Teamleader | 1 company, 2 contacts | 50+ companies, 100+ contacts |
 | Exact Online | 9 customers, 78 invoices | 50+ customers, 200+ invoices |
-| Autotask | 5 companies, 5 tickets, 3 contracts | Linked ticket/contract history for the same demo accounts used in the 360 story |
-| Website behavior | Not yet demonstrated in guide | Visible page views/downloads/events for the same demo accounts |
-| Resend | 9 test emails | Populated audience evidence for the canonical demo segment |
+| Autotask | 5 companies, 5 tickets, 3 contracts | One `linked_all` account is already proven; scale linked ticket/contract history across more demo accounts only if broader IT1 proof is needed |
+| Website behavior | Demo-labeled writeback proof exists for B.B.S. | Scale behavior evidence beyond the single-account proof only if the demo narrative needs more breadth |
+| Resend | Populated audience proof exists for the Brussels IT subset | Improve audience naming/caption integrity or recapture when plan limits allow |
 
 **Mock Data Specification:**
 
@@ -342,8 +344,8 @@ With 50+ connected records:
 **Implementation Path:**
 1. Create companies in Teamleader demo environment via API/script
 2. Create matching customers/invoices in Exact Online
-3. Link Autotask tickets/contracts to the same demo accounts
-4. Add website-behavior events for a subset of the same demo accounts
+3. Scale Autotask tickets/contracts beyond the existing B.B.S. proof only if wider IT1 storytelling is needed
+4. Add website-behavior events for more demo accounts only if the single-account proof stops being sufficient
 5. Run sync scripts to populate PostgreSQL
 6. Verify identity linking via `source_identity_links` table
 7. Re-capture Illustrated Guide screenshots with rich, cross-source evidence
@@ -352,51 +354,46 @@ With 50+ connected records:
 
 ### Milestone 5: Replace Demo Integrations With Production Source-System Flows
 
-**Why this matters:** Teamleader, Exact, and Autotask are currently **demo/placeholder implementations only** (`DEMO_MODE = True`). The CDP cannot reach production readiness without real API integrations.
+**Why this matters:** Teamleader and Exact already use real API sync paths. The remaining source-system production gap is live Autotask access plus broader identity, consent, and PII-resolution hardening around those integrations.
 
-**Current State (Verified 2026-03-07):**
+**Current State (Verified 2026-03-08):**
 | Integration | File | Status | Gap |
 |-------------|------|--------|-----|
 | Teamleader | `scripts/sync_teamleader_to_postgres.py` | **PRODUCTION** | ✅ OAuth, real API, KBO matching |
-| Exact | `scripts/sync_exact_to_postgres.py` | **PRODUCTION** | ✅ OAuth, real API, pending credentials |
-| Autotask | `scripts/demo_autotask_integration.py` | Demo only | No zone discovery, no real API calls |
+| Exact | `scripts/sync_exact_to_postgres.py` | **PRODUCTION** | ✅ OAuth, real API, current local sync verified |
+| Autotask | `src/services/autotask.py`, `scripts/sync_autotask_to_postgres.py` | **HYBRID** | Production-capable client exists, but current verified data still uses demo mode until credentials/zone discovery are available |
 
-**What "Demo Only" Means:**
-- Files contain mock data structures
-- `DEMO_MODE = True` flag prevents real API calls
-- Show what data would look like but don't persist to database
-- Useful for UI prototyping, NOT for production
+**What "Hybrid" Means For Autotask:**
+- The client and sync script are production-capable
+- Default local proof persists demo-mode data into PostgreSQL
+- Migration `007_add_autotask_to_unified_360.sql` plus the sync path make that data queryable in the real unified 360 model
+- Switching from demo-mode data to live API data still requires credentials and zone discovery validation
 
 | Priority | Item | Status | What still needs to happen |
 |----------|------|--------|-----------------------------|
 | Critical | **Teamleader → PostgreSQL sync pipeline** | ✅ **COMPLETE** | Production sync operational with real demo data flowing |
-| Critical | **Exact Online → PostgreSQL sync pipeline** | ✅ **COMPLETE** | Production sync ready - pending OAuth credentials from user |
-| Critical | **Cross-source identity reconciliation** | **READY** | Once Teamleader + Exact data flows in, implement identity matching (company name, VAT, email domain) to create unified 360° view |
-| Critical | Build production Autotask API client | **BLOCKED** | No demo env available yet; keep mock-first unless access granted |
-| High | Prove IT1 business value with the current Autotask mock path | Pending | Even before production credentials, the demo story must visibly link tickets/contracts into the unified profile if IT1 remains in scope |
-| High | Build canonical identity reconciliation | **BLOCKED** | Needs source system data first |
+| Critical | **Exact Online → PostgreSQL sync pipeline** | ✅ **COMPLETE** | Production sync operational with real demo data flowing |
+| Critical | **Cross-source identity reconciliation** | Partial | One `linked_all` account exists; expand coverage and robustness beyond the flagship proof |
+| Critical | Validate live Autotask credentials and zone discovery | **BLOCKED** | Requires vendor access; once available, rerun the existing production-capable client outside demo mode |
+| High | Prove IT1 business value with the current Autotask hybrid path | ✅ COMPLETE | B.B.S. profile already shows ticket/contract evidence in the unified 360 story |
+| High | Build canonical identity reconciliation | Partial | VAT/KBO/name/email-domain matching works, but coverage and resiliency need expansion |
 | High | Implement consent/suppression flow | **BLOCKED** | Needs source system integrations |
 | Medium | Build PII resolution service | Pending | Can be designed in parallel |
 
-**Dependency Chain:**
-```
-This milestone blocks:
-├── Milestone 2 (360 data model - needs real source data)
-├── Milestone 3 (Projection/writeback - needs source events)
-├── Milestone 7 (Production readiness - needs end-to-end flow)
-└── All outbound activation features
-```
+**Dependency note:**
+- This milestone no longer blocks the local demo.
+- It still blocks full production readiness for support-data ingestion, consent, and privacy-safe outbound activation.
 
 **Recommended Approach:**
-1. Pick ONE source system (recommend Teamleader - simplest OAuth)
-2. Build production API client (auth, rate limiting, pagination)
-3. Implement data persistence to PostgreSQL
-4. Repeat for other systems
+1. Keep Teamleader and Exact as the real baseline integrations.
+2. Treat live Autotask access as the remaining source-system gap.
+3. Expand identity coverage beyond the current single `linked_all` account.
+4. Then productionize consent and PII-resolution services on top of the proven source paths.
 
 **Exit criteria:**
-- Real API clients exist for at least one source system
-- Data flows from source → PostgreSQL (not just demo data)
-- UID bridge works with real source system IDs
+- Real API clients exist for Teamleader and Exact, and live Autotask is validated when access exists
+- Data flows from source → PostgreSQL with clear provenance labels for real, mock, or hybrid paths
+- UID bridge works across multiple source-system IDs, not just one flagship example
 
 ---
 
