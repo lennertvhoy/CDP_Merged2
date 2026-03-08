@@ -1829,3 +1829,69 @@ PY
 - The guide now points at the fresh linked-all screenshot and explains the three count scopes correctly
 
 ---
+
+## 2026-03-08 (Tracardi Draft Repair + Runtime Blocker)
+
+### Task: Repair local Tracardi email workflow drafts and re-document the real runtime state
+
+**Type:** app_code
+**Status:** PARTIAL
+**Timestamp:** 2026-03-08 21:45 CET
+**Git Head:** `ea73689`
+
+**Summary:**
+Replaced the stale Tracardi workflow setup script with a current `/flow/draft`-based repair path, then re-verified the local workflow state directly against the Tracardi API. This closed the earlier hollow-draft contradiction, but it did **not** prove runtime execution: local event probes still produce zero flow logs and the engagement rules remain non-running/non-production.
+
+**Code Change:**
+- Rewrote `scripts/setup_tracardi_workflows.py`
+  - removed the stale `/flow` endpoint usage
+  - switched to repo-relative imports and `.env.local` / `.env` loading
+  - loads the live plugin catalog from `/flow/action/plugins`
+  - fetches existing workflows from `/flows/entity`
+  - repairs/upserts drafts through `POST /flow/draft?rearrange_nodes=false`
+  - builds real graphs for Bounce, Complaint, Delivery, Engagement, and High Engagement
+
+**Verification Commands Executed:**
+```bash
+python -m py_compile scripts/setup_tracardi_workflows.py
+
+TRACARDI_USERNAME='lennertvhoy@gmail.com' TRACARDI_PASSWORD='***' \
+  poetry run python scripts/setup_tracardi_workflows.py
+# Result: authenticated, loaded 123 plugins, found 5 existing workflows, repaired all 5 drafts
+
+# Bounce draft structure
+GET /flow/draft/5bc7ae58-bd4c-4c56-a275-50165643f9c0
+# Result: nodes = [Start, Copy data, Update profile], edges = 2
+
+# Engagement draft structure
+GET /flow/draft/1b5233f9-241c-49b0-b2c6-60b3c010f4de
+# Result: nodes = [Start, Increment counter, Copy data, Update profile], edges = 3,
+#         event_types = [email.opened, email.clicked],
+#         increment field = profile@traits.engagement_score
+
+# Runtime probe
+POST /track with source=resend-webhook and event=email.opened
+# Result: HTTP 200, profile/session IDs returned
+
+GET /flow/logs/1b5233f9-241c-49b0-b2c6-60b3c010f4de
+# Result: total = 0
+
+GET /rules/by_flow/1b5233f9-241c-49b0-b2c6-60b3c010f4de
+# Result: enabled=true, running=false, production=false for both email.clicked and email.opened rules
+```
+
+**Observed Result:**
+- The local workflow drafts are no longer empty or misleading
+- The local runtime activation problem is still real
+- The current blocker is not draft structure anymore; it is draft-to-running activation in Tracardi
+
+**Documentation Updates:**
+- `PROJECT_STATE.yaml`: recorded repaired-draft proof and added the runtime activation blocker
+- `STATUS.md`: corrected the headline/current-state narrative so it no longer claims active workflows
+- `NEXT_ACTIONS.md`: reopened Tracardi activation work as a runtime blocker instead of a completed item
+- `WORKLOG.md`: this entry
+
+**Next Step:**
+Determine how the repaired drafts become running production rules in this Tracardi version (`/flow/debug`, GUI publish/deploy path, or explicit rule activation), then verify one local event generates flow logs and profile trait updates before using workflow screenshots as guide evidence.
+
+---

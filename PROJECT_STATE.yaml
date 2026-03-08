@@ -3,7 +3,7 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-08T20:35:00+01:00
+  updated_at: 2026-03-08T21:45:00+01:00
   updated_by: agent
   repo_head:
     value: fe9d51a
@@ -171,6 +171,26 @@ current_state:
         - Local four-source backend proof now exists for B.B.S. Entreprise
         - Autotask ticket and contract data are queryable in the unified 360 path
         - The remaining guide blocker is now refreshed evidence/captioning plus UID-first privacy proof, not missing backend implementation
+    tracardi_workflow_drafts_repaired_runtime_blocked:
+      status: observed
+      verified_at: 2026-03-08T21:35:00+01:00
+      evidence:
+        - command: TRACARDI_USERNAME='lennertvhoy@gmail.com' TRACARDI_PASSWORD='***' poetry run python scripts/setup_tracardi_workflows.py
+        - result: authenticated successfully, loaded 123 plugins, found 5 existing workflows, repaired all 5 drafts
+        - command: GET /flow/draft/5bc7ae58-bd4c-4c56-a275-50165643f9c0
+        - result: bounce draft nodes=[Start, Copy data, Update profile], edges=2
+        - command: GET /flow/draft/1b5233f9-241c-49b0-b2c6-60b3c010f4de
+        - result: engagement draft nodes=[Start, Increment counter, Copy data, Update profile], edges=3, start event_types=[email.opened, email.clicked], increment field=profile@traits.engagement_score
+        - command: POST /track with source resend-webhook and event email.opened
+        - result: HTTP 200 with profile/session IDs returned
+        - command: GET /flow/logs/1b5233f9-241c-49b0-b2c6-60b3c010f4de
+        - result: total=0
+        - command: GET /rules/by_flow/1b5233f9-241c-49b0-b2c6-60b3c010f4de
+        - result: engagement rules enabled=true but running=false and production=false
+      conclusion:
+        - The local workflow drafts are no longer hollow
+        - The remaining Tracardi blocker is runtime activation, not draft structure
+        - Workflow screenshots alone are insufficient proof until logs or trait updates show real execution
 
   chatbot:
     status: observed
@@ -809,8 +829,8 @@ current_state:
           - Browser-based profile creation verified -> profile ddde7ea5-3343-49ce-8e44-f0ab3e5347fa created
           - Event tracking verified -> browser_verification_test event logged
       activation_layer:
-        status: verified_resend_ready
-        verified_at: 2026-03-07T20:45:00+01:00
+        status: drafts_repaired_runtime_blocked
+        verified_at: 2026-03-08T21:35:00+01:00
         verification_script: scripts/setup_and_verify_tracardi.py
         resend_verification: scripts/verify_local_resend_setup.py
         components:
@@ -821,42 +841,47 @@ current_state:
             resend_source_type: rest
             resend_source_fixed_at: 2026-03-07T20:35:00+01:00
           workflows:
-            status: deployed
-            method: gui_configuration
+            status: drafts_repaired_not_running
+            method: flow_draft_api_repair
             count: 5
             created_at: 2026-03-07T19:57:00+01:00
-            configured_at: 2026-03-07T20:20:00+01:00
-            deployed_at: 2026-03-07T20:25:00+01:00
-            deployed_via: browser_verification
+            repaired_at: 2026-03-08T21:35:00+01:00
+            repaired_via: scripts/setup_tracardi_workflows.py
             list:
               - id: 1b5233f9-241c-49b0-b2c6-60b3c010f4de
                 name: Email Engagement Processor
                 description: Processes email open and click events from Resend to track engagement scores
-                nodes: Start → End
+                nodes: Start → Increment counter → Copy data → Update profile
                 triggers: [email.opened, email.clicked]
-                deployed: true
+                draft_repaired: true
+                running: false
+                production: false
               - name: Email Bounce Processor
                 description: Handles email bounce events to mark emails as invalid and maintain list hygiene
-                nodes: Start → Update Profile → End
+                nodes: Start → Copy data → Update profile
                 triggers: [email.bounced]
-                deployed: true
+                draft_repaired: true
+                runtime_verified: false
               - name: Email Delivery Processor
                 description: Tracks email sent and delivered events to maintain email validity status
-                nodes: Start → End
-                triggers: [email.delivered]
-                deployed: true
+                nodes: Start → Copy data → Update profile
+                triggers: [email.sent, email.delivered]
+                draft_repaired: true
+                runtime_verified: false
               - name: High Engagement Segment
-                description: Automatically assigns VIP tags to highly engaged users when engagement score reaches 5+
-                nodes: Start → End
-                triggers: [profile.updated]
-                deployed: true
+                description: Automatically assigns the High Engagement segment to engaged profiles
+                nodes: Start → If → Add segment
+                triggers: [email.opened, email.clicked]
+                draft_repaired: true
+                runtime_verified: false
               - name: Email Complaint Processor
                 description: Handles spam complaints by suppressing profiles and protecting sender reputation
-                nodes: Start → End
+                nodes: Start → Copy data → Update profile
                 triggers: [email.complained]
-                deployed: true
+                draft_repaired: true
+                runtime_verified: false
           resend_webhooks:
-            status: configured
+            status: transport_configured_runtime_not_proven
             configured_at: 2026-03-07T20:45:00+01:00
             tunnel_type: localtunnel
             public_url: https://chilly-ghosts-melt.loca.lt/track?source=resend-webhook
@@ -883,15 +908,35 @@ current_state:
           destinations_list: working
           profile_queries: working
           track_endpoint: working
+          draft_repair: working
+          workflow_runtime: blocked
       configuration_gaps:
-        workflows: all 5 deployed and active
-        resend_webhooks: configured with localtunnel, needs Resend dashboard setup
+        workflows: drafts repaired, but rules still not running in production and flow logs remain empty after a local email.opened probe
+        resend_webhooks: transport configured with localtunnel, but external webhook execution is still unverified and not the current runtime blocker
         segments: 0 configured
         destinations: 0 configured (need GUI)
         licenses: none (community edition limitations apply)
-      note: Local Tracardi activation layer fully configured. All 5 Resend email processing workflows deployed via GUI. Event sources functional with resend-webhook as REST type. Localtunnel exposing API at https://chilly-ghosts-melt.loca.lt/track?source=resend-webhook. Webhook secret configured. Ready for Resend dashboard integration. GUI accessible at http://localhost:8787.
+      note: Local Tracardi still has working authentication, event sources, and `/track`, but the current truth is draft repair plus runtime blockage. `scripts/setup_tracardi_workflows.py` repaired the 5 email workflow drafts through `/flow/draft`, yet the engagement rules remain `running=false` / `production=false` and local event probes still produce zero flow logs. GUI accessible at http://localhost:8787.
 
 active_problems:
+  tracardi_workflow_runtime_activation_blocked:
+    status: observed
+    severity: high
+    discovered_at: 2026-03-08
+    summary: The local Tracardi email workflows were hollow drafts until repaired, and after repair they still do not show live execution because their rules remain non-running and flow logs stay empty after a direct local event probe.
+    evidence:
+      - poetry run python scripts/setup_tracardi_workflows.py -> authenticated, loaded 123 plugins, repaired 5 existing drafts
+      - GET /flow/draft/5bc7ae58-bd4c-4c56-a275-50165643f9c0 -> nodes Start/Copy data/Update profile, edges=2
+      - GET /flow/draft/1b5233f9-241c-49b0-b2c6-60b3c010f4de -> nodes Start/Increment counter/Copy data/Update profile, edges=3
+      - POST /track with source resend-webhook and event email.opened -> HTTP 200, profile/session IDs returned
+      - GET /flow/logs/1b5233f9-241c-49b0-b2c6-60b3c010f4de -> total=0
+      - GET /rules/by_flow/1b5233f9-241c-49b0-b2c6-60b3c010f4de -> enabled=true, running=false, production=false
+    affects:
+      - local_tracardi_activation_runtime
+      - illustrated_guide_workflow_execution_proof
+      - resend_event_writeback_verification
+    owner: agent
+    next_action: Determine how these repaired drafts are promoted into running production rules, then re-run a local event probe until flow logs or profile trait updates prove execution.
   browser_vs_direct_search_total_mismatch:
     status: resolved
     severity: medium
