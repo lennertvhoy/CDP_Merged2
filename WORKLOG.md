@@ -1941,3 +1941,45 @@ GET /rules/by_flow/1b5233f9-241c-49b0-b2c6-60b3c010f4de
 Determine how the repaired drafts become running production rules in this Tracardi version (`/flow/debug`, GUI publish/deploy path, or explicit rule activation), then verify one local event generates flow logs and profile trait updates before using workflow screenshots as guide evidence.
 
 ---
+
+
+---
+
+## 2026-03-08 (Illustrated Guide CE Limitation Documentation)
+
+### Task: Update Illustrated Guide to document Tracardi CE workflow execution limitation
+
+**Type:** docs_or_process_only  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 22:45 CET  
+**Git Head:** `278f954` at session start
+
+**Summary:**
+Updated both Illustrated Guide files to explicitly document that Tracardi Community Edition does not support production workflow execution. The guide previously implied live workflow execution capability, but the investigation confirmed this requires Tracardi Premium (licensed feature).
+
+**Changes Made:**
+
+1. **docs/ILLUSTRATED_GUIDE.md**
+   - Added "Tracardi Workflow Limitation (CE)" subsection under Phase 5
+   - Documented the limitation matrix (drafts exist, execution blocked)
+   - Explained evidence: API returns 200 but values don't persist, `/license` returns 404
+   - Listed alternative approaches: Tracardi Premium or Python bridge
+   - Updated Next Steps to mark email workflow execution as blocked by CE limitation
+
+2. **docs/illustrated_guide/ILLUSTRATED_GUIDE.md**
+   - Updated "Workflow Automation" section to "Workflow Automation (Draft Structure Only)"
+   - Added explicit CE limitation callout box with verification evidence
+   - Listed alternative approaches for workflow automation
+   - Updated Production Readiness table: Tracardi Workflows now marked as "⚠️ Draft Only"
+   - Updated Tracardi API Verification table: Workflows status changed to "⚠️ 5 Drafts"
+
+**Files Modified:**
+- `docs/ILLUSTRATED_GUIDE.md`
+- `docs/illustrated_guide/ILLUSTRATED_GUIDE.md`
+
+**Verification:**
+- Both guides now explicitly state that workflow screenshots show draft structure, not live execution
+- CE limitation is clearly documented with technical evidence
+- Alternative approaches are listed for users who need workflow automation
+
+---

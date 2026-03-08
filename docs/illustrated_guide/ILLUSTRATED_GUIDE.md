@@ -220,10 +220,22 @@ AI successfully creates segments from natural language:
 ![Tracardi Event Sources](tracardi_event_sources_verified_2026-03-07.png)
 *4 event sources configured: CDP API, KBO Import, KBO Real-time, Resend Webhook*
 
-**Workflow Automation**
+**Workflow Automation (Draft Structure Only)**
 
 ![Tracardi Workflows](tracardi_workflows_configured_2026-03-07.png)
-*5 email processing workflows deployed*
+*5 email processing workflow drafts created*
+
+⚠️ **CE Limitation:** Tracardi Community Edition does not support production workflow execution. The `/deploy/{path}` endpoint is a licensed (premium) feature. Rule updates to `production=true`/`running=true` do not persist in CE. Workflow screenshots show *draft structure*, not live execution.
+
+**Verification Evidence:**
+- `GET /rules/by_flow/{id}` → `enabled=true, production=false, running=false`
+- `POST /track` with events → Profile created, but `GET /flow/logs/{id}` shows `total=0`
+- `/license` endpoint → 404 (CE has no licensing module)
+
+**Alternative Approaches:**
+1. **Tracardi Premium/Enterprise** - Full workflow execution with licensing
+2. **Python Bridge Script** - Handle Resend webhooks directly (`scripts/resend_to_tracardi_bridge.py`)
+3. **Direct PostgreSQL Webhooks** - Store engagement data directly in PostgreSQL
 
 **Profile Search**
 
@@ -254,7 +266,8 @@ AI successfully creates segments from natural language:
 | Teamleader Sync | ⏸️ Ready | OAuth connected, test data synced |
 | Exact Online Sync | ⏸️ Ready | OAuth connected, test data synced |
 | Resend Email | ✅ Active | Dashboard showing metrics |
-| Tracardi Events | ✅ Working | 4 event sources, 5 workflows |
+| Tracardi Events | ✅ Working | 4 event sources active |
+| Tracardi Workflows | ⚠️ Draft Only | 5 workflows created but CE cannot execute |
 
 ### To Go Live (3-5 Days)
 
@@ -293,7 +306,7 @@ AI successfully creates segments from natural language:
 |-----------|--------|---------|
 | API Health | ✅ Working | HTTP 200 on /healthcheck |
 | Event Sources | ✅ 4 Configured | cdp-api, kbo-batch-import, kbo-realtime, resend-webhook |
-| Workflows | ✅ 5 Deployed | Bounce, Complaint, Delivery, Engagement, High Engagement |
+| Workflows | ⚠️ 5 Drafts | Structure created; execution requires Premium license |
 | Profiles | ✅ 76 Stored | Activation layer profiles |
 | Identity Links | ✅ 100% Match | Teamleader (1/1), Exact (9/9) |
 

@@ -209,6 +209,24 @@ Total Members: 1,652 (canonical full-scope segment)
 
 ## Phase 5: Data Foundation
 
+### Tracardi Workflow Limitation (CE)
+
+**Important:** Tracardi Community Edition has a known limitation regarding workflow execution.
+
+| Aspect | Current State | Limitation |
+|--------|---------------|------------|
+| Workflow Drafts | ✅ 5 email processing workflows created | Structure is real and visible in GUI |
+| Production Execution | ❌ Not available | Requires Tracardi Premium license |
+| `/deploy/{path}` Endpoint | ❌ Licensed (premium) | Returns 403 in CE |
+| Rule Persistence | ⚠️ Limited | `production=true` updates do not persist |
+| Flow Logs | 0 entries | Workflows cannot execute without license |
+
+**Evidence:** API calls to enable production mode return HTTP 200 but values remain `production=false, running=false`. The `/license` endpoint returns 404 (CE has no licensing module), and flow logs show `total=0` even after triggering events.
+
+**Impact:** Workflow screenshots in this guide show the *draft structure* of automation workflows. Live execution of email processing (bounce handling, engagement tracking, etc.) requires either:
+1. Tracardi Premium/Enterprise license, or
+2. Alternative Python-based event processor (bridge script available at `scripts/resend_to_tracardi_bridge.py`)
+
 ### Source System Integration Status
 
 | Source | Records | Status | Evidence |
