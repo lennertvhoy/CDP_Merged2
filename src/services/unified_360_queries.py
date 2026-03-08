@@ -635,6 +635,9 @@ class Unified360Service:
     ) -> list[dict[str, Any]]:
         """Search across all company data sources.
         
+        Searches KBO, Teamleader, and Exact Online for matching companies,
+        even if they haven't been identity-linked yet.
+        
         Args:
             query: Search query string
             search_fields: Fields to search (default: company names)
@@ -645,41 +648,99 @@ class Unified360Service:
         """
         pool = await self._get_pool()
         
-        # Default search on KBO company names
         search_pattern = f"%{query}%"
         
         async with pool.acquire() as conn:
-            # Search unified view
+            # Search ALL sources: unified view + direct CRM/Exact tables
             rows = await conn.fetch(
                 """
-                SELECT 
-                    company_uid,
-                    kbo_number,
-                    kbo_company_name,
-                    tl_company_name,
-                    exact_company_name,
-                    nace_code,
-                    kbo_city,
-                    identity_link_status,
-                    last_updated_at
-                FROM unified_company_360
-                WHERE 
-                    kbo_company_name ILIKE $1
-                    OR tl_company_name ILIKE $1
-                    OR exact_company_name ILIKE $1
-                    OR kbo_number ILIKE $1
-                ORDER BY 
-                    CASE 
-                        WHEN kbo_company_name ILIKE $2 THEN 1
-                        WHEN tl_company_name ILIKE $2 THEN 2
-                        WHEN exact_company_name ILIKE $2 THEN 3
-                        ELSE 4
-                    END,
-                    kbo_company_name
+                WITH unified_matches AS (
+                    -- Search already-linked companies
+                    SELECT 
+                        company_uid,
+                        kbo_number,
+                        kbo_company_name as company_name,
+                        tl_company_id,
+                        tl_company_name,
+                        exact_customer_id,
+                        exact_company_name,
+                        nace_code,
+                        kbo_city as city,
+                        identity_link_status,
+                        last_updated_at,
+                        'linked' as match_source,
+                        CASE 
+                            WHEN kbo_company_name ILIKE $2 THEN 1
+                            WHEN tl_company_name ILIKE $2 THEN 2
+                            WHEN exact_company_name ILIKE $2 THEN 3
+                            ELSE 4
+                        END as match_priority
+                    FROM unified_company_360
+                    WHERE 
+                        kbo_company_name ILIKE $1
+                        OR tl_company_name ILIKE $1
+                        OR exact_company_name ILIKE $1
+                        OR kbo_number ILIKE $1
+                ),
+                crm_matches AS (
+                    -- Search Teamleader companies not yet linked
+                    SELECT 
+                        NULL as company_uid,
+                        NULL as kbo_number,
+                        cc.company_name as company_name,
+                        cc.id::text as tl_company_id,
+                        cc.company_name as tl_company_name,
+                        NULL as exact_customer_id,
+                        NULL as exact_company_name,
+                        NULL as nace_code,
+                        cc.city,
+                        'crm_only' as identity_link_status,
+                        cc.last_modified_at as last_updated_at,
+                        'teamleader' as match_source,
+                        CASE WHEN cc.company_name ILIKE $2 THEN 2 ELSE 5 END as match_priority
+                    FROM crm_companies cc
+                    WHERE cc.company_name ILIKE $1
+                        AND NOT EXISTS (
+                            SELECT 1 FROM unified_matches um 
+                            WHERE um.tl_company_id = cc.id::text
+                        )
+                ),
+                exact_matches AS (
+                    -- Search Exact customers not yet linked  
+                    SELECT 
+                        NULL as company_uid,
+                        NULL as kbo_number,
+                        ec.company_name as company_name,
+                        NULL as tl_company_id,
+                        NULL as tl_company_name,
+                        ec.id::text as exact_customer_id,
+                        ec.company_name as exact_company_name,
+                        NULL as nace_code,
+                        ec.city,
+                        'exact_only' as identity_link_status,
+                        ec.last_modified_at as last_updated_at,
+                        'exact' as match_source,
+                        CASE WHEN ec.company_name ILIKE $2 THEN 3 ELSE 6 END as match_priority
+                    FROM exact_customers ec
+                    WHERE ec.company_name ILIKE $1
+                        AND NOT EXISTS (
+                            SELECT 1 FROM unified_matches um 
+                            WHERE um.exact_customer_id = ec.id::text
+                        )
+                ),
+                all_matches AS (
+                    SELECT * FROM unified_matches
+                    UNION ALL
+                    SELECT * FROM crm_matches  
+                    UNION ALL
+                    SELECT * FROM exact_matches
+                )
+                SELECT * FROM all_matches
+                ORDER BY match_priority, company_name
                 LIMIT $3
                 """,
                 search_pattern,
-                query,  # Exact match priority
+                query,  # For exact match priority
                 limit
             )
 
