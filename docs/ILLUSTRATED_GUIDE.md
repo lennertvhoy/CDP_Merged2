@@ -1,6 +1,6 @@
 # CDP_Merged Illustrated Guide v2.0
 
-**Status:** Backend Truth Verified; guide evidence refresh still in progress  
+**Status:** Fresh four-source screenshot and scope labels applied; UID-first/privacy and business-value evidence still pending
 **Last Updated:** 2026-03-08  
 **Verification:** Screenshots captured from live systems; four-source backend rechecked via local PostgreSQL on 2026-03-08 19:20 CET
 
@@ -15,7 +15,7 @@ This guide demonstrates the complete Customer Data Platform with AI-powered natu
 | Business Case Requirement | Evidence in This Guide |
 |---------------------------|------------------------|
 | *"360° klantbeeld creëren"* (360° customer view) | ✅ B.B.S. Entreprise unified profile with live backend proof for KBO + Teamleader + Exact + Autotask |
-| *"Segmenteren en personaliseren"* (Segment & personalize) | ✅ "IT services - Brussels" segment (1,652 companies) → Resend activation |
+| *"Segmenteren en personaliseren"* (Segment & personalize) | ✅ Canonical "IT services - Brussels" segment (1,652 companies) with a separately labeled 1,529-member activation test |
 | *"Datastromen verbinden"* (Connect data streams) | ✅ Current live linkage snapshot: `linked_all=1`, `linked_exact=8`, `linked_teamleader=6` |
 | *"Real-time inzichten"* (Real-time insights) | ✅ Live PostgreSQL queries on 1.94M records |
 
@@ -30,11 +30,17 @@ This guide demonstrates the complete Customer Data Platform with AI-powered natu
 
 **Query:** *"Show me a 360 view of B.B.S. Entreprise"*
 
-**Result:** Complete unified profile verified across 4 sources. The screenshot below still shows the KBO + Teamleader + Exact portion; the live SQL-backed Autotask support fields for the same company are listed underneath.
+**Result:** Fresh chatbot evidence now shows B.B.S. Entreprise as a real four-source `linked_all` profile. The screenshot below visibly proves the linking-quality outcome and explicitly names all four linked systems; the field-level KBO/CRM/Exact/Autotask details for the same query path remain backed by the SQL proof underneath.
 
-![360° Golden Record View](/home/ff/Documents/CDP_Merged/chatbot_360_bbs_entreprise_2026-03-08.png)
+![360° Golden Record View](/home/ff/Documents/CDP_Merged/chatbot_360_bbs_four_source_final_2026-03-08.png)
 
-**What's Shown:**
+**What the screenshot visibly proves:**
+
+- `identity_link_status = linked_all`
+- `Sources linked: KBO + Teamleader + Exact + Autotask (4 sources)`
+- The same response path offers follow-up into open Autotask ticket details or the activity timeline
+
+**Backend fields returned for the same linked_all profile:**
 
 | Data Source | Fields Displayed | Value |
 |-------------|------------------|-------|
@@ -90,7 +96,7 @@ WHERE identity_link_status = 'linked_all';
 
 **Query:** *"Create a segment of IT services companies in Brussels"*
 
-**Result:** 1,652 companies segmented in 0.75 seconds
+**Result:** 1,652 companies segmented in 0.75 seconds for the canonical full software scope.
 
 ![Segment Creation Flow](/home/ff/Documents/CDP_Merged/chatbot_segment_creation_2026-03-08.png)
 
@@ -99,7 +105,7 @@ WHERE identity_link_status = 'linked_all';
 | Metric | Value |
 |--------|-------|
 | Segment Name | IT services - Brussels |
-| Member Count | 1,652 companies |
+| Member Count | 1,652 companies (canonical 6-code scope) |
 | City Filter | Brussels (including Brussel, Bruxelles) |
 | NACE Codes | 62010, 62020, 62030, 62090, 63110, 63120 |
 | NACE Description | Computer programming, consultancy, information service activities |
@@ -124,17 +130,19 @@ WHERE identity_link_status = 'linked_all';
 
 ## Phase 3: Segment Activation to Resend
 
-### Demonstration: NL → Segment → Resend Audience
+### Demonstration: NL → Segment → Resend Activation Path
 
 **POC Test Results (All 6 Tests Passing):**
 
 ```
-✅ SEGMENT_CREATION: 0.75s - 1,529 members
+✅ SEGMENT_CREATION: 0.75s - 1,529 members (narrower 62xxx-only activation test scope)
 ✅ SEGMENT_TO_RESEND: 2.20s - 8 contacts with email pushed
 ✅ CAMPAIGN_SEND: 0.00s - Campaign created via API
 ✅ WEBHOOK_SETUP: 0.00s - 6 events subscribed
 ✅ ENGAGEMENT_WRITEBACK: 0.82s - 4 events tracked in Tracardi
 ```
+
+**Scope note:** The canonical "software companies in Brussels" segment is `1,652` when the full 6-code software scope is used (`62010`, `62020`, `62030`, `62090`, `63110`, `63120`). The `1,529` figure above is a narrower earlier activation test that only used the 4 core `62xxx` codes.
 
 **Resend Dashboard Evidence:**
 
@@ -144,7 +152,7 @@ WHERE identity_link_status = 'linked_all';
 - Resend account active (lennertvhoy)
 - Email history with CDP test campaigns
 - Webhook integration configured
-- Ready to receive the 1,652-company audience
+- Activation path is ready, but this screenshot does not yet show a populated 1,652-contact audience
 
 **Why Resend (vs Flexmail):**
 
@@ -169,8 +177,8 @@ WHERE identity_link_status = 'linked_all';
 
 ```
 File: output/it_services_brussels_segment.csv
-Rows: 101 (first 100 + header)
-Total Members: 1,652
+Rows: 101 (preview export: first 100 data rows + header)
+Total Members: 1,652 (canonical full-scope segment)
 ```
 
 **Field Validation:**
@@ -277,7 +285,7 @@ User NL Query → LLM Intent Classification → PostgreSQL Search
 
 | Filename | Description | Date |
 |----------|-------------|------|
-| `chatbot_360_bbs_entreprise_2026-03-08.png` | 360° Golden Record view | 2026-03-08 |
+| `chatbot_360_bbs_four_source_final_2026-03-08.png` | 360° Golden Record view showing `linked_all` and 4-source linkage | 2026-03-08 |
 | `chatbot_segment_creation_2026-03-08.png` | NL segment creation flow | 2026-03-08 |
 | `resend_dashboard.png` | Resend dashboard with campaigns | 2026-03-08 |
 | `tracardi_dashboard_live.png` | Tracardi activation layer | 2026-03-08 |
@@ -293,7 +301,7 @@ User NL Query → LLM Intent Classification → PostgreSQL Search
 - [x] Segment → Resend activation tested (POC 6/6 tests passing)
 - [x] CSV export validated (all 9 fields present)
 - [x] Hyperrealistic demo data scripts created (72 Teamleader companies)
-- [x] Cross-source identity links established (15 companies)
+- [x] Cross-source identity links established (`linked_all=1`, `linked_exact=8`, `linked_teamleader=6`)
 - [x] All screenshots captured from live systems
 - [x] No synthetic/fake data claims
 

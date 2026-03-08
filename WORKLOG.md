@@ -1782,3 +1782,50 @@ SELECT COUNT(*) FROM autotask_companies;
 - Query service: `src/services/unified_360_queries.py`
 
 ---
+
+## 2026-03-08 (Worktree Hygiene + Guide Refresh Alignment)
+
+### Task: Stop enrichment cursor drift from dirtying the repo and align the guide/state docs to the fresh four-source screenshot
+
+**Type:** docs_or_process_only
+**Status:** COMPLETE
+**Timestamp:** 2026-03-08 20:35 CET
+**Git Head:** `2f7a0f5` at session start
+
+**Summary:**
+Resolved the recurring dirty-worktree problem by removing live enrichment cursor files from git tracking and ignoring them going forward, then updated the Illustrated Guide and live-state docs to match the fresh B.B.S. four-source screenshot and the explicit `1,652` / `1,529` / `101` scope labels.
+
+**Changes:**
+- Added `logs/enrichment/*_cursor.json` to `.gitignore`
+- Removed `logs/enrichment/cbe_running_cursor.json`, `logs/enrichment/geocoding_parallel_cursor.json`, and `logs/enrichment/website_discovery_cursor.json` from git tracking while keeping them on disk as local runtime state
+- Refreshed `docs/ILLUSTRATED_GUIDE.md` to use `chatbot_360_bbs_four_source_final_2026-03-08.png`
+- Labeled counts consistently:
+  - `1,652` = canonical full-scope software segment
+  - `1,529` = narrower 62xxx-only activation-test scope
+  - `101` = preview export file (first 100 rows + header)
+- Updated `STATUS.md`, `PROJECT_STATE.yaml`, `NEXT_ACTIONS.md`, and `docs/ILLUSTRATED_GUIDE_AUDIT.md` to remove the now-stale screenshot/count-gap narrative
+
+**Verification:**
+```bash
+git status --short
+# Initially showed live cursor drift under logs/enrichment/*.json
+
+git rm --cached logs/enrichment/cbe_running_cursor.json \
+  logs/enrichment/geocoding_parallel_cursor.json \
+  logs/enrichment/website_discovery_cursor.json
+
+find . -maxdepth 3 -type f -name 'chatbot_360_bbs_four_source_final_2026-03-08.png'
+# Result: screenshot present at repo root
+
+python - <<'PY'
+import yaml
+yaml.safe_load(open("PROJECT_STATE.yaml"))
+print("PROJECT_STATE_OK")
+PY
+```
+
+**Result:**
+- Cursor files remain available locally for running enrichers, but no longer dirty the git worktree
+- The guide now points at the fresh linked-all screenshot and explains the three count scopes correctly
+
+---
