@@ -749,6 +749,67 @@ If a deployment causes issues:
 
 ---
 
+## Screenshot and Demo Integrity - STRICT PROHIBITION
+
+**ABSOLUTE RULE:** Never create fake screenshots, mock interfaces, or synthetic demo content.
+
+### What is FORBIDDEN
+
+1. **❌ Fake Screenshots:** Creating HTML/CSS mockups that look like screenshots
+2. **❌ Synthetic Data Claims:** Claiming mock data is real production data
+3. **❌ Composited Images:** Combining real screenshots with fake elements
+4. **❌ Staged Text Content:** Writing fake conversation transcripts as if they happened
+5. **❌ Mock Interface Generators:** Scripts that generate fake UI screenshots
+
+### What is REQUIRED
+
+1. **✅ Real Runtime Capture:** Use browser tools to capture actual application state
+2. **✅ Actual Query Results:** Run real queries against the database and show real results
+3. **✅ Honest Data Attribution:** Clearly label test data vs production data
+4. **✅ Real Conversations:** Capture actual chatbot interactions, not imagined ones
+5. **✅ Verified Claims:** Every screenshot claim must be verifiable against the actual system
+
+### Screenshot Verification Protocol
+
+**Before using any screenshot in documentation:**
+
+1. **Verify the source:**
+   - Was this captured from the actual running application?
+   - Can the same view be reproduced right now?
+   - Are the dates/times in the screenshot recent?
+
+2. **Verify the data:**
+   - Do the numbers match actual database queries?
+   - Are company names, counts, and metrics real?
+   - Is there a path to reproduce this exact view?
+
+3. **Label honestly:**
+   - "Screenshot of local development instance"
+   - "Test data shown - production data similar"
+   - "Captured 2026-03-08 from staging environment"
+   - Never imply test data is production data
+
+### Consequences of Violation
+
+If you create fake screenshots or synthetic demo content:
+1. You have compromised the trustworthiness of all documentation
+2. You must immediately delete all fake content
+3. You must document the violation in WORKLOG.md
+4. You must re-capture all affected content using real runtime
+
+### Correct Approach for Missing Screenshots
+
+If a screenshot is needed but cannot be captured:
+
+1. **Use browser tools:** Navigate to the actual application and capture
+2. **Document the blocker:** "Screenshot pending - authentication required"
+3. **Create a task:** Add to NEXT_ACTIONS.md for future capture
+4. **Never fake it:** Leave the gap rather than create false evidence
+
+**Remember:** A missing screenshot is better than a fake screenshot.
+
+---
+
 ## Decision Log
 
 | Date | Decision | Reason |
