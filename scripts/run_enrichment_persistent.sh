@@ -3,7 +3,7 @@
 
 set -o pipefail
 
-WORKSPACE="/home/ff/.openclaw/workspace/repos/CDP_Merged"
+WORKSPACE="/home/ff/Documents/CDP_Merged"
 ENRICHERS="${ENRICHERS:-cbe}"
 RUN_NAME="${RUN_NAME:-${ENRICHERS//,/__}}"
 CHUNK_SIZE="${CHUNK_SIZE:-2000}"
@@ -18,6 +18,13 @@ CURSOR_FILE="${CURSOR_FILE:-$LOG_DIR/${RUN_NAME}_cursor.json}"
 PID_FILE="${PID_FILE:-$WORKSPACE/.${RUN_NAME}_runner.pid}"
 
 mkdir -p "$LOG_DIR"
+
+# Load environment variables from .env.local
+if [ -f "$WORKSPACE/.env.local" ]; then
+    set -a
+    source "$WORKSPACE/.env.local"
+    set +a
+fi
 
 # Save PID
 echo $$ > "$PID_FILE"
