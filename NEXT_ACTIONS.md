@@ -533,104 +533,32 @@ nace_codes=['62010', '62020', '62030', '62090', '63110', '63120'], city=Brussels
 
 ### P2: Tracardi Activation Layer Configuration
 
-**Status:** COMPLETE - All 5 workflows deployed and active
+**Status:** REOPENED - Drafts repaired, runtime execution still blocked
 **Discovered:** 2026-03-07 19:29 CET
-**Configured:** 2026-03-07 20:20 CET
-**Deployed:** 2026-03-07 20:25 CET
+**Last Updated:** 2026-03-08 21:35 CET
 **Severity:** MEDIUM
 
 #### Current State
 
-Tracardi activation layer fully configured:
+Tracardi activation layer is only partially verified:
 - ✅ 4 event sources configured (cdp-api, kbo-batch-import, kbo-realtime, resend-webhook)
-- ✅ 31 profiles stored (chatbot sessions creating profiles)
-- ✅ 52 events recorded
 - ✅ API fully functional (auth, /track, profile queries)
+- ✅ `scripts/setup_tracardi_workflows.py` rewritten to the current `/flow/draft` API
+- ✅ All 5 workflow drafts repaired locally on 2026-03-08
+- ✅ Bounce draft now shows `Start -> Copy data -> Update profile`
+- ✅ Engagement draft now shows `Start -> Increment counter -> Copy data -> Update profile`
+- ⚠️ Runtime still not proven: `POST /track` with `email.opened` returned `200`, but `GET /flow/logs/1b5233f9-241c-49b0-b2c6-60b3c010f4de` still returned `total=0`
+- ⚠️ Engagement rules remain `enabled=true`, `running=false`, `production=false`
 - ✅ Verification script created: `scripts/setup_and_verify_tracardi.py`
-- ✅ **Workflows: 5 deployed via GUI**
-  - Email Engagement Processor: Start → End, triggers on email.opened, email.clicked
-  - Email Bounce Processor: Start → Update Profile → End, triggers on email.bounced
-  - Email Delivery Processor: Start → End, triggers on email.delivered
-  - High Engagement Segment: Start → End, triggers on profile.updated
-  - Email Complaint Processor: Start → End, triggers on email.complained
-- ⚠️ Destinations: 0 configured (require GUI - API needs specific format)
 - ✅ GUI accessible at http://localhost:8787
-- ✅ Screenshots saved: tracardi_workflows_configured.png, tracardi_workflow_email_bounce_deployed.png
-
-#### Completed
-
-1. **Created verification script** (`scripts/setup_and_verify_tracardi.py`)
-   - Authenticates and tests all Tracardi endpoints
-   - Lists event sources, workflows, destinations, profiles
-   - Tests /track endpoint functionality
-
-2. **Created and deployed workflows via GUI** (browser automation)
-   - All 5 Resend email processing workflows created with nodes and event triggers
-   - Workflows saved/deployed in Tracardi GUI
-   - Event triggers configured for Resend webhook events (bounce, complaint, delivery, open, click)
-
-3. **Configured workflow nodes and triggers**
-   - Email Bounce Processor has Update Profile node for marking emails invalid
-   - All workflows have Start and End nodes on canvas
-   - Event triggers mapped to Resend webhook event types
-
-#### Completed (2026-03-07 20:45 CET)
-
-4. **Fixed Resend event source type**
-   - Changed from `webhook` type to `rest` type to work with `/track` endpoint
-   - Created fix script: `scripts/fix_resend_event_source.py`
-   - Created verification script: `scripts/verify_local_resend_setup.py`
-
-5. **Verified local Resend webhook setup**
-   - ✅ Tracardi authentication working
-   - ✅ Resend event source configured (type: REST)
-   - ✅ All 5 email workflows deployed and active
-   - ✅ Tracker endpoint accepting events
-   - ✅ Event simulation successful (events create profiles)
-
-#### Completed (2026-03-07 20:45 CET)
-
-4. **Fixed Resend event source type**
-   - Changed from `webhook` type to `rest` type to work with `/track` endpoint
-   - Created fix script: `scripts/fix_resend_event_source.py`
-   - Created verification script: `scripts/verify_local_resend_setup.py`
-
-5. **Verified local Resend webhook setup**
-   - ✅ Tracardi authentication working
-   - ✅ Resend event source configured (type: REST)
-   - ✅ All 5 email workflows deployed and active
-   - ✅ Tracker endpoint accepting events
-   - ✅ Event simulation successful (events create profiles)
-
-#### Completed (2026-03-07 20:45 CET) - Webhook Secret Configured
-
-6. **Resend webhook secret configured**
-   - Webhook signing secret added to `.env` and `.env.local`
-   - Localtunnel URL configured: `https://chilly-ghosts-melt.loca.lt/track?source=resend-webhook`
-   - Ready for signature verification when Resend sends webhooks
-
-#### Completed (2026-03-07 21:00 CET) - Bridge Script Fixed
-
-7. **Resend to Tracardi bridge script fixed and tested**
-   - Fixed `scripts/resend_to_tracardi_bridge.py` with proper async FastAPI implementation
-   - Correctly translates Resend webhook format (`{"type": "...", "data": {...}}`) to Tracardi `/track` format
-   - Signature verification using Svix format (v1,timestamp,signature)
-   - Properly handles Tracardi's `events` array (not single `event` object)
-   - Returns deterministic profile IDs based on email hash
-   - Run with: `poetry run python scripts/resend_to_tracardi_bridge.py [port]`
-   - Webhook endpoint: `POST /webhook/resend`
-   - Health check: `GET /health`
+- ⚠️ Destinations: 0 configured (require GUI - API needs specific format)
 
 #### Next Actions
 
-For end-to-end testing with real Resend webhooks:
-1. Start the bridge: `poetry run python scripts/resend_to_tracardi_bridge.py`
-2. Configure webhook URL in Resend dashboard: `http://your-server:5000/webhook/resend`
-3. Subscribe to events: email.sent, email.delivered, email.opened, email.clicked, email.bounced, email.complained
-4. Send test email via Resend and verify events trigger Tracardi workflows
-5. Verify webhook signatures are validated using `RESEND_WEBHOOK_SECRET`
-
-**Note:** Local setup is complete. For external webhooks from Resend servers, use ngrok or deploy the bridge to a publicly accessible server.
+1. Use `/flow/debug` or the GUI to determine why repaired rules remain `running=false` and `production=false`
+2. Verify one end-to-end local event updates profile traits and produces flow logs
+3. Capture fresh workflow screenshots only after execution is real, not just after draft save
+4. Keep Resend transport setup and webhook secret work as supporting infrastructure, not as proof that workflow automation is active
 
 ## Paused
 
