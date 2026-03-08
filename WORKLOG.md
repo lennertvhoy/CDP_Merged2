@@ -727,3 +727,114 @@ Added strict prohibition section:
 NEVER create fake content when the user asks for screenshots. Always use the real system. If the system doesn't show what they want, document that gap honestly rather than fabricating evidence.
 
 ---
+
+
+---
+
+## 2026-03-08 (Illustrated Guide Testing - 3 Core Tests PASSED)
+
+### Task: Test and verify chatbot functionality for illustrated guide
+
+**Type:** verification_only  
+**Status:** IN PROGRESS - Phase 1 Complete  
+**Timestamp:** 2026-03-08 13:45 CET  
+**Git Head:** `d040436`
+
+**Summary:**
+Systematically tested chatbot core functionality per handoff_session_19 protocol. All 3 initial tests PASSED with working screenshots captured.
+
+---
+
+### Test Results
+
+#### ✅ TEST 1: Basic Count Query - PASSED
+
+**Query:** "How many restaurant companies are in Gent?"
+
+**Result:**
+- AI correctly interpreted query
+- Used `search_profiles` tool with keywords="restaurant", city="Gent"
+- NACE codes auto-resolved: 56101, 56102, 56290
+- **Count: 1,105 restaurant companies in Gent**
+- Response time: ~15 seconds
+- Follow-up actions offered: Create segment, Analytics, CSV export
+
+**Screenshot:** `docs/illustrated_guide/test_01_restaurants_gent_working.png`
+**Status:** VERIFIED WORKING
+
+---
+
+#### ✅ TEST 2: Segment Creation - PASSED
+
+**Query:** "Create a segment for these companies"
+
+**Result:**
+- AI used `create_segment` tool
+- Parameters: name="Restaurants in Gent", use_last_search=true
+- **Segment created with 1,105 members**
+- Response time: ~15 seconds
+- Follow-up actions: Show stats, Export CSV, Push to Resend/Flexmail
+
+**Screenshot:** `docs/illustrated_guide/test_02_segment_creation_working.png`
+**Status:** VERIFIED WORKING
+
+---
+
+#### ✅ TEST 3: Analytics Query - PASSED
+
+**Query:** "Show me analytics breakdown by zip code"
+
+**Result:**
+- AI used `aggregate_profiles` tool with group_by="zip_code"
+- **Table visualization with 10 zip codes**
+- Top result: 9000 (Gent center) - 802 companies (72.6%)
+- Complete distribution shown with counts and percentages
+- Response time: ~15 seconds
+
+**Screenshot:** `docs/illustrated_guide/test_03_analytics_zip_working.png`
+**Status:** VERIFIED WORKING
+
+---
+
+### Verification Summary
+
+| Test | Function | Result | Screenshot |
+|------|----------|--------|------------|
+| 1 | Count Query | ✅ PASS | test_01_restaurants_gent_working.png |
+| 2 | Segment Creation | ✅ PASS | test_02_segment_creation_working.png |
+| 3 | Analytics | ✅ PASS | test_03_analytics_zip_working.png |
+
+**All tests show:**
+- Real working functionality
+- Accurate data from 1.94M PostgreSQL database
+- Proper AI tool selection
+- Clear, actionable responses
+- Appropriate follow-up suggestions
+
+---
+
+### Issues Found: NONE
+
+All tested functionality works as expected. No troubleshooting required.
+
+---
+
+### Next Steps for Illustrated Guide
+
+1. **Capture full-page screenshots** showing complete conversation flow
+2. **Test multi-message user story** end-to-end
+3. **Verify Tracardi backend** screenshots are current
+4. **Create final illustrated guide** with verified screenshots only
+
+---
+
+### Files Added
+
+- `docs/illustrated_guide/test_01_restaurants_gent_working.png`
+- `docs/illustrated_guide/test_02_segment_creation_working.png`
+- `docs/illustrated_guide/test_03_analytics_zip_working.png`
+- `handoff_session_19_illustrated_guide.md`
+
+---
+
+*Phase 1 complete. All core chatbot functionality verified working.*
