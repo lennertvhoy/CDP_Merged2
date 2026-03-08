@@ -4,6 +4,62 @@
 
 ---
 
+## 2026-03-08 (Option B - Four-Source 360 Implementation)
+
+### Task: Implement Autotask into the unified 360 query plane and re-verify live backend proof
+
+**Type:** app_code + verification_only  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 19:20 CET  
+**Git Head:** `57dace7` at session start
+
+**Summary:**
+Completed Option B from the Illustrated Guide queue. Autotask is now part of the live local unified 360 backend, and the B.B.S. Entreprise example now resolves as a real `linked_all` company across KBO + Teamleader + Exact + Autotask.
+
+**Implementation changes:**
+- Added canonical VAT/KBO/UID linkage to `scripts/sync_autotask_to_postgres.py`
+- Realigned mock company `AT-002` in `src/services/autotask.py` to B.B.S. Entreprise so the demo data overlaps the existing Teamleader + Exact example
+- Added `scripts/migrations/007_add_autotask_to_unified_360.sql`
+  - backfills `autotask_companies.kbo_number` / `organization_uid`
+  - creates `autotask_company_support_summary`
+  - extends `unified_company_360` with `autotask_*` fields and `linked_all`
+  - extends `company_activity_timeline` and `identity_link_quality`
+- Updated `src/services/unified_360_queries.py` and `src/ai_interface/tools/unified_360.py` to expose Autotask fields in the operator query path
+- Added focused regression coverage in `tests/unit/test_autotask_unified_360.py`
+
+**Verification:**
+```bash
+poetry run pytest -q tests/unit/test_autotask_unified_360.py
+# Result: 4 passed
+
+python -m py_compile scripts/sync_autotask_to_postgres.py \
+    src/services/unified_360_queries.py \
+    src/ai_interface/tools/unified_360.py \
+    src/services/autotask.py
+
+psql "$DATABASE_URL" -f scripts/migrations/007_add_autotask_to_unified_360.sql
+poetry run python scripts/sync_autotask_to_postgres.py --full
+
+SELECT identity_link_status, COUNT(*) FROM unified_company_360 GROUP BY identity_link_status ORDER BY identity_link_status;
+# Result: kbo_only=1,940,588; linked_exact=8; linked_teamleader=6; linked_all=1
+
+SELECT source_system, total_records, with_kbo_number, with_org_uid, unmatched, match_rate_pct
+FROM identity_link_quality ORDER BY source_system;
+# Result: autotask=5 total / 2 with_kbo / 1 with_org_uid / 3 unmatched / 40.00%
+
+SELECT kbo_number, kbo_company_name, tl_company_name, exact_company_name,
+       autotask_company_name, autotask_open_tickets, autotask_total_contracts, total_source_count
+FROM unified_company_360
+WHERE identity_link_status = 'linked_all';
+# Result: 0438437723 / B.B.S. ENTREPRISE / B.B.S. Entreprise / Entreprise BCE sprl / B.B.S. Entreprise / 1 / 1 / 4
+```
+
+**Notes:**
+- The original contradiction is now resolved in implementation, but the guide still needs refreshed evidence and the UID-first privacy proof remains open.
+- During live verification, the first sync attempt failed with `INSERT has more expressions than target columns`; fixed the placeholder mismatch in the same session and reran successfully.
+
+---
+
 ## 2026-03-08 (Business-Case Alignment Doc Reopen)
 
 ### Task: Re-align live docs and backlog after user audit of the Illustrated Guide

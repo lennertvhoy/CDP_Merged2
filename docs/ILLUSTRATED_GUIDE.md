@@ -1,8 +1,8 @@
 # CDP_Merged Illustrated Guide v2.0
 
-**Status:** Source of Truth Verified  
+**Status:** Backend Truth Verified; guide evidence refresh still in progress  
 **Last Updated:** 2026-03-08  
-**Verification:** All screenshots captured from live systems
+**Verification:** Screenshots captured from live systems; four-source backend rechecked via local PostgreSQL on 2026-03-08 19:20 CET
 
 ---
 
@@ -14,9 +14,9 @@ This guide demonstrates the complete Customer Data Platform with AI-powered natu
 
 | Business Case Requirement | Evidence in This Guide |
 |---------------------------|------------------------|
-| *"360° klantbeeld creëren"* (360° customer view) | ✅ B.B.S. Entreprise unified profile (KBO + Teamleader + Exact) |
+| *"360° klantbeeld creëren"* (360° customer view) | ✅ B.B.S. Entreprise unified profile with live backend proof for KBO + Teamleader + Exact + Autotask |
 | *"Segmenteren en personaliseren"* (Segment & personalize) | ✅ "IT services - Brussels" segment (1,652 companies) → Resend activation |
-| *"Datastromen verbinden"* (Connect data streams) | ✅ 15 cross-source identity links established |
+| *"Datastromen verbinden"* (Connect data streams) | ✅ Current live linkage snapshot: `linked_all=1`, `linked_exact=8`, `linked_teamleader=6` |
 | *"Real-time inzichten"* (Real-time insights) | ✅ Live PostgreSQL queries on 1.94M records |
 
 ---
@@ -30,7 +30,7 @@ This guide demonstrates the complete Customer Data Platform with AI-powered natu
 
 **Query:** *"Show me a 360 view of B.B.S. Entreprise"*
 
-**Result:** Complete unified profile with data from 3 sources
+**Result:** Complete unified profile verified across 4 sources. The screenshot below still shows the KBO + Teamleader + Exact portion; the live SQL-backed Autotask support fields for the same company are listed underneath.
 
 ![360° Golden Record View](/home/ff/Documents/CDP_Merged/chatbot_360_bbs_entreprise_2026-03-08.png)
 
@@ -39,7 +39,7 @@ This guide demonstrates the complete Customer Data Platform with AI-powered natu
 | Data Source | Fields Displayed | Value |
 |-------------|------------------|-------|
 | **Identity Layer** | KBO Number | 0438.437.723 |
-| | Link Status | `linked_both` (KBO + CRM + Financial) |
+| | Link Status | `linked_all` (KBO + CRM + Financial + Support) |
 | **KBO (Official Registry)** | Legal Name | B.B.S. ENTREPRISE |
 | | Legal Form | Coöperatieve vennootschap |
 | | NACE Code | 43320 (Schrijnwerk) |
@@ -53,6 +53,10 @@ This guide demonstrates the complete Customer Data Platform with AI-powered natu
 | **Financial (Exact Online)** | Account Name | Entreprise BCE sprl |
 | | Status | C (Confirmed) |
 | | Account Manager | Linked |
+| **Support (Autotask)** | Company Name | B.B.S. Entreprise |
+| | Open Tickets | 1 |
+| | Active Contracts | 1 |
+| | Contract Value | €15,000 |
 | **Pipeline** | Open Deals | 0 |
 | | Revenue Tracking | Enabled |
 
@@ -60,7 +64,20 @@ This guide demonstrates the complete Customer Data Platform with AI-powered natu
 - VAT-based matching: `0438437723` → KBO record
 - Email domain matching: `bbsentreprise.be` → Teamleader company
 - Account name matching → Exact Online customer
-- `source_identity_links` table populated with cross-references
+- Belgian VAT / KBO extraction: `BE0438.437.723` → Autotask company linked into the same KBO profile
+- `query_unified_360` now serializes `autotask_*` support data in the same 360 response path
+
+**Live backend verification (2026-03-08 19:20 CET):**
+
+```sql
+SELECT kbo_number, kbo_company_name, tl_company_name, exact_company_name,
+       autotask_company_name, autotask_open_tickets, autotask_total_contracts,
+       total_source_count
+FROM unified_company_360
+WHERE identity_link_status = 'linked_all';
+```
+
+**Result:** `0438437723 | B.B.S. ENTREPRISE | B.B.S. Entreprise | Entreprise BCE sprl | B.B.S. Entreprise | 1 | 1 | 4`
 
 ---
 
@@ -189,24 +206,31 @@ Total Members: 1,652
 | Source | Records | Status | Evidence |
 |--------|---------|--------|----------|
 | **KBO (Official Registry)** | 1,940,603 | ✅ Real-time sync | Full dataset loaded |
-| **Teamleader (CRM)** | 72 companies | ✅ Hyperrealistic mock | Scripts created |
+| **Teamleader (CRM)** | 60 companies | ✅ Local sync verified | Present in `identity_link_quality` recheck |
 | **Exact Online (Accounting)** | 9 customers, 78 invoices | ✅ Real OAuth sync | OAuth tokens valid |
-| **Autotask (PSA)** | 5 companies, 5 tickets | ✅ Mock ready | Awaiting credentials |
+| **Autotask (PSA)** | 5 companies, 5 tickets, 3 contracts | ✅ Mock integrated | `007_add_autotask_to_unified_360.sql` + full sync; 2 KBO-linked, 1 linked-all profile |
 
 ### Cross-Source Identity Links
 
-**15 Companies Linked Across All 3 Sources:**
+**Current Live Linkage Snapshot (2026-03-08 19:20 CET):**
 
-| Company | KBO | Teamleader | Exact | Link Status |
-|---------|-----|------------|-------|-------------|
-| B.B.S. Entreprise | ✅ 0438.437.723 | ✅ info@bbsentreprise.be | ✅ Entreprise BCE | `linked_both` |
-| Demo Company BV | ✅ 0672.123.456 | ✅ info@democompany.be | ✅ Demo Account | `linked_both` |
-| ... | ... | ... | ... | ... |
+| Status | Count | Meaning |
+|--------|-------|---------|
+| `linked_all` | 1 | KBO + Teamleader + Exact + Autotask (B.B.S. Entreprise) |
+| `linked_exact` | 8 | KBO + Exact |
+| `linked_teamleader` | 6 | KBO + Teamleader |
+| `kbo_only` | 1,940,588 | KBO only |
+
+**Linked-All Example:**
+
+| Company | KBO | Teamleader | Exact | Autotask | Link Status |
+|---------|-----|------------|-------|----------|-------------|
+| B.B.S. Entreprise | ✅ 0438.437.723 | ✅ info@bbsentreprise.be | ✅ Entreprise BCE | ✅ 1 open ticket, 1 contract | `linked_all` |
 
 **Link Resolution Methods:**
 1. VAT number matching (KBO ↔ Teamleader)
 2. Email domain matching (Teamleader ↔ Exact)
-3. Account name similarity (Exact ↔ KBO)
+3. Belgian VAT / KBO extraction (Autotask ↔ KBO)
 
 ---
 

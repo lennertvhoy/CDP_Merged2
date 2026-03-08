@@ -1,7 +1,7 @@
 """Unified 360° View Tools for Cross-Source Customer Insights.
 
 These tools enable natural language queries against unified views combining
-KBO, Teamleader CRM, and Exact Online financial data.
+KBO, Teamleader CRM, Exact Online financial data, and Autotask support data.
 
 Example queries:
 - "What is the total pipeline value for software companies in Brussels?"
@@ -57,12 +57,12 @@ async def query_unified_360(
     min_revenue_ytd: float | None = None,
     limit: int = 50,
 ) -> str:
-    """Query unified 360° customer data combining KBO, Teamleader, and Exact Online.
+    """Query unified 360° customer data combining KBO, Teamleader, Exact Online, and Autotask.
 
     USE THIS TOOL WHEN:
     - User asks for a "360° view" or "complete profile" of a specific company
     - User asks to search for companies by name across all source systems
-    - User asks for detailed company information with cross-source data (KBO + CRM + financials)
+    - User asks for detailed company information with cross-source data (KBO + CRM + financials + support)
     - User asks for activity timeline for a specific company
     - User asks about a specific company by KBO number
 
@@ -104,11 +104,11 @@ async def query_unified_360(
         limit: Maximum results to return (default 50)
 
     Returns:
-        JSON string with query results including company data, pipeline, financials, and activities.
+        JSON string with query results including company data, pipeline, financials, support data, and activities.
 
     Examples:
         >>> query_unified_360(query_type="company_profile", kbo_number="0123.456.789")
-        # Returns complete 360° profile with KBO, Teamleader, and Exact data
+        # Returns complete 360° profile with KBO, Teamleader, Exact, and Autotask data
         >>> query_unified_360(query_type="pipeline_summary", city="Brussels", nace_prefix="62")
         # Returns companies with pipeline data in Brussels, NACE 62xxx
         >>> query_unified_360(query_type="search_by_name", company_name="Acme Corp")
@@ -163,13 +163,29 @@ async def query_unified_360(
                     "payment_terms": profile.exact_payment_terms,
                     "account_manager": profile.exact_account_manager,
                 } if profile.exact_customer_id else None,
+                "autotask": {
+                    "company_id": profile.autotask_company_id,
+                    "company_name": profile.autotask_company_name,
+                    "company_type": profile.autotask_company_type,
+                    "phone": profile.autotask_phone,
+                    "website": profile.autotask_website,
+                    "total_tickets": profile.autotask_total_tickets,
+                    "open_tickets": profile.autotask_open_tickets,
+                    "last_ticket_at": profile.autotask_last_ticket_at.isoformat() if profile.autotask_last_ticket_at else None,
+                    "total_contracts": profile.autotask_total_contracts,
+                    "active_contracts": profile.autotask_active_contracts,
+                    "total_contract_value": float(profile.autotask_total_contract_value) if profile.autotask_total_contract_value else 0,
+                    "last_contract_start": profile.autotask_last_contract_start.isoformat() if profile.autotask_last_contract_start else None,
+                } if profile.autotask_company_id else None,
                 "pipeline": _serialize_for_json(profile.pipeline.__dict__) if profile.pipeline else None,
                 "financials": _serialize_for_json(profile.financials.__dict__) if profile.financials else None,
                 "identity_link_status": profile.identity_link_status,
+                "total_source_count": profile.total_source_count,
                 "data_sources": {
                     "kbo": True,
-                    "teamleader": profile.tl_company_id is not None,
-                    "exact": profile.exact_customer_id is not None,
+                    "teamleader": profile.has_teamleader,
+                    "exact": profile.has_exact,
+                    "autotask": profile.has_autotask,
                 }
             }
             return json.dumps(result, ensure_ascii=False, indent=2)

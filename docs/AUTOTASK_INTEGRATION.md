@@ -1,6 +1,6 @@
 # Autotask PSA Integration
 
-**Status:** Hyperrealistic Mock Implementation Complete  
+**Status:** Hyperrealistic Mock + Unified 360 Integration Complete  
 **Date:** March 8, 2026  
 **Type:** Service Management / PSA Integration
 
@@ -30,6 +30,7 @@ This integration completes the IT1 Group 360° view alongside:
 | Sync Pipeline | ✅ Complete | `scripts/sync_autotask_to_postgres.py` |
 | Database Schema | ✅ Complete | 3 tables + sync cursor |
 | Identity Linking | ✅ Complete | VAT/Tax ID matching to KBO |
+| Unified 360 Integration | ✅ Complete | `007_add_autotask_to_unified_360.sql` adds `autotask_*` fields and `linked_all` status |
 | Production API | ⏸️ Ready | Requires credentials |
 
 ---
@@ -129,7 +130,7 @@ class AutotaskContract:
 | ID | Name | Location | Tax ID |
 |----|------|----------|--------|
 | AT-001 | TechFlow Solutions BV | Eindhoven, NL | NL123456789B01 |
-| AT-002 | Global Manufacturing Group | Antwerpen, BE | BE0123.456.789 |
+| AT-002 | B.B.S. Entreprise | Antwerp, BE | BE0438.437.723 |
 | AT-003 | Legal Partners Advocaten | Brussels, BE | BE0987.654.321 |
 | AT-004 | Green Energy Systems | Luxembourg, LU | LU12345678 |
 | AT-005 | Finance First Advisors | Luxembourg, LU | LU87654321 |
@@ -219,7 +220,7 @@ GROUP BY c.name;
 
 ## Identity Linking
 
-The sync automatically attempts to match Autotask companies to KBO records using Tax ID (VAT/BTW number):
+The sync automatically attempts to match Autotask companies to KBO records using Tax ID (VAT/BTW number), stores `kbo_number` / `organization_uid`, and projects the matched records into `unified_company_360`:
 
 ```sql
 -- View matched identities

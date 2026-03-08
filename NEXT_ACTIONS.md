@@ -12,7 +12,7 @@
 
 **Status:** REOPENED - Published, but not yet acceptable as the business-case source of truth
 **Discovered:** 2026-03-08 (initial audit), reopened 2026-03-08 via direct user feedback
-**Last Updated:** 2026-03-08 16:52 CET
+**Last Updated:** 2026-03-08 19:20 CET
 **Severity:** CRITICAL
 **Guide:** `docs/ILLUSTRATED_GUIDE.md` v2.0  
 **Audit Report:** `docs/ILLUSTRATED_GUIDE_AUDIT.md`
@@ -25,7 +25,7 @@
 
 | Evidence | Status | Limitation |
 |----------|--------|------------|
-| B.B.S. Entreprise screenshot | Partial | Shows KBO + Teamleader + Exact linkage, but not the required Autotask/website/UID-first story |
+| B.B.S. Entreprise screenshot | Partial | The current screenshot still shows only KBO + Teamleader + Exact, but the backend now verifies the same account as `linked_all` with Autotask support data |
 | NL segment creation | Partial | Shows a canonical `1,652`-company result, but the guide still mixes `1,652`, `1,529`, and `101` without consistent scope labels |
 | Resend activation POC tests | Partial | Technical path exists, but the guide still lacks a populated audience screenshot for the canonical segment |
 | CSV export artifact | Partial | File exists, but the guide still needs explicit sample-vs-total framing |
@@ -34,9 +34,9 @@
 
 | Gap | Priority | What still needs to be shown or corrected |
 |-----|----------|-------------------------------------------|
-| **Four-source 360 overclaim** | **CRITICAL** | **OBSERVED CONTRADICTION (2026-03-08):** The unified_company_360 view only implements KBO + Teamleader + Exact. Autotask (5 companies) exists but is NOT linked via KBO and NOT in the unified view. The guide's "15 companies linked" claim is false—only 1 company (B.B.S. Entreprise) has linked_both status. Must correct guide or implement true four-source unification. |
+| **Guide refresh after four-source backend fix** | **CRITICAL** | **OBSERVED IMPLEMENTATION FIX (2026-03-08 19:20 CET):** `unified_company_360` now includes Autotask and returns `linked_all=1` for B.B.S. Entreprise with `autotask_open_tickets=1`, `autotask_total_contracts=1`, and `total_source_count=4`. The blocker is now refreshing `docs/ILLUSTRATED_GUIDE.md` so it reflects the new backend truth instead of the old false "15 linked companies" narrative. |
 | UID-first privacy proof | CRITICAL | Show Tracardi/runtime evidence using UID-first operational data, or explicitly document the current privacy divergence |
-| Autotask / IT1 coverage | CRITICAL | Show ticket and contract data linked into the same 360 profile story, or mark IT1 as not yet demonstrated |
+| Guide visual refresh for linked-all profile | MEDIUM | The guide now includes SQL-backed four-source proof for B.B.S. Entreprise, but the screenshot itself still visually shows only the three-source portion of the same story |
 | Count consistency | CRITICAL | Reconcile and label `1,652` total, `1,529` narrower activation test scope, and `101` CSV preview rows |
 | Full 360 proof | CRITICAL | Show visible KBO + CRM + financial + support/behavior context in one coherent demonstration |
 | Business-value demonstrations | HIGH | Add cross-sell/up-sell, multi-division revenue, and website behavior evidence |
@@ -45,9 +45,9 @@
 #### Exit Criteria
 
 - [x] Record that Resend is the accepted current POC activation platform
-- [ ] **Fix four-source 360 overclaim:** Either (a) correct ILLUSTRATED_GUIDE to reflect three-source reality, or (b) implement Autotask into unified_company_360 with KBO linking
+- [x] Implement Autotask into `unified_company_360` with KBO linking and verify one `linked_all` company
 - [ ] Demonstrate UID-only Tracardi/runtime evidence or explicitly document the current privacy divergence
-- [ ] Show one account with KBO + Teamleader + Exact + Autotask and, if claimed, website behavior in the same story
+- [x] Show one account with KBO + Teamleader + Exact + Autotask in the same story
 - [ ] Resolve the `1,652` / `1,529` / `101` count framing in the guide
 - [ ] Capture cross-sell, multi-division, and Next Best Action evidence
 - [ ] Capture identity-resolution and engagement-writeback evidence

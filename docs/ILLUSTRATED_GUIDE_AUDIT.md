@@ -270,6 +270,8 @@ The Illustrated Guide demonstrates component existence but **fails to prove end-
 
 ### ❌ FOUR-SOURCE 360° IS A FALSE CLAIM - OBSERVED CONTRADICTION
 
+**Update (2026-03-08 19:20 CET):** Option B is now implemented in the codebase. Migration `007_add_autotask_to_unified_360.sql` plus a full Autotask resync produced `linked_all=1` for B.B.S. Entreprise, and `query_unified_360` now exposes Autotask support data. This section remains as historical audit evidence of the earlier contradiction; the active blocker has narrowed to refreshing the guide evidence/captions and proving the UID-first privacy boundary.
+
 **Status:** VERIFIED via direct PostgreSQL query  
 **Severity:** CRITICAL - Undermines core value proposition  
 **Evidence Location:** Local PostgreSQL `unified_company_360` view

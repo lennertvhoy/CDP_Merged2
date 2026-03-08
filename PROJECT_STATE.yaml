@@ -133,30 +133,46 @@ current_state:
       - Application Insights Smart Detection
     note: No broad waste was observed inside rg-cdpmerged-fast. The strongest storage-account cleanup candidate is stcdpmergedprtnlp because the group currently holds three nearly identical es-snapshots storage accounts while the repo's current Terraform footprint defines two, and stcdpmergedprtnlp uniquely carries the tag temporary_containerapp_exception=true. The Application Insights Smart Detection action group also looks orphaned because rg-cdpmerged-fast has no App Insights component or smartDetectorAlertRules.
   verified_facts:
-  four_source_360_gap:
-    status: observed
-    verified_at: 2026-03-08T17:36:00+01:00
-    evidence:
-      - source: local_postgresql_query
-      - command: SELECT identity_link_status, COUNT(*) FROM unified_company_360 GROUP BY identity_link_status
-      - result: kbo_only=1,940,588; linked_exact=8; linked_teamleader=6; linked_both=1
-      - command: SELECT source_system, COUNT(*) FROM source_identity_links GROUP BY source_system
-      - result: teamleader=1 (only)
-      - command: SELECT COUNT(*) FROM autotask_companies
-      - result: 5 (but no kbo_number column, not linked to unified view)
-      - file: scripts/migrations/006_add_unified_360_views.sql
-        finding: unified_company_360 only implements KBO + Teamleader + Exact (no Autotask)
-    conclusion:
-      - The ILLUSTRATED_GUIDE claim of "15 Companies Linked Across All 3 Sources" is false
-      - Only 1 company (B.B.S. Entreprise) has linked_both status (KBO + Teamleader + Exact)
-      - Autotask data exists (5 companies) but is NOT integrated into unified_company_360 view
-      - True "four-source 360" (KBO + Teamleader + Exact + Autotask) is NOT implemented
-    guide_contradictions:
-      - "15 Companies Linked" -> Actually 1 company with linked_both status
-      - "Autotask: 5 companies, mock ready" -> Data exists but not linked/integrated
-      - Implied four-source 360 -> Only three sources in unified view
+    four_source_360_gap:
+      status: reported
+      verified_at: 2026-03-08T17:36:00+01:00
+      evidence:
+        - source: local_postgresql_query
+        - command: SELECT identity_link_status, COUNT(*) FROM unified_company_360 GROUP BY identity_link_status
+        - result: kbo_only=1,940,588; linked_exact=8; linked_teamleader=6; linked_both=1
+        - command: SELECT source_system, COUNT(*) FROM source_identity_links GROUP BY source_system
+        - result: teamleader=1 (only)
+        - command: SELECT COUNT(*) FROM autotask_companies
+        - result: 5 (but no kbo_number column, not linked to unified view)
+        - file: scripts/migrations/006_add_unified_360_views.sql
+          finding: unified_company_360 only implemented KBO + Teamleader + Exact at that time
+      conclusion:
+        - The original Illustrated Guide four-source story was a real implementation contradiction before Option B landed
+      note: Superseded on 2026-03-08 by four_source_360_implemented after migration 007 plus a full Autotask resync.
+    four_source_360_implemented:
+      status: observed
+      verified_at: 2026-03-08T19:20:00+01:00
+      evidence:
+        - command: psql "$DATABASE_URL" -f scripts/migrations/007_add_autotask_to_unified_360.sql
+        - command: poetry run python scripts/sync_autotask_to_postgres.py --full
+        - command: SELECT identity_link_status, COUNT(*) FROM unified_company_360 GROUP BY identity_link_status ORDER BY identity_link_status
+        - result: kbo_only=1,940,588; linked_exact=8; linked_teamleader=6; linked_all=1
+        - command: SELECT source_system, total_records, with_kbo_number, with_org_uid, unmatched, match_rate_pct FROM identity_link_quality ORDER BY source_system
+        - result: autotask=5 total / 2 with_kbo_number / 1 with_org_uid / 3 unmatched / 40.00%; exact=9/9/9/0/100.00%; teamleader=60/7/7/53/11.67%
+        - command: SELECT kbo_number, kbo_company_name, tl_company_name, exact_company_name, autotask_company_name, autotask_open_tickets, autotask_total_contracts, total_source_count FROM unified_company_360 WHERE identity_link_status = 'linked_all'
+        - result: 0438437723 / B.B.S. ENTREPRISE / B.B.S. Entreprise / Entreprise BCE sprl / B.B.S. Entreprise / open_tickets=1 / contracts=1 / total_source_count=4
+        - file: scripts/migrations/007_add_autotask_to_unified_360.sql
+          finding: unified_company_360 now includes autotask_* fields, linked_all status, Autotask activity rows, and identity_link_quality coverage
+        - file: src/services/unified_360_queries.py
+          finding: Company360Profile plus unified name search now expose Autotask support data
+        - file: src/ai_interface/tools/unified_360.py
+          finding: query_unified_360 now serializes Autotask support data and source flags
+      conclusion:
+        - Local four-source backend proof now exists for B.B.S. Entreprise
+        - Autotask ticket and contract data are queryable in the unified 360 path
+        - The remaining guide blocker is now refreshed evidence/captioning plus UID-first privacy proof, not missing backend implementation
 
-chatbot:
+  chatbot:
     status: observed
     verified_at: 2026-03-07T23:45:00+01:00
     authoritative_query_plane: postgresql
@@ -175,11 +191,11 @@ chatbot:
         - get_geographic_revenue_distribution
         - get_identity_link_quality
       capabilities:
-        - Cross-source company profiles (KBO + Teamleader + Exact)
+        - Cross-source company profiles (KBO + Teamleader + Exact + Autotask)
         - Industry-level pipeline and revenue analysis
         - High-value/risk account identification
         - Geographic revenue distribution
-        - Identity link quality monitoring
+        - Identity link quality monitoring across Teamleader, Exact, and Autotask
       sample_queries:
         - "What is the total pipeline value for software companies in Brussels?"
         - "Show me IT companies in Gent with open deals over €10k"
@@ -657,10 +673,14 @@ chatbot:
         - "Which high-value accounts have overdue invoices?"
       status: Complete - Views, query service, and chatbot tools all operational
     autotask:
-      status: reported
-      verified_at: 2026-03-04
-      posture: mock_first
-      summary: Treat as mock-first unless vendor access is granted.
+      status: observed
+      verified_at: 2026-03-08T19:20:00+01:00
+      posture: mock_integrated_into_unified_360
+      summary: Mock Autotask data is synced locally and now linked into the unified 360 view for Belgian KBO matches.
+      evidence:
+        - poetry run python scripts/sync_autotask_to_postgres.py --full -> 5 companies, 5 tickets, 3 contracts, 1 identity link created
+        - SELECT source_system, total_records, with_kbo_number, with_org_uid, unmatched, match_rate_pct FROM identity_link_quality ORDER BY source_system -> autotask total_records=5, with_kbo_number=2, with_org_uid=1, unmatched=3, match_rate_pct=40.00
+        - SELECT ... FROM unified_company_360 WHERE identity_link_status = 'linked_all' -> B.B.S. Entreprise linked across KBO + Teamleader + Exact + Autotask
 
   azure_openai:
     status: observed
@@ -1228,12 +1248,12 @@ active_problems:
     status: observed
     severity: critical
     discovered_at: 2026-03-08
-    summary: Illustrated Guide v2.0 is published but still not acceptable as the business-case source of truth. The current guide overstates completion; Resend is accepted for the POC, but privacy/UID proof, Autotask/IT1 evidence, multi-division and behavioral value, and count consistency remain unresolved.
+    summary: Illustrated Guide v2.0 is published but still not yet acceptable as the business-case source of truth. The four-source backend contradiction is now fixed in implementation, but the guide still needs refreshed evidence for the linked_all profile, UID-first/privacy proof, business-value demonstrations, and clearer count framing.
     evidence:
       - Audit report: docs/ILLUSTRATED_GUIDE_AUDIT.md
       - docs/ILLUSTRATED_GUIDE.md still mixes 1,652 segment members, 1,529 activation test members, and 101 CSV rows without a consistent explanatory frame
       - docs/ILLUSTRATED_GUIDE.md Phase 3 shows Resend readiness and POC results, but not a populated audience containing the canonical CDP segment
-      - docs/ILLUSTRATED_GUIDE.md data foundation table still shows Autotask as mock-ready / awaiting credentials rather than demonstrated in the unified profile
+      - docs/ILLUSTRATED_GUIDE.md still needs refreshed wording/screenshots for the now-live linked_all B.B.S. profile and the current Autotask integration status
       - User feedback 2026-03-08 accepted Resend in place of Flexmail for the current POC, so the email-platform swap is not a blocker
       - User feedback 2026-03-08 flagged the privacy architecture contradiction: guide screenshots expose direct PII while the target architecture requires UID-first operational/runtime evidence
       - User feedback 2026-03-08 flagged missing business-case proof for cross-sell, multi-division revenue visibility, website behavior, next-best-action, and engagement writeback
@@ -1248,9 +1268,9 @@ active_problems:
         actual: "Target architecture requires UID-first operational evidence with PII resolved only at authorized presentation/activation steps"
         fix: Demonstrate the UID proxy layer or explicitly document the current architectural divergence
       - issue: autotask_it1_evidence_missing
-        current: "Autotask is shown only as mock-ready / awaiting credentials"
-        actual: "The IT1 division requires ticket/contract evidence inside the unified profile story"
-        fix: Show Autotask-linked support data in the 360 proof or explicitly mark IT1 as not yet demonstrated
+        current: "Guide evidence for Autotask/IT1 is stale and still presented as mock-ready"
+        actual: "Backend proof now exists for one linked_all profile with ticket/contract data, but the guide needs refreshed evidence for the same story"
+        fix: Refresh the guide with the linked_all B.B.S. example and explicit Autotask support fields
       - issue: count_consistency_unresolved
         current: "Guide shows 1,652 segment members, 1,529 activation test members, and 101 CSV rows"
         actual: "These may be reconcilable, but the guide does not label canonical total vs narrower test scope vs preview sample"
@@ -1267,7 +1287,7 @@ active_problems:
       - demonstration: autotask_it1_360_proof
         priority: critical
         description: Show one company linked across KBO + Teamleader + Exact + Autotask in the unified 360 story
-        status: not_started
+        status: backend_verified_refresh_pending
       - demonstration: segment_activation_real_data
         priority: high
         description: Resend audience actually containing 1,652 contacts from CDP

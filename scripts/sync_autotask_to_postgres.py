@@ -21,6 +21,7 @@ import argparse
 import asyncio
 import json
 import os
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -46,8 +47,100 @@ async def get_db_pool():
     return await asyncpg.create_pool(get_database_url())
 
 
+def normalize_vat(vat: str | None) -> str | None:
+    """Normalize VAT numbers for cross-system matching."""
+    if not vat:
+        return None
+
+    normalized = re.sub(r"[^A-Z0-9]", "", vat.upper())
+    if normalized.startswith("BE") and len(normalized) == 12:
+        return normalized
+    if len(normalized) == 10 and normalized.isdigit():
+        return f"BE{normalized}"
+    return normalized if normalized.startswith("BE") else None
+
+
+def extract_belgian_kbo(vat: str | None) -> str | None:
+    """Extract a 10-digit KBO number from a Belgian VAT number."""
+    normalized = normalize_vat(vat)
+    if not normalized or not normalized.startswith("BE"):
+        return None
+    digits = normalized[2:]
+    return digits if len(digits) == 10 and digits.isdigit() else None
+
+
+async def find_kbo_match(
+    conn: asyncpg.Connection,
+    vat_number: str | None,
+    company_name: str | None,
+    city: str | None,
+) -> tuple[str | None, str | None]:
+    """Find the canonical company row that Autotask should link to."""
+    normalized_vat = normalize_vat(vat_number)
+    derived_kbo = extract_belgian_kbo(normalized_vat)
+
+    if normalized_vat:
+        row = await conn.fetchrow(
+            """
+            SELECT kbo_number, id::text AS uid
+            FROM companies
+            WHERE vat_number = $1
+            LIMIT 1
+            """,
+            normalized_vat,
+        )
+        if row:
+            return row["kbo_number"], row["uid"]
+
+    if derived_kbo:
+        row = await conn.fetchrow(
+            """
+            SELECT kbo_number, id::text AS uid
+            FROM companies
+            WHERE kbo_number = $1
+            LIMIT 1
+            """,
+            derived_kbo,
+        )
+        if row:
+            return row["kbo_number"], row["uid"]
+
+    if company_name:
+        normalized_name = re.sub(r"[^a-z0-9]+", "", company_name.lower())
+        if city:
+            row = await conn.fetchrow(
+                """
+                SELECT kbo_number, id::text AS uid
+                FROM companies
+                WHERE regexp_replace(lower(company_name), '[^a-z0-9]+', '', 'g') = $1
+                  AND city ILIKE $2
+                LIMIT 1
+                """,
+                normalized_name,
+                f"%{city}%",
+            )
+            if row:
+                return row["kbo_number"], row["uid"]
+
+        row = await conn.fetchrow(
+            """
+            SELECT kbo_number, id::text AS uid
+            FROM companies
+            WHERE regexp_replace(lower(company_name), '[^a-z0-9]+', '', 'g') = $1
+            LIMIT 1
+            """,
+            normalized_name,
+        )
+        if row:
+            return row["kbo_number"], row["uid"]
+
+    return derived_kbo, None
+
+
 # Database schema migration for Autotask tables
 AUTOTASK_TABLES_SQL = """
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 -- Autotask companies table
 CREATE TABLE IF NOT EXISTS autotask_companies (
     id VARCHAR(50) PRIMARY KEY,
@@ -66,10 +159,21 @@ CREATE TABLE IF NOT EXISTS autotask_companies (
     account_manager_id INTEGER,
     territory_id INTEGER,
     tax_id VARCHAR(50),
+    vat_number VARCHAR(20),
+    kbo_number VARCHAR(20),
+    organization_uid VARCHAR(100),
     create_date TIMESTAMP,
     last_modified_date TIMESTAMP,
-    synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_sync_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    raw_data JSONB
 );
+
+ALTER TABLE autotask_companies ADD COLUMN IF NOT EXISTS vat_number VARCHAR(20);
+ALTER TABLE autotask_companies ADD COLUMN IF NOT EXISTS kbo_number VARCHAR(20);
+ALTER TABLE autotask_companies ADD COLUMN IF NOT EXISTS organization_uid VARCHAR(100);
+ALTER TABLE autotask_companies ADD COLUMN IF NOT EXISTS last_sync_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE autotask_companies ADD COLUMN IF NOT EXISTS raw_data JSONB;
 
 -- Autotask tickets table
 CREATE TABLE IF NOT EXISTS autotask_tickets (
@@ -126,6 +230,9 @@ ON CONFLICT (id) DO NOTHING;
 CREATE INDEX IF NOT EXISTS idx_autotask_tickets_company_id ON autotask_tickets(company_id);
 CREATE INDEX IF NOT EXISTS idx_autotask_contracts_company_id ON autotask_contracts(company_id);
 CREATE INDEX IF NOT EXISTS idx_autotask_companies_tax_id ON autotask_companies(tax_id);
+CREATE INDEX IF NOT EXISTS idx_autotask_companies_vat_number ON autotask_companies(vat_number) WHERE vat_number IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_autotask_companies_kbo_number ON autotask_companies(kbo_number) WHERE kbo_number IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_autotask_companies_org_uid ON autotask_companies(organization_uid) WHERE organization_uid IS NOT NULL;
 """
 
 
@@ -147,13 +254,24 @@ async def sync_companies(pool, client: AutotaskClient, full_sync: bool = False) 
             print("Cleared existing company data (full sync)")
         
         for company in client.get_companies():
+            normalized_vat = normalize_vat(company.tax_id)
+            matched_kbo, org_uid = await find_kbo_match(
+                conn,
+                normalized_vat,
+                company.name,
+                company.city,
+            )
             await conn.execute(
                 """
                 INSERT INTO autotask_companies (
                     id, name, address1, address2, city, state, postal_code, country,
                     phone, fax, web_address, company_type, market_segment_id,
-                    account_manager_id, territory_id, tax_id, create_date, last_modified_date
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+                    account_manager_id, territory_id, tax_id, vat_number, kbo_number,
+                    organization_uid, create_date, last_modified_date, last_sync_at, raw_data
+                ) VALUES (
+                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
+                    $16, $17, $18, $19, $20, $21, CURRENT_TIMESTAMP, $22
+                )
                 ON CONFLICT (id) DO UPDATE SET
                     name = EXCLUDED.name,
                     address1 = EXCLUDED.address1,
@@ -170,8 +288,13 @@ async def sync_companies(pool, client: AutotaskClient, full_sync: bool = False) 
                     account_manager_id = EXCLUDED.account_manager_id,
                     territory_id = EXCLUDED.territory_id,
                     tax_id = EXCLUDED.tax_id,
+                    vat_number = COALESCE(EXCLUDED.vat_number, autotask_companies.vat_number),
+                    kbo_number = COALESCE(EXCLUDED.kbo_number, autotask_companies.kbo_number),
+                    organization_uid = COALESCE(EXCLUDED.organization_uid, autotask_companies.organization_uid),
                     last_modified_date = EXCLUDED.last_modified_date,
-                    synced_at = CURRENT_TIMESTAMP
+                    synced_at = CURRENT_TIMESTAMP,
+                    last_sync_at = CURRENT_TIMESTAMP,
+                    raw_data = EXCLUDED.raw_data
                 """,
                 company.id,
                 company.name,
@@ -189,8 +312,12 @@ async def sync_companies(pool, client: AutotaskClient, full_sync: bool = False) 
                 company.account_manager_id,
                 company.territory_id,
                 company.tax_id,
+                normalized_vat,
+                matched_kbo,
+                org_uid,
                 company.create_date,
                 company.last_modified_date,
+                json.dumps(company.to_dict()),
             )
             count += 1
     
@@ -305,7 +432,6 @@ async def create_identity_links(pool) -> int:
     count = 0
     
     async with pool.acquire() as conn:
-        # Match by Tax ID (VAT/BTW number)
         result = await conn.execute(
             """
             INSERT INTO source_identity_links (
@@ -317,21 +443,18 @@ async def create_identity_links(pool) -> int:
                 is_primary
             )
             SELECT 
-                c.id::varchar as uid,
+                COALESCE(ac.organization_uid, c.id::varchar) as uid,
                 'company' as subject_type,
                 'autotask' as source_system,
                 'company' as source_entity_type,
                 ac.id as source_record_id,
                 false as is_primary
-            FROM companies c
-            JOIN autotask_companies ac ON 
-                REPLACE(REPLACE(REPLACE(c.vat_number, '.', ''), ' ', ''), 'BE0', '') = 
-                REPLACE(REPLACE(REPLACE(ac.tax_id, '.', ''), ' ', ''), 'BE0', '')
-            WHERE c.vat_number IS NOT NULL 
-              AND ac.tax_id IS NOT NULL
+            FROM autotask_companies ac
+            JOIN companies c ON c.kbo_number = ac.kbo_number
+            WHERE ac.kbo_number IS NOT NULL
               AND NOT EXISTS (
                   SELECT 1 FROM source_identity_links sil
-                  WHERE sil.uid = c.id::varchar
+                  WHERE sil.uid = COALESCE(ac.organization_uid, c.id::varchar)
                     AND sil.source_system = 'autotask'
                     AND sil.source_record_id = ac.id
               )
