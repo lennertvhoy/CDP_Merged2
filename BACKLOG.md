@@ -110,7 +110,7 @@ These are included only where they appear likely to add real future value to thi
 | High | **Autotask evidence in demo story** | ✅ DONE | B.B.S. Entreprise now shows `1` open ticket and `1` active contract inside the unified 360 story |
 | High | **Clarify Resend audience naming** | Pending | The reused audience label is generic; captions should make the Brussels IT subset explicit |
 | High | **Document NBA scoring logic** | Partial | `/api/scoring-model`, `ENGAGEMENT_THRESHOLDS`, `RECOMMENDATION_RULES`, and `rule_trace` now exist; the guide/spec still need to cite them clearly |
-| High | **Split mixed demo/source-of-truth docs** | Pending | Break the current guide into vision/business case, system spec, and illustrated evidence so one PDF is not carrying all three roles |
+| High | **Split mixed demo/source-of-truth docs** | ✅ DONE | Split into BUSINESS_CASE.md (vision/value), SYSTEM_SPEC.md (architecture/APIs), and streamlined ILLUSTRATED_GUIDE.md (evidence only) |
 | Medium | **Recheck webhook/event-processor test hang** | ✅ DONE | Both suites now pass cleanly (54 tests in 0.33s); issue resolved, likely by prior hardening |
 
 **Accepted platform decision:** Use **RESEND** for the current POC.

@@ -2636,3 +2636,49 @@ The hanging test issue is resolved. The PROJECT_STATE.yaml entry for `combined_w
 
 ---
 
+
+---
+
+### Task: Split guide into business case / system spec / illustrated evidence
+
+**Type:** docs_or_process_only  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 22:35 CET  
+**Git Head:** `6f8c473` at session start
+
+**Summary:**
+Split the monolithic ILLUSTRATED_GUIDE.md into three focused documents per the handoff direction. Each document now serves a single purpose with clear audience targeting.
+
+**Documents Created:**
+
+1. **docs/BUSINESS_CASE.md** (6.7KB)
+   - Audience: Business stakeholders, decision makers
+   - Content: Vision, value proposition, verified metrics, competitive differentiation
+   - Key sections: Executive Summary, Core Capabilities, Business Metrics, Investment Model
+
+2. **docs/SYSTEM_SPEC.md** (17KB)
+   - Audience: Engineers, architects, security reviewers
+   - Content: Architecture diagrams, PostgreSQL schema, API contracts, privacy architecture
+   - Key sections: Truth Layers, Scoring Model Spec, Webhook Privacy Controls, Routing Guard
+   - Citations: /api/scoring-model, sanitize_resend_event_data(), QUERY_ROUTING_RULES
+
+3. **docs/ILLUSTRATED_GUIDE.md** (9KB, streamlined from ~30KB)
+   - Audience: Demo observers, auditors
+   - Content: Screenshot evidence, verification commands, API responses
+   - Cross-references: Links to BUSINESS_CASE.md for context, SYSTEM_SPEC.md for technical details
+
+**Verification:**
+```bash
+git add -A
+git status --short  # M BACKLOG.md, A docs/BUSINESS_CASE.md, M docs/ILLUSTRATED_GUIDE.md, A docs/SYSTEM_SPEC.md
+git commit -m "docs: split mixed guide into business case / system spec / evidence"
+```
+
+**Result:**
+- 788 insertions, 413 deletions
+- No single document carries conflicting roles
+- Each doc type-appropriate for its audience
+- Cross-references maintain coherence across the three documents
+
+---
+
