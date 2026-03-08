@@ -1097,6 +1097,25 @@ active_problems:
     affects:
       - chatbot_runtime_latency
       - deployed_quality_matrix
+  hardcoded_database_credentials:
+    status: resolved
+    severity: critical
+    discovered_at: 2026-03-08
+    resolved_at: 2026-03-08
+    summary: Multiple scripts had hardcoded PostgreSQL credentials in os.getenv fallbacks, creating security risk if scripts were copied/shared with credentials embedded.
+    evidence:
+      - scripts/regression_local_chatbot.py - os.environ.setdefault with hardcoded URL
+      - scripts/sync_teamleader_to_postgres.py - DEFAULT_DATABASE_URL with hardcoded fallback
+      - scripts/sync_exact_to_postgres.py - DEFAULT_DATABASE_URL with hardcoded fallback
+      - scripts/verify_kbo_matching.py - DEFAULT_DATABASE_URL with hardcoded fallback
+      - Fixed - all scripts now use src.config.settings.DATABASE_URL or exit with error
+      - Verified - grep finds no hardcoded "postgresql://cdpadmin:cdpadmin123" in active scripts
+    affects:
+      - script_security
+      - credential_management
+      - local_development_security
+    owner: agent
+    next_action: None - fixed in commit. Scripts now fail fast with clear error if DATABASE_URL not set.
       - demo_reliability
     owner: agent
     next_action: Monitor Azure OpenAI costs at capacity 100; reduce to 50-70 if budget concerns arise (retries provide resilience).

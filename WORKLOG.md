@@ -934,3 +934,61 @@ All tested functionality works as expected. No troubleshooting required.
 ---
 
 *Phase 1 complete. All core chatbot functionality verified working.*
+
+---
+
+## 2026-03-08 (Security Fix - Remove Hardcoded Credentials)
+
+### Task: Remove Inline Secrets from Scripts
+
+**Type:** app_code  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 14:00 CET  
+**Git Head:** `220a270`
+
+**Summary:**
+Fixed critical security issue where database credentials were hardcoded in several scripts. All scripts now properly load credentials from environment variables via `src.config.settings`.
+
+**Files Modified:**
+
+| File | Change |
+|------|--------|
+| `scripts/regression_local_chatbot.py` | Replaced hardcoded `DATABASE_URL` with `settings.DATABASE_URL` |
+| `scripts/sync_teamleader_to_postgres.py` | Added `get_database_url()` helper, exits with error if not configured |
+| `scripts/sync_exact_to_postgres.py` | Added `get_database_url()` helper, exits with error if not configured |
+| `scripts/verify_kbo_matching.py` | Added `get_database_url()` helper, exits with error if not configured |
+
+**Before:**
+```python
+# Hardcoded fallback (SECURITY RISK)
+DEFAULT_DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://cdpadmin:cdpadmin123@localhost:5432/cdp?sslmode=disable"
+)
+```
+
+**After:**
+```python
+from src.config import settings
+
+def get_database_url() -> str:
+    """Get database URL from settings or environment."""
+    url = settings.DATABASE_URL or os.getenv("DATABASE_URL")
+    if not url:
+        logger.error("DATABASE_URL not configured. Set it in .env or environment.")
+        sys.exit(1)
+    return url
+```
+
+**Verification:**
+- ✓ All 4 scripts pass syntax validation
+- ✓ No hardcoded `postgresql://cdpadmin:cdpadmin123` remains in active scripts
+- ✓ Archive scripts (historical) excluded from fix
+- ✓ `.env.local.example` already documents required variables
+
+**Impact:**
+- Scripts now fail fast with clear error message if `DATABASE_URL` not set
+- No risk of accidentally connecting to wrong database
+- Credentials properly isolated to `.env.local` (untracked)
+
+---
