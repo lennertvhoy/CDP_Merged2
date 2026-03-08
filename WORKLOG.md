@@ -45,6 +45,58 @@ setsid env ENRICHERS=website RUN_NAME=website_discovery CHUNK_SIZE=250 BATCH_SIZ
 
 ---
 
+## 2026-03-08 (Ollama AI Description Enrichment)
+
+### Task: Add Ollama-based AI Description Enrichment (Cost-Free)
+
+**Type:** app_code  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 14:15 CET  
+**Git Head:** `cc87d29`
+
+**Summary:**
+Created Ollama-based AI description enrichment as a cost-free alternative to Azure OpenAI. Ollama is already installed and running with `llama3.1:8b`. The new enricher generates professional business descriptions from NACE codes using local inference.
+
+**Cost Comparison:**
+
+| Option | Cost for 516K profiles | Quality | Speed |
+|--------|----------------------|---------|-------|
+| Azure OpenAI | ~€20-40 | High | Fast |
+| **Ollama (NEW)** | **FREE** | Good | Medium |
+
+**Files Created:**
+- `src/enrichment/descriptions_ollama.py` - New Ollama-based enricher
+
+**Files Modified:**
+- `scripts/enrich_companies_batch.py` - Added DESCRIPTION_ENRICHER selection logic
+
+**Configuration:**
+```bash
+# Use Azure OpenAI (default, paid)
+python scripts/enrich_companies_batch.py --enrichers description
+
+# Use Ollama (FREE, local)
+export DESCRIPTION_ENRICHER=ollama
+export OLLAMA_MODEL=llama3.1:8b  # or llama3.2:3b, mistral
+python scripts/enrich_companies_batch.py --enrichers description
+```
+
+**Verification:**
+- ✅ Tested description generation with sample profile
+- ✅ Verified caching works (same NACE codes = cache hit)
+- ✅ Confirmed environment variable selection works
+- ✅ Git commit `cc87d29` pushed
+
+**Example Output:**
+```
+Description: Test Software BV provides software and IT services to businesses, 
+offering expertise in development, implementation, and maintenance of technology 
+solutions.
+Source: ollama:llama3.1:8b
+```
+
+---
+
 ## 2026-03-08 (Phase 2 Testing - Multi-Message User Story)
 
 ### Task: Execute Phase 2 of Illustrated Guide Testing

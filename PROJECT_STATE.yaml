@@ -497,6 +497,31 @@ current_state:
         second_supervised_chunk_website_discoveries: 62
         current_cursor_file: logs/enrichment/website_discovery_cursor.json
         note: Runner restarted 2026-03-08 with corrected supervisor script. Python batch process (PID 1308070) actively processing chunks. Pre-restart chunks averaged ~25% discovery rate (67/250, 62/250).
+    ai_description_enrichers:
+      azure_openai:
+        status: available
+        cost: ~€20-40 for 516K profiles
+        quality: high
+        implementation: src/enrichment/descriptions.py
+      ollama:
+        status: available_added_2026_03_08
+        cost: FREE (local inference)
+        quality: good
+        speed: medium
+        default_model: llama3.1:8b
+        alternative_models: [llama3.2:3b, mistral]
+        implementation: src/enrichment/descriptions_ollama.py
+        configuration:
+          env_var: DESCRIPTION_ENRICHER=ollama
+          ollama_url_env: OLLAMA_URL=http://localhost:11434
+          model_env: OLLAMA_MODEL=llama3.1:8b
+        features:
+          - same_caching_as_azure
+          - nace_code_deduplication
+          - model_specific_cache_keys
+        verified: true
+        verified_at: 2026-03-08T14:15:00+01:00
+        commit: cc87d29
     truth_notes:
       - sync_status_does_not_equal_field_complete_enrichment
       - canonical_sql_counts_override_stale_dashboard_or_loop_narratives
