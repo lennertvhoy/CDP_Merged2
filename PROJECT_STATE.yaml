@@ -3,7 +3,7 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-08T23:24:41+01:00
+  updated_at: 2026-03-09T00:31:00+01:00
   updated_by: agent
   repo_head:
     value: fe9d51a
@@ -557,9 +557,9 @@ current_state:
       total_companies: 1940603
       industry_nace_code: 1252022
       legal_form: 1176853
-      website_url: 35844
-      geo_latitude: 0
-      ai_description: 70
+      website_url: 36091
+      geo_latitude: 8609
+      ai_description: 441
       sync_status_pending: 0
       sync_status_enriched: 1940603
       updated_last_hour: 0
@@ -733,7 +733,7 @@ current_state:
         - "What is the total pipeline value for software companies in Brussels?"
         - "Show me IT companies in Gent with open deals over €10k"
         - "Which high-value accounts have overdue invoices?"
-      status: Complete - Views, query service, and chatbot tools all operational
+      completion_note: Views, query service, and chatbot tools all operational
     autotask:
       status: observed
       verified_at: 2026-03-08T19:20:00+01:00

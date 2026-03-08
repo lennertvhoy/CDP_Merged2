@@ -4,6 +4,41 @@
 
 ---
 
+### Task: Deep repo cleanup pass for docs, handoffs, guide assets, and generated clutter
+
+**Type:** docs_or_process_only
+**Status:** COMPLETE
+**Timestamp:** 2026-03-09 00:25 CET
+**Git Head:** `b8dfaa4` at session start
+
+**Summary:**
+Ran a controlled cleanup pass focused on repo organization rather than broad deletion. Archived stale planning docs and handoffs out of the repo root and `docs/` top level, removed tracked runtime/generated duplicates that already had canonical copies, and fixed a real documentation-integrity issue in the active Illustrated Guide: it was pointing at ignored root screenshots instead of tracked guide assets.
+
+**Cleanup / organization updates made:**
+- Moved superseded root planning docs (`ACP_EXECUTION_PLAN.md`, `STRATEGIC_ROADMAP.md`) into `docs/archive/roadmaps/`
+- Moved historical `docs/HANDOFF_*.md`, `handoff_session_*.md`, and the leftover `docs/handoffs/` item into `docs/archive/session_handoffs/`
+- Archived stale technical reports out of the active `docs/` surface (`architecture.md`, `deployment.md`, `development.md`, `AI_RESEARCH_AGENT_BRIEF.md`, `RESEARCH_REQUEST_REPORT.md`, `CHATBOT_TEST_REPORT_2026-03-02.md`, `SCREENSHOTS_INDEX.md`)
+- Moved the stale VS Code PET note into `docs/obsolete/reports/` because it still referenced the wrong `.openclaw` workspace
+- Removed tracked `.pid` files, duplicate `.playwright-cli` screenshots, duplicate `output/ILLUSTRATED_GUIDE.*` exports, and duplicate `output/demo_screenshots/*` files
+- Copied the active guide-only screenshots into `docs/illustrated_guide/demo_screenshots/` and updated `docs/ILLUSTRATED_GUIDE.md` so maintained evidence no longer depends on ignored root PNGs
+- Updated `README.md`, `docs/README.md`, `docs/screenshots/README.md`, `.gitignore`, `BACKLOG.md`, and `scripts/doc_lint.py` so the cleaned structure is documented and enforced
+
+**Verification:**
+```bash
+git ls-files | rg '^(handoff_session_.*\.md|docs/HANDOFF_.*\.md|ACP_EXECUTION_PLAN\.md|STRATEGIC_ROADMAP\.md)$'
+python scripts/doc_lint.py
+rg -n '/home/ff/Documents/CDP_Merged/[^)]+\.png' docs/ILLUSTRATED_GUIDE.md
+git diff --check
+```
+
+**Observed Results:**
+- Historical handoffs and stale planning docs are no longer mixed into the active repo surface
+- The active guide now points at tracked `docs/illustrated_guide/demo_screenshots/` assets instead of ignored root screenshots
+- Duplicate generated screenshot/export copies were removed where a canonical tracked copy already existed
+
+**Next Step:**
+- Continue the guide-quality pass itself from the now-cleaner structure: fix the timestamp inconsistency, add the count-semantics dictionary, and finish the CSV/query-ID proof
+
 ### Task: Expand guide backlog from v3.3 polish to business-case conformity tracking
 
 **Type:** docs_or_process_only

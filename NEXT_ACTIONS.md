@@ -5,6 +5,7 @@
 **Date:** 2026-03-08
 **Owner:** AI Agent / Developer
 **Purpose:** Active queue only. Older completions now live in `WORKLOG.md`; roadmap items live in `BACKLOG.md`.
+**Canonical Counts:** `total=1,940,603; website_url=36,091; geo_latitude=8,609; ai_description=441`
 
 ## Active
 
@@ -740,20 +741,3 @@ Secondary Issue Discovered:
 - Status filtering: WORKING - active vs all statuses return different results
 - Segment creation: FUNCTIONAL - creates segments but single-company results may not meet criteria
 - Analytics aggregation: FIXED ✅ - "top industries" queries now correctly map to nace_code
-
-### 2026-03-06: Verify Geocoding Durability
-
-- Eight post-cutover chunks completed with enrichments: 101, 405, 400, 397, 418, 407, 407, 405.
-- Zero explicit 429 or unexpected-error lines in the new supervised runner log.
-- Canonical `geo_latitude` increased from 4,142 to 5,779 (+1,637 records).
-- Geocoding durability risk is now closed.
-
-### 2026-03-06: Tighten Main Local-Only CBE Selector
-
-- `scripts/enrich_companies_batch.py` now requires usable NACE input for CBE selection instead of re-targeting rows solely because `industry_nace_code` is blank.
-- Same-day selector recheck counted `1,226,399` main-selector rows and `688,581` deferred NACE-less rows; the first post-edit chunk completed `2,000` enriched / `0` skipped.
-
-### 2026-03-06: Fix Chunked Failure Exit Propagation
-
-- `scripts/enrich_companies_chunked.py` now returns non-zero when an inner chunk fails, when a full chunk omits `Last company ID`, or when the run is interrupted.
-- `tests/unit/test_enrich_companies_batch.py` now covers the failing-chunk exit path so the supervisor cannot silently treat a failed chunk as success again.

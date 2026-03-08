@@ -2,6 +2,8 @@
 
 Organized visual documentation for the CDP Merged project.
 
+This directory is for general verification captures and browser evidence. The active illustrated guide keeps its tracked proof images under `docs/illustrated_guide/demo_screenshots/` so the PDF does not depend on ignored root screenshots.
+
 ## Directory Structure
 
 ```
@@ -21,10 +23,10 @@ docs/screenshots/
 
 ## Usage Rules
 
-1. **Always save screenshots here** - Never commit root-level PNG files
+1. **Always save screenshots in a tracked docs location** - use `docs/screenshots/` for general verification and `docs/illustrated_guide/demo_screenshots/` for guide assets
 2. **Use descriptive names** - Include date/component/purpose
 3. **Clean up old screenshots** - Remove outdated captures periodically
-4. **Respect .gitignore** - Transient artifacts are excluded
+4. **Respect .gitignore** - Transient artifacts such as `.playwright-cli/` and duplicate `output/` exports are excluded
 
 ## Creating Screenshots
 
@@ -46,3 +48,5 @@ page.screenshot(path="docs/screenshots/browser/my-screenshot.png")
 | browser | UI verification, E2E tests | chainlit-ui-*.png |
 | chatbot | Chatbot functionality | chatbot_working_*.png |
 | tracardi | Tracardi dashboard state | tracardi_dashboard_*.png |
+
+Guide-specific examples live under `docs/illustrated_guide/demo_screenshots/`, for example `resend_audience_detail_populated_2026-03-08.png` and `chatbot_360_bbs_four_source_final_2026-03-08.png`.

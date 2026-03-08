@@ -54,9 +54,15 @@ logs/import_kbo_state.json
 logs/enrichment/*_cursor.json
 enrichment_run_result.json
 .enrichment.pid
+*.pid
+logs/*.pid
 
 # Screenshot organization - root level should be clean
 # All screenshots go to docs/screenshots/
 /*.png
 /playwright-screenshots/
+.playwright-cli/*.log
+.playwright-cli/*.png
 .playwright-cli/page-*.yml
+output/ILLUSTRATED_GUIDE.*
+output/demo_screenshots/

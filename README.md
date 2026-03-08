@@ -2,7 +2,7 @@
 
 AI-assisted customer data platform built around PostgreSQL, Tracardi, and an operator chatbot.
 
-**Last Updated:** 2026-03-06  
+**Last Updated:** 2026-03-08
 **Canonical Repo:** `/home/ff/Documents/CDP_Merged`
 
 ## Start Here
@@ -48,6 +48,7 @@ Historical material that may still be useful for context lives under `docs/archi
 
 - `docs/archive/status_history/`
 - `docs/archive/planning/`
+- `docs/archive/roadmaps/`
 - `docs/archive/reports/`
 - `docs/archive/session_handoffs/`
 - existing legacy archive folders already under `docs/archive/`
@@ -64,6 +65,9 @@ Unsafe or misleading historical prompts and reports live under `docs/obsolete/`.
 - `config/examples/`: safe example env/config fragments
 - `infra/`: infrastructure code and deployment helpers
 - `docs/`: durable technical documentation, archives, and obsolete material
+- `docs/illustrated_guide/demo_screenshots/`: tracked evidence assets for the active guide
+- `docs/screenshots/`: general verification and browser screenshots
+- `output/`: generated local artifacts only; not a source-of-truth docs location
 - `tests/`: unit and integration coverage
 - `logs/`: session and operational logs
 
@@ -72,3 +76,4 @@ Unsafe or misleading historical prompts and reports live under `docs/obsolete/`.
 - Real secrets must not live in the repo. Use `.env.database.example` as a template and keep the real `.env.database` local-only.
 - Do not treat `docs/archive/` or `docs/obsolete/` as sources of current status.
 - If a status claim matters operationally, prefer `PROJECT_STATE.yaml` over older summaries.
+- Do not point maintained docs at ignored root screenshots or generated `output/` copies when a tracked docs asset exists.

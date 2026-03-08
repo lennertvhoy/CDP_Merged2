@@ -51,7 +51,7 @@
 
 ### Response Excerpt
 
-![360° Golden Record response excerpt](/home/ff/Documents/CDP_Merged/chatbot_360_bbs_four_source_final_2026-03-08.png){ width=72% }
+![360° Golden Record response excerpt](/home/ff/Documents/CDP_Merged/docs/illustrated_guide/demo_screenshots/chatbot_360_bbs_four_source_final_2026-03-08.png){ width=72% }
 
 **Visible Proof:**
 
@@ -84,7 +84,7 @@ WHERE identity_link_status = 'linked_all';
 
 ### Response Excerpt
 
-![Segment Creation response excerpt](/home/ff/Documents/CDP_Merged/chatbot_segment_creation_2026-03-08.png){ width=72% }
+![Segment Creation response excerpt](/home/ff/Documents/CDP_Merged/docs/illustrated_guide/demo_screenshots/chatbot_segment_creation_2026-03-08.png){ width=72% }
 
 **Visible Proof:**
 
@@ -274,7 +274,7 @@ curl http://localhost:8780/api/scoring-model
 
 ### Privacy Boundary Evidence
 
-![Tracardi UID-First](/home/ff/Documents/CDP_Merged/tracardi_dashboard_anonymous_profiles_2026-03-08.png)
+![Tracardi UID-First](/home/ff/Documents/CDP_Merged/docs/illustrated_guide/demo_screenshots/tracardi_dashboard_anonymous_profiles_2026-03-08.png)
 
 **Visible Proof:**
 
@@ -305,7 +305,7 @@ curl http://localhost:8780/api/scoring-model
 
 ### Teamleader (CRM)
 
-![Teamleader Dashboard](/home/ff/Documents/CDP_Merged/teamleader_dashboard.png)
+![Teamleader Dashboard](/home/ff/Documents/CDP_Merged/docs/illustrated_guide/demo_screenshots/teamleader_dashboard_2026-03-08.png)
 
 **Verified Data:**
 
@@ -316,7 +316,7 @@ curl http://localhost:8780/api/scoring-model
 
 ### Exact Online (Financial)
 
-![Exact Online Dashboard](/home/ff/Documents/CDP_Merged/exact_current.png)
+![Exact Online Dashboard](/home/ff/Documents/CDP_Merged/docs/illustrated_guide/demo_screenshots/exact_dashboard_2026-03-08.png)
 
 **Verified Data:**
 
@@ -357,9 +357,9 @@ Use short evidence IDs in the matrix below so the PDF stays readable; the full f
 - `SG-01` → `chatbot_360_bbs_four_source_final_2026-03-08.png`
 - `SG-02` → `chatbot_segment_creation_2026-03-08.png`
 - `SG-03` → `docs/illustrated_guide/demo_screenshots/resend_audience_detail_populated_2026-03-08.png`
-- `SG-04` → `tracardi_dashboard_anonymous_profiles_2026-03-08.png`
-- `SG-05` → `teamleader_dashboard.png`
-- `SG-06` → `exact_current.png`
+- `SG-04` → `docs/illustrated_guide/demo_screenshots/tracardi_dashboard_anonymous_profiles_2026-03-08.png`
+- `SG-05` → `docs/illustrated_guide/demo_screenshots/teamleader_dashboard_2026-03-08.png`
+- `SG-06` → `docs/illustrated_guide/demo_screenshots/exact_dashboard_2026-03-08.png`
 - `SG-07` → `docs/illustrated_guide/demo_screenshots/csv_export_opened_spreadsheet_view_2026-03-08.png`
 
 **Label Note:** The guide intentionally mixes live SaaS screens, local runtime views, demo-backed integration evidence, and generated local artifacts. Each item is labeled by source rather than flattened into a single "live" claim.

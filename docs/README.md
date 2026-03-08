@@ -15,10 +15,13 @@ Current project state does **not** live here first. Start at the repo root:
 
 Use the rest of `docs/` for durable technical references such as:
 
+- `ILLUSTRATED_GUIDE.md`
 - `ARCHITECTURE_AZURE.md`
 - `ARCHITECTURE_DECISION_RECORD.md`
 - `KBO_INGESTION.md`
 - `SECRETS_AUDIT.md`
+- `illustrated_guide/demo_screenshots/`
+- `screenshots/`
 - `research/`
 - `specs/`
 
@@ -28,9 +31,9 @@ Use the rest of `docs/` for durable technical references such as:
 
 - `status_history/` for dated status snapshots and correction notes
 - `planning/` for superseded migration plans or planning copies
+- `roadmaps/` for retired planning docs that were replaced by `BACKLOG.md`
 - `reports/` for one-off implementation or investigation reports
 - `operations/` for archived operational SOPs tied to older workflows
-- `roadmaps/` for superseded architecture or migration roadmaps
 - `session_handoffs/` for older handoff context that is no longer current
 - existing legacy archive folders preserved from earlier cleanups
 
@@ -51,3 +54,4 @@ Do not use anything under `docs/obsolete/` for operational guidance.
 - Keep real secrets out of tracked files.
 - Use `.env.database.example` as the safe template for the local-only `.env.database`.
 - If you find an old document with raw credentials, move or sanitize it instead of repeating the values elsewhere.
+- `output/` is for generated local artifacts, not maintained documentation.

@@ -10,9 +10,14 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT_STATE = ROOT / "PROJECT_STATE.yaml"
 STATUS = ROOT / "STATUS.md"
 NEXT_ACTIONS = ROOT / "NEXT_ACTIONS.md"
+ILLUSTRATED_GUIDE = ROOT / "docs" / "ILLUSTRATED_GUIDE.md"
 RETIRED_ROOT_SUMMARIES = [
     ROOT / "GEMINI.md",
     ROOT / "PROJECT_STATUS_SUMMARY.md",
+]
+RETIRED_ROOT_PLANNING_DOCS = [
+    ROOT / "ACP_EXECUTION_PLAN.md",
+    ROOT / "STRATEGIC_ROADMAP.md",
 ]
 
 
@@ -28,6 +33,25 @@ def check_retired_summary_files(errors: list[str]) -> None:
     for path in RETIRED_ROOT_SUMMARIES:
         if path.exists():
             errors.append(f"{path.name} should be retired from the repo root.")
+
+
+def check_retired_planning_files(errors: list[str]) -> None:
+    for path in RETIRED_ROOT_PLANNING_DOCS:
+        if path.exists():
+            errors.append(f"{path.name} should be archived under docs/archive/, not kept at the repo root.")
+
+
+def check_handoff_locations(errors: list[str]) -> None:
+    root_handoffs = sorted(ROOT.glob("handoff_session_*.md"))
+    docs_handoffs = sorted((ROOT / "docs").glob("HANDOFF_*.md"))
+
+    if root_handoffs:
+        names = ", ".join(path.name for path in root_handoffs)
+        errors.append(f"Root handoff files should be archived under docs/archive/session_handoffs/: {names}.")
+
+    if docs_handoffs:
+        names = ", ".join(path.name for path in docs_handoffs)
+        errors.append(f"docs/HANDOFF_*.md files should be archived under docs/archive/session_handoffs/: {names}.")
 
 
 def check_duplicate_yaml_keys(errors: list[str]) -> None:
@@ -49,6 +73,26 @@ def check_duplicate_yaml_keys(errors: list[str]) -> None:
             block_scalar_indent = None
 
         if stripped.startswith("- "):
+            while len(stack) > 1 and indent < stack[-1][0]:
+                stack.pop()
+            if len(stack) > 1 and indent == stack[-1][0]:
+                stack.pop()
+            stack.append((indent, set()))
+
+            item_body = raw_line[indent + 2 :]
+            match = key_re.match(item_body)
+            if not match:
+                continue
+
+            key = match.group(2)
+            remainder = (match.group(3) or "").strip()
+            current_keys = stack[-1][1]
+            current_keys.add(key)
+
+            if not remainder or remainder in {"|", ">"}:
+                stack.append((indent + 2, set()))
+                if remainder in {"|", ">"}:
+                    block_scalar_indent = indent + 2
             continue
 
         match = key_re.match(raw_line)
@@ -143,12 +187,27 @@ def check_next_actions_shape(errors: list[str]) -> None:
         )
 
 
+def check_illustrated_guide_asset_paths(errors: list[str]) -> None:
+    text = read_text(ILLUSTRATED_GUIDE)
+    image_re = re.compile(r"/home/ff/Documents/CDP_Merged/([^\s)]+\.png)")
+
+    for match in image_re.finditer(text):
+        rel_path = match.group(1)
+        if not rel_path.startswith("docs/illustrated_guide/"):
+            errors.append(
+                f"{ILLUSTRATED_GUIDE.name} should use tracked docs/illustrated_guide assets, found root/other PNG path `{rel_path}`."
+            )
+
+
 def main() -> int:
     errors: list[str] = []
     check_retired_summary_files(errors)
+    check_retired_planning_files(errors)
+    check_handoff_locations(errors)
     check_duplicate_yaml_keys(errors)
     check_status_shape(errors)
     check_next_actions_shape(errors)
+    check_illustrated_guide_asset_paths(errors)
     try:
         check_summary_count_alignment(errors)
     except LintFailure as exc:
