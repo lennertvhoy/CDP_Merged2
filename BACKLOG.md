@@ -92,6 +92,33 @@ These are included only where they appear likely to add real future value to thi
 - `A2A`: possible later value, but only once agent-to-agent interoperability is a real architectural need rather than a trend.
 - `AG-UI / A2UI`: interesting, but not enough value while Chainlit remains the UI shell and the main problem is source realism plus runtime stability.
 
+### Milestone POC: Close the Loop - Activation End-to-End
+
+**Why this matters:** The POC is not complete until we prove the full activation cycle works: Chatbot → Segment → Email Tool → Engagement → Enriched Profile. All infrastructure exists, but end-to-end verification is missing.
+
+| Priority | Item | Status | What still needs to happen |
+|----------|------|--------|-----------------------------|
+| Critical | **TEST: Segment push to Flexmail** | Pending | Run end-to-end test, verify segment appears in Flexmail ≤60s |
+| Critical | **TEST: Engagement writeback** | Pending | Send test email, verify open/click events enrich Tracardi profiles |
+| Critical | **TEST: End-to-end latency** | Pending | Time from NL prompt to segment in email tool |
+| High | **Document POC completion evidence** | Pending | Screenshot/video of working flow, latency report |
+| High | **Autotask decision** | Blocked | No demo env available; decide: mock-only, pursue access, or descope |
+
+**Prerequisites (all ✅ complete):**
+- PostgreSQL with 1.94M KBO records
+- Tracardi with 5 email workflows deployed
+- Teamleader + Exact sync pipelines operational
+- Bridge script for Flexmail integration exists
+- AI chatbot with routing guard (≥95% accuracy achieved)
+
+**Exit criteria:**
+- Segment created via chatbot appears in Flexmail within 60 seconds
+- Engagement events (sent/opened/clicked) flow back to Tracardi
+- At least 3 profile fields enriched by engagement events
+- End-to-end latency measured and documented
+
+---
+
 ### Milestone 0A: Standards And Modularity With Real Future Value
 
 **Why this matters:** These items can increase modularity, quality, and future interoperability without distracting from the near-term demo goal, but only if adopted in a scoped way.
