@@ -232,6 +232,7 @@ curl http://localhost:8780/api/scoring-model
 ```
 
 **Example Calculation (B.B.S. Entreprise):**
+
 | Event | Weight | Count | Subtotal |
 |-------|--------|-------|----------|
 | email.opened | +5 | 1 | +5 |
@@ -250,6 +251,7 @@ curl http://localhost:8780/api/scoring-model
 - Raw emails removed by gateway sanitization
 
 **Current Divergence (Documented):**
+
 | Layer | Target | Current | Gap |
 |-------|--------|---------|-----|
 | PostgreSQL core | UID-first | UID-first | ✅ |
@@ -305,15 +307,26 @@ curl http://localhost:8780/api/scoring-model
 
 ## Screenshot Inventory
 
-| Filename | Description | Date | Verification |
-|----------|-------------|------|--------------|
-| `chatbot_360_bbs_four_source_final_2026-03-08.png` | 360° view with 4-source linkage | 2026-03-08 | ✅ Live backend |
-| `chatbot_segment_creation_2026-03-08.png` | NL segment creation | 2026-03-08 | ✅ Live chatbot |
-| `resend_dashboard.png` | Resend campaigns dashboard | 2026-03-08 | ✅ Live Resend |
-| `tracardi_dashboard_anonymous_profiles_2026-03-08.png` | UID-first profiles | 2026-03-08 | ✅ Local Tracardi |
-| `teamleader_dashboard.png` | Teamleader companies | 2026-03-08 | ✅ Live Teamleader |
-| `exact_current.png` | Exact Online dashboard | 2026-03-08 | ✅ Live Exact |
-| `chatbot_360_demo_attempt.png` | CSV export view | 2026-03-08 | ✅ Local artifact |
+Use short evidence IDs in the matrix below so the PDF stays readable; the full filenames are preserved in the key immediately after it.
+
+| ID | What it proves | Date | Verification |
+|----|----------------|------|--------------|
+| SG-01 | 360° linked_all profile across 4 sources | 2026-03-08 | ✅ Live backend |
+| SG-02 | NL segment creation for Brussels IT scope | 2026-03-08 | ✅ Live chatbot |
+| SG-03 | Resend dashboard and activation surface | 2026-03-08 | ✅ Live Resend |
+| SG-04 | Anonymous Tracardi profile view | 2026-03-08 | ✅ Local Tracardi |
+| SG-05 | Teamleader CRM snapshot | 2026-03-08 | ✅ Live Teamleader |
+| SG-06 | Exact Online dashboard snapshot | 2026-03-08 | ✅ Live Exact |
+| SG-07 | Opened CSV artifact preview | 2026-03-08 | ✅ Local artifact |
+
+**Filename Key:**
+- `SG-01` → `chatbot_360_bbs_four_source_final_2026-03-08.png`
+- `SG-02` → `chatbot_segment_creation_2026-03-08.png`
+- `SG-03` → `resend_dashboard.png`
+- `SG-04` → `tracardi_dashboard_anonymous_profiles_2026-03-08.png`
+- `SG-05` → `teamleader_dashboard.png`
+- `SG-06` → `exact_current.png`
+- `SG-07` → `chatbot_360_demo_attempt.png`
 
 ---
 
@@ -346,14 +359,14 @@ curl http://localhost:8780/api/scoring-model
 
 **Query Timestamp:** 2026-03-08 22:24 CET
 
-**360° Revenue Aggregation:**
-| Source | Metric | Value | Status |
-|--------|--------|-------|--------|
-| **Teamleader (CRM)** | Pipeline Value | €0 (no open deals) | ✅ Linked |
-| **Teamleader (CRM)** | Won Deals YTD | €0 (demo tenant) | ✅ Linked |
-| **Exact (Financial)** | Revenue YTD | €0 (demo tenant) | ✅ Linked |
-| **Autotask (Support)** | Contract Value | €15,000 | ✅ Active |
-| **AGGREGATED TOTAL** | Cross-Source Value | **€15,000** | **✅ Computed** |
+**360° Revenue Aggregation Summary:**
+
+| Source | Current Value | Status |
+|--------|---------------|--------|
+| Teamleader CRM | Pipeline `€0`; won deals YTD `€0` | ✅ Linked |
+| Exact Online | Revenue YTD `€0` | ✅ Linked |
+| Autotask Support | Contract value `€15,000` | ✅ Active |
+| Aggregated total | Cross-source value `€15,000` | ✅ Computed |
 
 **Linkage Verification:**
 ```
@@ -376,13 +389,22 @@ AUTOTASK:   B.B.S. Entreprise | 1 Open Ticket | €15,000 Contract Value
 
 ### Timestamped Sync Proof
 
-| Company | KBO | CRM Last Sync | Exact Last Sync | Sync Status |
-|---------|-----|---------------|-----------------|-------------|
-| Goossens Belgium | 0794801370 | 2026-03-08 14:57:56 | — | ✅ Fresh |
-| Digital Pharma & Zonen | 0771989346 | 2026-03-08 14:57:55 | — | ✅ Fresh |
-| B.B.S. Entreprise | 0438437723 | 2026-03-08 14:57:55 | — | ✅ Fresh |
-| Sportmart NV | 0877319765 | — | 2026-03-08 11:19:39 | ✅ Fresh |
-| IT4U bvba | 0467561477 | — | 2026-03-08 11:19:39 | ✅ Fresh |
+**Teamleader sample rows (captured 2026-03-08 14:57 CET):**
+
+| Company | KBO | Last sync |
+|---------|-----|-----------|
+| Goossens Belgium | 0794801370 | 2026-03-08 14:57:56 |
+| Digital Pharma & Zonen | 0771989346 | 2026-03-08 14:57:55 |
+| B.B.S. Entreprise | 0438437723 | 2026-03-08 14:57:55 |
+
+**Exact Online sample rows (captured 2026-03-08 11:19 CET):**
+
+| Company | KBO | Last sync |
+|---------|-----|-----------|
+| Sportmart NV | 0877319765 | 2026-03-08 11:19:39 |
+| IT4U bvba | 0467561477 | 2026-03-08 11:19:39 |
+
+All sampled rows were fresh in the local 360° query plane when the evidence was captured.
 
 **Sync Latency Summary:**
 - **Teamleader → PostgreSQL:** Sub-second to 2 minutes (API rate limit dependent)

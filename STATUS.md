@@ -2,19 +2,19 @@
 
 **Platform:** Azure target architecture with local-only execution mode
 **Current Execution Mode:** Local-only (`Azure deployment path paused to save costs`)
-**Last Updated:** 2026-03-08 21:20 CET
+**Last Updated:** 2026-03-08 22:46 CET
 **Purpose:** Human-readable current snapshot
 **Structured Source:** `PROJECT_STATE.yaml`
 
 ## Current Headline
 
-- `observed` from 2026-03-08 21:32 CET: **DEMO 100% READY - Illustrated Guide v2.0 exported to PDF.** All core business-value proof gaps closed: four-source 360 view (B.B.S. Entreprise), populated Resend audience (189 unique contacts), event-processor outputs (NBA, cross-sell, multi-division), website-behavior writeback proof, and CSV opened-file spreadsheet view all captured.
+- `observed` from 2026-03-08 22:44 CET: **DEMO 100% READY - Illustrated Guide v3.1 PDF exported locally with critical page 9/10 table fixes.** All core business-value proof gaps remain closed, and the screenshot-inventory plus sync-latency tables now render readably in the PDF export.
 - `observed` from 2026-03-08 20:06 CET: **EVENT PROCESSOR ALTERNATIVE VERIFIED LOCALLY.** `scripts/cdp_event_processor.py` now passes targeted unit tests, initializes `company_engagement` in PostgreSQL, serves `/health`, `/api/next-best-action/{kbo}`, and `/api/engagement/leads`, and accepts signed Resend-style webhook events. Verified outputs: B.B.S. Entreprise reached `engagement_score=15` after `email.opened` + `email.clicked` with support-expansion/re-activation recommendations, and Accountantskantoor Dubois produced cross-sell + multi-division recommendations through the same processor.
 - `observed` from 2026-03-08 21:45 CET: **TRACARDI WORKFLOW RUNTIME IS BLOCKED BY CE LIMITATION.** Investigation confirmed that Tracardi Community Edition does not support production workflow execution. The `/deploy/{path}` endpoint is licensed (premium), and rule updates to `production=true`/`running=true` do not persist. Workflow draft screenshots are the maximum verifiable evidence; live execution requires Tracardi Premium or an alternative implementation.
 - `observed` from 2026-03-08 20:21 CET: **TRACARDI PRIVACY BOUNDARY IS ONLY PARTIALLY ACHIEVED.** Live `/profile/select` samples still show anonymous profiles and the Tracardi projection path remains PII-light, but live `/event/select` samples for `email.opened` and `email.clicked` still carry raw email fields in event properties. The Illustrated Guide now explicitly documents that divergence instead of claiming a fully UID-only runtime.
 - `observed` from 2026-03-08 19:20 CET: **FOUR-SOURCE 360 BACKEND IMPLEMENTED LOCALLY.** Migration `007_add_autotask_to_unified_360.sql` plus a full `scripts/sync_autotask_to_postgres.py --full` run now produce one real `linked_all` company in `unified_company_360`: B.B.S. Entreprise with KBO + Teamleader + Exact + Autotask, `autotask_open_tickets=1`, `autotask_total_contracts=1`, and `total_source_count=4`.
 - `observed` from 2026-03-08 18:11 CET: **FRESH FOUR-SOURCE CHATBOT EVIDENCE CAPTURED.** `chatbot_360_bbs_four_source_final_2026-03-08.png` now shows B.B.S. Entreprise with `identity_link_status=linked_all` and `Sources linked: KBO + Teamleader + Exact + Autotask (4 sources)`.
-- `observed` from 2026-03-08 21:04 CET: **Illustrated Guide v2.0 now has live populated Resend audience proof.** The exact Brussels IT primary-code subset was verified at `190` company rows and `189` unique contact emails, then loaded into the empty Resend audience `KBO Companies - Test Audience` with `0` failures. A fresh audience-list screenshot and audience-detail screenshot were captured from the live Resend dashboard. The current Resend plan is capped at `3` audiences, so a new audience could not be created and the empty existing audience had to be reused.
+- `observed` from 2026-03-08 21:04 CET: **Illustrated Guide now has live populated Resend audience proof.** The exact Brussels IT primary-code subset was verified at `190` company rows and `189` unique contact emails, then loaded into the empty Resend audience `KBO Companies - Test Audience` with `0` failures. A fresh audience-list screenshot and audience-detail screenshot were captured from the live Resend dashboard. The current Resend plan is capped at `3` audiences, so a new audience could not be created and the empty existing audience had to be reused.
 - `observed` from 2026-03-08 21:20 CET: **Illustrated Guide now has B.B.S. website-behavior writeback proof.** After applying `scripts/migrations/001_add_projection_tables.sql` to the local compose PostgreSQL instance, the actual `WritebackService` recorded a demo-labeled website session for the real B.B.S. UID. Canonical `event_facts` now show `2` `page.view` events and `1` `goal.achieved` download for the same `linked_all` account used in the 360°, Resend, and event-processor story.
 - `reported` from 2026-03-08 16:52 CET via direct user instruction: **Resend is acceptable as the current activation platform.** Do not treat Flexmail parity as a near-term blocker unless the user explicitly reopens that requirement.
 - `observed` from 2026-03-08 15:50 CET: **DEMO DATA POPULATION SCRIPTS COMPLETE!** Added `scripts/populate_hyperrealistic_demo_data.py` and `scripts/create_360_demo_companies.py` for creating realistic Belgian company data across Teamleader, Exact, and KBO. Commit `51ac939`.
@@ -73,7 +73,7 @@
 ## Top Risks
 
 - If the local-only mode is not kept explicit in the docs, future sessions will keep reopening Azure verification and deployment work that is intentionally paused for cost control.
-- The Illustrated Guide now has the core local-only business-case proof in place, but some low-priority cleanup remains: CSV opened-file proof is still missing, and older audit/caption language still needs light cleanup.
+- The Illustrated Guide now has the core local-only business-case proof in place and the critical PDF table collisions are fixed, but `4` precision items plus `5` remaining formatting items still separate the current package from a cleaner v3.1 finish.
 - The current website-behavior proof is explicitly demo-labeled local writeback evidence for a real UID, not live public-site traffic; replace it only if a non-simulated website-tracking demo becomes a requirement.
 - **Tracardi workflow runtime is blocked by Community Edition limitations**: The draft graphs are real, but production workflow execution requires Tracardi Premium (licensed feature). The `/deploy/{path}` endpoint is licensed, and `production=true`/`running=true` rule updates do not persist in CE. The Illustrated Guide should document this limitation.
 - All stale `.openclaw` path assumptions have been cleaned from active helper/setup scripts; they now use repo-relative imports or `resolve_kbo_zip_path()`.
@@ -91,7 +91,7 @@
 ## Immediate Focus
 
 1. **Keep the active work local-only** and avoid Azure deployment, Azure smoke, or cloud verification until the user explicitly reopens that path
-2. **Keep Illustrated Guide alignment stable** now that the populated audience and website-behavior proofs are captured; only pursue low-priority cleanup or a live public-site tracker demo if the user asks for it
+2. **Keep Illustrated Guide alignment stable and finish the remaining v3.1 cleanup**: split page 1, standardize the phase layout, tighten count/export wording, and improve visual hierarchy without reopening Azure work
 3. **Treat Resend as the accepted POC activation platform** unless the user later reopens a Flexmail requirement
 4. **Document Tracardi CE limitation** - workflow execution requires Premium license; consider alternative approaches (Python bridge, direct webhook handling) for writeback automation
 5. **Keep the compose-managed stack as the default local runtime** and treat host-side `start_chatbot.sh` as the edit/run fallback rather than the primary deployment path

@@ -3,7 +3,7 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-08T22:18:00+01:00
+  updated_at: 2026-03-08T22:46:00+01:00
   updated_by: agent
   repo_head:
     value: fe9d51a
@@ -1417,7 +1417,7 @@ active_problems:
     status: resolved
     severity: none
     discovered_at: 2026-03-08
-    summary: Illustrated Guide v2.0 now contains the core local-only business-case proof. The fresh linked_all screenshot, explicit `1,652` / `1,529` / `101` scope labels, UID-first/runtime note, local event-processor proofs, populated Resend audience proof, and demo-labeled website-behavior writeback proof tied to the same B.B.S. UID are now in place. Remaining follow-up is lower-priority CSV opened-file evidence and stale audit/caption cleanup.
+    summary: The Illustrated Guide package now contains the core local-only business-case proof, and the 2026-03-08 v3.1 formatting pass rebuilt the previously broken screenshot-inventory and sync-latency tables in the PDF export. Remaining follow-up is the page-1 split plus the still-open precision and visual-hierarchy cleanup items.
     evidence:
       - Audit report: docs/ILLUSTRATED_GUIDE_AUDIT.md
       - docs/ILLUSTRATED_GUIDE.md now uses chatbot_360_bbs_four_source_final_2026-03-08.png for the B.B.S. linked_all story
@@ -1433,6 +1433,8 @@ active_problems:
       - 'Joined local SQL verification returned `123ef502-d6d7-4491-8dd3-93060297a16e | 0438437723 | B.B.S. ENTREPRISE | linked_all | 4 | 2 | 1 | 2026-03-08 20:19:48`'
       - 'Detail local SQL verification showed `service-contract-upgrade`, `multi-division-support-playbook`, and `downloaded_support_playbook` in canonical `event_facts`'
       - 2026-03-08 Playwright verification confirmed local Tracardi operator login and dashboard access with fresh GUI evidence, but the dashboard screenshot only shows activation-layer counts/events and does not close the UID-first or four-source 360 proof gaps
+      - '`pandoc --toc --pdf-engine=xelatex docs/ILLUSTRATED_GUIDE.md -o /tmp/ILLUSTRATED_GUIDE_v3_1_test.pdf` completed successfully on 2026-03-08 22:44 CET'
+      - '`pdftotext -f 9 -l 13 -layout /tmp/ILLUSTRATED_GUIDE_v3_1_test.pdf` plus page image inspection confirmed the page 9 screenshot inventory and the sync-latency proof now render without the previous table collisions'
     critical_mismatches:
       - issue: resend_platform_mismatch_removed_as_blocker
         current: "User accepted Resend for the current POC on 2026-03-08"
@@ -1453,7 +1455,7 @@ active_problems:
       - issue: business_value_story_incomplete
         current: "Guide now includes B.B.S.-linked website behavior writeback proof in addition to the four-source, Resend, and event-processor evidence"
         actual: "A demo-labeled local website session is now written to canonical event_facts for the same B.B.S. UID, closing the last core business-value proof gap"
-        fix: Treat remaining work as optional CSV/opened-file proof and stale audit/caption cleanup, not as a missing core story
+        fix: Treat remaining work as formatting/precision cleanup, not as a missing core story
     missing_demonstrations:
       - demonstration: uid_first_privacy_layer
         priority: critical
@@ -1504,8 +1506,8 @@ active_problems:
       - business_case_alignment
     owner: agent
     next_action: 
-      - Demo 100% ready - Illustrated Guide v2.0 exported to PDF at docs/ILLUSTRATED_GUIDE_v2.0.pdf
-      - All core business-value proof captured: four-source 360, populated Resend audience, event-processor outputs, website-behavior writeback, CSV opened-file proof
+      - Latest local guide export is `docs/ILLUSTRATED_GUIDE_v3.1.pdf`, with the critical screenshot-inventory and sync-latency table rebuilds verified
+      - Next guide cleanup step: split page 1 into two pages and standardize the phase-page pattern without changing the verified content claims
   local_compose_projection_tables_missing:
     status: resolved
     severity: medium
