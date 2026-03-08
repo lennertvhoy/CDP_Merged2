@@ -38,7 +38,7 @@
 
 | Gap | Priority | Status |
 |-----|----------|--------|
-| Split the project docs into business case / system spec / illustrated evidence guide | HIGH | Pending - the current guide still carries source-of-truth, evidence, and future-state roles at the same time |
+| Split the project docs into business case / system spec / illustrated evidence guide | HIGH | ✅ COMPLETE - Split into BUSINESS_CASE.md, SYSTEM_SPEC.md, and streamlined ILLUSTRATED_GUIDE.md |
 | Clarify reused Resend audience naming/captioning | HIGH | Pending - make it explicit that `KBO Companies - Test Audience` contains the Brussels IT subset, or capture a better-named audience when plan limits allow |
 | Clarify Autotask wording as `hybrid` | HIGH | Pending - the client and unified 360 linkage are production-capable, but the currently verified local data still runs in demo mode until vendor credentials exist |
 | Surface NBA scoring weights and thresholds | HIGH | In progress - `scripts/cdp_event_processor.py` now exposes `/api/scoring-model` and `rule_trace`, but the guide/spec still need to reference it |
@@ -61,7 +61,7 @@
 - [x] Capture website-behavior evidence tied to the same UID/business-value story
 - [ ] Clarify Resend audience naming so the screenshot label matches the claim
 - [ ] Clarify Autotask as hybrid/prod-ready linkage plus demo-mode data
-- [ ] Split the current guide into business case / system spec / evidence guide
+- [x] Split the current guide into business case / system spec / evidence guide
 - [ ] Surface NBA weights and threshold logic in the guide/spec, using `/api/scoring-model`
 - [ ] Add explicit cross-division revenue aggregation proof
 - [ ] Capture one timestamped sync-latency proof
