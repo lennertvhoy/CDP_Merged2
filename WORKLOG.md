@@ -1576,3 +1576,56 @@ The earlier 2026-03-08 secret-handling fix was incomplete. A follow-up audit fou
 - Corrected stale Milestone 6 text in `BACKLOG.md` that still pointed at `scripts/enrich_monitor.py`
 
 ---
+
+## 2026-03-08 (Illustrated Guide Protocol Clarification)
+
+### Task: Codify one-way Illustrated Guide rule before resuming guide gap closure
+
+**Type:** docs_or_process_only  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 17:09 CET  
+**Git Head:** `975654a`
+
+**Summary:**
+The user clarified that the Illustrated Guide is a one-way source-of-truth artifact: if the guide claims a capability, the default response is to implement or fix the project and gather fresh evidence/screenshots, not merely downgrade the guide to match a weaker current state. Added this rule to `AGENTS.md` as the `Illustrated Guide Directionality Rule`.
+
+**Files Modified:**
+
+| File | Change |
+|------|--------|
+| `AGENTS.md` | Added explicit rule that published guide claims are delivery commitments unless the user de-scopes or the claim is temporarily quarantined with a blocker |
+
+**Verification:**
+- Read `AGENTS.md` screenshot/source-of-truth section and confirmed the new rule fills a process gap without changing architecture rules
+- `git status --short` at session start showed pre-existing dirty path `logs/enrichment/website_discovery_cursor.json`
+
+**Blocked capability noted:**
+- This Codex session does not currently expose a browser-control tool for driving the user's existing Chrome window, so direct GUI capture/login confirmation for Tracardi, Teamleader, and Exact remains blocked from this interface until a browser-control path is available
+
+---
+
+## 2026-03-08 (GUI Access Attempt Paused By User)
+
+### Task: Investigate GUI access to existing browser sessions for Teamleader / Exact / Resend / Tracardi
+
+**Type:** verification_only  
+**Status:** PAUSED  
+**Timestamp:** 2026-03-08 17:18 CET  
+**Git Head:** `975654a`
+
+**Summary:**
+The user briefly redirected work to GUI-access verification, then paused that lane and asked for a handoff plus a reusable prompt for a GUI-capable agent if needed later.
+
+**What was verified before pause:**
+- `curl http://127.0.0.1:9222/json/version` and `/json/list` confirmed a Chrome remote-debug session with live tabs for Exact Online, Teamleader Focus, Resend, Tracardi, and the local chatbot
+- Running `google-chrome-stable "https://focus.teamleader.eu/companies.php"` opened the existing Chrome session and successfully surfaced the logged-in Teamleader companies page
+- Desktop screenshots via `spectacle -b -n -o /tmp/<file>.png` work from this environment
+
+**Why paused:**
+- The user explicitly said to stop pursuing GUI access now and to provide a prompt for another agent if GUI help is needed later
+
+**Follow-up if reopened:**
+- Use `google-chrome-stable "<service-url>"` to surface the target page in the existing Chrome session, then capture with `spectacle`
+- Validate the same approach for Exact Online, Resend, and Tracardi before depending on it for guide evidence
+
+---

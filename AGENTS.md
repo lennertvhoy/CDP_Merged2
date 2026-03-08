@@ -832,6 +832,19 @@ When documentation is designated as "source of truth" for the project:
 4. **End-to-end must be proven:** Show the full flow, not just component existence
 5. **Contradictions must be resolved:** If two docs disagree, verify against implementation
 
+### Illustrated Guide Directionality Rule
+
+For `docs/ILLUSTRATED_GUIDE.md` and any derived guide assets:
+
+1. Treat published guide claims as **delivery commitments**, not aspirational marketing copy.
+2. If the guide claims a capability that the implementation or evidence does not yet support, the default action is to **fix or implement the project first**, then capture fresh evidence and screenshots.
+3. Do **not** resolve the gap only by weakening or deleting the guide claim unless one of these is true:
+   - the user explicitly de-scopes that claim
+   - implementation is currently blocked or unsafe
+   - the claim must be temporarily quarantined to avoid a false current-state statement while the implementation gap is being closed
+4. If a claim is quarantined or downgraded temporarily, record the blocker and the concrete follow-up needed to make the implementation and evidence match the guide again.
+5. The guide never overrides direct runtime verification for deciding what is true **now**, but guide claims do set the default expectation for what work must be completed unless the user changes scope.
+
 **Mandatory demonstrations for CDP source-of-truth status:**
 - 360° Golden Record: Single company query showing unified data from ALL sources
 - Segment Activation: Actual segment push to email tool with populated audience
