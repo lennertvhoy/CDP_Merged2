@@ -2,7 +2,7 @@
 
 **Platform:** AZURE (VMs, Container Apps, OpenAI)  
 **Architecture:** Source systems PII truth + PostgreSQL intelligence truth + Tracardi activation runtime + AI chatbot  
-**Last Updated:** 2026-03-08 (Roadmap realigned after source-of-truth review; core demo proof complete, final polish isolated)
+**Last Updated:** 2026-03-08 (Roadmap aligned with hardening handoff `f9d1906`; core demo proof complete, final polish isolated)
 **Purpose:** Medium-term roadmap from the current repo state to a credible demo first and production readiness later
 
 ## How To Use This File
@@ -106,9 +106,12 @@ These are included only where they appear likely to add real future value to thi
 | Critical | **TEST: Webhook setup for engagement** | ✅ PASS | 6 events subscribed |
 | Critical | **TEST: Engagement writeback** | ✅ PASS | 4/4 events tracked (sent, delivered, opened, clicked) |
 | High | **Document POC completion evidence** | ✅ DONE | Test scripts: `scripts/test_poc_resend_activation.py`, `scripts/test_poc_activation.py` |
+| High | **Harden canonical Brussels IT segment/export contract** | ✅ DONE | Active IT mapping is fixed to `62100/62200/62900/63100`, and CSV export now aborts if canonical rows drift from stored segment filters |
 | High | **Autotask evidence in demo story** | ✅ DONE | B.B.S. Entreprise now shows `1` open ticket and `1` active contract inside the unified 360 story |
 | High | **Clarify Resend audience naming** | Pending | The reused audience label is generic; captions should make the Brussels IT subset explicit |
-| High | **Document NBA scoring logic** | Pending | Surface the weights and thresholds behind `engagement_score=15`, `support_expansion`, and `re_activation` |
+| High | **Document NBA scoring logic** | Partial | `/api/scoring-model`, `ENGAGEMENT_THRESHOLDS`, `RECOMMENDATION_RULES`, and `rule_trace` now exist; the guide/spec still need to cite them clearly |
+| High | **Split mixed demo/source-of-truth docs** | Pending | Break the current guide into vision/business case, system spec, and illustrated evidence so one PDF is not carrying all three roles |
+| Medium | **Recheck webhook/event-processor test hang** | Pending | `tests/unit/test_webhook_gateway.py` + `tests/unit/test_cdp_event_processor.py` still need isolated `-vv -x` reruns to capture a clean green state |
 
 **Accepted platform decision:** Use **RESEND** for the current POC.
 The user explicitly accepted the Resend swap on 2026-03-08, so Flexmail parity should not drive the near-term roadmap.
@@ -190,14 +193,15 @@ poetry run python scripts/test_poc_activation.py --mock
 | Critical | **POPULATE Hyperrealistic connected demo data** | In progress | One flagship `linked_all` account is proven; scale to 10-50 coherent cross-source accounts only if the demo needs more breadth than the current single-story package |
 | Critical | Define a hyperrealistic integration standard | ✅ COMPLETE | Autotask mock with 5 companies, 5 tickets, 3 contracts complete |
 | Critical | **Guide core business-case proof** | ✅ COMPLETE | Four-source 360, populated Resend audience, event-processor outputs, website writeback, privacy divergence note, and CSV opened-file proof are all now captured |
-| Critical | **Keep the guide source-of-truth clean** | In progress | The remaining work is naming clarity, wording precision, explicit logic, and one sync-latency proof chain |
+| Critical | **Keep the guide source-of-truth clean** | In progress | The remaining work is doc splitting, naming clarity, wording precision, explicit logic, citation of the new scoring/privacy hardening, and one sync-latency proof chain |
 | Critical | **Clarify reused Resend audience evidence** | Pending | Make it explicit that `KBO Companies - Test Audience` contains the Brussels IT subset, or replace it with a better-named audience when plan limits allow |
 | Critical | **Clarify Autotask integration posture** | Pending | Keep the guide consistent: production-capable client + local unified-360 linkage, current verified data still demo-mode |
 | Critical | Stabilize the public demo flow | Pending | Eliminate prompt hangs and prove repeatable end-to-end demo success |
-| High | **Surface NBA scoring and threshold logic** | Pending | Show why `engagement_score=15` leads to `support_expansion` + `re_activation` |
+| High | **Surface NBA scoring and threshold logic** | Partial | The runtime now exposes `/api/scoring-model` and `rule_trace`; the remaining work is guide/spec wiring and screenshot/evidence capture |
 | High | **Add explicit cross-division revenue proof** | Pending | Show one customer with revenue rolled up across divisions, not just recommendation output |
 | High | **Capture timestamped sync-latency proof** | Pending | Demonstrate one source update reaching the 360/query plane within the claimed sync interval |
-| High | **Keep privacy hardening on the roadmap** | Pending | Remove raw email fields from Tracardi event properties while preserving the current honest divergence note |
+| High | **Keep privacy hardening on the roadmap** | Partial | `scripts/webhook_gateway.py` now emits privacy-safe downstream payloads, but the live local runtime still needs an end-to-end recheck and Tracardi event-path confirmation |
+| High | **Recheck webhook/event-processor hardening tests** | Pending | Isolate the late-suite timeout in `tests/unit/test_webhook_gateway.py` and `tests/unit/test_cdp_event_processor.py`, then capture a clean green run |
 | High | Build a real/mock/hybrid source matrix | ✅ COMPLETE | Documented in PROJECT_STATE.yaml |
 | High | Add a cleanup/organization queue for demo assets and stale narratives | Pending | Consolidate fixtures, screenshots, and current-state summaries to reduce future drift |
 | High | Require user-owned final verification | Pending | Hold final demo sign-off until the user has tested it and seen one stable week |
@@ -258,7 +262,7 @@ poetry run python scripts/test_poc_activation.py --mock
 | Priority | Item | Status | What still needs to happen |
 |----------|------|--------|-----------------------------|
 | Critical | Verify end-to-end PostgreSQL → Tracardi → PostgreSQL flow on live infrastructure | Partial | Confirm projected state, event writeback, lag metrics, and live profile counts from primary tooling |
-| Critical | Secure inbound webhook handling | Pending | `scripts/webhook_gateway.py` still has TODOs for signature verification and proper rate limiting |
+| Critical | Secure inbound webhook handling | Partial | HMAC/Svix verification, rate limiting, and privacy-safe payload sanitization exist in `scripts/webhook_gateway.py`; remaining work is runtime recheck, replay/retry coverage, and proof that the sanitized path is the one actually exercised |
 | High | Decide whether writeback is webhook-only or must also support polling | Pending | `src/services/writeback.py` still contains TODOs for event fetching and profile-fetch-based sync paths |
 | High | Add idempotency, retry, and replay/dead-letter handling | Pending | Needed for reliable campaign and workflow event ingestion |
 | High | Finish delivery-tool boundaries for Resend/Flexmail | Pending | Resolve PII at authorized send time and keep providers downstream |
