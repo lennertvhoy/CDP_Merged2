@@ -4,7 +4,7 @@ Model Context Protocol (MCP) server exposing core PostgreSQL-backed read-only to
 
 ## Overview
 
-The MCP server provides a standardized interface for MCP-compatible clients (Claude Desktop, etc.) to query the CDP's PostgreSQL database. It exposes 7 core read-only tools:
+The MCP server provides a standardized interface for MCP-compatible clients to query the CDP's PostgreSQL database. MCP is an open protocol for integrating external data sources and tools with AI systems. It exposes 7 core read-only tools:
 
 | Tool | Purpose |
 |------|---------|
@@ -18,7 +18,7 @@ The MCP server provides a standardized interface for MCP-compatible clients (Cla
 
 ## Quick Start
 
-### Stdio Mode (Claude Desktop)
+### Stdio Mode (Default)
 
 ```bash
 ./scripts/start_mcp_server.sh
@@ -33,10 +33,11 @@ The MCP server provides a standardized interface for MCP-compatible clients (Cla
 Health check: http://localhost:8001/health  
 SSE endpoint: http://localhost:8001/sse
 
-## Claude Desktop Configuration
+## Client Configuration
 
-Add to Claude Desktop config (usually `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+MCP servers can be used with any MCP-compatible client. The stdio transport is the most common for local integration.
 
+Example configuration format (client-dependent):
 ```json
 {
   "mcpServers": {
