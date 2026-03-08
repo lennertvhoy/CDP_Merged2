@@ -2343,3 +2343,61 @@ The original "software companies" segment was defined using NACE codes that don'
 1. Push the selected segment (190-email Brussels or 1,682-email NULL city) to Resend
 2. Capture the populated audience screenshot for the Illustrated Guide
 3. Proceed to website-behavior evidence capture
+
+---
+
+## 2026-03-08 (Illustrated Guide Website-Behavior Proof)
+
+### Task: Capture website-behavior evidence tied to the same B.B.S. UID story
+
+**Type:** verification_only + docs_or_process_only
+**Status:** COMPLETE (core guide proof closed; low-priority cleanup remains)
+**Timestamp:** 2026-03-08 21:20 CET
+**Git Head:** `36fb363` at session start
+
+**Summary:**
+Captured the missing website-behavior proof for the Illustrated Guide by tying a demo-labeled website session to the real B.B.S. Entreprise UID used in the four-source `linked_all` story. During verification, discovered that the compose-managed local PostgreSQL instance had `activation_projection_state` but was missing the canonical writeback tables required for local behavior proof. Applied the existing migration, wrote the website session through the actual `WritebackService`, and updated the guide/state docs so website behavior is no longer an open core blocker.
+
+**Verification Steps:**
+
+1. Verified the real B.B.S. local company UID
+   - Query: `SELECT id::text, kbo_number, company_name FROM companies WHERE kbo_number = '0438437723'`
+   - Result: `123ef502-d6d7-4491-8dd3-93060297a16e | 0438437723 | B.B.S. ENTREPRISE`
+
+2. Verified the local compose schema gap before the fix
+   - Query: `SELECT table_name FROM information_schema.tables ...`
+   - Result: `activation_projection_state` existed, but `event_facts`, `profile_traits`, and `ai_decisions` were missing
+
+3. Initialized the missing canonical writeback tables
+   - Command: `psql "$DATABASE_URL" -f scripts/migrations/001_add_projection_tables.sql`
+   - Result: migration completed successfully on the compose PostgreSQL instance
+
+4. Wrote website behavior through the real local writeback path
+   - Command: `poetry run python ... WritebackService.process_events(...)`
+   - Result: `2` `page.view` events and `1` `goal.achieved` event processed successfully for the B.B.S. UID
+
+5. Verified the joined B.B.S. story in canonical PostgreSQL
+   - Query: joined `companies` + `unified_company_360` + `event_facts`
+   - Result: `123ef502-d6d7-4491-8dd3-93060297a16e | 0438437723 | B.B.S. ENTREPRISE | linked_all | 4 | 2 | 1 | 2026-03-08 20:19:48`
+
+6. Verified the detail rows in `event_facts`
+   - Result:
+     - `page.view` → `/solutions/service-contract-upgrade`
+     - `page.view` → `/resources/multi-division-support-playbook`
+     - `goal.achieved` → `downloaded_support_playbook` / `support-expansion-playbook.pdf`
+
+**Docs Updated:**
+- `docs/ILLUSTRATED_GUIDE.md`
+- `docs/ILLUSTRATED_GUIDE_AUDIT.md`
+- `STATUS.md`
+- `PROJECT_STATE.yaml`
+- `NEXT_ACTIONS.md`
+
+**Outcome:**
+- The core Illustrated Guide business-case proof is now present for the current local-only POC
+- Website behavior is no longer the missing guide gap
+- Remaining follow-up is low-priority: opened-file CSV proof and light stale audit/caption cleanup
+
+**Next Actions:**
+1. Capture opened-file CSV proof only if the user wants a stronger export demo
+2. Replace the demo-labeled website session with live public-site traffic only if a non-simulated website-tracking demo becomes required

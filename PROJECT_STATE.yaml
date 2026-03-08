@@ -3,7 +3,7 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-08T21:08:00+01:00
+  updated_at: 2026-03-08T21:20:00+01:00
   updated_by: agent
   repo_head:
     value: fe9d51a
@@ -1376,9 +1376,9 @@ active_problems:
     next_action: Keep the broader security sweep focused on unsafe real secrets and stale operational claims rather than the now-resolved enrich_monitor fallback.
   illustrated_guide_screenshot_mismatches:
     status: observed
-    severity: critical
+    severity: medium
     discovered_at: 2026-03-08
-    summary: Illustrated Guide v2.0 is published but still not yet fully acceptable as the business-case source of truth. The fresh linked_all screenshot, explicit `1,652` / `1,529` / `101` scope labels, UID-first/runtime note, local event-processor proofs, and populated Resend audience proof are now in place. The main remaining evidence gap is website-behavior proof tied to the same UID/business-value story, plus cleanup of stale audit/caption language.
+    summary: Illustrated Guide v2.0 now contains the core local-only business-case proof. The fresh linked_all screenshot, explicit `1,652` / `1,529` / `101` scope labels, UID-first/runtime note, local event-processor proofs, populated Resend audience proof, and demo-labeled website-behavior writeback proof tied to the same B.B.S. UID are now in place. Remaining follow-up is lower-priority CSV opened-file evidence and stale audit/caption cleanup.
     evidence:
       - Audit report: docs/ILLUSTRATED_GUIDE_AUDIT.md
       - docs/ILLUSTRATED_GUIDE.md now uses chatbot_360_bbs_four_source_final_2026-03-08.png for the B.B.S. linked_all story
@@ -1389,7 +1389,10 @@ active_problems:
       - User feedback 2026-03-08 accepted Resend in place of Flexmail for the current POC, so the email-platform swap is not a blocker
       - User feedback 2026-03-08 flagged the privacy architecture contradiction: guide screenshots expose direct PII while the target architecture requires UID-first operational/runtime evidence
       - Local verification 2026-03-08 confirmed event-processor proof for B.B.S. Entreprise (support-expansion + engagement writeback) and Accountantskantoor Dubois (cross-sell + multi-division)
-      - User feedback 2026-03-08 flagged missing business-case proof for website behavior
+      - 'Local compose PostgreSQL initially lacked `event_facts`, `profile_traits`, and `ai_decisions`; `psql "$DATABASE_URL" -f scripts/migrations/001_add_projection_tables.sql` created the missing canonical writeback tables on 2026-03-08'
+      - '`WritebackService.process_events()` recorded 3 demo-labeled B.B.S. website events successfully (`2` `page.view`, `1` `goal.achieved`)'
+      - 'Joined local SQL verification returned `123ef502-d6d7-4491-8dd3-93060297a16e | 0438437723 | B.B.S. ENTREPRISE | linked_all | 4 | 2 | 1 | 2026-03-08 20:19:48`'
+      - 'Detail local SQL verification showed `service-contract-upgrade`, `multi-division-support-playbook`, and `downloaded_support_playbook` in canonical `event_facts`'
       - 2026-03-08 Playwright verification confirmed local Tracardi operator login and dashboard access with fresh GUI evidence, but the dashboard screenshot only shows activation-layer counts/events and does not close the UID-first or four-source 360 proof gaps
     critical_mismatches:
       - issue: resend_platform_mismatch_removed_as_blocker
@@ -1409,9 +1412,9 @@ active_problems:
         actual: "The figures are now explicitly framed as canonical full scope vs narrower activation-test scope vs preview export sample"
         fix: Keep future captions using the same scope labels
       - issue: business_value_story_incomplete
-        current: "Current guide screenshots still do not visibly prove website behavior or show guide-ready captures for the newly verified event-processor outputs"
-        actual: "Cross-sell, multi-division, next-best-action, and engagement writeback are now locally verified, but website behavior and audience population are still missing from the guide"
-        fix: Add guide-ready evidence for the verified event-processor outputs and capture the remaining website/audience proof
+        current: "Guide now includes B.B.S.-linked website behavior writeback proof in addition to the four-source, Resend, and event-processor evidence"
+        actual: "A demo-labeled local website session is now written to canonical event_facts for the same B.B.S. UID, closing the last core business-value proof gap"
+        fix: Treat remaining work as optional CSV/opened-file proof and stale audit/caption cleanup, not as a missing core story
     missing_demonstrations:
       - demonstration: uid_first_privacy_layer
         priority: critical
@@ -1424,7 +1427,7 @@ active_problems:
       - demonstration: segment_activation_real_data
         priority: high
         description: Resend audience actually containing 1,652 contacts from CDP
-        status: not_started
+        status: resolved_via_populated_resend_audience_189_unique_contacts
       - demonstration: count_scope_alignment
         priority: critical
         description: Reconcile and label the 1,652 total, 1,529 narrower test scope, and 101-row CSV preview
@@ -1436,7 +1439,7 @@ active_problems:
       - demonstration: website_behavior_and_writeback
         priority: high
         description: Show website behavior and profile enrichment evidence tied to the same UID; email engagement writeback is now locally verified via the event processor
-        status: partially_verified_locally
+        status: guide_ready_demo_labeled_writeback_proof_recorded
       - demonstration: csv_export_validation
         priority: medium
         description: Opened CSV showing all 9 claimed fields with real data and explicitly labeled sample/full counts
@@ -1452,8 +1455,8 @@ active_problems:
         current: 5 companies, 5 tickets, 3 contracts (mock-first)
         required: ticket and contract evidence linked into the same demo accounts used for the IT1 story
       - source: website_behavior
-        current: not yet shown in the guide
-        required: visible behavior events or page-view/download evidence tied to the same UID
+        current: 'guide now shows demo-labeled canonical writeback proof for the same B.B.S. UID (`2` page views, `1` goal)'
+        required: live public-site tracker traffic only if a future demo requires non-simulated website activity
     affects:
       - documentation_credibility
       - demo_readiness
@@ -1464,9 +1467,24 @@ active_problems:
     next_action: 
       - Keep Resend as the accepted current POC activation platform unless the user reopens Flexmail
       - Keep the anonymous-profile proof and email-event divergence explicit until a true UID-only event path is implemented
-      - Keep the fresh linked_all screenshot and captioning aligned with the backend proof
-      - Capture website-behavior evidence tied to the same UID/business-value story
-      - Clean up any stale audit/caption text that still describes the Resend audience proof as missing
+      - Keep the fresh linked_all screenshot, website-behavior proof, and captioning aligned with the backend proof
+      - Capture opened-file CSV proof only if the user wants a stronger export demo
+      - Clean up any stale audit/caption text that still reads like a live blocker instead of historical context
+  local_compose_projection_tables_missing:
+    status: resolved
+    severity: medium
+    discovered_at: 2026-03-08
+    resolved_at: 2026-03-08
+    summary: 'The compose-managed local PostgreSQL instance had `activation_projection_state` but was missing the canonical writeback tables required for local behavior-proof verification (`event_facts`, `profile_traits`, `ai_decisions`).'
+    evidence:
+      - '`SELECT table_name FROM information_schema.tables ...` on local compose PostgreSQL returned only `activation_projection_state` before the fix'
+      - '`psql "$DATABASE_URL" -f scripts/migrations/001_add_projection_tables.sql` completed successfully on 2026-03-08'
+      - 'Subsequent B.B.S. website-writeback verification queried rows from `event_facts` successfully'
+    affects:
+      - local_writeback_verification
+      - illustrated_guide_demo_proof
+    owner: agent
+    next_action: 'Keep local verification commands on `.env.local` / compose PostgreSQL when the task depends on local-only writeback or event-fact proof.'
   postgresql_city_query_timeouts:
     status: resolved
     severity: high

@@ -9,9 +9,9 @@
 
 The Illustrated Guide presents a compelling POC narrative but contains **critical mismatches** between screenshots and descriptions, **missing demonstrations** of core value propositions, and **data inconsistencies** that undermine its credibility as a source of truth.
 
-**Grade: C+** - Components exist but end-to-end integration is not proven with realistic data.
+**Grade: C+** - Historical baseline from the initial audit pass. See the update note below for the current live-state delta.
 
-**Update (2026-03-08 21:08 CET):** The guide has since been refreshed with populated Resend audience proof. The exact Brussels IT primary-code subset was verified at `190` company rows and `189` unique contact emails, then loaded into the empty Resend audience `KBO Companies - Test Audience` because the current Resend plan is capped at `3` audiences. Fresh screenshots were captured at `docs/illustrated_guide/demo_screenshots/resend_audiences_populated_2026-03-08.png` and `docs/illustrated_guide/demo_screenshots/resend_audience_detail_populated_2026-03-08.png`. The remaining active blockers are workflow execution evidence, website-behavior evidence, and stale screenshot/caption cleanup in a few older sections.
+**Update (2026-03-08 21:20 CET):** The guide has since been refreshed with populated Resend audience proof and demo-labeled website-behavior proof tied to the same B.B.S. UID story. The exact Brussels IT primary-code subset was verified at `190` company rows and `189` unique contact emails, then loaded into the empty Resend audience `KBO Companies - Test Audience` because the current Resend plan is capped at `3` audiences. After applying `scripts/migrations/001_add_projection_tables.sql` to the local compose PostgreSQL instance, the actual `WritebackService` wrote `2` `page.view` events and `1` `goal.achieved` event into canonical `event_facts` for `0438437723` / B.B.S. Entreprise. The remaining live follow-up is lower-priority CSV opened-file proof and stale screenshot/caption cleanup. Tracardi workflow execution remains a documented CE product limitation rather than an unacknowledged guide contradiction.
 
 ---
 
@@ -193,6 +193,7 @@ The Illustrated Guide presents a compelling POC narrative but contains **critica
 ### Priority 2: Generate Missing Demonstrations
 - [x] **360° Golden Record:** Capture fresh B.B.S. Entreprise `linked_all` view and align the guide caption to the four-source backend proof
 - [x] **Segment Activation:** Populate the exact Brussels IT primary-code subset in Resend (`190` company rows, `189` unique contacts after one duplicate shared mailbox), capture audience-list and audience-detail screenshots
+- [x] **Website behavior:** Record a demo-labeled B.B.S. website session in canonical `event_facts` (`2` `page.view`, `1` `goal.achieved`) and tie it to the same `linked_all` UID story used in the guide
 - [ ] **CSV Export:** Download and open CSV, screenshot showing all 9 fields with data
 
 ### Priority 3: Populate Realistic Mock Data
@@ -251,7 +252,7 @@ Per AGENTS.md Screenshot and Demo Integrity rules:
 
 ## Conclusion
 
-The Illustrated Guide demonstrates component existence but **fails to prove end-to-end integration** with realistic data. To become a credible source of truth, it must:
+The Illustrated Guide audit started from a state where end-to-end integration was not yet proven with realistic data. Several of those gaps have since been closed; the remaining live follow-up is now limited to CSV opened-file proof and light stale-caption cleanup. To harden the guide further, it should:
 
 1. Fix all screenshot/caption mismatches
 2. Add the 360° Golden Record demonstration (core value)

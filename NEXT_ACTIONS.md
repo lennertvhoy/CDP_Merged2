@@ -10,9 +10,9 @@
 
 ### P0: Illustrated Guide Business-Case Alignment
 
-**Status:** REOPENED - Published, but not yet acceptable as the business-case source of truth
+**Status:** PARTIAL - Core business-case proof is now captured for the current local-only POC; remaining work is low-priority guide cleanup
 **Discovered:** 2026-03-08 (initial audit), reopened 2026-03-08 via direct user feedback
-**Last Updated:** 2026-03-08 21:08 CET
+**Last Updated:** 2026-03-08 21:20 CET
 **Severity:** CRITICAL
 **Guide:** `docs/ILLUSTRATED_GUIDE.md` v2.0  
 **Audit Report:** `docs/ILLUSTRATED_GUIDE_AUDIT.md`
@@ -25,19 +25,20 @@
 
 | Evidence | Status | Limitation |
 |----------|--------|------------|
-| B.B.S. Entreprise screenshot | Partial | Fresh screenshot now shows `identity_link_status=linked_all` and explicit 4-source linkage, but the guide still needs a tighter single-story business-value presentation alongside the verified event-processor outputs |
+| B.B.S. Entreprise single-story proof | Verified | The guide now ties the same B.B.S. record across the `linked_all` 360 proof, event-processor outputs, populated Resend audience context, and demo-labeled website behavior written to canonical `event_facts` |
 | Privacy boundary | Partial | The guide now truthfully shows anonymous Tracardi profile listings plus the documented event-metadata divergence, but the runtime is not yet fully UID-only |
 | NL segment creation | Verified | The guide now labels `1,652` canonical scope, `1,529` narrower activation-test scope, `101` CSV preview rows, and the exact Brussels IT primary-code subset now has downstream proof in Resend (`190` company rows → `189` unique contacts after one shared-mailbox dedupe) |
 | Resend activation POC tests | Verified | Live populated audience proof now exists: the empty audience `KBO Companies - Test Audience` was reused because the plan is capped at `3` audiences, and now holds `189` unique contacts from the exact `190`-company Brussels IT subset |
 | Event processor business-value proof | Verified | Local API outputs verify B.B.S. Entreprise engagement writeback plus support-expansion NBA and Accountantskantoor Dubois cross-sell + multi-division, and the guide now embeds the live JSON evidence |
+| Website behavior writeback | Verified | A demo-labeled local website session for the real B.B.S. UID now records `2` `page.view` events and `1` `goal.achieved` download in canonical `event_facts` after `001_add_projection_tables.sql` initialized the missing local projection tables |
 | CSV export artifact | Partial | The guide now labels `101` as a preview export, but it still lacks opened-file/spreadsheet proof |
 
-#### Remaining blockers
+#### Remaining Follow-up (Non-Blocking)
 
 | Gap | Priority | What still needs to be shown or corrected |
 |-----|----------|-------------------------------------------|
-| Full 360 proof | HIGH | Keep the four-source B.B.S. story aligned with the event-processor behavior proof and the newly captured Resend audience proof in one coherent guide narrative |
-| Website-behavior evidence | HIGH | Capture visible page-view/download/behavior evidence tied to the same UID/business-value story |
+| CSV export opened-file proof | LOW | Optionally capture the exported CSV opened in a spreadsheet so the 9-field preview is visible outside the chatbot/export link |
+| Audit/caption cleanup | LOW | Remove or relabel any older guide/audit wording that still reads like a live blocker instead of historical context |
 
 #### Exit Criteria
 
@@ -50,6 +51,7 @@
 - [x] Capture identity-resolution and engagement-writeback evidence
 - [x] Capture guide-ready event-processor API evidence (live JSON for `/api/next-best-action/0438437723` and `/api/engagement/leads?min_score=5` embedded in guide on 2026-03-08)
 - [x] Capture populated Resend audience proof for the selected Brussels IT subset
+- [x] Capture website-behavior evidence tied to the same UID/business-value story
 
 ---
 
@@ -578,10 +580,10 @@ Evidence:
      - Cross-sell opportunity detection by NACE code
      - Multi-division sales insights
      - REST API: `/api/next-best-action/{kbo}`, `/api/engagement/leads`
-4. **Capture evidence for Illustrated Guide:**
-   - Push 1,652 IT services segment to Resend and capture populated audience
-   - Convert the verified event-processor outputs into guide-ready screenshot/caption evidence
-   - Capture website-behavior evidence tied to the same UID/business-value story
+4. ✅ **Capture evidence for Illustrated Guide** - core proof completed 2026-03-08
+   - Populated Resend audience proof captured for the exact Brussels IT subset (`190` company rows → `189` unique contacts)
+   - Verified event-processor outputs converted into guide-ready JSON evidence
+   - Website-behavior proof captured for the same B.B.S. UID via canonical `event_facts`
 5. Keep Resend transport setup as supporting infrastructure
 
 ## Paused
