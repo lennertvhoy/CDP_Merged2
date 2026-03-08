@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.ai_interface.tools import create_data_artifact
 from src.ai_interface.tools.search import aggregate_profiles, search_profiles
+from src.config import settings
 
 
 @dataclass
@@ -40,18 +41,24 @@ class ChatbotRegressionTest:
         self.results: list[TestResult] = []
         self.start_time: float = 0.0
         
-        # Ensure local database is targeted
-        os.environ.setdefault(
-            "DATABASE_URL",
-            "postgresql://cdpadmin:cdpadmin123@localhost:5432/cdp?sslmode=disable"
-        )
+        # Use database URL from settings (env vars or .env files)
+        if settings.DATABASE_URL:
+            os.environ["DATABASE_URL"] = settings.DATABASE_URL
 
     async def run_all(self) -> bool:
         """Run all regression tests."""
         print("=" * 70)
         print("Local Chatbot Regression Test Suite")
         print("=" * 70)
-        print(f"Database: {os.environ.get('DATABASE_URL', 'not set')}")
+        db_url = os.environ.get('DATABASE_URL', 'not set')
+        # Mask password in output for security
+        if '://' in db_url and '@' in db_url:
+            parts = db_url.split('@')
+            creds = parts[0].split('://')[1] if '://' in parts[0] else parts[0]
+            if ':' in creds:
+                masked = parts[0].replace(creds, creds.split(':')[0] + ':***')
+                db_url = masked + '@' + '@'.join(parts[1:])
+        print(f"Database: {db_url}")
         print()
 
         tests = [

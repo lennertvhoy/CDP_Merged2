@@ -47,14 +47,20 @@ sys.path.insert(0, str(project_root))
 
 from src.core.logger import get_logger
 from src.services.teamleader import TeamleaderClient, load_teamleader_env_file
+from src.config import settings
 
 logger = get_logger(__name__)
 
-# Configuration
-DEFAULT_DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://cdpadmin:cdpadmin123@localhost:5432/cdp?sslmode=disable"
-)
+# Configuration - get from environment via settings, no hardcoded fallback
+def get_database_url() -> str:
+    """Get database URL from settings or environment."""
+    url = settings.DATABASE_URL or os.getenv("DATABASE_URL")
+    if not url:
+        logger.error("DATABASE_URL not configured. Set it in .env or environment.")
+        sys.exit(1)
+    return url
+
+DEFAULT_DATABASE_URL = get_database_url()
 BATCH_SIZE = 100
 PAGE_SIZE = 100
 
