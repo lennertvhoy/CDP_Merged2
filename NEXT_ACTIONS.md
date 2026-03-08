@@ -10,12 +10,12 @@
 
 ### P0: Demo Polish And Source-Of-Truth Hardening
 
-**Status:** ✅ COMPLETE v3.0 - Guide v3.0 presentation-ready per user feedback. 80-90% of source-of-truth issues resolved. Remaining precision improvements (metrics dictionary, CSV integrity proof, maturity labels) deferred to backlog for v3.1.
+**Status:** ✅ COMPLETE v3.0 - Content direction validated; 80-90% of source-of-truth issues resolved. Formatting is now the weakest part (per user: "still amateur-looking"). 4 precision + 7 formatting improvements deferred to backlog for v3.1.
 **Discovered:** 2026-03-08 (initial audit), reopened 2026-03-08 via direct user feedback and source-of-truth review
-**Last Updated:** 2026-03-08 22:32 CET
+**Last Updated:** 2026-03-08 22:45 CET
 **Severity:** HIGH
 **Guide:** `docs/ILLUSTRATED_GUIDE.md` v3.0  
-**User Feedback:** v3.0 solves most document-side issues; 4 precision improvements remain for v3.1
+**User Feedback:** v3.0 content direction good; formatting needs significant work (page 9/10 tables broken, page 1 overloaded, visual hierarchy inconsistent)
 
 #### Accepted Decisions
 
@@ -47,16 +47,28 @@
 | Harden privacy boundary in runtime | MEDIUM | ✅ COMPLETE - 48 webhook gateway tests pass, PII stripping verified, guide updated with verification note |
 | Recheck the late-suite webhook/event-processor test timeout | MEDIUM | ✅ COMPLETE - Both test suites now pass cleanly (54 tests in 0.33s). Issue resolved, likely by commit f9d1906. |
 
-#### Deferred to Backlog (v3.1 Precision Improvements)
+#### Deferred to Backlog (v3.1 Improvements)
 
-Per user feedback on v3.0 guide, these precision improvements remain for future work:
+Per user feedback on v3.0 guide:
 
+**Precision Improvements (4 items):**
 | Gap | Priority | Location |
 |-----|----------|----------|
 | Add canonical count semantics dictionary | P1 | `BACKLOG.md` Milestone 0 |
 | Upgrade CSV export integrity proof | P1 | `BACKLOG.md` Milestone 0 |
 | Implement maturity label system | P2 | `BACKLOG.md` Milestone 0 |
 | Fix privacy statement wording precision | P2 | `BACKLOG.md` Milestone 0 |
+
+**Formatting Improvements (7 items) - formatting is now the weakest part:**
+| Gap | Priority | Issue |
+|-----|----------|-------|
+| Rebuild page 9 screenshot inventory table | P0 | Overlapping text, unreadable rows |
+| Rebuild page 10 sync-latency table | P0 | Column collisions with company names/timestamps |
+| Split page 1 into two pages | P1 | Title overload - needs to breathe |
+| Standardize phase page pattern | P1 | Inconsistent structure across phases |
+| Shaded code boxes for API/JSON | P2 | Pages 5-7 look like raw terminal dumps |
+| Fix blank space waste | P2 | Pages 4 and 11 under-designed |
+| Standardize visual hierarchy | P2 | Screenshots, captions, spacing uneven |
 
 #### Exit Criteria
 
