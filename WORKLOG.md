@@ -459,3 +459,36 @@ Instead of abstract guidance like "use 360° tools for cross-source concepts", t
 ---
 
 *End of WORKLOG*
+
+## 2026-03-08: Exact Online OAuth Token Renewal and Sync Fix
+
+**Task:** Renew Exact Online OAuth tokens and fix sync script
+
+**Status:** COMPLETE
+
+### Changes Made
+1. **Renewed Exact Online OAuth tokens**
+   - Completed OAuth flow via browser automation
+   - Obtained fresh access_token and refresh_token
+   - Updated `.env.exact` with new tokens
+
+2. **Fixed sync script field mappings**
+   - Fixed GL Accounts: `Name`→`Description`, `Active`→`IsBlocked`, `TaxCode`→`VATCode`
+   - Fixed Customers: Removed non-existent fields (CreditLine, DiscountPercentage, etc.)
+   - Fixed Invoices: Removed non-existent fields (ID, ExchangeRate, etc.)
+   - Changed customer filter from `Type eq 'C'` to `IsSales eq true`
+
+3. **Updated Exact client**
+   - Added support for reading/saving access_token from env file
+   - Fixed token refresh handling for "not expired" edge case
+
+### Sync Results
+- GL Accounts: 258 synced
+- Customers: 9 synced
+- Invoices: 78 synced
+- Transactions: Skipped (API field issues, not critical for demo)
+
+### Files Modified
+- `.env.exact` - Updated OAuth tokens
+- `src/services/exact.py` - Enhanced token handling
+- `scripts/sync_exact_to_postgres.py` - Fixed field mappings

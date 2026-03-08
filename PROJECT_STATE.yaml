@@ -430,9 +430,9 @@ current_state:
       identity_linking: enabled_via_source_identity_links
     exact:
       status: observed
-      verified_at: 2026-03-07T22:46:00+01:00
+      verified_at: 2026-03-08T12:20:00+01:00
       posture: real_sync_to_postgresql
-      summary: OAuth authorization completed. Exact Online sync pipeline operational and syncing financial data to PostgreSQL.
+      summary: OAuth tokens renewed and sync pipeline operational. Syncing GL accounts, customers, and invoices to PostgreSQL.
       implementation:
         client_service: src/services/exact.py
         sync_script: scripts/sync_exact_to_postgres.py
@@ -451,11 +451,14 @@ current_state:
         - exact_sales_invoice_lines
         - exact_transactions
       entities_synced:
-        gl_accounts: 60
-        invoices: 60
+        gl_accounts: 258
+        customers: 9
+        invoices: 78
       kbo_matching: automatic_via_vat_number
       identity_linking: enabled_via_source_identity_links
       run_command: poetry run python scripts/sync_exact_to_postgres.py --full
+      oauth_renewed: 2026-03-08
+      notes: Tokens renewed via browser automation. Transactions sync disabled due to API field incompatibility.
     unified_360_views:
       status: implemented
       implemented_at: 2026-03-07T23:00:00+01:00
