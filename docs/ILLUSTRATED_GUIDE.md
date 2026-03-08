@@ -1,6 +1,6 @@
 # CDP_Merged Illustrated Guide v2.0
 
-**Status:** Four-source screenshot, scope labels, anonymous-profile runtime evidence, and guide-ready event-processor evidence applied; populated Resend audience and website-behavior evidence still pending, and the remaining email-event privacy divergence is now explicit
+**Status:** Four-source screenshot, scope labels, anonymous-profile runtime evidence, guide-ready event-processor evidence, and populated Resend audience proof are now applied; website-behavior evidence is still pending, and the remaining email-event privacy divergence is now explicit
 **Last Updated:** 2026-03-08  
 **Verification:** Screenshots captured from live systems; four-source backend rechecked via local PostgreSQL on 2026-03-08 19:20 CET; event processor rechecked locally on 2026-03-08 20:06 CET; Tracardi runtime/privacy path rechecked via local API and code inspection on 2026-03-08 20:21 CET
 
@@ -157,16 +157,16 @@ WHERE identity_link_status = 'linked_all';
 
 **Scope note:** The original "software companies in Brussels" segment claimed 1,652 companies using NACE codes `62010`, `62020`, `62030`, `62090`, `63110`, `63120`. **Data verification revealed these NACE codes don't exist in the Brussels KBO dataset.** The actual IT segment with email coverage uses NACE codes `62100`, `62200`, `62900`, `63100` and contains **190 companies with verified emails** in Brussels, or **1,682 companies with emails** nationwide (NULL city).
 
-**Resend Dashboard Evidence:**
+**Resend Audience Evidence (captured 2026-03-08 21:04 CET):**
 
-![Resend Dashboard](/home/ff/Documents/CDP_Merged/resend_dashboard.png)
+![Resend Audience List](/home/ff/Documents/CDP_Merged/docs/illustrated_guide/demo_screenshots/resend_audiences_populated_2026-03-08.png)
 
 **What's Shown:**
-- Resend account active (lennertvhoy)
-- Email history with CDP test campaigns
-- Webhook integration configured
-- Activation path verified: 190 IT companies in Brussels with verified emails ready for campaign
-- Alternative: 1,682 IT companies nationwide (NULL city) for larger audience demonstration
+- Live Resend audience list rendered from the authenticated dashboard
+- Existing empty audience `KBO Companies - Test Audience` reused because the current Resend plan is capped at `3` audiences
+- Exact Brussels IT primary-code subset loaded successfully: `190` company rows became `189` unique Resend contacts with `0` API failures
+- One shared mailbox explains the `190 → 189` reduction: `NVISO Belgium` and `nviso` both use `info@nviso.eu`
+- A detailed live audience view was also captured at `docs/illustrated_guide/demo_screenshots/resend_audience_detail_populated_2026-03-08.png`
 
 **Why Resend (vs Flexmail):**
 
@@ -471,7 +471,7 @@ User NL Query → LLM Intent Classification → PostgreSQL Search
 - [x] All screenshots captured from live systems
 - [x] No synthetic/fake data claims
 - [x] Event-processor guide-ready evidence captured (`/api/next-best-action/0438437723`, `/api/engagement/leads?min_score=5`)
-- [ ] Populated Resend audience screenshot (ready: 190-email Brussels IT segment or 1,682-email nationwide segment)
+- [x] Populated Resend audience screenshot (exact Brussels IT subset loaded as `189` unique contacts from `190` company rows)
 - [ ] Website-behavior evidence tied to the same UID/business-value story
 
 ---
@@ -479,7 +479,7 @@ User NL Query → LLM Intent Classification → PostgreSQL Search
 ## Next Steps for Production
 
 1. **Scale Teamleader Integration:** Populate 50+ real companies
-2. **Resend Audience Verification:** ✅ READY - 190 IT companies in Brussels with verified emails; 1,682 IT companies nationwide. Populated audience screenshot pending capture.
+2. **Resend Audience Verification:** ✅ COMPLETE - the exact Brussels IT primary-code subset (`190` company rows, `189` unique contacts after one duplicate shared mailbox) is now populated in Resend and captured in fresh audience-list and audience-detail screenshots.
 3. **Real-Time Sync Demo:** Show data change flowing through system
 4. **Email Workflow Execution:** Capture bounce processor with real events
 5. **Privacy Boundary Hardening:** Audit event payloads for any residual PII in metadata

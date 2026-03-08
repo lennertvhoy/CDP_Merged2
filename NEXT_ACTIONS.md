@@ -12,7 +12,7 @@
 
 **Status:** REOPENED - Published, but not yet acceptable as the business-case source of truth
 **Discovered:** 2026-03-08 (initial audit), reopened 2026-03-08 via direct user feedback
-**Last Updated:** 2026-03-08 20:21 CET
+**Last Updated:** 2026-03-08 21:08 CET
 **Severity:** CRITICAL
 **Guide:** `docs/ILLUSTRATED_GUIDE.md` v2.0  
 **Audit Report:** `docs/ILLUSTRATED_GUIDE_AUDIT.md`
@@ -27,19 +27,17 @@
 |----------|--------|------------|
 | B.B.S. Entreprise screenshot | Partial | Fresh screenshot now shows `identity_link_status=linked_all` and explicit 4-source linkage, but the guide still needs a tighter single-story business-value presentation alongside the verified event-processor outputs |
 | Privacy boundary | Partial | The guide now truthfully shows anonymous Tracardi profile listings plus the documented event-metadata divergence, but the runtime is not yet fully UID-only |
-| NL segment creation | Partial | The guide now labels `1,652` canonical scope, `1,529` narrower activation-test scope, and `101` CSV preview rows, but it still lacks a populated downstream audience screenshot |
-| Resend activation POC tests | Partial | Technical path exists, but the guide still lacks a populated audience screenshot for the canonical segment |
-| Event processor business-value proof | Partial | Local API outputs now verify B.B.S. Entreprise engagement writeback plus support-expansion NBA and Accountantskantoor Dubois cross-sell + multi-division, but the guide still lacks screenshot/caption evidence for those outputs |
+| NL segment creation | Verified | The guide now labels `1,652` canonical scope, `1,529` narrower activation-test scope, `101` CSV preview rows, and the exact Brussels IT primary-code subset now has downstream proof in Resend (`190` company rows → `189` unique contacts after one shared-mailbox dedupe) |
+| Resend activation POC tests | Verified | Live populated audience proof now exists: the empty audience `KBO Companies - Test Audience` was reused because the plan is capped at `3` audiences, and now holds `189` unique contacts from the exact `190`-company Brussels IT subset |
+| Event processor business-value proof | Verified | Local API outputs verify B.B.S. Entreprise engagement writeback plus support-expansion NBA and Accountantskantoor Dubois cross-sell + multi-division, and the guide now embeds the live JSON evidence |
 | CSV export artifact | Partial | The guide now labels `101` as a preview export, but it still lacks opened-file/spreadsheet proof |
 
 #### Remaining blockers
 
 | Gap | Priority | What still needs to be shown or corrected |
 |-----|----------|-------------------------------------------|
-| Populated Resend audience proof | READY TO PROCEED | **Blocker resolved via data-driven pivot.** The original 1,652-company "software" segment had 0 emails because NACE codes 62010-62090 don't exist in Brussels KBO data. Found alternative: **190 IT companies in Brussels (NACE 62100, 62200, 62900, 63100) with verified emails** (17% coverage). Also available: **1,682 IT companies (NULL city) with emails** for larger demonstration. Decision: Use the 190-email Brussels IT segment for geographic relevance, or the 1,682-email segment for volume impact. |
-| Full 360 proof | HIGH | Keep the four-source B.B.S. story aligned with the new event-processor behavior proof in one coherent guide narrative |
-| Business-value demonstrations | HIGH | Cross-sell, multi-division, and Next Best Action are now locally verified; remaining proof gap is website behavior plus guide-ready capture |
-| Guide-ready event-processor capture | DONE | Convert the verified API/webhook outputs into screenshots or equivalent guide evidence |
+| Full 360 proof | HIGH | Keep the four-source B.B.S. story aligned with the event-processor behavior proof and the newly captured Resend audience proof in one coherent guide narrative |
+| Website-behavior evidence | HIGH | Capture visible page-view/download/behavior evidence tied to the same UID/business-value story |
 
 #### Exit Criteria
 
@@ -51,6 +49,7 @@
 - [x] Capture cross-sell, multi-division, and Next Best Action evidence
 - [x] Capture identity-resolution and engagement-writeback evidence
 - [x] Capture guide-ready event-processor API evidence (live JSON for `/api/next-best-action/0438437723` and `/api/engagement/leads?min_score=5` embedded in guide on 2026-03-08)
+- [x] Capture populated Resend audience proof for the selected Brussels IT subset
 
 ---
 

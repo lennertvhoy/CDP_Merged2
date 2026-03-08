@@ -4,6 +4,52 @@
 
 ---
 
+### Task: Populate live Resend audience proof for the Illustrated Guide
+
+**Type:** verification_only + docs_or_process_only
+**Status:** COMPLETE
+**Timestamp:** 2026-03-08 21:08 CET
+**Git Head:** `1597b63` at session start
+
+**Summary:**
+Resolved the last missing Resend proof in the guide by loading the exact Brussels IT primary-code subset into a live Resend audience and capturing fresh authenticated dashboard screenshots. Also resolved a same-session contradiction: the app's broader `all_nace_codes` search behavior returns `311` Brussels companies with email for those codes, but the documented proof target is the exact primary-code subset, which is `190` company rows and `189` unique email contacts.
+
+**Verification:**
+```bash
+PGPASSWORD=cdpadmin123 psql -h localhost -U cdpadmin -d cdp -At -F $'\t' -c "SELECT COUNT(*) FROM companies WHERE city = 'Brussel' AND status = 'AC' AND main_email IS NOT NULL AND main_email != '' AND industry_nace_code IN ('62100','62200','62900','63100');"
+PGPASSWORD=cdpadmin123 psql -h localhost -U cdpadmin -d cdp -P pager=off -c "SELECT COUNT(*) AS rows, COUNT(DISTINCT LOWER(main_email)) AS distinct_emails FROM companies WHERE city = 'Brussel' AND status = 'AC' AND main_email IS NOT NULL AND main_email != '' AND industry_nace_code IN ('62100','62200','62900','63100');"
+PGPASSWORD=cdpadmin123 psql -h localhost -U cdpadmin -d cdp -P pager=off -c "SELECT COUNT(*) AS segment_members, COUNT(*) FILTER (WHERE c.industry_nace_code IN ('62100','62200','62900','63100')) AS main_code_matches, COUNT(*) FILTER (WHERE c.industry_nace_code NOT IN ('62100','62200','62900','63100')) AS other_main_code FROM companies c JOIN segment_memberships sm ON c.id::text = sm.uid WHERE sm.segment_id = '32b92133-9288-4f9c-829a-de14054b3047';"
+GET https://api.resend.com/audiences
+POST https://api.resend.com/audiences
+GET https://api.resend.com/audiences/1f5e593f-f38d-43c2-8adf-04995b5733aa/contacts
+google-chrome-stable --headless=new --user-data-dir=/tmp/resend_chrome_profile --profile-directory=Default --dump-dom https://resend.com/audiences/1f5e593f-f38d-43c2-8adf-04995b5733aa
+google-chrome-stable --headless=new --user-data-dir=/tmp/resend_chrome_profile --profile-directory=Default --screenshot=docs/illustrated_guide/demo_screenshots/resend_audiences_populated_2026-03-08.png https://resend.com/audiences
+google-chrome-stable --headless=new --user-data-dir=/tmp/resend_chrome_profile --profile-directory=Default --screenshot=docs/illustrated_guide/demo_screenshots/resend_audience_detail_populated_2026-03-08.png https://resend.com/audiences/1f5e593f-f38d-43c2-8adf-04995b5733aa
+```
+
+**Observed Results:**
+- Exact Brussels IT primary-code subset: `190` company rows
+- Distinct emails in that exact subset: `189`
+- Shared mailbox duplicate: `NVISO Belgium` + `nviso` both use `info@nviso.eu`
+- Canonical segment service broadening explained: the earlier segment created through app search semantics held `311` rows because `nace_codes` matches both `industry_nace_code` and `all_nace_codes`
+- Resend audience creation for a fresh audience failed with HTTP `400`: `Your plan includes 3 segments. Upgrade to add more.`
+- Existing audience inventory showed `3` audiences; `KBO Companies - Test Audience` (`1f5e593f-f38d-43c2-8adf-04995b5733aa`) had `0` contacts and was reused non-destructively
+- Audience population result: `189` contacts added, `0` failures
+- Headless Chrome with a copied authenticated profile rendered the live audience page and captured fresh screenshots without touching the active browser profile
+
+**Doc / Evidence Updates:**
+- Updated `docs/ILLUSTRATED_GUIDE.md` to embed the populated audience proof and record the `190` → `189` dedupe detail
+- Updated `PROJECT_STATE.yaml`, `STATUS.md`, and `NEXT_ACTIONS.md` to reflect that the Resend audience proof is now complete and that the plan cap is a current operational constraint
+- Updated `docs/ILLUSTRATED_GUIDE_AUDIT.md` so it no longer treats populated audience proof as missing
+- Added screenshots:
+  - `docs/illustrated_guide/demo_screenshots/resend_audiences_populated_2026-03-08.png`
+  - `docs/illustrated_guide/demo_screenshots/resend_audience_detail_populated_2026-03-08.png`
+
+**Next Step:**
+- Capture website-behavior evidence tied to the same UID/business-value story so the guide no longer depends on a missing behavior proof
+
+---
+
 ### Task: Verify event processor fallback locally and fix live schema mismatches
 
 **Type:** app_code + verification_only + docs_or_process_only  
@@ -2297,4 +2343,3 @@ The original "software companies" segment was defined using NACE codes that don'
 1. Push the selected segment (190-email Brussels or 1,682-email NULL city) to Resend
 2. Capture the populated audience screenshot for the Illustrated Guide
 3. Proceed to website-behavior evidence capture
-

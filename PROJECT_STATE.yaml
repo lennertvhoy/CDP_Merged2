@@ -3,7 +3,7 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-08T20:21:52+01:00
+  updated_at: 2026-03-08T21:08:00+01:00
   updated_by: agent
   repo_head:
     value: fe9d51a
@@ -975,12 +975,29 @@ active_problems:
       - option_a: Use the available 190-email IT segment (17% coverage) and adjust guide narrative to "190 IT companies in Brussels with verified emails"
       - option_b: Use a broader segment with better email coverage (NULL city IT segment has 1,682 emails)
       - option_c: Enrich emails for the 1,652 segment (large undertaking, requires email discovery service)
-    recommendation: Option A - Update guide narrative to reflect actual data availability. 190 verified emails is still a credible POC demonstration.
+    recommendation: "Option A was executed on 2026-03-08. Keep the guide aligned to the exact Brussels primary-code proof: `190` company rows and `189` unique Resend contacts after one duplicate shared mailbox."
     affects:
       - illustrated_guide_populated_audience_proof
       - segment_activation_demonstration
     owner: agent
-    next_action: Update guide narrative to use the 190-email IT segment or pivot to the 1,682-email NULL-city segment for better visual impact.
+    next_action: "Keep the guide/state docs aligned to the exact `190`-row / `189`-unique-contact proof and do not revert to the invalid `1,652`-email narrative."
+  resend_audience_plan_limit:
+    status: observed
+    severity: medium
+    discovered_at: 2026-03-08
+    summary: The current Resend plan is capped at 3 audiences, so a fresh audience could not be created for the Illustrated Guide proof and an empty existing audience had to be reused.
+    evidence:
+      - command: POST https://api.resend.com/audiences name="Illustrated Guide Brussels IT ..."
+      - result: HTTP 400 "Your plan includes 3 segments. Upgrade to add more."
+      - command: GET https://api.resend.com/audiences
+      - result: 3 audiences returned; `KBO Companies - Test Audience` (`1f5e593f-f38d-43c2-8adf-04995b5733aa`) had `0` contacts before reuse
+      - command: GET https://api.resend.com/audiences/1f5e593f-f38d-43c2-8adf-04995b5733aa/contacts
+      - result: final contact_count=189 after loading the exact Brussels IT subset
+    affects:
+      - resend_audience_creation
+      - illustrated_guide_resend_capture
+    owner: agent
+    next_action: Reuse or rename an existing audience for future demos; delete an audience or upgrade the plan only with explicit user approval.
   tracardi_workflow_runtime_activation_blocked:
     status: observed
     severity: high
@@ -1361,16 +1378,18 @@ active_problems:
     status: observed
     severity: critical
     discovered_at: 2026-03-08
-    summary: Illustrated Guide v2.0 is published but still not yet acceptable as the business-case source of truth. The fresh linked_all screenshot, explicit `1,652` / `1,529` / `101` scope labels, UID-first/runtime note, and local event-processor proofs for Next Best Action, cross-sell, multi-division, and engagement writeback are now in place, but the guide still lacks a populated activation audience, guide-ready captures for the event-processor outputs, and website-behavior evidence.
+    summary: Illustrated Guide v2.0 is published but still not yet fully acceptable as the business-case source of truth. The fresh linked_all screenshot, explicit `1,652` / `1,529` / `101` scope labels, UID-first/runtime note, local event-processor proofs, and populated Resend audience proof are now in place. The main remaining evidence gap is website-behavior proof tied to the same UID/business-value story, plus cleanup of stale audit/caption language.
     evidence:
       - Audit report: docs/ILLUSTRATED_GUIDE_AUDIT.md
       - docs/ILLUSTRATED_GUIDE.md now uses chatbot_360_bbs_four_source_final_2026-03-08.png for the B.B.S. linked_all story
       - docs/ILLUSTRATED_GUIDE.md now labels 1,652 as the canonical 6-code software scope, 1,529 as the narrower 62xxx activation-test scope, and 101 as the preview export file size
-      - docs/ILLUSTRATED_GUIDE.md Phase 3 shows Resend readiness and POC results, but not a populated audience containing the canonical CDP segment
+      - docs/ILLUSTRATED_GUIDE.md Phase 3 now shows populated Resend audience proof for the exact Brussels IT primary-code subset (`190` company rows → `189` unique contacts)
+      - docs/ILLUSTRATED_GUIDE.md now references `docs/illustrated_guide/demo_screenshots/resend_audiences_populated_2026-03-08.png`
+      - docs/illustrated_guide/demo_screenshots/resend_audience_detail_populated_2026-03-08.png captures the live audience detail view after population
       - User feedback 2026-03-08 accepted Resend in place of Flexmail for the current POC, so the email-platform swap is not a blocker
       - User feedback 2026-03-08 flagged the privacy architecture contradiction: guide screenshots expose direct PII while the target architecture requires UID-first operational/runtime evidence
       - Local verification 2026-03-08 confirmed event-processor proof for B.B.S. Entreprise (support-expansion + engagement writeback) and Accountantskantoor Dubois (cross-sell + multi-division)
-      - User feedback 2026-03-08 flagged missing business-case proof for website behavior and a populated downstream audience
+      - User feedback 2026-03-08 flagged missing business-case proof for website behavior
       - 2026-03-08 Playwright verification confirmed local Tracardi operator login and dashboard access with fresh GUI evidence, but the dashboard screenshot only shows activation-layer counts/events and does not close the UID-first or four-source 360 proof gaps
     critical_mismatches:
       - issue: resend_platform_mismatch_removed_as_blocker
@@ -1446,9 +1465,8 @@ active_problems:
       - Keep Resend as the accepted current POC activation platform unless the user reopens Flexmail
       - Keep the anonymous-profile proof and email-event divergence explicit until a true UID-only event path is implemented
       - Keep the fresh linked_all screenshot and captioning aligned with the backend proof
-      - Convert the verified event-processor outputs into guide-ready screenshot/caption evidence
-      - Capture the populated Resend audience for the canonical 1,652-company segment
       - Capture website-behavior evidence tied to the same UID/business-value story
+      - Clean up any stale audit/caption text that still describes the Resend audience proof as missing
   postgresql_city_query_timeouts:
     status: resolved
     severity: high

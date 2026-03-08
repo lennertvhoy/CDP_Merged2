@@ -2,7 +2,7 @@
 
 **Platform:** Azure target architecture with local-only execution mode
 **Current Execution Mode:** Local-only (`Azure deployment path paused to save costs`)
-**Last Updated:** 2026-03-08 20:21 CET
+**Last Updated:** 2026-03-08 21:08 CET
 **Purpose:** Human-readable current snapshot
 **Structured Source:** `PROJECT_STATE.yaml`
 
@@ -13,7 +13,7 @@
 - `observed` from 2026-03-08 20:21 CET: **TRACARDI PRIVACY BOUNDARY IS ONLY PARTIALLY ACHIEVED.** Live `/profile/select` samples still show anonymous profiles and the Tracardi projection path remains PII-light, but live `/event/select` samples for `email.opened` and `email.clicked` still carry raw email fields in event properties. The Illustrated Guide now explicitly documents that divergence instead of claiming a fully UID-only runtime.
 - `observed` from 2026-03-08 19:20 CET: **FOUR-SOURCE 360 BACKEND IMPLEMENTED LOCALLY.** Migration `007_add_autotask_to_unified_360.sql` plus a full `scripts/sync_autotask_to_postgres.py --full` run now produce one real `linked_all` company in `unified_company_360`: B.B.S. Entreprise with KBO + Teamleader + Exact + Autotask, `autotask_open_tickets=1`, `autotask_total_contracts=1`, and `total_source_count=4`.
 - `observed` from 2026-03-08 18:11 CET: **FRESH FOUR-SOURCE CHATBOT EVIDENCE CAPTURED.** `chatbot_360_bbs_four_source_final_2026-03-08.png` now shows B.B.S. Entreprise with `identity_link_status=linked_all` and `Sources linked: KBO + Teamleader + Exact + Autotask (4 sources)`.
-- `observed` from 2026-03-08 20:21 CET: **Illustrated Guide v2.0 is still not yet acceptable as the business-case source of truth, but the gap is narrower.** The four-source screenshot, the `1,652` / `1,529` / `101` scope framing, the explicit privacy-divergence note, and local event-processor proofs for Next Best Action, cross-sell, multi-division, and engagement writeback are now available. The **Resend audience blocker is RESOLVED** - found 190 IT companies in Brussels with verified emails (17% coverage) and 1,682 IT companies (NULL city) with emails for larger demonstration. Original 1,652 "software" segment had 0 emails because those NACE codes don't exist in Brussels KBO data. Remaining blockers: guide-ready captures for the event-processor outputs, and website-behavior evidence.
+- `observed` from 2026-03-08 21:04 CET: **Illustrated Guide v2.0 now has live populated Resend audience proof.** The exact Brussels IT primary-code subset was verified at `190` company rows and `189` unique contact emails, then loaded into the empty Resend audience `KBO Companies - Test Audience` with `0` failures. A fresh audience-list screenshot and audience-detail screenshot were captured from the live Resend dashboard. The current Resend plan is capped at `3` audiences, so a new audience could not be created and the empty existing audience had to be reused. The main remaining Illustrated Guide blocker is website-behavior evidence tied to the same UID/business-value story.
 - `reported` from 2026-03-08 16:52 CET via direct user instruction: **Resend is acceptable as the current activation platform.** Do not treat Flexmail parity as a near-term blocker unless the user explicitly reopens that requirement.
 - `observed` from 2026-03-08 15:50 CET: **DEMO DATA POPULATION SCRIPTS COMPLETE!** Added `scripts/populate_hyperrealistic_demo_data.py` and `scripts/create_360_demo_companies.py` for creating realistic Belgian company data across Teamleader, Exact, and KBO. Commit `51ac939`.
 - `observed` from 2026-03-08 14:45 CET: **OLLAMA AI DESCRIPTION ENRICHMENT SCALING UP!** Now at 441 AI descriptions (+371 from this session), batch of 1000 in progress. Coverage: 0.023% of 1.94M companies. Successfully running ~1.5s per description with NACE code caching. Run: `export DESCRIPTION_ENRICHER=ollama && python scripts/enrich_companies_batch.py --enrichers description --limit 1000`
@@ -71,7 +71,7 @@
 ## Top Risks
 
 - If the local-only mode is not kept explicit in the docs, future sessions will keep reopening Azure verification and deployment work that is intentionally paused for cost control.
-- The Illustrated Guide is published but not yet business-case-safe as a source-of-truth artifact; the fresh linked-all screenshot, count labels, and local event-processor business-value proofs are now in place, but populated audience evidence, guide-ready event-processor captures, and website-behavior proof are still missing.
+- The Illustrated Guide is published but not yet fully business-case-safe as a source-of-truth artifact; the fresh linked-all screenshot, count labels, local event-processor business-value proofs, and populated Resend audience proof are now in place, but website-behavior evidence is still missing and some audit/caption cleanup remains.
 - **Tracardi workflow runtime is blocked by Community Edition limitations**: The draft graphs are real, but production workflow execution requires Tracardi Premium (licensed feature). The `/deploy/{path}` endpoint is licensed, and `production=true`/`running=true` rule updates do not persist in CE. The Illustrated Guide should document this limitation.
 - All stale `.openclaw` path assumptions have been cleaned from active helper/setup scripts; they now use repo-relative imports or `resolve_kbo_zip_path()`.
 - The compose-managed chatbot requires a populated `.env.local` and exclusive use of port `8000`; any leftover host-side `uvicorn` process will block the default local stack until it is stopped.
@@ -88,7 +88,7 @@
 ## Immediate Focus
 
 1. **Keep the active work local-only** and avoid Azure deployment, Azure smoke, or cloud verification until the user explicitly reopens that path
-2. **Finish Illustrated Guide alignment** around populated audience proof, guide-ready event-processor captures, and website-behavior evidence while keeping the current privacy divergence explicit
+2. **Finish Illustrated Guide alignment** around the newly captured populated audience proof and the remaining website-behavior evidence while keeping the current privacy divergence explicit
 3. **Treat Resend as the accepted POC activation platform** unless the user later reopens a Flexmail requirement
 4. **Document Tracardi CE limitation** - workflow execution requires Premium license; consider alternative approaches (Python bridge, direct webhook handling) for writeback automation
 5. **Keep the compose-managed stack as the default local runtime** and treat host-side `start_chatbot.sh` as the edit/run fallback rather than the primary deployment path
