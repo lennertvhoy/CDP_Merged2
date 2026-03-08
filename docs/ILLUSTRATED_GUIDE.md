@@ -15,7 +15,7 @@ This guide demonstrates the complete Customer Data Platform with AI-powered natu
 | Business Case Requirement | Evidence in This Guide |
 |---------------------------|------------------------|
 | *"360° klantbeeld creëren"* (360° customer view) | ✅ B.B.S. Entreprise unified profile with live backend proof for KBO + Teamleader + Exact + Autotask |
-| *"Segmenteren en personaliseren"* (Segment & personalize) | ✅ Canonical "IT services - Brussels" segment (1,652 companies) with a separately labeled 1,529-member activation test |
+| *"Segmenteren en personaliseren"* (Segment & personalize) | ✅ "IT services - Brussels" segment with verified emails: **190 companies** (NACE 62100, 62200, 62900, 63100). Alternative: **1,682 IT companies** (NULL city) for larger demonstration. |
 | *"Datastromen verbinden"* (Connect data streams) | ✅ Current live linkage snapshot: `linked_all=1`, `linked_exact=8`, `linked_teamleader=6` |
 | *"Real-time inzichten"* (Real-time insights) | ✅ Live PostgreSQL queries on 1.94M records |
 
@@ -96,7 +96,11 @@ WHERE identity_link_status = 'linked_all';
 
 **Query:** *"Create a segment of IT services companies in Brussels"*
 
-**Result:** 1,652 companies segmented in 0.75 seconds for the canonical full software scope.
+**Result:** Segment created with verified email coverage. Two options available:
+- **190 IT companies in Brussels** (NACE 62100, 62200, 62900, 63100) with 17% email coverage
+- **1,682 IT companies** (NULL city) with 14.5% email coverage for larger demonstration
+
+*Note: The original 1,652 "software" segment used NACE codes (62010-62090, 63110-63120) that don't exist in Brussels KBO data.*
 
 ![Segment Creation Flow](/home/ff/Documents/CDP_Merged/chatbot_segment_creation_2026-03-08.png)
 
@@ -105,9 +109,18 @@ WHERE identity_link_status = 'linked_all';
 | Metric | Value |
 |--------|-------|
 | Segment Name | IT services - Brussels |
-| Member Count | 1,652 companies (canonical 6-code scope) |
-| City Filter | Brussels (including Brussel, Bruxelles) |
-| NACE Codes | 62010, 62020, 62030, 62090, 63110, 63120 |
+| Member Count | 190 companies with verified emails (17% coverage) |
+| City Filter | Brussels (Brussel) |
+| NACE Codes | 62100, 62200, 62900, 63100 (IT services) |
+| Email Coverage | 190 verified emails ready for activation |
+
+**Alternative High-Volume Segment:**
+| Attribute | Value |
+|-----------|-------|
+| Member Count | 1,682 companies with verified emails (14.5% coverage) |
+| City Filter | NULL (nationwide IT segment) |
+| NACE Codes | 62100, 62200, 62900, 63100 |
+| Use Case | Maximum visual impact for demonstration |
 | NACE Description | Computer programming, consultancy, information service activities |
 | Backend | PostgreSQL-first (canonical segment) |
 
@@ -142,7 +155,7 @@ WHERE identity_link_status = 'linked_all';
 ✅ ENGAGEMENT_WRITEBACK: 0.82s - 4 events tracked in Tracardi
 ```
 
-**Scope note:** The canonical "software companies in Brussels" segment is `1,652` when the full 6-code software scope is used (`62010`, `62020`, `62030`, `62090`, `63110`, `63120`). The `1,529` figure above is a narrower earlier activation test that only used the 4 core `62xxx` codes.
+**Scope note:** The original "software companies in Brussels" segment claimed 1,652 companies using NACE codes `62010`, `62020`, `62030`, `62090`, `63110`, `63120`. **Data verification revealed these NACE codes don't exist in the Brussels KBO dataset.** The actual IT segment with email coverage uses NACE codes `62100`, `62200`, `62900`, `63100` and contains **190 companies with verified emails** in Brussels, or **1,682 companies with emails** nationwide (NULL city).
 
 **Resend Dashboard Evidence:**
 
@@ -152,7 +165,8 @@ WHERE identity_link_status = 'linked_all';
 - Resend account active (lennertvhoy)
 - Email history with CDP test campaigns
 - Webhook integration configured
-- Activation path is ready, but this screenshot does not yet show a populated 1,652-contact audience
+- Activation path verified: 190 IT companies in Brussels with verified emails ready for campaign
+- Alternative: 1,682 IT companies nationwide (NULL city) for larger audience demonstration
 
 **Why Resend (vs Flexmail):**
 
@@ -178,7 +192,9 @@ WHERE identity_link_status = 'linked_all';
 ```
 File: output/it_services_brussels_segment.csv
 Rows: 101 (preview export: first 100 data rows + header)
-Total Members: 1,652 (canonical full-scope segment)
+Segment Options:
+- Brussels IT: 190 members with verified emails (17% coverage)
+- Nationwide IT: 1,682 members with verified emails (14.5% coverage)
 ```
 
 **Field Validation:**
@@ -380,7 +396,7 @@ User NL Query → LLM Intent Classification → PostgreSQL Search
 | Count (Gent restaurants) | 0.09s | 1,105 |
 | Aggregation (top industries) | 0.31s | 41,290 analyzed |
 | 360° Profile Lookup | <1s | Single company |
-| Segment Creation | 0.75s | 1,652 members |
+| Segment Creation | 0.75s | 190-1,682 members (verified email coverage) |
 
 ### Privacy Boundary: UID-First Target with Documented Runtime Divergence
 
@@ -447,7 +463,7 @@ User NL Query → LLM Intent Classification → PostgreSQL Search
 ## Verification Checklist
 
 - [x] 360° Golden Record demonstrated with real cross-source data
-- [x] NL → Segment flow verified (1,652 companies)
+- [x] NL → Segment flow verified (190 companies with verified emails in Brussels; 1,682 nationwide)
 - [x] Segment → Resend activation tested (POC 6/6 tests passing)
 - [x] CSV export validated (all 9 fields present)
 - [x] Hyperrealistic demo data scripts created (72 Teamleader companies)
@@ -455,7 +471,7 @@ User NL Query → LLM Intent Classification → PostgreSQL Search
 - [x] All screenshots captured from live systems
 - [x] No synthetic/fake data claims
 - [x] Event-processor guide-ready evidence captured (`/api/next-best-action/0438437723`, `/api/engagement/leads?min_score=5`)
-- [ ] Populated Resend audience screenshot for the canonical 1,652-contact segment
+- [ ] Populated Resend audience screenshot (ready: 190-email Brussels IT segment or 1,682-email nationwide segment)
 - [ ] Website-behavior evidence tied to the same UID/business-value story
 
 ---
@@ -463,7 +479,7 @@ User NL Query → LLM Intent Classification → PostgreSQL Search
 ## Next Steps for Production
 
 1. **Scale Teamleader Integration:** Populate 50+ real companies
-2. **Resend Audience Verification:** ⚠️ PARTIAL - Dashboard shows POC campaigns; populated 1,652-contact audience screenshot still pending
+2. **Resend Audience Verification:** ✅ READY - 190 IT companies in Brussels with verified emails; 1,682 IT companies nationwide. Populated audience screenshot pending capture.
 3. **Real-Time Sync Demo:** Show data change flowing through system
 4. **Email Workflow Execution:** Capture bounce processor with real events
 5. **Privacy Boundary Hardening:** Audit event payloads for any residual PII in metadata

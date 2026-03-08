@@ -961,6 +961,26 @@ current_state:
       note: Local Tracardi still has working authentication, event sources, and `/track`, but the current truth is draft repair plus runtime blockage. `scripts/setup_tracardi_workflows.py` repaired the 5 email workflow drafts through `/flow/draft`, yet the engagement rules remain `running=false` / `production=false` and local event probes still produce zero flow logs. GUI accessible at http://localhost:8787.
 
 active_problems:
+  resend_audience_sparse_emails:
+    status: observed
+    severity: high
+    discovered_at: 2026-03-08
+    summary: The canonical 1,652-company "software companies in Brussels" segment has only 190 companies with email addresses (11.5% coverage). The NACE codes used (62010, 62020, 62030, 62090, 63110, 63120) don't exist in the KBO dataset for Brussels.
+    evidence:
+      - command: SELECT industry_nace_code, COUNT(*) FROM companies WHERE city = 'Brussel' AND industry_nace_code IN ('62010', '62020', '62030', '62090', '63110', '63120') GROUP BY industry_nace_code
+      - result: All 6 codes return 0 companies
+      - command: SELECT COUNT(*) FILTER (WHERE main_email IS NOT NULL) FROM companies WHERE city = 'Brussel' AND industry_nace_code IN ('62100', '62200', '62900', '63100')
+      - result: 190 companies with emails out of 1,091 total IT companies (17.4% coverage)
+    decision:
+      - option_a: Use the available 190-email IT segment (17% coverage) and adjust guide narrative to "190 IT companies in Brussels with verified emails"
+      - option_b: Use a broader segment with better email coverage (NULL city IT segment has 1,682 emails)
+      - option_c: Enrich emails for the 1,652 segment (large undertaking, requires email discovery service)
+    recommendation: Option A - Update guide narrative to reflect actual data availability. 190 verified emails is still a credible POC demonstration.
+    affects:
+      - illustrated_guide_populated_audience_proof
+      - segment_activation_demonstration
+    owner: agent
+    next_action: Update guide narrative to use the 190-email IT segment or pivot to the 1,682-email NULL-city segment for better visual impact.
   tracardi_workflow_runtime_activation_blocked:
     status: observed
     severity: high

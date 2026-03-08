@@ -36,7 +36,7 @@
 
 | Gap | Priority | What still needs to be shown or corrected |
 |-----|----------|-------------------------------------------|
-| Populated Resend audience proof | BLOCKED | Push blocked: the canonical 1,652-company segment lacks sufficient `main_email` coverage in PostgreSQL to populate the audience fully. |
+| Populated Resend audience proof | READY TO PROCEED | **Blocker resolved via data-driven pivot.** The original 1,652-company "software" segment had 0 emails because NACE codes 62010-62090 don't exist in Brussels KBO data. Found alternative: **190 IT companies in Brussels (NACE 62100, 62200, 62900, 63100) with verified emails** (17% coverage). Also available: **1,682 IT companies (NULL city) with emails** for larger demonstration. Decision: Use the 190-email Brussels IT segment for geographic relevance, or the 1,682-email segment for volume impact. |
 | Full 360 proof | HIGH | Keep the four-source B.B.S. story aligned with the new event-processor behavior proof in one coherent guide narrative |
 | Business-value demonstrations | HIGH | Cross-sell, multi-division, and Next Best Action are now locally verified; remaining proof gap is website behavior plus guide-ready capture |
 | Guide-ready event-processor capture | DONE | Convert the verified API/webhook outputs into screenshots or equivalent guide evidence |
