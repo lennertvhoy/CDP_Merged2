@@ -225,7 +225,7 @@ poetry run python scripts/test_poc_activation.py --mock
 | High | **Keep privacy hardening on the roadmap** | Partial | `scripts/webhook_gateway.py` now emits privacy-safe downstream payloads, but the live local runtime still needs an end-to-end recheck and Tracardi event-path confirmation |
 | High | **Recheck webhook/event-processor hardening tests** | ✅ COMPLETE | Both suites now pass cleanly (`54` tests in `0.33s`); the earlier late-suite timeout is closed |
 | High | Build a real/mock/hybrid source matrix | ✅ COMPLETE | Documented in PROJECT_STATE.yaml |
-| High | Add a cleanup/organization queue for demo assets and stale narratives | Pending | Consolidate fixtures, screenshots, and current-state summaries to reduce future drift |
+| High | Add a cleanup/organization queue for demo assets and stale narratives | Partial | Historical handoffs and stale planning docs are now archived, duplicate guide-output screenshots are pruned, and the active guide assets are moving under tracked docs paths; broader log/output hygiene can continue incrementally |
 | High | Require user-owned final verification | Pending | Hold final demo sign-off until the user has tested it and seen one stable week |
 
 **Exit criteria (v3.0 COMPLETE):**
