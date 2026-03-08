@@ -50,6 +50,7 @@
 - [x] Resolve the `1,652` / `1,529` / `101` count framing in the guide
 - [x] Capture cross-sell, multi-division, and Next Best Action evidence
 - [x] Capture identity-resolution and engagement-writeback evidence
+- [x] Capture guide-ready event-processor API evidence (live JSON for `/api/next-best-action/0438437723` and `/api/engagement/leads?min_score=5` embedded in guide on 2026-03-08)
 
 ---
 

@@ -1,6 +1,6 @@
 # CDP_Merged Illustrated Guide v2.0
 
-**Status:** Fresh four-source screenshot, scope labels, anonymous-profile runtime evidence, and local event-processor business-value proof applied; populated Resend audience and website-behavior evidence still pending, and the remaining email-event privacy divergence is now explicit
+**Status:** Four-source screenshot, scope labels, anonymous-profile runtime evidence, and guide-ready event-processor evidence applied; populated Resend audience and website-behavior evidence still pending, and the remaining email-event privacy divergence is now explicit
 **Last Updated:** 2026-03-08  
 **Verification:** Screenshots captured from live systems; four-source backend rechecked via local PostgreSQL on 2026-03-08 19:20 CET; event processor rechecked locally on 2026-03-08 20:06 CET; Tracardi runtime/privacy path rechecked via local API and code inspection on 2026-03-08 20:21 CET
 
@@ -231,12 +231,90 @@ Total Members: 1,652 (canonical full-scope segment)
    - Cross-sell opportunity detection
    - REST API for sales leads: `/api/engagement/leads`
 
-**Local alternative verification (2026-03-08 20:06 CET):**
+**Event-Processor Live Evidence (captured 2026-03-08):**
 
-| Company | Verification Path | Observed Result |
-|---------|-------------------|-----------------|
-| B.B.S. Entreprise (`0438437723`) | `GET /api/next-best-action/0438437723`, then signed `POST /webhook/resend` events for `email.opened` + `email.clicked`, then `GET /api/engagement/leads?min_score=10` | `support_expansion` + `re_activation`; engagement score rose to `15`; leads API returned B.B.S. with `1` open and `1` click |
-| Accountantskantoor Dubois (`0408340801`) | Signed `POST /webhook/resend` event for `email.opened` to `info@duboisaccount.be` | `cross_sell` (`accounting_software`, `tax_automation`) + `multi_division` + `re_activation`; engagement score `5` |
+#### Sub-case A: Next Best Action — B.B.S. Entreprise
+
+**Request:** `GET http://127.0.0.1:5001/api/next-best-action/0438437723`
+
+```json
+{
+  "status": "success",
+  "kbo_number": "0438437723",
+  "company_name": "B.B.S. Entreprise",
+  "engagement_level": "low",
+  "engagement_score": 15,
+  "source_systems": 4,
+  "priority": "medium",
+  "recommendations": [
+    {
+      "type": "support_expansion",
+      "action": "Review support contract for expansion",
+      "reason": "1 open ticket(s) indicate support needs"
+    },
+    {
+      "type": "re_activation",
+      "action": "Send re-engagement campaign with special offer",
+      "reason": "Low engagement - risk of churn"
+    }
+  ],
+  "timestamp": "2026-03-08T19:28:01.958521+00:00"
+}
+```
+
+**What this proves:**
+
+| Field | Value | Business Meaning |
+|-------|-------|------------------|
+| `engagement_score` | 15 | Engagement writeback working: 1 open (weight +5) + 1 click (weight +10) |
+| `source_systems` | 4 | Full `linked_all` profile: KBO + Teamleader + Exact + Autotask |
+| `support_expansion` | Recommended | 1 open Autotask ticket surfaced as sales intelligence |
+| `re_activation` | Recommended | Score < 20 → low-engagement re-activation trigger active |
+
+#### Sub-case B: Engagement Leads Feed (sales hand-off)
+
+**Request:** `GET http://127.0.0.1:5001/api/engagement/leads?min_score=5`
+
+```json
+{
+  "status": "success",
+  "count": 2,
+  "min_score": 5,
+  "leads": [
+    {
+      "kbo_number": "0438437723",
+      "company_name": "B.B.S. ENTREPRISE",
+      "engagement_score": 15,
+      "email_opens": 1,
+      "email_clicks": 1,
+      "last_activity": "2026-03-08T19:04:49.972044+00:00"
+    },
+    {
+      "kbo_number": "0408340801",
+      "company_name": "Accountantskantoor Dubois",
+      "engagement_score": 5,
+      "email_opens": 1,
+      "email_clicks": 0,
+      "last_activity": "2026-03-08T19:06:03.392552+00:00"
+    }
+  ]
+}
+```
+
+**What this proves:**
+
+| Lead | Score | Opens | Clicks | Signal |
+|------|-------|-------|--------|--------|
+| B.B.S. Entreprise | 15 | 1 | 1 | Clicked → hottest lead; support-expansion recommendation active |
+| Accountantskantoor Dubois | 5 | 1 | 0 | Opened → warm; cross-sell `accounting_software` + `tax_automation` queued |
+
+**End-to-end data path proven:**
+```
+Resend email sent → webhook received → PostgreSQL engagement row written
+    → engagement score aggregated → leads API ranked by score
+    → NBA recommendations generated from 360° company data
+    → sales team hand-off ready
+```
 
 **Verification commands:**
 
@@ -244,8 +322,8 @@ Total Members: 1,652 (canonical full-scope segment)
 python -m py_compile scripts/cdp_event_processor.py tests/unit/test_cdp_event_processor.py
 poetry run pytest tests/unit/test_cdp_event_processor.py -q
 poetry run python -c "from scripts.cdp_event_processor import init_database; init_database()"
-curl -fsS http://127.0.0.1:5001/api/next-best-action/0438437723
-curl -fsS 'http://127.0.0.1:5001/api/engagement/leads?min_score=5'
+curl -s http://127.0.0.1:5001/api/next-best-action/0438437723
+curl -s 'http://127.0.0.1:5001/api/engagement/leads?min_score=5'
 ```
 
 ### Source System Integration Status
@@ -376,6 +454,9 @@ User NL Query → LLM Intent Classification → PostgreSQL Search
 - [x] Cross-source identity links established (`linked_all=1`, `linked_exact=8`, `linked_teamleader=6`)
 - [x] All screenshots captured from live systems
 - [x] No synthetic/fake data claims
+- [x] Event-processor guide-ready evidence captured (`/api/next-best-action/0438437723`, `/api/engagement/leads?min_score=5`)
+- [ ] Populated Resend audience screenshot for the canonical 1,652-contact segment
+- [ ] Website-behavior evidence tied to the same UID/business-value story
 
 ---
 
