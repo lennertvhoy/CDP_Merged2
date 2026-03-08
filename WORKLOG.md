@@ -4,6 +4,48 @@
 
 ---
 
+### Task: Align backlog with hardening handoff `f9d1906`
+
+**Type:** docs_or_process_only
+**Status:** COMPLETE
+**Timestamp:** 2026-03-08 23:05 CET
+**Git Head:** `f9d1906` at session start
+
+**Summary:**
+Realigned `BACKLOG.md` to the latest hardening handoff so the roadmap no longer lags the code/documentation state from `fix(demo): harden canonical segment and privacy contracts`. The goal was to keep roadmap statements consistent with the current handoff without rewriting live-state docs that were not re-verified in this session.
+
+**Backlog updates made:**
+- Marked the canonical Brussels IT segment/export hardening as complete, including the corrected `62100/62200/62900/63100` mapping and the new export validation guard
+- Upgraded NBA scoring work from generic pending language to partial/in-progress, reflecting `/api/scoring-model`, `ENGAGEMENT_THRESHOLDS`, `RECOMMENDATION_RULES`, and `rule_trace`
+- Added explicit roadmap items for:
+  - splitting the mixed guide into business case / system spec / illustrated evidence
+  - isolating the webhook/event-processor late-suite timeout and capturing a clean green run
+- Tightened the guide-cleanup line so it now explicitly includes doc splitting plus scoring/privacy citation work
+- Reclassified privacy/webhook hardening from fully pending to partial, because sanitization/signature work exists in code and the remaining gap is runtime recheck/proof
+- Corrected the stale webhook-security roadmap line so it no longer claims signature verification is missing from `scripts/webhook_gateway.py`
+
+**Verification:**
+```bash
+git status --short
+git log --oneline --decorate -n 5
+sed -n '1,260p' AGENTS.md
+sed -n '1,220p' STATUS.md
+sed -n '1,260p' PROJECT_STATE.yaml
+sed -n '1,260p' NEXT_ACTIONS.md
+sed -n '1,260p' BACKLOG.md
+sed -n '240,310p' BACKLOG.md
+sed -n '310,410p' BACKLOG.md
+rg -n "62100|scoring|webhook|timeout|doc split|business case|system spec|evidence guide|privacy-safe|Autotask|Resend audience|sync-latency|test hang|csv|canonical export" BACKLOG.md
+rg -n "signature|rate limit|TODO|sanitize_resend_event_data|build_tracardi_forward_payload|privacy" scripts/webhook_gateway.py
+rg -n "api/scoring-model|ENGAGEMENT_THRESHOLDS|RECOMMENDATION_RULES|rule_trace" scripts/cdp_event_processor.py
+rg -n "62100|62200|62900|63100|export validation|validation" src/ai_interface/tools/export.py src/ai_interface/tools/nace_resolver.py src/services/canonical_segments.py
+```
+
+**Result:**
+- `BACKLOG.md` now matches the current handoff direction: the remaining near-term work is the hanging test isolation plus guide/spec restructuring and citation, not re-litigating already-implemented hardening work.
+
+---
+
 ### Task: Populate live Resend audience proof for the Illustrated Guide
 
 **Type:** verification_only + docs_or_process_only
