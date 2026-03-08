@@ -111,7 +111,7 @@ These are included only where they appear likely to add real future value to thi
 | High | **Clarify Resend audience naming** | Pending | The reused audience label is generic; captions should make the Brussels IT subset explicit |
 | High | **Document NBA scoring logic** | Partial | `/api/scoring-model`, `ENGAGEMENT_THRESHOLDS`, `RECOMMENDATION_RULES`, and `rule_trace` now exist; the guide/spec still need to cite them clearly |
 | High | **Split mixed demo/source-of-truth docs** | Pending | Break the current guide into vision/business case, system spec, and illustrated evidence so one PDF is not carrying all three roles |
-| Medium | **Recheck webhook/event-processor test hang** | Pending | `tests/unit/test_webhook_gateway.py` + `tests/unit/test_cdp_event_processor.py` still need isolated `-vv -x` reruns to capture a clean green state |
+| Medium | **Recheck webhook/event-processor test hang** | ✅ DONE | Both suites now pass cleanly (54 tests in 0.33s); issue resolved, likely by prior hardening |
 
 **Accepted platform decision:** Use **RESEND** for the current POC.
 The user explicitly accepted the Resend swap on 2026-03-08, so Flexmail parity should not drive the near-term roadmap.
