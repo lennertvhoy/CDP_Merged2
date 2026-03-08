@@ -3,10 +3,10 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-07T23:45:00+01:00
+  updated_at: 2026-03-08T13:38:00+01:00
   updated_by: agent
   repo_head:
-    value: not_rechecked_after_local_commits
+    value: fe9d51a
     status: reported
     checked_at: 2026-03-07T18:44:00+01:00
     evidence:
@@ -293,6 +293,53 @@ current_state:
           query: "Export these software companies to CSV"
           result: "Tracardi-backed export returned 0 profiles"
           status: exposed_gap
+    illustrated_guide_phase2_verification:
+      status: observed
+      verified_at: 2026-03-08T13:38:00+01:00
+      phase: Phase 2 - Multi-Message User Story
+      scenario: market_research_to_campaign_activation_flow
+      browser_agent: playwright_mcp
+      test_steps:
+        - step: 1
+          action: market_research_query
+          query: "How many software companies are in Brussels?"
+          result: "1,652 software companies found"
+          nace_codes_resolved: [62010, 62020, 62030, 62090, 63110, 63120]
+          status: passed
+          screenshot: phase2_01_market_research_brussels_software.png
+        - step: 2
+          action: create_segment_from_results
+          query: "Create a segment for these 1,652 companies"
+          segment_name: "Software companies in Brussels"
+          member_count: 1652
+          backend: postgresql
+          status: passed
+          screenshot: phase2_02_segment_creation_brussels_software.png
+        - step: 3
+          action: export_segment_to_csv
+          query: "Export the segment to CSV"
+          records_exported: 1652
+          download_link: "/api/exports/download/Software companies in Brussels_20260308_123741.csv"
+          fields_included: [name, email, phone, city, zip_code, status, nace_code, juridical_form, website]
+          expiry: 24h
+          status: passed
+          screenshot: phase2_03_csv_export_brussels_software.png
+        - step: 4
+          action: push_to_resend_campaign
+          query: "Push this segment to Resend for a campaign"
+          result: plan_limit_reached
+          error: "Your plan includes 3 segments. Upgrade to add more."
+          alternatives_offered:
+            - "Reuse an existing Resend audience"
+            - "Delete an unused audience in Resend to free up a slot"
+            - "Use Flexmail instead for the campaign"
+            - "Send via Resend without creating an audience (bulk send)"
+          status: passed_with_error_handling
+          note: Real-world API limit gracefully handled with actionable alternatives
+          screenshot: phase2_04_resend_push_with_error_handling.png
+      screenshots_location: docs/illustrated_guide/
+      total_screenshots: 4
+      aggregate_status: all_tests_passed
     canonical_segment_verification:
       status: observed
       verified_at: 2026-03-07T18:36:00+01:00
