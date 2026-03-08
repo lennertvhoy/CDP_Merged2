@@ -141,9 +141,9 @@ current_state:
       status: implemented_prompt_restructured_pending_retest
       implemented_at: 2026-03-07T23:10:00+01:00
       system_prompt_enhanced_at: 2026-03-07T23:40:00+01:00
-      tool_selection_tested_at: 2026-03-08T00:10:00+01:00
+      tool_selection_tested_at: 2026-03-08T10:05:00+01:00
       system_prompt_restructured_at: 2026-03-08T00:47:00+01:00
-      tool_selection_status: tool_level_docstrings_enhanced_ready_for_retest
+      tool_selection_status: tool_level_docstrings_failed_need_parameter_validation
       tools:
         - query_unified_360
         - get_industry_summary
@@ -194,7 +194,8 @@ current_state:
         - "2026-03-08: Added Section 1C - EXAMPLES with exact query→tool mappings"
         - "2026-03-08: Added Section 1D - NEGATIVE CONSTRAINTS with DO NOT USE language"
         - "2026-03-08: Enhanced all 5 tool docstrings with USE WHEN/DO NOT USE WHEN sections"
-      tool_selection_next_action: Re-test the 3 failing queries to verify tool-level docstring enhancements work
+        - "2026-03-08: RETEST FAILED - Tool-level docstrings insufficient alone"
+      tool_selection_next_action: Implement Option D - Parameter validation layer that rejects wrong tool selections
       tool_selection_screenshot: chatbot_360_retest_all_failed_2026-03-08.png
     local_dataset:
       status: verified_working

@@ -2,7 +2,7 @@
 
 **Platform:** Azure target architecture with local-only execution mode
 **Current Execution Mode:** Local-only (`Azure deployment path paused to save costs`)
-**Last Updated:** 2026-03-07
+**Last Updated:** 2026-03-08
 **Purpose:** Human-readable current snapshot
 **Structured Source:** `PROJECT_STATE.yaml`
 
@@ -69,6 +69,6 @@
 ## Immediate Focus
 
 1. **Keep the active work local-only** and avoid Azure deployment, Azure smoke, or cloud verification until the user explicitly reopens that path
-2. **Re-test 360° tool selection** after tool-level docstring enhancements with USE WHEN/DO NOT USE WHEN sections
+2. **Fix 360° tool selection with parameter validation** - Tool-level docstrings insufficient; implement Option D (parameter validation layer)
 3. **Expand real local multi-message runtime scenarios** around Tracardi/Resend handoffs, follow-up memory, and artifact/export flows
 4. **Keep the compose-managed stack as the default local runtime** and treat host-side `start_chatbot.sh` as the edit/run fallback rather than the primary deployment path

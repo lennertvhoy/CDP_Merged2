@@ -65,41 +65,51 @@ poetry run python scripts/sync_exact_to_postgres.py --full
 poetry run python scripts/sync_exact_to_postgres.py
 ```
 
-#### 🔄 CRITICAL ISSUE: Tool Selection Fix - Tool-Level Docstrings Enhanced
+#### 🔄 CRITICAL ISSUE: Tool Selection Fix - TOOL-LEVEL DOCSTRINGS FAILED
 
-**Status:** ✅ TOOL-LEVEL DOCSTRINGS ENHANCED - Ready for re-test  
-**Implemented:** 2026-03-08  
-**Screenshot:** `chatbot_360_retest_all_failed_2026-03-08.png` (previous failure)
+**Status:** ❌ TOOL-LEVEL DOCSTRING ENHANCEMENTS INSUFFICIENT - Need stronger fix  
+**Tested:** 2026-03-08 10:05 CET  
+**Screenshot:** `chatbot_360_retest_all_failed_2026-03-08.png` (current failure)
 
-**Previous Test Results (before fix):**
+**Test Results (AFTER tool-level docstring enhancements):**
 
 | Query | Expected Tool | Actual Tool Used | Result |
 |-------|---------------|------------------|--------|
 | "How well are source systems linked to KBO?" | `get_identity_link_quality` | `get_data_coverage_stats` | ❌ FAIL |
 | "Show me revenue distribution by city" | `get_geographic_revenue_distribution` | `aggregate_profiles` | ❌ FAIL |
-| "Pipeline value for software companies in Brussels?" | `get_industry_summary` | None (claimed unavailable) | ❌ FAIL |
+| "Pipeline value for software companies in Brussels?" | `get_industry_summary` | (still wrong tool) | ❌ FAIL |
 
-**Fix Applied:**
+**What Was Applied:**
 Enhanced all 5 unified 360° tool docstrings in `src/ai_interface/tools/unified_360.py` with:
 
 1. **USE THIS TOOL WHEN** sections - Clear positive conditions for using each tool
-2. **DO NOT USE THIS TOOL WHEN** sections - Explicit negative conditions with correct alternatives
+2. **DO NOT USE THIS TOOL WHEN** sections - Explicit negative conditions with correct alternatives  
 3. **QUERY PATTERNS THAT REQUIRE THIS TOOL** - Exact query patterns that map to each tool
 4. **QUERY PATTERNS THAT DO NOT REQUIRE THIS TOOL** - Common misclassifications with correct tool guidance
 
 **Enhanced Tools:**
-- `query_unified_360` - Now clearly distinguished from search_profiles and get_industry_summary
-- `get_industry_summary` - Explicitly handles "pipeline value" queries, directs city-only queries elsewhere
-- `get_geographic_revenue_distribution` - Clearly for revenue/pipeline by city, not general aggregation
-- `get_identity_link_quality` - Specifically for KBO linkage questions, not general data coverage
-- `find_high_value_accounts` - For risk/opportunity accounts, not general company search
+- `query_unified_360` - Clear distinction from search_profiles and aggregate tools
+- `get_industry_summary` - Explicitly for pipeline value queries (e.g., "Pipeline value for software companies in Brussels?")
+- `get_geographic_revenue_distribution` - For revenue by city questions (e.g., "Show me revenue distribution by city")
+- `get_identity_link_quality` - For KBO linkage quality (e.g., "How well are source systems linked to KBO?")
+- `find_high_value_accounts` - For risk/opportunity accounts
 
-**Next Step:**
-🔄 **Re-test the 3 failing queries** to verify the tool-level docstring enhancements fix the issue.
+**Root Cause Analysis:**
+Tool-level docstrings alone are NOT sufficient to override the LLM's tool selection behavior. The LLM continues to:
+1. Classify "linkage" queries as "coverage" queries (uses `get_data_coverage_stats`)
+2. Classify "revenue distribution" queries as "aggregation" queries (uses `aggregate_profiles`)
+3. Misclassify "pipeline value" queries (doesn't use `get_industry_summary`)
 
-**If this fails:**
-- Option D: Add parameter validation that fails if wrong tool is selected
-- Option A: Implement explicit routing layer before tool selection
+**Next Step - REQUIRED:**
+🔄 **Implement Option D: Parameter Validation Layer**
+
+Add pre-validation in tool wrappers that:
+1. Checks if the tool selection matches query intent
+2. Returns a clear error with the correct tool suggestion if wrong
+3. Forces the LLM to retry with the correct tool
+
+**Alternative (if Option D fails):**
+- Option A: Implement explicit routing layer before tool selection (regex/keyword-based)
 
 #### Next Priorities
 
