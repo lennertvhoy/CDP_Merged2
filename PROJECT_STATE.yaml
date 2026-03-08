@@ -226,6 +226,33 @@ current_state:
           status: passed
           coverage: All 3 query intents, non-interference, empty query handling
       tool_selection_screenshot: chatbot_360_retest_all_failed_2026-03-08.png
+    mcp_server:
+      status: implemented
+      implemented_at: 2026-03-08T11:30:00+01:00
+      file: src/mcp_server.py
+      startup_script: scripts/start_mcp_server.sh
+      documentation: docs/MCP_SERVER.md
+      transport_modes:
+        - stdio
+        - sse
+      tools_exposed:
+        - search_companies
+        - aggregate_companies
+        - get_company_360_profile
+        - get_industry_summary
+        - get_geographic_revenue_distribution
+        - get_identity_link_quality
+        - find_high_value_accounts
+      resources_exposed:
+        - cdp://schema/companies
+        - cdp://stats/summary
+      services_used:
+        - PostgreSQLSearchService
+        - Unified360Service
+      verification:
+        health_endpoint: working
+        tested_at: 2026-03-08T11:45:00+01:00
+        result: "{\"status\":\"ok\",\"server\":\"cdp-postgresql-query-server\",\"version\":\"1.0.0\"}"
     local_dataset:
       status: verified_working
       total_companies: 1940603
