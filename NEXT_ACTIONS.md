@@ -34,6 +34,7 @@
 
 | Gap | Priority | What still needs to be shown or corrected |
 |-----|----------|-------------------------------------------|
+| **Four-source 360 overclaim** | **CRITICAL** | **OBSERVED CONTRADICTION (2026-03-08):** The unified_company_360 view only implements KBO + Teamleader + Exact. Autotask (5 companies) exists but is NOT linked via KBO and NOT in the unified view. The guide's "15 companies linked" claim is false—only 1 company (B.B.S. Entreprise) has linked_both status. Must correct guide or implement true four-source unification. |
 | UID-first privacy proof | CRITICAL | Show Tracardi/runtime evidence using UID-first operational data, or explicitly document the current privacy divergence |
 | Autotask / IT1 coverage | CRITICAL | Show ticket and contract data linked into the same 360 profile story, or mark IT1 as not yet demonstrated |
 | Count consistency | CRITICAL | Reconcile and label `1,652` total, `1,529` narrower activation test scope, and `101` CSV preview rows |
@@ -44,6 +45,7 @@
 #### Exit Criteria
 
 - [x] Record that Resend is the accepted current POC activation platform
+- [ ] **Fix four-source 360 overclaim:** Either (a) correct ILLUSTRATED_GUIDE to reflect three-source reality, or (b) implement Autotask into unified_company_360 with KBO linking
 - [ ] Demonstrate UID-only Tracardi/runtime evidence or explicitly document the current privacy divergence
 - [ ] Show one account with KBO + Teamleader + Exact + Autotask and, if claimed, website behavior in the same story
 - [ ] Resolve the `1,652` / `1,529` / `101` count framing in the guide

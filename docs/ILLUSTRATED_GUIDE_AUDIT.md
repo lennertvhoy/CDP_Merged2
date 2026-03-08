@@ -263,3 +263,130 @@ The Illustrated Guide demonstrates component existence but **fails to prove end-
 **Current State:** Beta/POC with gaps  
 **Target State:** Source of Truth with verified demonstrations  
 **Estimated Work:** 2-3 sessions to generate missing screenshots and mock data
+
+---
+
+## NEW CRITICAL FINDING (2026-03-08 17:36 CET)
+
+### ❌ FOUR-SOURCE 360° IS A FALSE CLAIM - OBSERVED CONTRADICTION
+
+**Status:** VERIFIED via direct PostgreSQL query  
+**Severity:** CRITICAL - Undermines core value proposition  
+**Evidence Location:** Local PostgreSQL `unified_company_360` view
+
+#### The Claim
+
+The ILLUSTRATED_GUIDE implies a "four-source 360°" customer view:
+- KBO (Official Registry)
+- Teamleader (CRM)
+- Exact Online (Accounting)
+- Autotask (PSA/Tickets)
+
+Specific claims from the guide:
+- "15 Companies Linked Across All 3 Sources" (Phase 5)
+- "Autotask (PSA): 5 companies, 5 tickets, ✅ Mock ready" (Data Foundation table)
+- B.B.S. Entreprise example shows `linked_both` status (implying KBO + Teamleader + Exact)
+
+#### The Verified Reality
+
+```sql
+-- Identity link status distribution from unified_company_360
+SELECT identity_link_status, COUNT(*) FROM unified_company_360 GROUP BY identity_link_status;
+```
+
+| Status | Count | Meaning |
+|--------|-------|---------|
+| `kbo_only` | 1,940,588 | KBO data only, no CRM/Exact link |
+| `linked_exact` | 8 | KBO + Exact only |
+| `linked_teamleader` | 6 | KBO + Teamleader only |
+| `linked_both` | **1** | **KBO + Teamleader + Exact** |
+
+**ONLY 1 COMPANY** (B.B.S. Entreprise) has the `linked_both` status the guide showcases.
+
+```sql
+-- Source identity links table (canonical link table)
+SELECT source_system, COUNT(*) FROM source_identity_links GROUP BY source_system;
+```
+
+| Source | Count |
+|--------|-------|
+| `teamleader` | **1** |
+
+**The guide claims 15 linked companies. Reality: 1 link record exists.**
+
+```sql
+-- Autotask data exists but is NOT linked
+SELECT COUNT(*) FROM autotask_companies;  -- Result: 5
+\d autotask_companies  -- Shows columns
+```
+
+**Critical Schema Gap:**
+- `autotask_companies` has: `id`, `name`, `address1`, `city`, `tax_id`, ...
+- **MISSING:** `kbo_number` column
+- **MISSING:** `organization_uid` column
+- **Result:** Autotask companies CANNOT be linked via KBO-based identity resolution
+
+```sql
+-- Unified view column inspection
+\d+ unified_company_360
+```
+
+**View Scope Verification:**
+- Columns present: `kbo_*`, `tl_*` (Teamleader), `exact_*` (Exact)
+- **NO `autotask_*` columns exist**
+- The view definition in `006_add_unified_360_views.sql` only JOINs:
+  - `companies` (KBO)
+  - `crm_companies` (Teamleader)
+  - `exact_customers` (Exact)
+
+#### The Contradiction
+
+| Guide Claim | Verified Fact | Status |
+|-------------|---------------|--------|
+| "15 Companies Linked Across All 3 Sources" | Only 1 company has linked_both status | **FALSE** |
+| Autotask integrated into 360° view | Autotask NOT in unified_company_360 | **FALSE** |
+| Four-source unified profile | Only 3 sources implemented (KBO+TL+Exact) | **FALSE** |
+| source_identity_links populated | Only 1 record (teamleader) | **FALSE** |
+
+#### Why This Matters
+
+The **360° Golden Record** is the PRIMARY value proposition of the CDP. The guide implies this works across all four sources, but:
+
+1. **Autotask data is orphaned** - 5 companies exist but can't be queried via the unified interface
+2. **The "15 linked companies" story is fabricated** - only 1 company actually has the claimed linkage
+3. **The IT1 division story is unproven** - No ticket/contract data appears in any 360° query
+4. **User expectations are misaligned** - A reader would expect to query Autotask data through the chatbot
+
+#### Required Fixes
+
+**Option A - Correct the Guide (Minimal):**
+1. Change "15 Companies Linked" to "1 Company with Full Linkage Demonstrated"
+2. Change Autotask status from "✅ Mock ready" to "⚠️ Data exists (5 companies) but not yet linked to 360° view"
+3. Explicitly state the 360° view covers **3 sources** (KBO + Teamleader + Exact)
+4. Remove or qualify any claims implying Autotask integration
+
+**Option B - Implement Four-Source (Complete):**
+1. Add `kbo_number` column to `autotask_companies` table
+2. Update `unified_company_360` view to LEFT JOIN `autotask_companies`
+3. Add `autotask_*` columns to the view (tickets, contracts)
+4. Populate `source_identity_links` for Autotask records
+5. Update `unified_360_queries.py` to expose Autotask data
+6. Re-verify with actual query: "Show me companies with open Autotask tickets"
+
+#### Evidence Preservation
+
+**Verification Timestamp:** 2026-03-08T17:36:00+01:00  
+**Verified By:** PostgreSQL direct query on local Docker instance  
+**Database:** `postgresql://cdpadmin:cdpadmin123@localhost:5432/cdp`  
+**Files Examined:**
+- `scripts/migrations/006_add_unified_360_views.sql` (view definition)
+- `src/services/unified_360_queries.py` (query service)
+- `src/services/projection.py` (Tracardi projection)
+
+**Related Documentation Updates:**
+- `PROJECT_STATE.yaml` - Added `verified_facts.four_source_360_gap`
+- `STATUS.md` - Updated Integrations section
+- `NEXT_ACTIONS.md` - Added CRITICAL blocker
+- `WORKLOG.md` - Session log entry
+
+---

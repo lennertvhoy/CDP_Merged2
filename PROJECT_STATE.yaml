@@ -132,7 +132,31 @@ current_state:
       - stcdpmergedprtnlp
       - Application Insights Smart Detection
     note: No broad waste was observed inside rg-cdpmerged-fast. The strongest storage-account cleanup candidate is stcdpmergedprtnlp because the group currently holds three nearly identical es-snapshots storage accounts while the repo's current Terraform footprint defines two, and stcdpmergedprtnlp uniquely carries the tag temporary_containerapp_exception=true. The Application Insights Smart Detection action group also looks orphaned because rg-cdpmerged-fast has no App Insights component or smartDetectorAlertRules.
-  chatbot:
+  verified_facts:
+  four_source_360_gap:
+    status: observed
+    verified_at: 2026-03-08T17:36:00+01:00
+    evidence:
+      - source: local_postgresql_query
+      - command: SELECT identity_link_status, COUNT(*) FROM unified_company_360 GROUP BY identity_link_status
+      - result: kbo_only=1,940,588; linked_exact=8; linked_teamleader=6; linked_both=1
+      - command: SELECT source_system, COUNT(*) FROM source_identity_links GROUP BY source_system
+      - result: teamleader=1 (only)
+      - command: SELECT COUNT(*) FROM autotask_companies
+      - result: 5 (but no kbo_number column, not linked to unified view)
+      - file: scripts/migrations/006_add_unified_360_views.sql
+        finding: unified_company_360 only implements KBO + Teamleader + Exact (no Autotask)
+    conclusion:
+      - The ILLUSTRATED_GUIDE claim of "15 Companies Linked Across All 3 Sources" is false
+      - Only 1 company (B.B.S. Entreprise) has linked_both status (KBO + Teamleader + Exact)
+      - Autotask data exists (5 companies) but is NOT integrated into unified_company_360 view
+      - True "four-source 360" (KBO + Teamleader + Exact + Autotask) is NOT implemented
+    guide_contradictions:
+      - "15 Companies Linked" -> Actually 1 company with linked_both status
+      - "Autotask: 5 companies, mock ready" -> Data exists but not linked/integrated
+      - Implied four-source 360 -> Only three sources in unified view
+
+chatbot:
     status: observed
     verified_at: 2026-03-07T23:45:00+01:00
     authoritative_query_plane: postgresql
