@@ -11,7 +11,7 @@ The Illustrated Guide presents a compelling POC narrative but contains **critica
 
 **Grade: C+** - Components exist but end-to-end integration is not proven with realistic data.
 
-**Update (2026-03-08 20:35 CET, using a 20:21 CET runtime/privacy recheck):** The guide has since been refreshed with `chatbot_360_bbs_four_source_final_2026-03-08.png`, and the count framing is now explicitly labeled as `1,652` canonical full scope, `1,529` narrower 62xxx activation-test scope, and `101` preview export rows. The privacy claim is now truthfully narrowed: sampled Tracardi profiles are anonymous and projection is PII-light, but `email.opened` / `email.clicked` events still carry raw email fields in event properties. That closes the documentation mismatch on the privacy claim. The remaining active blockers are a populated Resend audience, workflow execution evidence, guide-ready event-processor captures, and richer business-value demonstrations.
+**Update (2026-03-08 21:08 CET):** The guide has since been refreshed with populated Resend audience proof. The exact Brussels IT primary-code subset was verified at `190` company rows and `189` unique contact emails, then loaded into the empty Resend audience `KBO Companies - Test Audience` because the current Resend plan is capped at `3` audiences. Fresh screenshots were captured at `docs/illustrated_guide/demo_screenshots/resend_audiences_populated_2026-03-08.png` and `docs/illustrated_guide/demo_screenshots/resend_audience_detail_populated_2026-03-08.png`. The remaining active blockers are workflow execution evidence, website-behavior evidence, and stale screenshot/caption cleanup in a few older sections.
 
 ---
 
@@ -87,18 +87,14 @@ The Illustrated Guide presents a compelling POC narrative but contains **critica
 
 ---
 
-### ❌ Segment Activation with Real Data
-**What it is:** Actually pushing a segment of 1,652 companies to Resend and verifying they appear as a populated audience.
+### ✅ Segment Activation with Real Data (Resolved For Current POC)
+**What it is:** Pushing the exact Brussels IT subset with real email coverage to Resend and verifying it appears as a populated audience.
 
-**Current Gap:** 
-- Guide shows Resend dashboard with 9 emails sent (test data)
-- Guide shows "graceful handling of API limits" (error screenshot)
-- **MISSING:** The success path - a Resend audience actually containing 1,652 contacts from the CDP
-
-**Required Evidence:**
-1. Chatbot: "Pushing 1,652 contacts to Resend..."
-2. Resend Audience page showing "Software companies in Brussels" with 1,652 contacts
-3. Audience detail showing actual email addresses from the CDP
+**Resolved State:**
+- The old `1,652` software-company claim is not usable for activation because those Brussels NACE codes do not exist in the KBO data
+- The verified exact primary-code subset contains `190` Brussels IT company rows and `189` unique contact emails
+- A fresh populated Resend audience proof now exists in the live dashboard using the reused empty audience `KBO Companies - Test Audience`
+- The current operational constraint is plan-related, not data-related: the Resend account is capped at `3` audiences, so a new audience could not be created and an empty existing audience had to be reused
 
 ---
 
@@ -196,7 +192,7 @@ The Illustrated Guide presents a compelling POC narrative but contains **critica
 
 ### Priority 2: Generate Missing Demonstrations
 - [x] **360° Golden Record:** Capture fresh B.B.S. Entreprise `linked_all` view and align the guide caption to the four-source backend proof
-- [ ] **Segment Activation:** Push 1,652 software companies segment to Resend, capture populated audience
+- [x] **Segment Activation:** Populate the exact Brussels IT primary-code subset in Resend (`190` company rows, `189` unique contacts after one duplicate shared mailbox), capture audience-list and audience-detail screenshots
 - [ ] **CSV Export:** Download and open CSV, screenshot showing all 9 fields with data
 
 ### Priority 3: Populate Realistic Mock Data
