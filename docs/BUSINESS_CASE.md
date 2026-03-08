@@ -136,7 +136,7 @@ CDP_Merged is a Customer Data Platform with AI-powered natural language interfac
 ### Known Limitations
 1. **Tracardi CE workflows:** Runtime execution requires Premium license; Python event processor provides equivalent local automation
 2. **Email coverage:** IT segments show 14-17% email coverage (realistic for B2B Belgian market)
-3. **Autotask linkage:** Production-ready but verified with demo data pending live tenant credentials
+3. **Autotask (hybrid):** KBO linkage and 360° integration are production-ready; current verification uses demo data pending live tenant credentials
 
 ---
 
