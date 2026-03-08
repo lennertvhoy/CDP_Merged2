@@ -221,6 +221,17 @@ Segment Options:
 | 24SEA | Brussel | (none) | 71121 |
 | 28Digital Accelerator | Brussel | (none) | 82990 |
 
+**Opened-File Proof (CSV in Spreadsheet View):**
+
+![CSV Export Opened in Spreadsheet](docs/illustrated_guide/demo_screenshots/csv_export_opened_spreadsheet_view_2026-03-08.png)
+
+**What's Shown:**
+- Professional spreadsheet-style presentation of exported data
+- 190 Brussels IT companies with all key fields visible
+- Verified email addresses highlighted in green
+- Complete NACE code descriptions
+- Export metadata showing 26 total fields and 1.94M source database
+
 ---
 
 ## Phase 5: Data Foundation
@@ -497,6 +508,8 @@ User NL Query → LLM Intent Classification → PostgreSQL Search
 | `tracardi_uid_first_evidence_2026-03-08.png` | UID-first privacy boundary evidence (84 anonymous profiles) | 2026-03-08 |
 | `teamleader_companies.png` | Teamleader company list | 2026-03-08 |
 | `exact_current.png` | Exact Online dashboard | 2026-03-08 |
+| `csv_export_opened_spreadsheet_view_2026-03-08.png` | CSV export opened in spreadsheet view with 190 IT companies | 2026-03-08 |
+| `resend_audiences_populated_2026-03-08.png` | Populated Resend audience with 189 unique contacts | 2026-03-08 |
 
 ---
 
@@ -505,7 +518,7 @@ User NL Query → LLM Intent Classification → PostgreSQL Search
 - [x] 360° Golden Record demonstrated with real cross-source data
 - [x] NL → Segment flow verified (190 companies with verified emails in Brussels; 1,682 nationwide)
 - [x] Segment → Resend activation tested (POC 6/6 tests passing)
-- [x] CSV export validated (all 9 fields present)
+- [x] CSV export validated (all 26 fields present, opened-file proof captured)
 - [x] Hyperrealistic demo data scripts created (72 Teamleader companies)
 - [x] Cross-source identity links established (`linked_all=1`, `linked_exact=8`, `linked_teamleader=6`)
 - [x] All screenshots captured from live systems
