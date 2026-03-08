@@ -4,6 +4,65 @@
 
 ---
 
+### Task: Verify event processor fallback locally and fix live schema mismatches
+
+**Type:** app_code + verification_only + docs_or_process_only  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 20:10 CET  
+**Git Head:** `4cc49d6` at session start
+
+**Summary:**
+Re-verified the new Tracardi CE fallback (`scripts/cdp_event_processor.py`) against the real local PostgreSQL dataset and fixed three live issues discovered during verification: invalid Postgres table DDL, wrong `company_id` type for the `companies.id` UUID schema, and an NBA query that referenced nonexistent columns on `unified_company_360`.
+
+**Implementation / Fixes:**
+
+1. **Hardened company resolution**
+   - Added recipient-email normalization for string/list/dict payload shapes
+   - Added KBO extraction from direct payload fields and nested metadata
+   - Switched lookup logic from `companies.main_email` only to unified 360 email/KBO resolution so B.B.S. Entreprise resolves correctly via `info@bbsentreprise.be`
+
+2. **Fixed engagement schema initialization**
+   - Removed invalid inline `INDEX ...` syntax from `CREATE TABLE`
+   - Changed `company_id` from `INTEGER` to `UUID` to match `companies.id`
+   - Kept explicit index creation as separate `CREATE INDEX IF NOT EXISTS` statements
+
+3. **Fixed NBA query against the live schema**
+   - Replaced nonexistent `u.tl_open_deals_count` / `u.exact_total_invoiced` references
+   - Joined `unified_pipeline_revenue` for real `tl_open_deals` and `exact_revenue_total` fields
+
+4. **Added targeted regression tests**
+   - New file: `tests/unit/test_cdp_event_processor.py`
+   - Covers payload parsing, KBO extraction, unified-360 company lookup, and table initialization
+
+**Verification:**
+```bash
+python -m py_compile scripts/cdp_event_processor.py tests/unit/test_cdp_event_processor.py
+poetry run pytest tests/unit/test_cdp_event_processor.py -q
+poetry run python -c "from scripts.cdp_event_processor import init_database; init_database()"
+curl -fsS http://127.0.0.1:5001/health
+curl -fsS http://127.0.0.1:5001/api/next-best-action/0438437723
+curl -fsS 'http://127.0.0.1:5001/api/engagement/leads?min_score=5'
+psql "$DATABASE_URL" -Atc "SELECT kbo_number, SUM(event_weight), COUNT(*) FILTER (WHERE event_type = 'email.opened'), COUNT(*) FILTER (WHERE event_type = 'email.clicked') FROM company_engagement GROUP BY kbo_number ORDER BY kbo_number;"
+```
+
+**Observed Results:**
+- `health` returned `status=ok`, `database=ok`, `signature_verification=true`
+- `GET /api/next-best-action/0438437723` returned B.B.S. Entreprise with `support_expansion` + `re_activation`
+- Signed Resend-style `email.opened` + `email.clicked` events for B.B.S. Entreprise wrote to PostgreSQL and produced `engagement_score=15`
+- Signed Resend-style `email.opened` event for Accountantskantoor Dubois produced `cross_sell` (`accounting_software`, `tax_automation`) + `multi_division`
+- `GET /api/engagement/leads?min_score=5` returned:
+  - `0438437723` B.B.S. ENTREPRISE score `15`
+  - `0408340801` Accountantskantoor Dubois score `5`
+
+**Guide / Queue Impact:**
+- Cross-sell, multi-division, Next Best Action, identity-resolution, and engagement-writeback evidence are now locally verified
+- The main remaining Illustrated Guide blockers are:
+  1. Populated Resend audience capture for the canonical `1,652`-company segment
+  2. Guide-ready capture of the verified event-processor outputs
+  3. Website-behavior evidence tied to the same UID/business-value story
+
+---
+
 ## 2026-03-08 (Tracardi Workflow Runtime Investigation)
 
 ### Task: Determine how to activate repaired Tracardi workflow drafts for production execution

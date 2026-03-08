@@ -3,7 +3,7 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-08T21:45:00+01:00
+  updated_at: 2026-03-08T20:10:00+01:00
   updated_by: agent
   repo_head:
     value: fe9d51a
@@ -191,6 +191,31 @@ current_state:
         - The local workflow drafts are no longer hollow
         - The remaining Tracardi blocker is runtime activation, not draft structure
         - Workflow screenshots alone are insufficient proof until logs or trait updates show real execution
+    event_processor_nba_and_writeback_verified:
+      status: observed
+      verified_at: 2026-03-08T20:06:00+01:00
+      evidence:
+        - command: python -m py_compile scripts/cdp_event_processor.py tests/unit/test_cdp_event_processor.py
+        - command: poetry run pytest tests/unit/test_cdp_event_processor.py -q
+        - result: 5 passed
+        - command: poetry run python -c "from scripts.cdp_event_processor import init_database; init_database()"
+        - result: company_engagement table initialized successfully
+        - command: curl -fsS http://127.0.0.1:5001/health
+        - result: status=ok, database=ok, signature_verification=true
+        - command: curl -fsS http://127.0.0.1:5001/api/next-best-action/0438437723
+        - result: B.B.S. Entreprise returned support_expansion + re_activation recommendations with engagement_score=0 before event replay
+        - command: signed POST /webhook/resend for B.B.S. Entreprise email.opened + email.clicked
+        - result: score advanced to 15; payload returned kbo_number=0438437723, opens=1, clicks=1
+        - command: signed POST /webhook/resend for Accountantskantoor Dubois email.opened
+        - result: score=5; payload returned cross_sell(accounting_software, tax_automation) + multi_division + re_activation
+        - command: curl -fsS 'http://127.0.0.1:5001/api/engagement/leads?min_score=5'
+        - result: leads API returned B.B.S. Entreprise score=15 and Accountantskantoor Dubois score=5
+        - command: SELECT kbo_number, SUM(event_weight), COUNT(*) FILTER (WHERE event_type = 'email.opened'), COUNT(*) FILTER (WHERE event_type = 'email.clicked') FROM company_engagement GROUP BY kbo_number ORDER BY kbo_number
+        - result: 0408340801=5/1/0; 0438437723=15/1/1
+      conclusion:
+        - The Tracardi CE fallback path is now locally verified end to end
+        - The processor resolves real companies through unified 360 data and stores engagement events in PostgreSQL
+        - Next Best Action, cross-sell, multi-division, and engagement-writeback proofs now exist even without Tracardi Premium
 
   chatbot:
     status: observed
@@ -1299,7 +1324,7 @@ active_problems:
     status: observed
     severity: critical
     discovered_at: 2026-03-08
-    summary: Illustrated Guide v2.0 is published but still not yet acceptable as the business-case source of truth. The fresh linked_all screenshot and explicit `1,652` / `1,529` / `101` scope labels are now in place, but the guide still lacks UID-first/privacy proof, a populated activation audience, and richer business-value / writeback demonstrations.
+    summary: Illustrated Guide v2.0 is published but still not yet acceptable as the business-case source of truth. The fresh linked_all screenshot, explicit `1,652` / `1,529` / `101` scope labels, UID-first/runtime note, and local event-processor proofs for Next Best Action, cross-sell, multi-division, and engagement writeback are now in place, but the guide still lacks a populated activation audience, guide-ready captures for the event-processor outputs, and website-behavior evidence.
     evidence:
       - Audit report: docs/ILLUSTRATED_GUIDE_AUDIT.md
       - docs/ILLUSTRATED_GUIDE.md now uses chatbot_360_bbs_four_source_final_2026-03-08.png for the B.B.S. linked_all story
@@ -1307,7 +1332,8 @@ active_problems:
       - docs/ILLUSTRATED_GUIDE.md Phase 3 shows Resend readiness and POC results, but not a populated audience containing the canonical CDP segment
       - User feedback 2026-03-08 accepted Resend in place of Flexmail for the current POC, so the email-platform swap is not a blocker
       - User feedback 2026-03-08 flagged the privacy architecture contradiction: guide screenshots expose direct PII while the target architecture requires UID-first operational/runtime evidence
-      - User feedback 2026-03-08 flagged missing business-case proof for cross-sell, multi-division revenue visibility, website behavior, next-best-action, and engagement writeback
+      - Local verification 2026-03-08 confirmed event-processor proof for B.B.S. Entreprise (support-expansion + engagement writeback) and Accountantskantoor Dubois (cross-sell + multi-division)
+      - User feedback 2026-03-08 flagged missing business-case proof for website behavior and a populated downstream audience
       - 2026-03-08 Playwright verification confirmed local Tracardi operator login and dashboard access with fresh GUI evidence, but the dashboard screenshot only shows activation-layer counts/events and does not close the UID-first or four-source 360 proof gaps
     critical_mismatches:
       - issue: resend_platform_mismatch_removed_as_blocker
@@ -1327,9 +1353,9 @@ active_problems:
         actual: "The figures are now explicitly framed as canonical full scope vs narrower activation-test scope vs preview export sample"
         fix: Keep future captions using the same scope labels
       - issue: business_value_story_incomplete
-        current: "Current screenshots do not visibly prove cross-sell, multi-division value, website behavior, next-best-action, or engagement writeback"
-        actual: "These are part of the stated business case and required demonstrations"
-        fix: Capture the missing evidence or narrow the claimed scope
+        current: "Current guide screenshots still do not visibly prove website behavior or show guide-ready captures for the newly verified event-processor outputs"
+        actual: "Cross-sell, multi-division, next-best-action, and engagement writeback are now locally verified, but website behavior and audience population are still missing from the guide"
+        fix: Add guide-ready evidence for the verified event-processor outputs and capture the remaining website/audience proof
     missing_demonstrations:
       - demonstration: uid_first_privacy_layer
         priority: critical
@@ -1350,11 +1376,11 @@ active_problems:
       - demonstration: cross_sell_multi_division_value
         priority: high
         description: Show cross-sell or up-sell recommendation plus cross-division revenue visibility for the same account
-        status: not_started
+        status: verified_locally_via_event_processor_outputs
       - demonstration: website_behavior_and_writeback
         priority: high
-        description: Show website behavior, email engagement writeback, and profile enrichment evidence tied to the same UID
-        status: not_started
+        description: Show website behavior and profile enrichment evidence tied to the same UID; email engagement writeback is now locally verified via the event processor
+        status: partially_verified_locally
       - demonstration: csv_export_validation
         priority: medium
         description: Opened CSV showing all 9 claimed fields with real data and explicitly labeled sample/full counts
@@ -1383,7 +1409,9 @@ active_problems:
       - Keep Resend as the accepted current POC activation platform unless the user reopens Flexmail
       - Demonstrate the UID-first privacy boundary or explicitly document the current divergence
       - Keep the fresh linked_all screenshot and captioning aligned with the backend proof
-      - Capture cross-sell, multi-division, website-behavior, next-best-action, identity-resolution, and engagement-writeback evidence
+      - Convert the verified event-processor outputs into guide-ready screenshot/caption evidence
+      - Capture the populated Resend audience for the canonical 1,652-company segment
+      - Capture website-behavior evidence tied to the same UID/business-value story
   postgresql_city_query_timeouts:
     status: resolved
     severity: high
