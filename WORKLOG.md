@@ -1656,3 +1656,73 @@ Used a one-off Playwright run against the local Tracardi GUI to verify that oper
 - This closes the GUI-access uncertainty for local Tracardi, but it does **not** close the Illustrated Guide blocker. The dashboard screenshot is activation-layer evidence only and still does not prove the UID-first privacy boundary or a four-source KBO + Teamleader + Exact + Autotask 360 story.
 
 ---
+
+---
+
+## 2026-03-08 (Four-Source 360 Verification - OBSERVED CONTRADICTION)
+
+### Task: Verify backend truth for Illustrated Guide four-source / UID-first gap
+
+**Type:** verification_only  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-08 17:36 CET  
+**Git Head:** `7cc578d`
+
+**Summary:**
+Completed the blocked verification from the previous session. Direct PostgreSQL queries on local Docker database reveal the ILLUSTRATED_GUIDE contains false claims about the 360° implementation.
+
+**Verification Commands Executed:**
+```bash
+# Identity link status distribution
+SELECT identity_link_status, COUNT(*) FROM unified_company_360 GROUP BY identity_link_status;
+# Result: kbo_only=1,940,588; linked_exact=8; linked_teamleader=6; linked_both=1
+
+# Source identity links table
+SELECT source_system, COUNT(*) FROM source_identity_links GROUP BY source_system;
+# Result: teamleader=1 (ONLY 1 RECORD, not 15)
+
+# Autotask data presence
+SELECT COUNT(*) FROM autotask_companies;
+# Result: 5 companies
+\d autotask_companies
+# Result: NO kbo_number column, NO organization_uid - cannot link to unified view
+
+# Unified view columns
+\d+ unified_company_360
+# Result: Only KBO, Teamleader (tl_*), and Exact (exact_*) fields - NO Autotask fields
+```
+
+**Observed Contradictions:**
+
+| Guide Claim | Verified Reality | Status |
+|-------------|------------------|--------|
+| "15 Companies Linked Across All 3 Sources" | Only 1 company has linked_both status (B.B.S. Entreprise) | FALSE |
+| "Autotask: 5 companies, mock ready" | 5 companies exist but NOT linked, NOT in unified view | MISLEADING |
+| Implied four-source 360° (KBO+CRM+Exact+Autotask) | unified_company_360 only implements 3 sources | FALSE |
+| `source_identity_links` populated | Only 1 record (teamleader), not 15 | FALSE |
+
+**Root Cause Analysis:**
+1. **Autotask schema mismatch:** The `autotask_companies` table lacks `kbo_number` and `organization_uid` columns required for KBO-based identity linking
+2. **View scope limitation:** `scripts/migrations/006_add_unified_360_views.sql` explicitly only JOINs KBO + Teamleader + Exact
+3. **Data without linkage:** 5 Autotask companies exist but are orphaned from the unified view
+
+**Documentation Updates:**
+- `PROJECT_STATE.yaml`: Added `verified_facts.four_source_360_gap` section with full evidence
+- `STATUS.md`: Updated Integrations line to reflect actual Autotask state
+- `NEXT_ACTIONS.md`: Added "Four-source 360 overclaim" as CRITICAL blocker with correction options
+- `WORKLOG.md`: This entry
+
+**Next Steps:**
+1. **Option A (Minimal):** Correct ILLUSTRATED_GUIDE.md to reflect three-source reality (KBO+Teamleader+Exact)
+2. **Option B (Complete):** Implement Autotask integration into unified_company_360:
+   - Add kbo_number column to autotask_companies
+   - Update unified view to LEFT JOIN autotask data
+   - Populate source_identity_links for Autotask records
+   - Re-verify with actual query
+
+**Evidence Files:**
+- Local PostgreSQL: `postgresql://cdpadmin:cdpadmin123@localhost:5432/cdp`
+- Migration file: `scripts/migrations/006_add_unified_360_views.sql`
+- Query service: `src/services/unified_360_queries.py`
+
+---
