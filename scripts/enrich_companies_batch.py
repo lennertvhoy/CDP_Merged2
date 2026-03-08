@@ -6,7 +6,16 @@ Enriches imported companies using:
 - FREE: CBE Integration (industry classification, size estimates)
 - FREE: OpenStreetMap Geocoding (lat/lon coordinates)
 - FREE: Website Discovery (URL pattern matching + scraping)
-- AZURE: AI Descriptions via Azure OpenAI
+- AZURE/LOCAL: AI Descriptions via Azure OpenAI OR local Ollama
+
+AI Description Options:
+    # Use Azure OpenAI (default, paid)
+    python scripts/enrich_companies_batch.py --enrichers description
+
+    # Use local Ollama (FREE, requires Ollama running)
+    export DESCRIPTION_ENRICHER=ollama
+    export OLLAMA_MODEL=llama3.1:8b  # or llama3.2:3b, mistral, etc.
+    python scripts/enrich_companies_batch.py --enrichers description
 
 Usage:
     # Enrich all pending companies
@@ -282,11 +291,21 @@ async def enrich_website(company: dict, enricher: Any | None = None) -> dict:
 
 
 async def enrich_description(company: dict, enricher: Any | None = None) -> dict:
-    """Enrich with AI-generated description via Azure OpenAI."""
+    """Enrich with AI-generated description via Azure OpenAI or Ollama."""
     if enricher is None:
-        from src.enrichment.descriptions import DescriptionEnricher
+        # Respect DESCRIPTION_ENRICHER env var for fallback enricher
+        description_enricher = os.environ.get("DESCRIPTION_ENRICHER", "azure").lower()
 
-        enricher = DescriptionEnricher()
+        if description_enricher == "ollama":
+            from src.enrichment.descriptions_ollama import OllamaDescriptionEnricher
+
+            ollama_url = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+            ollama_model = os.environ.get("OLLAMA_MODEL", "llama3.1:8b")
+            enricher = OllamaDescriptionEnricher(ollama_url=ollama_url, model=ollama_model)
+        else:
+            from src.enrichment.descriptions import DescriptionEnricher
+
+            enricher = DescriptionEnricher()
 
     # Skip if no NACE codes
     nace_codes = company.get("all_nace_codes", [])
@@ -421,9 +440,25 @@ def create_enricher_instances(enrichers: list[str]) -> dict[str, Any]:
 
         instances["website"] = WebsiteDiscoveryEnricher()
     if "description" in enrichers:
-        from src.enrichment.descriptions import DescriptionEnricher
+        # Select description enricher based on environment variable
+        description_enricher = os.environ.get("DESCRIPTION_ENRICHER", "azure").lower()
 
-        instances["description"] = DescriptionEnricher()
+        if description_enricher == "ollama":
+            from src.enrichment.descriptions_ollama import OllamaDescriptionEnricher
+
+            ollama_url = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+            ollama_model = os.environ.get("OLLAMA_MODEL", "llama3.1:8b")
+
+            instances["description"] = OllamaDescriptionEnricher(
+                ollama_url=ollama_url,
+                model=ollama_model,
+            )
+            logger.info(f"Using Ollama description enricher (model: {ollama_model})")
+        else:
+            from src.enrichment.descriptions import DescriptionEnricher
+
+            instances["description"] = DescriptionEnricher()
+            logger.info("Using Azure OpenAI description enricher")
 
     return instances
 
