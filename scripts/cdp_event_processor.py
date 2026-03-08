@@ -78,6 +78,157 @@ CROSS_SELL_MAP = {
 }
 
 
+def normalize_kbo_number(value: Any) -> str | None:
+    """Normalize Belgian KBO/VAT-like values to a 10-digit KBO number."""
+    if value in (None, ""):
+        return None
+
+    digits = "".join(ch for ch in str(value) if ch.isdigit())
+    if len(digits) < 10:
+        return None
+
+    return digits[-10:]
+
+
+def normalize_email(value: Any) -> str | None:
+    """Extract the first usable email from strings, lists, or nested dicts."""
+    if value in (None, ""):
+        return None
+
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        return normalized or None
+
+    if isinstance(value, list):
+        for item in value:
+            email = normalize_email(item)
+            if email:
+                return email
+        return None
+
+    if isinstance(value, dict):
+        for key in ("email", "address", "to"):
+            email = normalize_email(value.get(key))
+            if email:
+                return email
+
+    return None
+
+
+def extract_recipient_email(event_data: dict[str, Any]) -> str | None:
+    """Extract recipient email from common Resend payload shapes."""
+    for key in ("to", "email", "recipient", "recipient_email"):
+        email = normalize_email(event_data.get(key))
+        if email:
+            return email
+    return None
+
+
+def extract_kbo_from_event(event_data: dict[str, Any]) -> str | None:
+    """Extract a KBO number from direct event fields or attached metadata."""
+    candidate_keys = ("kbo_number", "company_kbo", "organization_number", "company_number")
+
+    for key in candidate_keys:
+        normalized = normalize_kbo_number(event_data.get(key))
+        if normalized:
+            return normalized
+
+    for parent_key in ("metadata", "tags", "properties"):
+        nested = event_data.get(parent_key)
+        if isinstance(nested, dict):
+            for key in candidate_keys:
+                normalized = normalize_kbo_number(nested.get(key))
+                if normalized:
+                    return normalized
+
+    return None
+
+
+def lookup_company(cursor, email: str | None, event_data: dict[str, Any]) -> tuple[Any, ...] | None:
+    """Resolve the company through unified 360 data before falling back to domain matching."""
+    kbo_number = extract_kbo_from_event(event_data)
+    if kbo_number:
+        cursor.execute(
+            """
+            SELECT
+                c.id,
+                u.kbo_number,
+                COALESCE(
+                    u.tl_company_name,
+                    u.kbo_company_name,
+                    u.exact_company_name,
+                    u.autotask_company_name,
+                    c.company_name
+                ) AS company_name,
+                COALESCE(u.nace_code, c.industry_nace_code) AS nace_code
+            FROM unified_company_360 u
+            LEFT JOIN companies c ON c.kbo_number = u.kbo_number
+            WHERE u.kbo_number = %s
+            LIMIT 1
+            """,
+            (kbo_number,),
+        )
+        row = cursor.fetchone()
+        if row:
+            return row
+
+    if email:
+        cursor.execute(
+            """
+            SELECT
+                c.id,
+                u.kbo_number,
+                COALESCE(
+                    u.tl_company_name,
+                    u.kbo_company_name,
+                    u.exact_company_name,
+                    u.autotask_company_name,
+                    c.company_name
+                ) AS company_name,
+                COALESCE(u.nace_code, c.industry_nace_code) AS nace_code
+            FROM unified_company_360 u
+            LEFT JOIN companies c ON c.kbo_number = u.kbo_number
+            WHERE LOWER(COALESCE(c.main_email, '')) = %s
+               OR LOWER(COALESCE(u.tl_email, '')) = %s
+               OR LOWER(COALESCE(u.exact_email, '')) = %s
+            LIMIT 1
+            """,
+            (email, email, email),
+        )
+        row = cursor.fetchone()
+        if row:
+            return row
+
+        domain = email.split("@", 1)[1] if "@" in email else None
+        if domain:
+            cursor.execute(
+                """
+                SELECT
+                    c.id,
+                    u.kbo_number,
+                    COALESCE(
+                        u.tl_company_name,
+                        u.kbo_company_name,
+                        u.exact_company_name,
+                        u.autotask_company_name,
+                        c.company_name
+                    ) AS company_name,
+                    COALESCE(u.nace_code, c.industry_nace_code) AS nace_code
+                FROM unified_company_360 u
+                LEFT JOIN companies c ON c.kbo_number = u.kbo_number
+                WHERE LOWER(COALESCE(u.email_domain, '')) = %s
+                   OR LOWER(split_part(COALESCE(c.main_email, ''), '@', 2)) = %s
+                LIMIT 1
+                """,
+                (domain.lower(), domain.lower()),
+            )
+            row = cursor.fetchone()
+            if row:
+                return row
+
+    return None
+
+
 def get_db_connection():
     """Get PostgreSQL database connection."""
     return psycopg2.connect(DATABASE_URL)
@@ -125,76 +276,78 @@ def update_engagement_score(email: str, event_type: str, event_data: dict) -> di
     
     Returns updated engagement metrics.
     """
+    normalized_email = normalize_email(email)
     weight = EVENT_WEIGHTS.get(event_type, 0)
     
     conn = get_db_connection()
     cursor = conn.cursor()
     
     try:
-        # Try to find company by email domain
-        domain = email.split("@")[1] if "@" in email else None
-        
-        if domain:
-            cursor.execute("""
-                SELECT c.id, c.kbo_number, c.company_name, c.industry_nace_code
-                FROM companies c
-                WHERE c.main_email LIKE %s
-                LIMIT 1
-            """, (f"%@{domain}",))
-            
-            row = cursor.fetchone()
-            if row:
-                company_id, kbo_number, company_name, nace_code = row
-                
-                # Update engagement tracking table
-                cursor.execute("""
-                    INSERT INTO company_engagement (
-                        company_id, kbo_number, email, event_type, event_weight, 
-                        event_data, created_at
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """, (
-                    company_id, kbo_number, email, event_type, weight,
-                    json.dumps(event_data), datetime.now(UTC)
-                ))
-                
-                # Calculate cumulative engagement score
-                cursor.execute("""
-                    SELECT 
-                        COALESCE(SUM(event_weight), 0) as total_score,
-                        COUNT(DISTINCT CASE WHEN event_type = 'email.opened' THEN 1 END) as opens,
-                        COUNT(DISTINCT CASE WHEN event_type = 'email.clicked' THEN 1 END) as clicks,
-                        MAX(created_at) as last_activity
-                    FROM company_engagement
-                    WHERE kbo_number = %s
-                """, (kbo_number,))
-                
-                score_row = cursor.fetchone()
-                total_score, opens, clicks, last_activity = score_row
-                
-                # Determine engagement level
-                if total_score >= 50:
-                    engagement_level = "high"
-                elif total_score >= 20:
-                    engagement_level = "medium"
-                else:
-                    engagement_level = "low"
-                
-                conn.commit()
-                
-                return {
-                    "company_id": company_id,
-                    "kbo_number": kbo_number,
-                    "company_name": company_name,
-                    "nace_code": nace_code,
-                    "engagement_score": total_score,
-                    "engagement_level": engagement_level,
-                    "email_opens": opens,
-                    "email_clicks": clicks,
-                    "last_activity": last_activity.isoformat() if last_activity else None,
-                }
-        
+        row = lookup_company(cursor, normalized_email, event_data)
+        if row:
+            company_id, kbo_number, company_name, nace_code = row
+
+            cursor.execute(
+                """
+                INSERT INTO company_engagement (
+                    company_id, kbo_number, email, event_type, event_weight,
+                    event_data, created_at
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    company_id,
+                    kbo_number,
+                    normalized_email,
+                    event_type,
+                    weight,
+                    json.dumps(event_data),
+                    datetime.now(UTC),
+                ),
+            )
+
+            cursor.execute(
+                """
+                SELECT
+                    COALESCE(SUM(event_weight), 0) AS total_score,
+                    COUNT(*) FILTER (WHERE event_type = 'email.opened') AS opens,
+                    COUNT(*) FILTER (WHERE event_type = 'email.clicked') AS clicks,
+                    MAX(created_at) AS last_activity
+                FROM company_engagement
+                WHERE kbo_number = %s
+                """,
+                (kbo_number,),
+            )
+
+            score_row = cursor.fetchone()
+            total_score, opens, clicks, last_activity = score_row
+
+            if total_score >= 50:
+                engagement_level = "high"
+            elif total_score >= 20:
+                engagement_level = "medium"
+            else:
+                engagement_level = "low"
+
+            conn.commit()
+
+            return {
+                "company_id": company_id,
+                "kbo_number": kbo_number,
+                "company_name": company_name,
+                "nace_code": nace_code,
+                "engagement_score": total_score,
+                "engagement_level": engagement_level,
+                "email_opens": opens,
+                "email_clicks": clicks,
+                "last_activity": last_activity.isoformat() if last_activity else None,
+            }
+
         conn.commit()
-        return {"status": "no_company_found", "email": email}
+        return {
+            "status": "no_company_found",
+            "email": normalized_email,
+            "kbo_number": extract_kbo_from_event(event_data),
+        }
         
     except Exception as e:
         conn.rollback()
@@ -230,11 +383,12 @@ def generate_next_best_action(engagement_data: dict) -> dict:
                 u.tl_company_name,
                 u.exact_company_name,
                 u.autotask_company_name,
-                u.tl_open_deals_count,
-                u.exact_total_invoiced,
+                COALESCE(upr.tl_open_deals, 0) AS tl_open_deals,
+                COALESCE(upr.exact_revenue_total, 0) AS exact_revenue_total,
                 u.autotask_open_tickets,
                 u.total_source_count
             FROM unified_company_360 u
+            LEFT JOIN unified_pipeline_revenue upr ON upr.kbo_number = u.kbo_number
             WHERE u.kbo_number = %s
         """, (kbo_number,))
         
@@ -323,7 +477,7 @@ def process_resend_event(resend_payload: dict) -> dict:
     """
     event_type = resend_payload.get("type", "unknown")
     event_data = resend_payload.get("data", resend_payload)
-    to_email = event_data.get("to", "")
+    to_email = extract_recipient_email(event_data) or ""
     
     print(f"📧 Processing: {event_type} -> {to_email}")
     
@@ -437,8 +591,8 @@ async def get_next_best_action(kbo_number: str):
         cursor.execute("""
             SELECT 
                 COALESCE(SUM(event_weight), 0) as total_score,
-                COUNT(DISTINCT CASE WHEN event_type = 'email.opened' THEN 1 END) as opens,
-                COUNT(DISTINCT CASE WHEN event_type = 'email.clicked' THEN 1 END) as clicks,
+                COUNT(*) FILTER (WHERE event_type = 'email.opened') as opens,
+                COUNT(*) FILTER (WHERE event_type = 'email.clicked') as clicks,
                 MAX(created_at) as last_activity
             FROM company_engagement
             WHERE kbo_number = %s
@@ -494,8 +648,8 @@ async def get_engaged_leads(min_score: int = 30):
                 ce.kbo_number,
                 MAX(c.company_name) as company_name,
                 SUM(ce.event_weight) as total_score,
-                COUNT(DISTINCT CASE WHEN ce.event_type = 'email.opened' THEN 1 END) as opens,
-                COUNT(DISTINCT CASE WHEN ce.event_type = 'email.clicked' THEN 1 END) as clicks,
+                COUNT(*) FILTER (WHERE ce.event_type = 'email.opened') as opens,
+                COUNT(*) FILTER (WHERE ce.event_type = 'email.clicked') as clicks,
                 MAX(ce.created_at) as last_activity
             FROM company_engagement ce
             JOIN companies c ON ce.kbo_number = c.kbo_number
@@ -560,15 +714,13 @@ def init_database():
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS company_engagement (
                 id SERIAL PRIMARY KEY,
-                company_id INTEGER REFERENCES companies(id),
+                company_id UUID REFERENCES companies(id),
                 kbo_number VARCHAR(20) NOT NULL,
                 email VARCHAR(255),
                 event_type VARCHAR(50) NOT NULL,
                 event_weight INTEGER NOT NULL DEFAULT 0,
                 event_data JSONB,
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-                INDEX idx_kbo_number (kbo_number),
-                INDEX idx_created_at (created_at)
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             )
         """)
         

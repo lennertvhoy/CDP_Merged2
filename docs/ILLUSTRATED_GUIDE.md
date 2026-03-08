@@ -1,8 +1,8 @@
 # CDP_Merged Illustrated Guide v2.0
 
-**Status:** Fresh four-source screenshot and scope labels applied; UID-first/privacy evidence now documented with runtime screenshot; business-value evidence and populated Resend audience still pending
+**Status:** Fresh four-source screenshot, scope labels, UID-first/runtime evidence, and local event-processor business-value proof applied; populated Resend audience and website-behavior evidence still pending
 **Last Updated:** 2026-03-08  
-**Verification:** Screenshots captured from live systems; four-source backend rechecked via local PostgreSQL on 2026-03-08 19:20 CET
+**Verification:** Screenshots captured from live systems; four-source backend rechecked via local PostgreSQL on 2026-03-08 19:20 CET; event processor rechecked locally on 2026-03-08 20:06 CET
 
 ---
 
@@ -230,6 +230,23 @@ Total Members: 1,652 (canonical full-scope segment)
    - Next Best Action recommendation generation
    - Cross-sell opportunity detection
    - REST API for sales leads: `/api/engagement/leads`
+
+**Local alternative verification (2026-03-08 20:06 CET):**
+
+| Company | Verification Path | Observed Result |
+|---------|-------------------|-----------------|
+| B.B.S. Entreprise (`0438437723`) | `GET /api/next-best-action/0438437723`, then signed `POST /webhook/resend` events for `email.opened` + `email.clicked`, then `GET /api/engagement/leads?min_score=10` | `support_expansion` + `re_activation`; engagement score rose to `15`; leads API returned B.B.S. with `1` open and `1` click |
+| Accountantskantoor Dubois (`0408340801`) | Signed `POST /webhook/resend` event for `email.opened` to `info@duboisaccount.be` | `cross_sell` (`accounting_software`, `tax_automation`) + `multi_division` + `re_activation`; engagement score `5` |
+
+**Verification commands:**
+
+```bash
+python -m py_compile scripts/cdp_event_processor.py tests/unit/test_cdp_event_processor.py
+poetry run pytest tests/unit/test_cdp_event_processor.py -q
+poetry run python -c "from scripts.cdp_event_processor import init_database; init_database()"
+curl -fsS http://127.0.0.1:5001/api/next-best-action/0438437723
+curl -fsS 'http://127.0.0.1:5001/api/engagement/leads?min_score=5'
+```
 
 ### Source System Integration Status
 
