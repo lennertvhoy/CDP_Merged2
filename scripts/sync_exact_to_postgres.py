@@ -271,7 +271,7 @@ class ExactOnlineSync:
         try:
             for record in self.client.get_all_records(
                 "financial/GLAccounts",
-                select="ID,Code,Name,Type,Description,Active,TaxCode,Classification",
+                select="ID,Code,Type,Description,IsBlocked,VATCode",
                 filter_query=filter_query,
                 orderby="Code",
                 top=PAGE_SIZE,
@@ -310,14 +310,14 @@ class ExactOnlineSync:
                         """,
                         source_id,
                         account_code,
-                        record.get("Name", ""),
-                        record.get("Type", ""),
-                        record.get("Classification", ""),
-                        record.get("Active", True),
-                        record.get("TaxCode") is not None,
-                        record.get("TaxCode", ""),
+                        record.get("Description", ""),  # Name → Description
+                        str(record.get("Type", "")),
+                        record.get("TypeDescription", ""),  # Classification → TypeDescription
+                        not record.get("IsBlocked", False),  # Active = not IsBlocked
+                        record.get("VATCode") is not None,
+                        record.get("VATCode", ""),  # TaxCode → VATCode
                         record.get("ReportingCode", ""),
-                        record.get("Description", ""),
+                        record.get("SearchCode", ""),
                         parse_exact_date(record.get("Created")),
                         parse_exact_date(modified),
                         json.dumps(record)
@@ -357,7 +357,8 @@ class ExactOnlineSync:
         
         logger.info("syncing_customers", full_sync=full_sync, cursor=last_modified)
         
-        filter_query = "Type eq 'C'"
+        # Get all accounts (filter by IsSales eq true for customers only)
+        filter_query = "IsSales eq true"
         if last_modified and not full_sync:
             filter_query = f"{filter_query} and Modified gt datetime'{last_modified}'"
         
@@ -367,7 +368,7 @@ class ExactOnlineSync:
         try:
             for record in self.client.get_all_records(
                 "crm/Accounts",
-                select="ID,Name,AddressLine1,AddressLine2,AddressLine3,Postcode,City,Country,Email,Phone,Website,VATNumber,ChamberOfCommerce,Code,CreditLine,DiscountPercentage,PaymentTermsDays,IsSalesBlocked,Status,AccountManager,Classification1,Classification2,Modified,Created",
+                select="ID,Name,AddressLine1,AddressLine2,AddressLine3,Postcode,City,Country,Email,Phone,Website,VATNumber,ChamberOfCommerce,Code,Status,AccountManager,Classification1,Classification2,Modified,Created",
                 filter_query=filter_query,
                 orderby="Name",
                 top=PAGE_SIZE,
@@ -397,12 +398,11 @@ class ExactOnlineSync:
                             company_name, legal_name, 
                             street_address, city, postal_code, country,
                             main_email, email_domain, main_phone, website_url,
-                            credit_line, discount_percentage, payment_terms_days,
-                            vat_number_exact, status, is_blocked,
+                            vat_number_exact, status,
                             customer_type, account_manager,
                             source_created_at, source_updated_at, last_sync_at, raw_data
                         ) VALUES (
-                            'exact', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, CURRENT_TIMESTAMP, $25
+                            'exact', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, CURRENT_TIMESTAMP, $21
                         )
                         ON CONFLICT (source_system, source_record_id) 
                         DO UPDATE SET
@@ -417,9 +417,7 @@ class ExactOnlineSync:
                             email_domain = EXCLUDED.email_domain,
                             main_phone = EXCLUDED.main_phone,
                             website_url = EXCLUDED.website_url,
-                            credit_line = EXCLUDED.credit_line,
                             status = EXCLUDED.status,
-                            is_blocked = EXCLUDED.is_blocked,
                             account_manager = EXCLUDED.account_manager,
                             source_updated_at = EXCLUDED.source_updated_at,
                             last_sync_at = CURRENT_TIMESTAMP,
@@ -444,12 +442,8 @@ class ExactOnlineSync:
                         self.extract_email_domain(email),
                         record.get("Phone", ""),
                         record.get("Website", ""),
-                        record.get("CreditLine"),
-                        record.get("DiscountPercentage"),
-                        record.get("PaymentTermsDays"),
                         record.get("VATNumber", ""),
                         record.get("Status", "C"),
-                        record.get("IsSalesBlocked", False),
                         record.get("Classification1", ""),
                         record.get("AccountManager", {}).get("FullName") if isinstance(record.get("AccountManager"), dict) else "",
                         parse_exact_date(record.get("Created")),
@@ -507,25 +501,23 @@ class ExactOnlineSync:
         try:
             for record in self.client.get_all_records(
                 "salesinvoice/SalesInvoices",
-                select="ID,InvoiceNumber,Type,Description,AmountDC,VATAmountDC,AmountFC,VATAmountFC,Currency,ExchangeRate,InvoiceDate,DueDate,DeliveryDate,PaymentDate,Status,PaymentStatus,AmountPaid,AmountOpen,DaysOverdue,PaymentConditionDescription,OrderedBy,Customer,JournalCode,DocumentNumber,Modified,Created",
+                select="InvoiceNumber,Type,Description,AmountDC,VATAmountDC,AmountFC,VATAmountFC,Currency,InvoiceDate,DueDate,Status,PaymentConditionDescription,DocumentNumber,Modified,Created",
                 filter_query=filter_query,
                 orderby="InvoiceDate desc",
                 top=PAGE_SIZE,
             ):
-                source_id = extract_guid(record.get("ID"))
-                if not source_id:
+                invoice_number_raw = record.get("InvoiceNumber")
+                invoice_number = str(invoice_number_raw) if invoice_number_raw else ""
+                if not invoice_number:
                     stats.skipped += 1
                     continue
                 
-                invoice_number = record.get("InvoiceNumber", "")
+                # Use invoice_number as source_id since ID field not available
+                source_id = invoice_number
                 modified = record.get("Modified", "")
                 
-                customer_data = record.get("Customer", {})
-                exact_customer_id = extract_guid(customer_data.get("ID")) if isinstance(customer_data, dict) else None
-                crm_company_id = customer_id_map.get(exact_customer_id) if exact_customer_id else None
-                
-                amount_excl = record.get("AmountDC", 0)
-                vat_amount = record.get("VATAmountDC", 0)
+                amount_excl = record.get("AmountDC", 0) or 0
+                vat_amount = record.get("VATAmountDC", 0) or 0
                 amount_incl = amount_excl + vat_amount
                 
                 async with self.pool.acquire() as conn:
@@ -533,28 +525,19 @@ class ExactOnlineSync:
                         """
                         INSERT INTO exact_sales_invoices (
                             source_system, source_record_id, invoice_number,
-                            exact_customer_id, crm_company_id,
                             invoice_type, invoice_description,
                             total_amount_excl, total_vat_amount, total_amount_incl,
-                            currency, exchange_rate,
-                            invoice_date, due_date, delivery_date, payment_date,
-                            invoice_status, payment_status,
-                            amount_paid, amount_open, days_overdue,
-                            payment_condition, document_number, journal_code,
+                            currency,
+                            invoice_date, due_date,
+                            invoice_status,
+                            payment_condition, document_number,
                             source_created_at, source_updated_at, last_sync_at, raw_data
                         ) VALUES (
-                            'exact', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, CURRENT_TIMESTAMP, $26
+                            'exact', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, CURRENT_TIMESTAMP, $16
                         )
                         ON CONFLICT (source_system, source_record_id) 
                         DO UPDATE SET
-                            exact_customer_id = COALESCE(EXCLUDED.exact_customer_id, exact_sales_invoices.exact_customer_id),
-                            crm_company_id = COALESCE(EXCLUDED.crm_company_id, exact_sales_invoices.crm_company_id),
                             invoice_status = EXCLUDED.invoice_status,
-                            payment_status = EXCLUDED.payment_status,
-                            amount_paid = EXCLUDED.amount_paid,
-                            amount_open = EXCLUDED.amount_open,
-                            days_overdue = EXCLUDED.days_overdue,
-                            payment_date = EXCLUDED.payment_date,
                             source_updated_at = EXCLUDED.source_updated_at,
                             last_sync_at = CURRENT_TIMESTAMP,
                             sync_version = exact_sales_invoices.sync_version + 1,
@@ -562,27 +545,17 @@ class ExactOnlineSync:
                         """,
                         source_id,
                         invoice_number,
-                        exact_customer_id,
-                        crm_company_id,
-                        record.get("Type", ""),
+                        str(record.get("Type", "")),
                         record.get("Description", ""),
                         amount_excl,
                         vat_amount,
                         amount_incl,
                         record.get("Currency", "EUR"),
-                        record.get("ExchangeRate", 1.0),
                         parse_exact_date(record.get("InvoiceDate")),
                         parse_exact_date(record.get("DueDate")),
-                        parse_exact_date(record.get("DeliveryDate")),
-                        parse_exact_date(record.get("PaymentDate")),
-                        record.get("Status", ""),
-                        record.get("PaymentStatus", ""),
-                        record.get("AmountPaid", 0),
-                        record.get("AmountOpen", 0),
-                        record.get("DaysOverdue", 0),
+                        str(record.get("Status", "")),
                         record.get("PaymentConditionDescription", ""),
                         record.get("DocumentNumber", ""),
-                        record.get("JournalCode", ""),
                         parse_exact_date(record.get("Created")),
                         parse_exact_date(modified),
                         json.dumps(record)

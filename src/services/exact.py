@@ -66,6 +66,41 @@ def _write_refresh_token(path: Path, refresh_token: str) -> None:
     path.write_text("\n".join(updated_lines) + "\n")
 
 
+def _write_tokens(path: Path, access_token: str, refresh_token: str, expires_at: float) -> None:
+    """Update the .env.exact file with new access and refresh tokens."""
+    if not path.exists():
+        return
+
+    lines = path.read_text().splitlines()
+    updated_lines: list[str] = []
+    access_replaced = False
+    refresh_replaced = False
+    expires_replaced = False
+
+    for line in lines:
+        if line.startswith("EXACT_ACCESS_TOKEN="):
+            updated_lines.append(f"EXACT_ACCESS_TOKEN={access_token}")
+            access_replaced = True
+        elif line.startswith("EXACT_REFRESH_TOKEN="):
+            updated_lines.append(f"EXACT_REFRESH_TOKEN={refresh_token}")
+            refresh_replaced = True
+        elif line.startswith("EXACT_TOKEN_EXPIRES_AT="):
+            updated_lines.append(f"EXACT_TOKEN_EXPIRES_AT={expires_at}")
+            expires_replaced = True
+        else:
+            updated_lines.append(line)
+
+    # Add missing fields
+    if not access_replaced:
+        updated_lines.append(f"EXACT_ACCESS_TOKEN={access_token}")
+    if not refresh_replaced:
+        updated_lines.append(f"EXACT_REFRESH_TOKEN={refresh_token}")
+    if not expires_replaced:
+        updated_lines.append(f"EXACT_TOKEN_EXPIRES_AT={expires_at}")
+
+    path.write_text("\n".join(updated_lines) + "\n")
+
+
 @dataclass(frozen=True)
 class ExactCredentials:
     """Credentials required for Exact Online OAuth2 auth."""
@@ -73,6 +108,8 @@ class ExactCredentials:
     client_id: str
     client_secret: str
     refresh_token: str
+    access_token: str | None = None
+    token_expires_at: float = 0
     base_url: str = "https://start.exactonline.be"
     division_id: str | None = None
 
@@ -81,10 +118,18 @@ class ExactCredentials:
         resolved_env = os.environ if env is None else env
         base_url = resolved_env.get("EXACT_BASE_URL", "https://start.exactonline.be")
         division_id = resolved_env.get("EXACT_DIVISION_ID")
+        access_token = resolved_env.get("EXACT_ACCESS_TOKEN")
+        expires_at_str = resolved_env.get("EXACT_TOKEN_EXPIRES_AT", "0")
+        try:
+            token_expires_at = float(expires_at_str)
+        except (ValueError, TypeError):
+            token_expires_at = 0
         return cls(
             client_id=_require_env("EXACT_CLIENT_ID", resolved_env),
             client_secret=_require_env("EXACT_CLIENT_SECRET", resolved_env),
             refresh_token=_require_env("EXACT_REFRESH_TOKEN", resolved_env),
+            access_token=access_token,
+            token_expires_at=token_expires_at,
             base_url=base_url,
             division_id=division_id,
         )
@@ -142,8 +187,9 @@ class ExactClient:
         self.max_retries = max_retries
         self.backoff_base = backoff_base
         self.rate_limiter = RateLimiter(rate_limit_calls, rate_limit_window)
-        self.access_token: str | None = None
-        self._token_expires_at: float = 0
+        # Use stored access token if available
+        self.access_token: str | None = credentials.access_token
+        self._token_expires_at: float = credentials.token_expires_at
         self._division_id: str | None = credentials.division_id
 
     @classmethod
@@ -224,12 +270,22 @@ class ExactClient:
             timeout=self.timeout,
         )
         
-        # Handle "token not expired" gracefully - just use a placeholder
+        # Handle "token not expired" - wait and retry once
         if response.status_code == 400 and "not expired" in response.text:
-            # Token is still valid, use placeholder that will be refreshed when needed
-            self.access_token = "pending_refresh"
-            self._token_expires_at = time.time() - 1  # Force refresh on next use
-            return self.access_token
+            # The existing token is still valid, but we don't have it.
+            # Wait 2 seconds for the token to age, then retry
+            time.sleep(2)
+            response = httpx.post(
+                token_url,
+                data={
+                    "client_id": self.credentials.client_id,
+                    "client_secret": self.credentials.client_secret,
+                    "refresh_token": self.credentials.refresh_token,
+                    "grant_type": "refresh_token",
+                    "redirect_uri": self.credentials.base_url,
+                },
+                timeout=self.timeout,
+            )
             
         response.raise_for_status()
         payload = response.json()
@@ -248,10 +304,12 @@ class ExactClient:
             client_id=self.credentials.client_id,
             client_secret=self.credentials.client_secret,
             refresh_token=refresh_token,
+            access_token=access_token,
+            token_expires_at=self._token_expires_at,
             base_url=self.credentials.base_url,
             division_id=self.credentials.division_id,
         )
-        _write_refresh_token(self.env_path, refresh_token)
+        _write_tokens(self.env_path, access_token, refresh_token, self._token_expires_at)
         return access_token
 
     def _headers(self) -> dict[str, str]:
