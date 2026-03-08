@@ -36,10 +36,10 @@
 
 | Gap | Priority | What still needs to be shown or corrected |
 |-----|----------|-------------------------------------------|
-| Populated Resend audience proof | CRITICAL | Push the canonical segment to Resend and capture a real audience view rather than only test campaigns |
+| Populated Resend audience proof | BLOCKED | Push blocked: the canonical 1,652-company segment lacks sufficient `main_email` coverage in PostgreSQL to populate the audience fully. |
 | Full 360 proof | HIGH | Keep the four-source B.B.S. story aligned with the new event-processor behavior proof in one coherent guide narrative |
 | Business-value demonstrations | HIGH | Cross-sell, multi-division, and Next Best Action are now locally verified; remaining proof gap is website behavior plus guide-ready capture |
-| Guide-ready event-processor capture | HIGH | Convert the verified API/webhook outputs into screenshots or equivalent guide evidence |
+| Guide-ready event-processor capture | DONE | Convert the verified API/webhook outputs into screenshots or equivalent guide evidence |
 
 #### Exit Criteria
 
