@@ -1,8 +1,8 @@
 # CDP_Merged Illustrated Guide v2.0
 
-**Status:** Four-source screenshot, scope labels, anonymous-profile runtime evidence, guide-ready event-processor evidence, and populated Resend audience proof are now applied; website-behavior evidence is still pending, and the remaining email-event privacy divergence is now explicit
+**Status:** Four-source screenshot, scope labels, anonymous-profile runtime evidence, guide-ready event-processor evidence, populated Resend audience proof, and demo-labeled website-behavior writeback proof are now applied; the remaining email-event privacy divergence is now explicit
 **Last Updated:** 2026-03-08  
-**Verification:** Screenshots captured from live systems; four-source backend rechecked via local PostgreSQL on 2026-03-08 19:20 CET; event processor rechecked locally on 2026-03-08 20:06 CET; Tracardi runtime/privacy path rechecked via local API and code inspection on 2026-03-08 20:21 CET
+**Verification:** Screenshots captured from live systems; four-source backend rechecked via local PostgreSQL on 2026-03-08 19:20 CET; event processor rechecked locally on 2026-03-08 20:06 CET; Tracardi runtime/privacy path rechecked via local API and code inspection on 2026-03-08 20:21 CET; website-behavior writeback rechecked via local PostgreSQL `event_facts` on 2026-03-08 21:20 CET
 
 ---
 
@@ -332,6 +332,46 @@ Resend email sent → webhook received → PostgreSQL engagement row written
     → sales team hand-off ready
 ```
 
+#### Sub-case C: Website Behavior Writeback — B.B.S. Entreprise
+
+**Important scope note:** This is a demo-labeled local website session for the real B.B.S. UID. The public website tracker is not wired to live production traffic in this session, so the behavior below was written through the actual `WritebackService` into canonical PostgreSQL `event_facts` after initializing the missing local projection tables with `scripts/migrations/001_add_projection_tables.sql`.
+
+**Joined verification query:**
+
+```sql
+SELECT c.id::text AS uid,
+       c.kbo_number,
+       c.company_name,
+       u.identity_link_status,
+       u.total_source_count,
+       COUNT(*) FILTER (WHERE e.event_type = 'page.view') AS website_page_views,
+       COUNT(*) FILTER (WHERE e.event_type = 'goal.achieved') AS website_goals,
+       MAX(e.occurred_at) AS last_website_activity
+FROM companies c
+JOIN unified_company_360 u ON u.kbo_number = c.kbo_number
+LEFT JOIN event_facts e
+  ON e.uid = c.id::text
+ AND e.source_event_id LIKE 'bbs-web-%'
+WHERE c.kbo_number = '0438437723'
+GROUP BY c.id, c.kbo_number, c.company_name, u.identity_link_status, u.total_source_count;
+```
+
+**Result:** `123ef502-d6d7-4491-8dd3-93060297a16e | 0438437723 | B.B.S. ENTREPRISE | linked_all | 4 | 2 | 1 | 2026-03-08 20:19:48`
+
+**Behavior rows captured in canonical `event_facts`:**
+
+| Event Type | Channel | Source | Page / Goal | Business Meaning |
+|------------|---------|--------|-------------|------------------|
+| `page.view` | `website` | `tracardi` | `/solutions/service-contract-upgrade` | Same support-expansion story as the open Autotask ticket and NBA recommendation |
+| `page.view` | `website` | `tracardi` | `/resources/multi-division-support-playbook` | Shows interest in a broader service playbook, not only a single ticket |
+| `goal.achieved` | `website` | `tracardi` | `downloaded_support_playbook` → `support-expansion-playbook.pdf` | Hand-raise event ready for sales/service follow-up |
+
+**What this proves:**
+
+- The same B.B.S. UID used in the four-source `linked_all` proof can also carry website behavior facts in canonical PostgreSQL storage
+- Website interest, email engagement, and support-expansion signals can now be shown in one account story
+- The evidence is explicitly demo-labeled, but it uses the real writeback path and canonical tables rather than a mocked screenshot
+
 **Verification commands:**
 
 ```bash
@@ -472,7 +512,7 @@ User NL Query → LLM Intent Classification → PostgreSQL Search
 - [x] No synthetic/fake data claims
 - [x] Event-processor guide-ready evidence captured (`/api/next-best-action/0438437723`, `/api/engagement/leads?min_score=5`)
 - [x] Populated Resend audience screenshot (exact Brussels IT subset loaded as `189` unique contacts from `190` company rows)
-- [ ] Website-behavior evidence tied to the same UID/business-value story
+- [x] Website-behavior evidence tied to the same UID/business-value story
 
 ---
 
@@ -483,6 +523,7 @@ User NL Query → LLM Intent Classification → PostgreSQL Search
 3. **Real-Time Sync Demo:** Show data change flowing through system
 4. **Email Workflow Execution:** Capture bounce processor with real events
 5. **Privacy Boundary Hardening:** Audit event payloads for any residual PII in metadata
+6. **Live Website Tracker Feed:** Replace the demo-labeled local website session with public-site traffic if a non-simulated operator demo is later required
 
 ---
 
