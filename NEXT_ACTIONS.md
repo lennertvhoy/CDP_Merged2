@@ -10,17 +10,18 @@
 
 ### P0: Demo Polish And Source-Of-Truth Hardening
 
-**Status:** ✅ COMPLETE v3.0; v3.2 local polish pass exported. The guide now has a real cover page, a self-contained CSV proof page, and tightened maturity/privacy wording. Remaining work is `3` precision items plus `3` formatting items.
+**Status:** ✅ COMPLETE v3.0; v3.2 local polish pass exported and positively reviewed. Remaining work is now a focused v3.3 credibility pass: timestamp alignment, count semantics, screenshot/prose label alignment, maturity wording tightening, API/code-page styling, PDF export quality, and a reviewer-friendly conformity/acceptance appendix.
 **Discovered:** 2026-03-08 (initial audit), reopened 2026-03-08 via direct user feedback and source-of-truth review
-**Last Updated:** 2026-03-08 23:10 CET
+**Last Updated:** 2026-03-08 23:24 CET
 **Severity:** HIGH
-**Guide:** `docs/ILLUSTRATED_GUIDE.md` v3.2 draft / `docs/ILLUSTRATED_GUIDE_v3.2.pdf` local export  
-**User Feedback:** The guide now reads like a deliberate evidence pack, but the follow-up pass needed to fix the page 1 ordering, rebuild the weak CSV page, stop overstating maturity versus the evidence tables, and make the chatbot screenshots read as deliberate response excerpts rather than accidental crops.
+**Guide:** `docs/ILLUSTRATED_GUIDE.md` / `docs/ILLUSTRATED_GUIDE_v3.2.pdf` local export
+**User Feedback:** v3.2 is the best version so far: good as an illustrated evidence guide, credible but not perfect as a source-of-truth support document, and aligned with the core CDP+AI POC slice. The main remaining blockers are mixed-year timestamps, one screenshot/prose naming mismatch, still-flat API/code pages, PDF text-layer/export quality, and the lack of a reviewer-friendly conformity matrix for the business-case acceptance criteria.
 
 #### Accepted Decisions
 
 - `Resend` is acceptable for the current POC. Do **not** treat the Flexmail swap as a blocker unless the user explicitly reopens it.
 - Keep the local-only demo posture explicit. Do **not** reopen Azure deployment work just to improve the guide package.
+- Keep the guide framed as evidence for the core POC/business-case slice, not as proof that the full future-state multi-channel business case is already demonstrated.
 
 #### What the current guide already proves
 
@@ -33,13 +34,14 @@
 | Event processor / NBA outputs | Verified | Live JSON evidence exists for B.B.S. support-expansion + re-activation and Accountantskantoor Dubois cross-sell + multi-division; remaining work is visual polish rather than missing logic explanation |
 | Website behavior writeback | Verified | A demo-labeled local website session for the real B.B.S. UID now records `2` `page.view` events and `1` `goal.achieved` download in canonical `event_facts` |
 | CSV export artifact | Verified | The page is now self-contained around the opened spreadsheet artifact and validation summary, but checksum/query-ID proof is still not added |
+| Business-case conformity | Verified for core POC slice | The guide does not yet prove the full future-state scope around live website analytics, ads/social, group-wide web tracking, or formal governance criteria |
 
 #### Remaining Polish Work
 
 | Gap | Priority | Status |
 |-----|----------|--------|
 | Split the project docs into business case / system spec / illustrated evidence guide | HIGH | ✅ COMPLETE - Split into BUSINESS_CASE.md, SYSTEM_SPEC.md, and streamlined ILLUSTRATED_GUIDE.md |
-| Clarify reused Resend audience naming/captioning | HIGH | ✅ COMPLETE - Guide now labels as `Brussels IT Services - Segment` with explicit note about previous naming |
+| Clarify reused Resend audience naming/captioning | HIGH | Partial - guide prose now explains the Brussels IT subset, but the visible screenshot still shows `KBO Companies - Test Audience` |
 | Clarify Autotask wording as `hybrid` | HIGH | ✅ COMPLETE - Both BUSINESS_CASE.md and ILLUSTRATED_GUIDE.md now document hybrid status (prod-ready linkage, demo data) |
 | Surface NBA scoring weights and thresholds | HIGH | ✅ COMPLETE - Full scoring model JSON documented in ILLUSTRATED_GUIDE.md with event weights, thresholds, and calculation example |
 | Add explicit cross-division revenue aggregation proof | HIGH | ✅ COMPLETE - B.B.S. Entreprise cross-source aggregation captured (€15,000 total) with timestamp 2026-03-08 22:24 CET |
@@ -47,27 +49,35 @@
 | Harden privacy boundary in runtime | MEDIUM | ✅ COMPLETE - 48 webhook gateway tests pass, PII stripping verified, guide updated with verification note |
 | Recheck the late-suite webhook/event-processor test timeout | MEDIUM | ✅ COMPLETE - Both test suites now pass cleanly (54 tests in 0.33s). Issue resolved, likely by commit f9d1906. |
 
-#### v3.2 Polish Tracking
+#### v3.3 Credibility Pass
 
-Per user feedback on v3.0 guide:
+Per the latest v3.2 review:
 
 **Precision Improvements:**
 | Gap | Priority | Status |
 |-----|----------|--------|
-| Add canonical count semantics dictionary | P1 | Pending |
-| Upgrade CSV export integrity proof | P1 | Partial - page is now self-contained and traceable, but checksum/query ID proof is still missing |
-| Implement maturity label system | P2 | Partial - guide now labels `Live system`, `Local runtime`, `Demo-backed`, and `Local artifact`, but the full system is not yet applied everywhere |
+| Fix guide timestamp consistency | P0 | Pending - pages 8-9 still show `2024-03-08` API evidence while the rest of the guide is dated `2026-03-08` |
+| Add canonical count semantics dictionary | P1 | Pending - add a small metrics dictionary near page 3 for segment rows, test-scope rows, unique activation contacts, and CSV preview rows |
+| Upgrade CSV export integrity proof | P1 | Partial - the page is now self-contained and traceable, but checksum/query ID proof is still missing |
+| Implement maturity label system and tighten Autotask wording | P1 | Partial - guide now labels `Live system`, `Local runtime`, `Demo-backed`, and `Local artifact`, but the full system is not yet applied everywhere and `production-ready` still reads too strongly beside `Demo-backed` |
 | Fix privacy statement wording precision | P2 | ✅ COMPLETE - top-line privacy wording now matches the divergence table and no longer implies a fully sanitized runtime |
 
-**Formatting Improvements:**
+**Business-case / Governance Improvements:**
 | Gap | Priority | Status |
 |-----|----------|--------|
-| Rebuild page 9 screenshot inventory table | P0 | ✅ COMPLETE - replaced the long filename table with a short evidence-ID matrix plus filename key; verified readable in the PDF export |
-| Rebuild page 10 sync-latency table | P0 | ✅ COMPLETE - split the wide table into source-specific proof tables; verified no column collisions in the PDF export |
-| Split page 1 into two pages | P1 | ✅ COMPLETE - page 1 is now a cover/introduction page and page 2 holds contents |
+| Publish business-case conformity matrix | P1 | Pending - map `BUSINESS_CASE.md` requirements to current guide/spec evidence as `Conforms`, `Partial`, or `Not yet covered` |
+| Add acceptance-criteria appendix | P1 | Pending - surface the `>=95%` prompt/tool-selection proof, audit-log/API-call control evidence, and deploy/IaC repeatability evidence or explicitly mark the current gaps |
+
+**Formatting / Export Improvements:**
+| Gap | Priority | Status |
+|-----|----------|--------|
+| Align screenshot-visible audience naming with prose | P1 | Pending - the screenshot still visibly says `KBO Companies - Test Audience` even though the narrative explains the narrower Brussels IT subset |
 | Standardize phase page pattern | P1 | Partial - early sections now follow claim → evidence → verification more cleanly, but the full guide is not yet standardized |
-| Shaded code boxes for API/JSON | P2 | Pending - pages 5-7 still read like raw terminal output |
-| Fix blank space waste | P2 | Pending - later pages still have avoidable whitespace after the reflow |
+| Shaded code boxes for API/JSON | P1 | Pending - pages 8-11 still read like raw request/response dumps instead of designed evidence boxes |
+| Keep page 6 audience note on one page | P2 | Pending - the renamed-for-clarity note currently wraps awkwardly across the page break |
+| Keep the privacy divergence table and mitigation note together | P2 | Pending - the current split across pages 10-11 hurts readability |
+| Improve page economy / oversized screenshots | P2 | Pending - pages 12 and 14 still use more space than the content justifies |
+| Fix PDF text-layer/export quality | P0 | Pending - extracted text still shows `ffi`/broken-word artifacts that hurt searchability and accessibility |
 | Standardize visual hierarchy | P2 | Partial - screenshot sizing and source labels are more controlled, but caption spacing and page rhythm still need a final pass |
 
 #### Exit Criteria
@@ -82,7 +92,8 @@ Per user feedback on v3.0 guide:
 - [x] Capture guide-ready event-processor API evidence (live JSON for `/api/next-best-action/0438437723` and `/api/engagement/leads?min_score=5`)
 - [x] Capture populated Resend audience proof for the selected Brussels IT subset
 - [x] Capture website-behavior evidence tied to the same UID/business-value story
-- [x] Clarify Resend audience naming so the screenshot label matches the claim
+- [x] Clarify Resend audience naming in prose and captions
+- [ ] Align the visible audience screenshot label with the same Brussels IT naming or explicitly present it as a historical UI label
 - [x] Clarify Autotask as hybrid/prod-ready linkage plus demo-mode data
 - [x] Split the current guide into business case / system spec / evidence guide
 - [x] Surface NBA weights and threshold logic in the guide/spec, using `/api/scoring-model`
@@ -132,7 +143,7 @@ poetry run python scripts/test_poc_resend_activation.py
 
 | Requirement | Status | Result |
 |-------------|--------|--------|
-| NL → Segment (≥95%) | ✅ VERIFIED | 0.32s segment creation |
+| NL → Segment flow | ✅ VERIFIED | 0.32s segment creation; the separate `>=95%` acceptance-style proof still needs to be surfaced in a conformity appendix |
 | Segment → Resend ≤60s | ✅ VERIFIED | 0.24s latency (mock) |
 | Campaign Send | ✅ VERIFIED | Resend API direct (Flexmail requires GUI) |
 | Webhook Setup | ✅ VERIFIED | 6 events subscribed via API |

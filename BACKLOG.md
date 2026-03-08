@@ -2,7 +2,7 @@
 
 **Platform:** AZURE (VMs, Container Apps, OpenAI)  
 **Architecture:** Source systems PII truth + PostgreSQL intelligence truth + Tracardi activation runtime + AI chatbot  
-**Last Updated:** 2026-03-08 (v3.2 local guide polish exported; cover page, CSV proof page, and wording cleanup landed; 3 precision items + 3 formatting items still tracked)
+**Last Updated:** 2026-03-08 (v3.2 guide positively reviewed as the best version so far; remaining v3.3 blockers are timestamp consistency, screenshot/prose alignment, count/maturity precision, code/API styling, PDF text-layer quality, and acceptance-criteria packaging)
 **Purpose:** Medium-term roadmap from the current repo state to a credible demo first and production readiness later
 
 ## How To Use This File
@@ -97,7 +97,9 @@ These are included only where they appear likely to add real future value to thi
 
 **Why this matters:** The POC is not complete until we prove the full activation cycle works: Chatbot → Segment → Email Tool → Engagement → Enriched Profile.
 
-**Status:** ✅ **TECHNICAL POC COMPLETE** (2026-03-08) - Resend is accepted for the current activation loop; remaining work is source-of-truth polish, not missing loop closure
+**Status:** ✅ **TECHNICAL POC COMPLETE** (2026-03-08) - Resend is accepted for the current activation loop; the guide now credibly proves the core CDP+AI POC slice, and the remaining work is a v3.3 credibility/presentation pass rather than missing loop closure
+
+**Scope note:** As of the 2026-03-08 v3.2 review, the guide conforms well to the core POC/business-case logic (360 profile, NL segmentation, activation, engagement, revenue/identity proof), but it does **not** yet prove the full broader future-state scope across live website analytics, ads/social, group-wide web tracking, or formal governance criteria.
 
 | Priority | Item | Status | Result |
 |----------|------|--------|--------|
@@ -108,13 +110,18 @@ These are included only where they appear likely to add real future value to thi
 | High | **Document POC completion evidence** | ✅ DONE | Test scripts: `scripts/test_poc_resend_activation.py`, `scripts/test_poc_activation.py` |
 | High | **Harden canonical Brussels IT segment/export contract** | ✅ DONE | Active IT mapping is fixed to `62100/62200/62900/63100`, and CSV export now aborts if canonical rows drift from stored segment filters |
 | High | **Autotask evidence in demo story** | ✅ DONE | B.B.S. Entreprise now shows `1` open ticket and `1` active contract inside the unified 360 story |
-| High | **Clarify Resend audience naming** | ✅ DONE | The reused audience label is generic; captions should make the Brussels IT subset explicit |
+| High | **Clarify Resend audience naming** | Partial | The prose now explains the Brussels IT subset, but the visible screenshot still says `KBO Companies - Test Audience`; one final capture or caption rewrite is still needed |
 | High | **Document NBA scoring logic** | ✅ DONE | `/api/scoring-model`, `ENGAGEMENT_THRESHOLDS`, `RECOMMENDATION_RULES`, and `rule_trace` now exist; documented in guide |
 | High | **Split mixed demo/source-of-truth docs** | ✅ DONE | Split into BUSINESS_CASE.md (vision/value), SYSTEM_SPEC.md (architecture/APIs), and streamlined ILLUSTRATED_GUIDE.md (evidence only) |
+| High | **Publish business-case conformity matrix** | Pending | Map the business-case requirements to current evidence as `Conforms`, `Partial`, or `Not yet covered`, so the guide's POC scope is explicit instead of implied |
+| High | **Add acceptance-criteria appendix** | Pending | Show the `>=95%` prompt/tool-selection proof, audit-log/API-call control evidence, and deploy/IaC repeatability status in a reviewer-friendly appendix |
+| High | **Fix guide evidence timestamp consistency** | Pending | Pages 8-9 still mix `2024-03-08` API timestamps into a guide otherwise dated `2026-03-08`; regenerate or relabel the evidence |
 | High | **Add canonical count semantics dictionary** | Pending | Define explicit rules: base rows, verified-email rows, deduped activation contacts, test-scope rows (per v3.0 feedback) |
 | High | **Upgrade CSV export integrity proof** | Partial | Opened-artifact page is now self-contained with scope, row count, field coverage, and timestamp/source traceability; checksum/query ID proof still missing |
-| Medium | **Implement maturity label system** | Partial | Guide now labels evidence as Live system, Local runtime, Demo-backed, and Local artifact, but the full maturity system is not yet applied everywhere |
+| Medium | **Implement maturity label system** | Partial | Guide now labels evidence as Live system, Local runtime, Demo-backed, and Local artifact, but the full maturity system is not yet applied everywhere and the Autotask readiness wording still needs tightening |
 | Medium | **Fix privacy statement wording precision** | ✅ DONE | Top-line privacy wording now matches the divergence table and no longer implies a fully sanitized runtime |
+| Medium | **Improve guide API/code evidence styling** | Pending | Pages 8-11 still read like flat request/response dumps instead of deliberate evidence boxes |
+| Medium | **Improve PDF text-layer/export quality** | Pending | Investigate ligature/encoding artifacts so copy/paste, searchability, and accessibility are clean |
 | Medium | **Recheck webhook/event-processor test hang** | ✅ DONE | Both suites now pass cleanly (54 tests in 0.33s); issue resolved, likely by prior hardening |
 
 **Accepted platform decision:** Use **RESEND** for the current POC.
@@ -129,12 +136,12 @@ The user explicitly accepted the Resend swap on 2026-03-08, so Flexmail parity s
 - ✅ Simpler integration model (audiences vs interests+contacts)
 - ⚠️ Only limitation: No custom fields (Flexmail advantage)
 
-**Prerequisites (all ✅ complete):**
+**Prerequisites (technical flow ready; acceptance-style packaging still incomplete):**
 - PostgreSQL with 1.94M KBO records
 - Tracardi event intake configured; CE workflow execution remains blocked, and the Python event processor covers the current local automation proof
 - Teamleader + Exact sync pipelines operational
 - Resend API client with full feature parity
-- AI chatbot with routing guard (≥95% accuracy achieved)
+- AI chatbot with routing guard in place; the guide still needs a reviewer-friendly appendix if the `>=95%` acceptance criterion must be shown explicitly
 
 **Test Results (Resend):**
 ```
@@ -196,18 +203,25 @@ poetry run python scripts/test_poc_activation.py --mock
 | Critical | **Real/mock/hybrid source matrix documentation** | ✅ COMPLETE | See PROJECT_STATE.yaml source_integrations section |
 | Critical | **POPULATE Hyperrealistic connected demo data** | In progress | One flagship `linked_all` account is proven; scale to 10-50 coherent cross-source accounts only if the demo needs more breadth than the current single-story package |
 | Critical | Define a hyperrealistic integration standard | ✅ COMPLETE | Autotask mock with 5 companies, 5 tickets, 3 contracts complete |
-| Critical | **Guide core business-case proof** | ✅ COMPLETE | Four-source 360, populated Resend audience, event-processor outputs, website writeback, privacy divergence note, and CSV opened-file proof are all now captured |
+| Critical | **Guide core business-case proof** | ✅ COMPLETE | Four-source 360, populated Resend audience, event-processor outputs, website writeback, privacy divergence note, and CSV opened-file proof are all now captured for the core POC slice; the broader multi-channel business-case scope remains future work |
 | Critical | **Keep the guide source-of-truth clean** | ✅ COMPLETE v3.0 | Phase-based proof structure, naming clarity, explicit logic, scoring/privacy citations, sync-latency proof all captured |
-| Critical | **Clarify reused Resend audience evidence** | ✅ COMPLETE | Guide now labels as `Brussels IT Services - Segment` with explicit note about subset scope |
+| Critical | **Clarify reused Resend audience evidence** | Partial | Guide now labels the Brussels IT subset explicitly, but the visible screenshot still shows the older generic audience name |
 | Critical | **Clarify Autotask integration posture** | ✅ COMPLETE | Guide documents hybrid status: production-capable linkage + demo-mode data |
 | Critical | Stabilize the public demo flow | ✅ COMPLETE | End-to-end demo flow verified repeatable |
+| High | **Publish business-case conformity matrix** | Pending | Turn the current strong POC slice into a requirement-by-requirement `Conforms / Partial / Not yet covered` map against `BUSINESS_CASE.md` |
+| High | **Add formal acceptance-criteria reporting** | Pending | Package the `>=95% on 5 prompts`, audit-log/control evidence, and deploy/IaC repeatability criteria so a reviewer can tick them off |
+| High | **Fix guide evidence timestamp consistency** | Pending | Per v3.2 review: remove or clearly label the remaining `2024-03-08` API timestamps so the evidence pack has one coherent date story |
 | High | **Add canonical count semantics dictionary** | Pending | Per v3.0 feedback: define explicit rules for base rows, verified-email rows, deduped activation contacts, test-scope rows |
 | High | **Upgrade CSV export integrity proof** | Partial | Per v3.0 feedback: page is now self-contained and traceable, but checksum/query ID proof still needs to be added |
-| High | **Implement maturity label system** | Partial | Per v3.0 feedback: guide now uses Live/Local runtime/Demo-backed/Local artifact labels, but the full system is not yet applied everywhere |
+| High | **Implement maturity label system** | Partial | Per v3.0 feedback: guide now uses Live/Local runtime/Demo-backed/Local artifact labels, but the full system is not yet applied everywhere and Autotask wording still needs a cleaner maturity split |
 | High | **Fix privacy statement wording precision** | ✅ COMPLETE | Per v3.0 feedback: top-line wording now matches the divergence table and no longer overstates runtime sanitization |
 | High | **Surface NBA scoring and threshold logic** | ✅ COMPLETE | Guide/spec now document `/api/scoring-model`, event weights, thresholds, and the B.B.S. example calculation |
 | High | **Add explicit cross-division revenue proof** | ✅ COMPLETE | B.B.S. Entreprise now shows a timestamped `€15,000` cross-source total in the guide |
 | High | **Capture timestamped sync-latency proof** | ✅ COMPLETE | Guide now records Teamleader sample syncs at `2026-03-08 14:57:55` and Exact sample syncs at `2026-03-08 11:19:39` |
+| High | **Improve guide API/code evidence styling** | Pending | Per v3.2 review: pages 8-11 still feel like a technical export and need boxed/shaded request-response styling |
+| High | **Improve PDF text-layer/export quality** | Pending | Per v3.2 review: fix ligature/encoding artifacts that break extracted text and reduce accessibility |
+| Medium | **Promote website-behavior proof from demo-labeled to live evidence** | Pending | Current guide proof is local demo-labeled writeback for a real UID; upgrade it only if the business-case scope requires live public-site evidence |
+| Medium | **Broaden live channel coverage beyond CRM/email POC** | Pending | Add live Matomo/GA, Google Ads, social, and group-wide website/channel evidence when access exists so the guide can support the broader IT1/NewCo vision |
 | High | **Keep privacy hardening on the roadmap** | Partial | `scripts/webhook_gateway.py` now emits privacy-safe downstream payloads, but the live local runtime still needs an end-to-end recheck and Tracardi event-path confirmation |
 | High | **Recheck webhook/event-processor hardening tests** | ✅ COMPLETE | Both suites now pass cleanly (`54` tests in `0.33s`); the earlier late-suite timeout is closed |
 | High | Build a real/mock/hybrid source matrix | ✅ COMPLETE | Documented in PROJECT_STATE.yaml |
@@ -222,21 +236,27 @@ poetry run python scripts/test_poc_activation.py --mock
 - ✅ The reused Resend audience and Autotask hybrid posture are explained clearly
 - ✅ Recommendation logic and sync-latency proof are documented for the claims that remain in scope
 
-**v3.2 Remaining Precision Improvements (tracked above):**
+**v3.3 Remaining Precision Improvements (tracked above):**
 - Canonical count semantics dictionary for all reported numbers
 - Strict CSV export integrity proof with validation and checksum
-- Maturity label system (Live/Local/Demo-backed/Planned)
+- Consistent evidence timestamps across the guide's API and screenshot proof
+- Maturity label system (Live/Local/Demo-backed/Planned) with tighter Autotask wording
+- Reviewer-friendly business-case conformity matrix and acceptance-criteria appendix
 - Privacy statement wording aligned exactly with divergence table - ✅ complete
 
-**v3.2 Remaining Formatting Improvements (content direction good, major layout defects closed):**
+**v3.3 Remaining Formatting / Export Improvements (content direction good, major layout defects closed):**
 | Priority | Item | Status | What needs to happen |
 |----------|------|--------|----------------------|
 | Critical | **Rebuild page 9 screenshot inventory table** | ✅ COMPLETE | Replaced the long filename table with a short evidence-ID matrix plus filename key; PDF export recheck shows the rows render readably |
 | Critical | **Rebuild page 10 sync-latency table** | ✅ COMPLETE | Replaced the single wide table with source-specific sync proof tables; PDF export recheck shows no timestamp/company collisions |
 | High | **Split page 1 into two pages** | ✅ COMPLETE | Page 1 is now a cover/introduction page and page 2 holds contents |
+| High | **Align screenshot-visible audience naming with prose** | Pending | The screenshot still visibly shows `KBO Companies - Test Audience`; either recapture after rename or tighten the caption so the historical UI name is explicit |
 | High | **Standardize phase page pattern** | Partial | Early sections now follow claim → evidence → verification more cleanly; finish the same pattern across the full guide |
-| Medium | **Shaded code boxes for API/JSON** | Pending | Replace raw monospaced text dumps with contained shaded code blocks (pages 5-7) |
-| Medium | **Fix blank space waste** | Pending | Tighten or combine pages 4 and 11 with adjacent content |
+| High | **Shaded code boxes for API/JSON** | Pending | Replace raw monospaced request/response dumps with contained shaded evidence boxes (pages 8-11) |
+| Medium | **Fix page 6 line-break awkwardness** | Pending | Keep the renamed-for-clarity audience note together instead of stranding `for clarity)` across the page break |
+| Medium | **Keep privacy divergence table + mitigation note together** | Pending | Reflow the page 10-11 split so the table and interpretation land on one page |
+| Medium | **Fix blank space / page economy** | Pending | Tighten later pages, especially the oversized screenshots on page 12 and the sparse narrative page 14 |
+| Medium | **Improve PDF text-layer/export quality** | Pending | Eliminate the ligature/encoding artifacts in extracted text so the PDF is searchable and accessible |
 | Medium | **Standardize visual hierarchy** | Partial | Screenshot sizing and source labels are more controlled, but caption spacing and page rhythm still need a final pass |
 
 ### Milestone 1: Finish Data Coverage And Enrichment
