@@ -983,21 +983,23 @@ active_problems:
     owner: agent
     next_action: Update the guide/spec so the canonical IT segment language matches the corrected resolver and the verified Brussels code set.
   combined_webhook_event_processor_test_timeout:
-    status: observed
+    status: resolved
     severity: medium
     discovered_at: 2026-03-08
-    summary: The combined unit run for `tests/unit/test_webhook_gateway.py` and `tests/unit/test_cdp_event_processor.py` does not finish within a 30-second bounded run even though it prints 27 passing tests first.
+    resolved_at: 2026-03-08
+    summary: The combined unit run for `tests/unit/test_webhook_gateway.py` and `tests/unit/test_cdp_event_processor.py` now completes successfully. Previously would hang after 27 passing tests.
     evidence:
       - command: timeout 30 poetry run pytest tests/unit/test_webhook_gateway.py tests/unit/test_cdp_event_processor.py -q
-      - result: exit 124 after printing 27 dots (`...........................`)
-      - command: poetry run pytest tests/unit/test_nace_resolution_consistency.py tests/unit/ai_interface/tools/test_nace_resolver.py tests/unit/test_canonical_segment_service.py tests/unit/test_segment_tools_postgresql_first.py -q
-      - result: 52 passed
+      - result: 54 passed in 0.33s (observed 2026-03-08T22:15:00+01:00)
+      - command: poetry run pytest tests/unit/test_webhook_gateway.py -vv --tb=short && poetry run pytest tests/unit/test_cdp_event_processor.py -vv --tb=short
+      - result: All 48 + 6 = 54 tests pass cleanly
+    resolution: Likely fixed by commit f9d1906 (harden canonical segment and privacy contracts)
     affects:
       - local_verification_confidence_for_privacy_hardening
       - webhook_gateway_test_harness
       - event_processor_test_harness
     owner: agent
-    next_action: Re-run the gateway and event-processor suites separately with `-vv`/`-x` to identify the hanging test and capture a clean green run after the root cause is fixed.
+    next_action: None - issue resolved, clean green run verified.
   resend_audience_sparse_emails:
     status: observed
     severity: high

@@ -45,7 +45,7 @@
 | Add explicit cross-division revenue aggregation proof | HIGH | Pending - show one account with revenue rolled up across divisions, not just recommendation output |
 | Capture timestamped sync-latency proof | HIGH | Pending - prove one source update reaches the 360/query plane within the claimed sync window |
 | Harden privacy boundary in runtime | MEDIUM | In progress - `scripts/webhook_gateway.py` now strips raw Resend email/subject fields before downstream projection, but the live local runtime still needs a fresh end-to-end recheck |
-| Recheck the late-suite webhook/event-processor test timeout | MEDIUM | Pending - `tests/unit/test_webhook_gateway.py` + `tests/unit/test_cdp_event_processor.py` print 27 passing tests and then hit `timeout 30` |
+| Recheck the late-suite webhook/event-processor test timeout | MEDIUM | ✅ COMPLETE - Both test suites now pass cleanly (54 tests in 0.33s). Issue resolved, likely by commit f9d1906. |
 
 #### Exit Criteria
 
@@ -65,7 +65,7 @@
 - [ ] Surface NBA weights and threshold logic in the guide/spec, using `/api/scoring-model`
 - [ ] Add explicit cross-division revenue aggregation proof
 - [ ] Capture one timestamped sync-latency proof
-- [ ] Recheck the combined webhook/event-processor test hang and capture a clean green run
+- [x] Recheck the combined webhook/event-processor test hang and capture a clean green run
 
 ---
 
