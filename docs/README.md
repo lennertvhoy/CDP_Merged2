@@ -35,6 +35,7 @@ Use the rest of `docs/` for durable technical references such as:
 - `reports/` for one-off implementation or investigation reports
 - `operations/` for archived operational SOPs tied to older workflows
 - `session_handoffs/` for older handoff context that is no longer current
+- `illustrated_guide/` for superseded guide-building notes and archived screenshot-capture material
 - existing legacy archive folders preserved from earlier cleanups
 
 Archived files are not current-state authority.

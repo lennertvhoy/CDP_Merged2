@@ -2,7 +2,7 @@
 
 **Platform:** Azure target architecture with local-only execution mode
 **Current Execution Mode:** Local-only (`Azure deployment path paused to save costs`)
-**Date:** 2026-03-08
+**Date:** 2026-03-09
 **Owner:** AI Agent / Developer
 **Purpose:** Active queue only. Older completions now live in `WORKLOG.md`; roadmap items live in `BACKLOG.md`.
 **Canonical Counts:** `total=1,940,603; website_url=36,091; geo_latitude=8,609; ai_description=441`
@@ -34,7 +34,7 @@
 | Resend activation proof | Verified | Live populated audience proof exists, and the guide now captions the reused `KBO Companies - Test Audience` label explicitly as the Brussels IT subset evidence |
 | Event processor / NBA outputs | Verified | Live JSON evidence exists for B.B.S. support-expansion + re-activation and Accountantskantoor Dubois cross-sell + multi-division; remaining work is visual polish rather than missing logic explanation |
 | Website behavior writeback | Verified | A demo-labeled local website session for the real B.B.S. UID now records `2` `page.view` events and `1` `goal.achieved` download in canonical `event_facts` |
-| CSV export artifact | Verified | The page is now self-contained around the opened spreadsheet artifact and validation summary, but checksum/query-ID proof is still not added |
+| CSV export artifact | Verified | The page is now self-contained, and the guide now records the artifact checksum plus file timestamp; query-ID proof is still not persisted by the export flow |
 | Business-case conformity | Verified for core POC slice | The guide does not yet prove the full future-state scope around live website analytics, ads/social, group-wide web tracking, or formal governance criteria |
 
 #### Remaining Polish Work
@@ -42,7 +42,7 @@
 | Gap | Priority | Status |
 |-----|----------|--------|
 | Split the project docs into business case / system spec / illustrated evidence guide | HIGH | ✅ COMPLETE - Split into BUSINESS_CASE.md, SYSTEM_SPEC.md, and streamlined ILLUSTRATED_GUIDE.md |
-| Clarify reused Resend audience naming/captioning | HIGH | Partial - guide prose now explains the Brussels IT subset, but the visible screenshot still shows `KBO Companies - Test Audience` |
+| Clarify reused Resend audience naming/captioning | HIGH | ✅ COMPLETE - the guide now frames `KBO Companies - Test Audience` explicitly as the reused UI label for the Brussels IT subset proof |
 | Clarify Autotask wording as `hybrid` | HIGH | ✅ COMPLETE - Both BUSINESS_CASE.md and ILLUSTRATED_GUIDE.md now document hybrid status (prod-ready linkage, demo data) |
 | Surface NBA scoring weights and thresholds | HIGH | ✅ COMPLETE - Full scoring model JSON documented in ILLUSTRATED_GUIDE.md with event weights, thresholds, and calculation example |
 | Add explicit cross-division revenue aggregation proof | HIGH | ✅ COMPLETE - B.B.S. Entreprise cross-source aggregation captured (€15,000 total) with timestamp 2026-03-08 22:24 CET |
@@ -57,11 +57,12 @@ Per the latest v3.2 review:
 **Precision Improvements:**
 | Gap | Priority | Status |
 |-----|----------|--------|
-| Fix guide timestamp consistency | P0 | Pending - pages 8-9 still show `2024-03-08` API evidence while the rest of the guide is dated `2026-03-08` |
-| Add canonical count semantics dictionary | P1 | Pending - add a small metrics dictionary near page 3 for segment rows, test-scope rows, unique activation contacts, and CSV preview rows |
-| Upgrade CSV export integrity proof | P1 | Partial - the page is now self-contained and traceable, but checksum/query ID proof is still missing |
+| Fix guide timestamp consistency | P0 | ✅ COMPLETE - event-processor examples now use the observed 2026-03-09 local payloads instead of stale `2024-03-08` placeholders |
+| Add canonical count semantics dictionary | P1 | ✅ COMPLETE - the guide now explicitly defines `1,652`, `1,529`, `190`, `189`, and `101` by scope |
+| Upgrade CSV export integrity proof | P1 | Partial - checksum and file timestamp are now documented; query-ID proof is still pending because the current export flow does not persist one |
 | Implement maturity label system and tighten Autotask wording | P1 | Partial - guide now labels `Live system`, `Local runtime`, `Demo-backed`, and `Local artifact`, but the full system is not yet applied everywhere and `production-ready` still reads too strongly beside `Demo-backed` |
 | Fix privacy statement wording precision | P2 | ✅ COMPLETE - top-line privacy wording now matches the divergence table and no longer implies a fully sanitized runtime |
+| Re-sync local event-processor daemon with checked-in routes | P1 | Pending - the checked-in code defines `/api/scoring-model`, but the long-running `127.0.0.1:5001` daemon returned `404` during the 2026-03-09 verification pass |
 
 **Business-case / Governance Improvements:**
 | Gap | Priority | Status |
@@ -72,7 +73,7 @@ Per the latest v3.2 review:
 **Formatting / Export Improvements:**
 | Gap | Priority | Status |
 |-----|----------|--------|
-| Align screenshot-visible audience naming with prose | P1 | Pending - the screenshot still visibly says `KBO Companies - Test Audience` even though the narrative explains the narrower Brussels IT subset |
+| Align screenshot-visible audience naming with prose | P1 | ✅ COMPLETE - the guide now explicitly presents `KBO Companies - Test Audience` as the reused historical UI label for the Brussels IT subset proof |
 | Standardize phase page pattern | P1 | Partial - early sections now follow claim → evidence → verification more cleanly, but the full guide is not yet standardized |
 | Shaded code boxes for API/JSON | P1 | Pending - pages 8-11 still read like raw request/response dumps instead of designed evidence boxes |
 | Keep page 6 audience note on one page | P2 | Pending - the renamed-for-clarity note currently wraps awkwardly across the page break |
@@ -94,7 +95,7 @@ Per the latest v3.2 review:
 - [x] Capture populated Resend audience proof for the selected Brussels IT subset
 - [x] Capture website-behavior evidence tied to the same UID/business-value story
 - [x] Clarify Resend audience naming in prose and captions
-- [ ] Align the visible audience screenshot label with the same Brussels IT naming or explicitly present it as a historical UI label
+- [x] Align the visible audience screenshot label with the same Brussels IT naming or explicitly present it as a historical UI label
 - [x] Clarify Autotask as hybrid/prod-ready linkage plus demo-mode data
 - [x] Split the current guide into business case / system spec / evidence guide
 - [x] Surface NBA weights and threshold logic in the guide/spec, using `/api/scoring-model`

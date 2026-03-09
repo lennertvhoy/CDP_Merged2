@@ -153,58 +153,59 @@ CREATE TABLE segment_memberships (
 **company_engagement** (NBA scoring facts)
 ```sql
 CREATE TABLE company_engagement (
-    company_id UUID PRIMARY KEY REFERENCES companies(id),
-    kbo_number VARCHAR(20) UNIQUE,
-    email_opens INTEGER DEFAULT 0,
-    email_clicks INTEGER DEFAULT 0,
-    emails_sent INTEGER DEFAULT 0,
-    engagement_score INTEGER DEFAULT 0,
-    engagement_level VARCHAR(20),  -- low, medium, high
-    last_engagement_at TIMESTAMP,
-    last_event_type VARCHAR(50),
-    recommendations JSONB,  -- Stored NBA recommendations
-    rule_trace JSONB,       -- Scoring decision audit trail
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY,
+    company_id UUID REFERENCES companies(id),
+    kbo_number VARCHAR(20) NOT NULL,
+    email VARCHAR(255),
+    event_type VARCHAR(50) NOT NULL,
+    event_weight INTEGER NOT NULL DEFAULT 0,
+    event_data JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 ```
 
 ### Engagement Scoring Model
 
-**Version:** 2026.03-v1  
-**Endpoint:** `GET /api/scoring-model` (via cdp_event_processor)
+**Version:** 2026-03-08
+**Endpoint:** `GET /api/scoring-model` (defined in `scripts/cdp_event_processor.py`; refresh any older long-running local daemon before treating the route as live-runtime verified)
 
-```python
-SCORING_MODEL = {
-    "version": "2026.03-v1",
-    "event_weights": {
-        "email.opened": 5,
-        "email.clicked": 10,
-        "email.sent": 1,
-        "email.bounced": -5,
-        "email.complained": -10,
-    },
+```json
+{
+    "version": "2026-03-08",
     "engagement_thresholds": {
-        "high": {"min_inclusive": 50, "label": "High Engagement"},
-        "medium": {"min_inclusive": 20, "max_exclusive": 50, "label": "Medium Engagement"},
-        "low": {"max_exclusive": 20, "label": "Low Engagement"},
+        "high": {"min_inclusive": 50},
+        "low": {"min_inclusive": 0, "max_exclusive": 20},
+        "medium": {"min_inclusive": 20, "max_exclusive": 50}
+    },
+    "event_weights": {
+        "email.bounced": -5,
+        "email.clicked": 10,
+        "email.complained": -10,
+        "email.delivered": 2,
+        "email.opened": 5,
+        "email.sent": 1,
     },
     "recommendation_rules": {
-        "support_expansion": {
-            "trigger": "open_tickets > 0",
-            "action": "Offer premium support tier",
-            "priority": "high"
-        },
         "cross_sell": {
-            "trigger": "engagement_score >= 20 AND nace_code IN ('62010', '62020')",
-            "action": "Propose additional service module",
+            "trigger": "nace_code in CROSS_SELL_MAP",
+            "priority": "medium"
+        },
+        "multi_division": {
+            "trigger": "source_systems < 3",
             "priority": "medium"
         },
         "re_activation": {
-            "trigger": "days_since_engagement > 30",
-            "action": "Send re-engagement campaign",
+            "trigger": "engagement_score < 20",
             "priority": "medium"
         },
+        "sales_opportunity": {
+            "trigger": "engagement_score >= 50 and open_deals == 0",
+            "priority": "high"
+        },
+        "support_expansion": {
+            "trigger": "open_tickets > 0",
+            "priority": "medium"
+        }
     }
 }
 ```
@@ -215,7 +216,7 @@ SCORING_MODEL = {
 
 ### Event Processor API
 
-**Base:** `http://localhost:8780` (local)  
+**Base:** `http://localhost:5001` (local)
 **Source:** `scripts/cdp_event_processor.py`
 
 #### Get Scoring Model
@@ -226,7 +227,7 @@ GET /api/scoring-model
 Response:
 ```json
 {
-  "version": "2026.03-v1",
+  "version": "2026-03-08",
   "event_weights": {...},
   "engagement_thresholds": {...},
   "recommendation_rules": {...}
@@ -241,28 +242,59 @@ GET /api/next-best-action/{kbo_number}
 Response:
 ```json
 {
+  "status": "success",
   "kbo_number": "0438437723",
   "company_name": "B.B.S. Entreprise",
-  "engagement_score": 25,
-  "engagement_level": "medium",
+  "engagement_level": "low",
+  "engagement_score": 15,
+  "source_systems": 4,
+  "priority": "medium",
   "recommendations": [
     {
       "type": "support_expansion",
-      "priority": "high",
-      "message": "Company has 1 open support ticket - opportunity for premium support tier"
+      "action": "Review support contract for expansion",
+      "reason": "1 open ticket(s) indicate support needs"
+    },
+    {
+      "type": "re_activation",
+      "action": "Send re-engagement campaign with special offer",
+      "reason": "Low engagement - risk of churn"
     }
   ],
-  "rule_trace": {
-    "rules_evaluated": [...],
-    "triggered_rules": [...],
-    "engagement_calculation": {...}
-  }
+  "timestamp": "2026-03-09T06:34:11.388686+00:00"
 }
 ```
 
 #### Get Engagement Leads
 ```
 GET /api/engagement/leads?min_score=5&limit=50
+```
+
+Response:
+```json
+{
+  "status": "success",
+  "count": 2,
+  "min_score": 5,
+  "leads": [
+    {
+      "kbo_number": "0438437723",
+      "company_name": "B.B.S. ENTREPRISE",
+      "engagement_score": 15,
+      "email_opens": 1,
+      "email_clicks": 1,
+      "last_activity": "2026-03-08T19:04:49.972044+00:00"
+    },
+    {
+      "kbo_number": "0408340801",
+      "company_name": "Accountantskantoor Dubois",
+      "engagement_score": 5,
+      "email_opens": 1,
+      "email_clicks": 0,
+      "last_activity": "2026-03-08T19:06:03.392552+00:00"
+    }
+  ]
+}
 ```
 
 ### Webhook Gateway API
