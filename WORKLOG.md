@@ -2855,6 +2855,35 @@ git commit -m "docs: split mixed guide into business case / system spec / eviden
 
 ---
 
+## 2026-03-09 (Backlog Update From Chatbot Quality Feedback)
+
+### Task: Fold detailed chatbot-eval and UX feedback into the roadmap
+
+**Type:** docs_or_process_only
+**Status:** COMPLETE
+**Timestamp:** 2026-03-09 12:25 CET
+**Git Head:** `8432f66`
+
+**Summary:**
+Updated the medium-term roadmap to capture a more rigorous chatbot-quality direction: self-contained eval prompts, answer-first user-facing behavior, less tool leakage, stronger interpretation blocks in 360/stats answers, and explicit copy/export UX regression coverage. Also marked the interrupted colleague-sharing setup as paused in `NEXT_ACTIONS.md` because the user redirected the session before implementation.
+
+**Files Changed:**
+- Updated `BACKLOG.md`
+- Updated `NEXT_ACTIONS.md`
+
+**Verification:**
+```bash
+git status --short
+git log --oneline --decorate -n 5
+```
+
+**Observed Results:**
+- Worktree was clean at the start of the docs update
+- The roadmap now explicitly tracks self-contained eval scenarios, answer-first response rules, validation/uncertainty blocks, and the known copy/export UX failure classes as backlog work instead of leaving them as chat-only feedback
+- The local sharing path is now recorded as a paused task rather than an abandoned thread
+
+---
+
 ## 2026-03-09 (GitHub Sync With CI Skipped)
 
 ### Task: Push the local `main` branch to GitHub without triggering Azure-oriented workflows

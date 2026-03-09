@@ -2,7 +2,7 @@
 
 **Platform:** AZURE (VMs, Container Apps, OpenAI)  
 **Architecture:** Source systems PII truth + PostgreSQL intelligence truth + Tracardi activation runtime + AI chatbot  
-**Last Updated:** 2026-03-08 (v3.2 guide positively reviewed as the best version so far; remaining v3.3 blockers are timestamp consistency, screenshot/prose alignment, count/maturity precision, code/API styling, PDF text-layer quality, and acceptance-criteria packaging)
+**Last Updated:** 2026-03-09 (v3.3 guide polish remains open; new user feedback raised the priority of self-contained eval prompts, answer-first user mode, and copy/export UX regression coverage)
 **Purpose:** Medium-term roadmap from the current repo state to a credible demo first and production readiness later
 
 ## How To Use This File
@@ -181,7 +181,8 @@ poetry run python scripts/test_poc_activation.py --mock
 | Priority | Item | Status | What still needs to happen |
 |----------|------|--------|-----------------------------|
 | High | Define a thin read-only MCP contract | Pending | Standardize `search`, `count`, `company_360`, and normalized source-adapter tools across real/mock backends |
-| High | Add reproducible agent evals / trace grading | Pending | Build a small scenario set that measures prompt stability, source provenance, and tool correctness over time |
+| High | Add reproducible agent evals / trace grading | Pending | Build a self-contained scenario set that measures prompt stability, source provenance, tool correctness, and regression risk without relying on hidden session memory |
+| High | Standardize self-contained eval prompt format | Pending | Define one reusable template covering role/context, goal, constraints, workflow expectation, output format, and success criteria; rewrite the existing scenario bank into that format |
 | Medium | Add GenAI observability conventions | Pending | Standardize traces for model calls, tool calls, latency, failures, and token/cost tracking |
 | Medium | Create a small internal agent skill library | Pending | Standardize demo prep, mock-authoring, and doc-hygiene workflows for future agent sessions |
 | Medium | Keep new agentic work Responses-compatible | Pending | Avoid new deprecated Assistants-style patterns and define an incremental migration posture |
@@ -191,6 +192,11 @@ poetry run python scripts/test_poc_activation.py --mock
 - A clear MCP boundary exists for read-only capabilities
 - Eval/tracing foundations exist for stability tracking
 - Modularity improvements reduce duplicated workflow logic rather than adding protocol complexity
+
+**2026-03-09 user-feedback implications:**
+- Eval prompts should be self-contained by default so each test still works if the previous conversation turns are wiped.
+- The eval bank should include the visible product-failure cases from the screenshots, especially the `ClipboardItem is not defined` copy failure and export flows that return an internal path instead of a real download.
+- Future scoring should separate `intent`, `autonomy`, `trust`, `actionability`, and `UX/product polish` so strong analysis does not hide weak operator experience.
 
 ### Milestone 0: Credible Demo Under Current Constraints
 
@@ -332,11 +338,18 @@ poetry run python scripts/test_poc_activation.py --mock
 | High | Keep logs, tool traces, and audit records UID-first | Pending | Enforce the privacy boundary in logging and operator tooling |
 | High | Bring tests in line with the PostgreSQL-first search path | Pending | Search mocks and tool tests still need targeted updates |
 | High | Add integration coverage for count/search/segment alignment and mutation safety | Pending | Prevent regressions in the authoritative query plane |
+| High | Remove user-visible tool leakage in normal chatbot mode | Pending | Hide internal tool names and planning traces such as `I will use...`, `search_profiles`, or `query_unified_360`; default to answer-first phrasing unless the user explicitly asks for internals |
+| High | Add interpretation-first response patterns for operator workflows | Pending | Make the bot explain what low contact coverage, cross-source mismatches, or uncertain data mean operationally instead of only listing fields |
+| High | Add explicit validation and uncertainty blocks to 360/stats outputs | Pending | Standardize sections such as `Te valideren`, `Top onzekerheden`, and `Next best action` so account summaries do more than dump source data |
+| High | Add end-to-end UX regression coverage for copy and export flows | Pending | Verify that copy actions degrade gracefully when `ClipboardItem` is unavailable and that exports return a real downloadable artifact or an explicit user-facing limitation message |
+| High | Rewrite legacy scenario tests into a self-contained operator eval suite | Pending | Rework the existing search, segment, 360, publication-parsing, export, troubleshooting, and prioritization prompts so each one carries enough context to be reproducible and comparable across versions |
 
 **Exit criteria:**
 - The chatbot is deterministic for counts, search, and analytics
 - Mutating actions are gated and auditable
 - Query-plane regressions are covered by tests, not just manual verification
+- User-facing answers remain trustworthy even when each test starts from an empty conversation state
+- Product-quality regressions in copy/export/download behavior are caught before demo use
 
 ---
 

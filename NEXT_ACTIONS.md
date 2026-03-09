@@ -686,6 +686,18 @@ Resume when:
 Next action:
 1. Re-scope the operator-layer work against the stabilized PostgreSQL-first query path.
 
+### P1: Local Chatbot Sharing For Colleague Testing
+
+**Status:** PAUSED
+**Paused:** 2026-03-09
+**Reason:** The user redirected the active work from local sharing setup to backlog planning. The implementation choice is still open between a private Tailscale path and a public password-protected path.
+
+Resume when:
+- the user wants colleague-access setup resumed
+
+Next action:
+1. Choose between `tailscale serve` (private tailnet access) and a password-gated public route such as `tailscale funnel`, then implement the safer option for the current test audience.
+
 ### P1: Azure Observability And RG Cleanup
 
 **Status:** PAUSED
