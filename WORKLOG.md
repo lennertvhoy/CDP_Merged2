@@ -542,8 +542,6 @@ The 360° tool requires identity linking between CRM/Exact and KBO. Current stat
 - Identity linking table (`source_identity_links`) is empty
 - Next: Run identity reconciliation to link CRM → KBO via VAT numbers
 
----
-
 ## 2026-03-08 (Enrichment Runners Restarted)
 
 ### Task: Restart Enrichment Runners After Supervisor Fix
@@ -2854,5 +2852,44 @@ git commit -m "docs: split mixed guide into business case / system spec / eviden
 - No single document carries conflicting roles
 - Each doc type-appropriate for its audience
 - Cross-references maintain coherence across the three documents
+
+---
+
+## 2026-03-09 (Guide Cleanup And Evidence Alignment)
+
+### Task: Archive stale screenshot-capture materials and tighten v3.3 guide evidence
+
+**Type:** docs_or_process_only
+**Status:** COMPLETE
+**Timestamp:** 2026-03-09 07:45 CET
+**Git Head:** `90cd462`
+
+**Summary:**
+Archived the remaining root-level Chrome CDP screenshots and the two superseded screenshot-capture helper docs out of the active tree. Then corrected the active guide/spec so they use current event-processor evidence, added the missing count-semantics dictionary, and upgraded the CSV proof with checksum-backed traceability.
+
+**Files Changed:**
+- Moved root screenshots to `docs/archive/illustrated_guide/2026-03-08_browser_cdp_capture/screenshots/`
+- Moved `docs/illustrated_guide/HANDOFF_BROWSER_AGENT.md` to `docs/archive/illustrated_guide/2026-03-08_browser_cdp_capture/`
+- Moved `docs/illustrated_guide/MANAGER_DEMO_GUIDE.md` to `docs/archive/illustrated_guide/2026-03-08_browser_cdp_capture/`
+- Added `docs/archive/illustrated_guide/2026-03-08_browser_cdp_capture/README.md`
+- Updated `docs/README.md`, `docs/ILLUSTRATED_GUIDE.md`, `docs/SYSTEM_SPEC.md`, `PROJECT_STATE.yaml`, and `NEXT_ACTIONS.md`
+
+**Verification:**
+```bash
+curl -fsS http://127.0.0.1:5001/health
+curl -fsS http://127.0.0.1:5001/api/next-best-action/0438437723
+curl -fsS 'http://127.0.0.1:5001/api/engagement/leads?min_score=5'
+curl -fsS http://127.0.0.1:5001/
+curl -fsS http://127.0.0.1:5001/api/scoring-model
+poetry run python -c 'from scripts.cdp_event_processor import get_scoring_model; import json; print(json.dumps(get_scoring_model(), indent=2, sort_keys=True))'
+wc -l output/it_services_brussels_segment.csv
+sha256sum output/it_services_brussels_segment.csv
+```
+
+**Observed Results:**
+- `GET /api/next-best-action/0438437723` returned B.B.S. Entreprise with `engagement_score=15`, `engagement_level=low`, and recommendations `[support_expansion, re_activation]`
+- `GET /api/engagement/leads?min_score=5` returned 2 leads: B.B.S. Entreprise (`15`) and Accountantskantoor Dubois (`5`)
+- `output/it_services_brussels_segment.csv` verified at `101` visible rows and SHA-256 `d7d2de30cf4a0206d34915b5324f16b64a1534a37a549e69535b5cc35d38abc5`
+- The long-running local daemon on `127.0.0.1:5001` returned `404` for `/api/scoring-model`, while the checked-in code still defines that route; documented in `PROJECT_STATE.yaml` and `NEXT_ACTIONS.md` as local runtime drift
 
 ---

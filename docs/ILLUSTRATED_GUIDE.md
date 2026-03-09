@@ -9,7 +9,7 @@
 
 **Audience:** Demo observers, auditors, stakeholders needing visual proof
 
-**Last Updated:** 2026-03-08
+**Last Updated:** 2026-03-09
 
 **Companion Docs:**
 
@@ -40,6 +40,16 @@
 | Privacy boundary status is documented honestly | Tracardi profile view + divergence table | Phase 5 below |
 
 **Source labels used in this guide:** `Live system`, `Local runtime`, `Demo-backed`, `Local artifact`
+
+### Count Semantics Dictionary
+
+| Count | Meaning | Current use in this guide |
+|-------|---------|---------------------------|
+| `1,652` | Broader historical Brussels software search scope using the legacy 6-code set (`62010`, `62020`, `62030`, `62090`, `63110`, `63120`) | Kept only as historical search/export context |
+| `1,529` | Narrower 62xxx-only activation-test scope from the POC latency run | Used only in the Phase 3 performance snippet |
+| `190` | Exact Brussels IT primary-code subset (`62100`, `62200`, `62900`, `63100`) | Canonical live activation-proof scope |
+| `189` | Unique Resend contacts after deduplicating one shared mailbox from the `190` rows | Canonical live audience count |
+| `101` | Visible spreadsheet preview size (`100` data rows + header) | CSV opened-file proof only |
 
 ---
 
@@ -99,7 +109,7 @@ WHERE identity_link_status = 'linked_all';
 | IT services - Brussels (62100/62200/62900/63100) | 190 | 17% | Verified |
 | IT services - Nationwide (NULL city) | 1,682 | 14.5% | Alternative for scale demo |
 
-**Note:** Original "software companies" claim (NACE 62010-62090, 63110-63120) was corrected when data verification showed these codes don't exist in Brussels KBO data.
+**Note:** The guide now treats the `190`-row Brussels IT subset as the activation-proof source of truth. Earlier `1,652`/`1,529` software counts remain useful only as labeled historical search/performance context.
 
 ---
 
@@ -119,8 +129,10 @@ ENGAGEMENT_WRITEBACK: 0.82s - 4 events tracked
 
 ### Resend Audience Evidence
 
-**Audience Name:** `Brussels IT Services - Segment`  
-*(Previously labeled generically as "KBO Companies - Test Audience" - renamed for clarity)*
+**Guide Label:** `Brussels IT Services - Segment`
+**Visible UI Label At Capture:** `KBO Companies - Test Audience`
+
+The live Resend screenshot uses a reused empty audience because the current plan is capped at `3` audiences. In this guide, that screenshot is interpreted only as the populated Brussels IT subset proof (`190` rows -> `189` unique contacts), not as a claim that the SaaS UI label itself was renamed.
 
 ![Resend populated audience detail](/home/ff/Documents/CDP_Merged/docs/illustrated_guide/demo_screenshots/resend_audience_detail_populated_2026-03-08.png){ width=88% }
 
@@ -153,9 +165,12 @@ ENGAGEMENT_WRITEBACK: 0.82s - 4 events tracked
 |-------|--------|
 | Export scope | Brussels IT Services segment (`62100`, `62200`, `62900`, `63100`) |
 | Opened preview | `101` rows shown (`100` data rows + header) |
-| Field coverage | `26` columns present |
+| Field coverage | `27` CSV columns present |
 | Visible columns | KBO, company name, legal form, city, postal code, NACE, email |
-| Artifact traceability | Footer shows filename, generation time (`2026-03-08`), and source (`CDP PostgreSQL Database`) |
+| Integrity proof | `SHA-256 d7d2de30cf4a0206d34915b5324f16b64a1534a37a549e69535b5cc35d38abc5` |
+| Artifact traceability | File `output/it_services_brussels_segment.csv`, timestamp `2026-03-08 16:26 CET`, source `CDP PostgreSQL Database` |
+
+**Audit Note:** The current export flow does not persist a stable query ID. The checksum plus the opened-file screenshot are the strongest current artifact anchors.
 
 ---
 
@@ -167,32 +182,32 @@ ENGAGEMENT_WRITEBACK: 0.82s - 4 events tracked
 
 **Request:**
 ```bash
-curl http://localhost:8780/api/next-best-action/0438437723
+curl http://localhost:5001/api/next-best-action/0438437723
 ```
 
-**Response:**
+**Response (observed 2026-03-09):**
 ```json
 {
+  "status": "success",
   "kbo_number": "0438437723",
   "company_name": "B.B.S. Entreprise",
-  "engagement_score": 25,
-  "engagement_level": "medium",
+  "engagement_level": "low",
+  "engagement_score": 15,
+  "source_systems": 4,
+  "priority": "medium",
   "recommendations": [
     {
       "type": "support_expansion",
-      "priority": "high",
-      "message": "Company has 1 open support ticket - opportunity for premium support"
+      "action": "Review support contract for expansion",
+      "reason": "1 open ticket(s) indicate support needs"
+    },
+    {
+      "type": "re_activation",
+      "action": "Send re-engagement campaign with special offer",
+      "reason": "Low engagement - risk of churn"
     }
   ],
-  "rule_trace": {
-    "triggered_rules": ["support_expansion"],
-    "engagement_calculation": {
-      "email_opens": 1,
-      "email_clicks": 1,
-      "base_score": 0,
-      "calculated_score": 25
-    }
-  }
+  "timestamp": "2026-03-09T06:34:11.388686+00:00"
 }
 ```
 
@@ -200,67 +215,86 @@ curl http://localhost:8780/api/next-best-action/0438437723
 
 **Request:**
 ```bash
-curl "http://localhost:8780/api/engagement/leads?min_score=5"
+curl "http://localhost:5001/api/engagement/leads?min_score=5"
 ```
 
-**Response:**
+**Response (observed 2026-03-09):**
 ```json
 {
+  "status": "success",
+  "count": 2,
+  "min_score": 5,
   "leads": [
     {
       "kbo_number": "0438437723",
-      "company_name": "B.B.S. Entreprise",
-      "engagement_score": 25,
-      "last_engagement": "2024-03-08T14:30:00Z",
-      "recommendation": "support_expansion"
+      "company_name": "B.B.S. ENTREPRISE",
+      "engagement_score": 15,
+      "email_opens": 1,
+      "email_clicks": 1,
+      "last_activity": "2026-03-08T19:04:49.972044+00:00"
+    },
+    {
+      "kbo_number": "0408340801",
+      "company_name": "Accountantskantoor Dubois",
+      "engagement_score": 5,
+      "email_opens": 1,
+      "email_clicks": 0,
+      "last_activity": "2026-03-08T19:06:03.392552+00:00"
     }
-  ],
-  "generated_at": "2024-03-08T22:10:00Z"
+  ]
 }
 ```
 
-### Scoring Model Endpoint
+### Deterministic Scoring Model
 
-**Request:**
+**Checked-in code verification (observed 2026-03-09):**
 ```bash
-curl http://localhost:8780/api/scoring-model
+poetry run python -c 'from scripts.cdp_event_processor import get_scoring_model; import json; print(json.dumps(get_scoring_model(), indent=2, sort_keys=True))'
 ```
 
-**Response (2026.03-v1):**
+**Result:**
 ```json
 {
-  "version": "2026.03-v1",
-  "event_weights": {
-    "email.opened": 5,
-    "email.clicked": 10,
-    "email.sent": 1,
-    "email.bounced": -5,
-    "email.complained": -10
-  },
+  "version": "2026-03-08",
   "engagement_thresholds": {
-    "high": {"min_inclusive": 50, "label": "High Engagement"},
-    "medium": {"min_inclusive": 20, "max_exclusive": 50, "label": "Medium Engagement"},
-    "low": {"max_exclusive": 20, "label": "Low Engagement"}
+    "high": {"min_inclusive": 50},
+    "low": {"max_exclusive": 20, "min_inclusive": 0},
+    "medium": {"max_exclusive": 50, "min_inclusive": 20}
+  },
+  "event_weights": {
+    "email.bounced": -5,
+    "email.clicked": 10,
+    "email.complained": -10,
+    "email.delivered": 2,
+    "email.opened": 5,
+    "email.sent": 1,
   },
   "recommendation_rules": {
-    "support_expansion": {
-      "trigger": "open_tickets > 0",
-      "action": "Offer premium support tier",
-      "priority": "high"
-    },
     "cross_sell": {
-      "trigger": "engagement_score >= 20 AND nace_code IN ('62010', '62020')",
-      "action": "Propose additional service module",
-      "priority": "medium"
+      "priority": "medium",
+      "trigger": "nace_code in CROSS_SELL_MAP"
+    },
+    "multi_division": {
+      "priority": "medium",
+      "trigger": "source_systems < 3"
     },
     "re_activation": {
-      "trigger": "days_since_engagement > 30",
-      "action": "Send re-engagement campaign",
+      "priority": "medium",
+      "trigger": "engagement_score < 20"
+    },
+    "sales_opportunity": {
+      "priority": "high",
+      "trigger": "engagement_score >= 50 and open_deals == 0"
+    },
+    "support_expansion": {
+      "trigger": "open_tickets > 0",
       "priority": "medium"
     }
   }
 }
 ```
+
+**Runtime Note:** The checked-in code defines `GET /api/scoring-model`, but the long-running local daemon on port `5001` returned `404` during the 2026-03-09 verification pass. Treat the model above as code-verified until that daemon is refreshed.
 
 **Example Calculation (B.B.S. Entreprise):**
 
@@ -268,9 +302,8 @@ curl http://localhost:8780/api/scoring-model
 |-------|--------|-------|----------|
 | email.opened | +5 | 1 | +5 |
 | email.clicked | +10 | 1 | +10 |
-| email.sent | +1 | 10 | +10 |
-| **Total Score** | | | **25** |
-| **Engagement Level** | | | **Medium** (>=20, <50) |
+| **Total Score** | | | **15** |
+| **Engagement Level** | | | **Low** (<20) |
 
 ### Privacy Boundary Evidence
 
