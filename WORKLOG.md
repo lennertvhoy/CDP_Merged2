@@ -2855,6 +2855,38 @@ git commit -m "docs: split mixed guide into business case / system spec / eviden
 
 ---
 
+## 2026-03-09 (GitHub Sync With CI Skipped)
+
+### Task: Push the local `main` branch to GitHub without triggering Azure-oriented workflows
+
+**Type:** docs_or_process_only
+**Status:** COMPLETE
+**Timestamp:** 2026-03-09 08:05 CET
+**Git Head:** `3f70f6a`
+
+**Summary:**
+Pushed the previously local-only `main` history to `origin/main` after confirming the branch was `ahead 62`. Used a top-level empty commit with a GitHub skip token because the Azure deployment path remains intentionally paused and the user did not want the legacy push-triggered CI/CD workflows to run.
+
+**Files Changed:**
+- Updated `WORKLOG.md`
+
+**Verification:**
+```bash
+git status -sb
+git fetch origin
+git log --oneline origin/main..HEAD -- docs/ILLUSTRATED_GUIDE.pdf docs/ILLUSTRATED_GUIDE_v2.0.pdf docs/ILLUSTRATED_GUIDE_v3.0.pdf docs/ILLUSTRATED_GUIDE_v3.1.pdf docs/ILLUSTRATED_GUIDE_v3.2.pdf
+git commit --allow-empty -m "chore(repo): push local main without CI [skip ci]"
+git push origin main
+gh run list --limit 20 --json headSha,workflowName,status,conclusion,event,displayTitle | jq '[.[] | select(.headSha | startswith("3f70f6a"))]'
+```
+
+**Observed Results:**
+- Local branch was confirmed `ahead 62` before the push
+- The push completed successfully to `origin/main`
+- No GitHub Actions run appeared for head SHA `3f70f6a` during immediate and delayed rechecks, so the skip token suppressed the push workflows as intended
+
+---
+
 ## 2026-03-09 (Guide Cleanup And Evidence Alignment)
 
 ### Task: Archive stale screenshot-capture materials and tighten v3.3 guide evidence
