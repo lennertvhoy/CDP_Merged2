@@ -105,6 +105,30 @@ Per the latest v3.2 review:
 
 ---
 
+### P1: Hybrid Azure Re-Entry For Auth And LLM
+
+**Status:** BLOCKED until 2026-03-14
+**Discovered:** 2026-03-09 via direct user instruction
+**Last Updated:** 2026-03-09
+**Severity:** HIGH
+**Goal:** Before the project is put online, add Microsoft Entra ID authentication and use Azure OpenAI for the user-facing chatbot path, while keeping PostgreSQL, Tracardi, and the rest of the runtime local for now.
+**Blocker:** The user reported that the Azure usage limit has been reached and only resets on 2026-03-14.
+
+#### Accepted Decisions
+
+- Do **not** put the project online before Entra auth exists.
+- Reintroduce Azure in a narrow, hybrid way first: `Entra auth + Azure OpenAI`.
+- Keep the rest of the stack local in this phase.
+- Treat the long-term hosting target as the user's server farm, not a return to full Azure app hosting.
+
+#### Next action after 2026-03-14
+
+1. Scope the minimum Azure work needed for Entra auth and Azure OpenAI only.
+2. Wire the app auth flow and provider configuration without reopening full Azure deployment work.
+3. Verify that the hybrid path is clearly documented as `Azure identity + Azure OpenAI + local runtime`.
+
+---
+
 ### P0: POC Resend Activation Tests (RECOMMENDED)
 
 **Status:** ✅ COMPLETE - All 6 tests passing, accepted as the current POC activation path

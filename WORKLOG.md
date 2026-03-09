@@ -2855,6 +2855,37 @@ git commit -m "docs: split mixed guide into business case / system spec / eviden
 
 ---
 
+## 2026-03-09 (Hybrid Azure Roadmap Update)
+
+### Task: Record the planned Entra auth + Azure OpenAI path and Azure quota blocker
+
+**Type:** docs_or_process_only
+**Status:** COMPLETE
+**Timestamp:** 2026-03-09 12:45 CET
+**Git Head:** `081010f`
+
+**Summary:**
+Recorded the new cloud-direction decision from the user. The project should stay local for now, but the first cloud re-entry before any public exposure must be limited to Microsoft Entra ID authentication and Azure OpenAI. PostgreSQL, Tracardi, and the rest of the runtime stay local in this phase, and the longer-term hosting target is the user's internal server farm. Also recorded the reported Azure usage-limit blocker through 2026-03-14.
+
+**Files Changed:**
+- Updated `BACKLOG.md`
+- Updated `NEXT_ACTIONS.md`
+- Updated `PROJECT_STATE.yaml`
+- Updated `STATUS.md`
+
+**Verification:**
+```bash
+git status --short
+git log --oneline --decorate -n 5
+```
+
+**Observed Results:**
+- The roadmap now treats `Entra auth + Azure OpenAI` as the only approved first step back into Azure
+- The queue now records that work as blocked until 2026-03-14 because of the reported Azure usage-limit reset date
+- The live-state docs now distinguish this planned hybrid posture from a full return to Azure-hosted runtime components
+
+---
+
 ## 2026-03-09 (Backlog Update From Chatbot Quality Feedback)
 
 ### Task: Fold detailed chatbot-eval and UX feedback into the roadmap
