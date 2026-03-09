@@ -3,7 +3,7 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-09T12:45:00+01:00
+  updated_at: 2026-03-09T13:20:00+01:00
   updated_by: agent
   repo_head:
     value: fe9d51a
@@ -81,6 +81,7 @@ current_state:
       - azure_budget_about_150_eur_per_month
       - azure_deployment_path_temporarily_paused_to_save_costs
       - azure_usage_limit_reported_reached_until_2026_03_14
+      - colleague_facing_mode_requires_per_user_work_account_auth_and_private_chat_state
       - no_live_exact_tenant_yet
       - no_live_autotask_tenant_yet
     acceptance:
@@ -89,13 +90,24 @@ current_state:
   cloud_reentry_plan:
     status: reported
     decided_at: 2026-03-09
-    summary: The next cloud re-entry should be limited to Microsoft Entra ID authentication and Azure OpenAI for privacy/compliance. Keep PostgreSQL, Tracardi, and the rest of the runtime local for now, and do not put the project online before Entra auth exists.
+    summary: The next cloud re-entry should be limited to Microsoft Entra ID work-account authentication and Azure OpenAI for privacy/compliance. Keep PostgreSQL, Tracardi, and the rest of the runtime local for now, and do not put the project online before Entra auth exists.
     constraints:
       - no_public_exposure_before_entra_auth
+      - microsoft_work_account_login_per_user
       - prefer_azure_openai_for_public_facing_mode
       - keep_remaining_runtime_local_during_this_phase
       - azure_usage_limit_reported_reached_until_2026_03_14
       - longer_term_target_is_server_farm_deployment
+  chat_experience_plan:
+    status: reported
+    decided_at: 2026-03-09
+    summary: The colleague-facing chatbot should behave like a multi-user product rather than a shared demo session. Each authenticated user should get a private chat workspace with stored conversations, and the Chainlit interface should move closer to a ChatGPT-like experience with deliberate web-search support only if privacy/compliance boundaries are defined.
+    requirements:
+      - per_user_conversation_storage_and_isolation
+      - conversation_history_titles_and_reentry
+      - no_shared_chatbot_surface_for_colleagues
+      - chatgpt_like_interface_direction
+      - explicit_web_search_policy_before_enablement
   deployment:
     status: reported
     verified_at: 2026-03-06T20:09:00+01:00

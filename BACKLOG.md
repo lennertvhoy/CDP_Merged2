@@ -2,7 +2,7 @@
 
 **Platform:** AZURE (VMs, Container Apps, OpenAI)  
 **Architecture:** Source systems PII truth + PostgreSQL intelligence truth + Tracardi activation runtime + AI chatbot  
-**Last Updated:** 2026-03-09 (v3.3 guide polish remains open; user feedback now also fixes the cloud roadmap: keep the stack local for now, but reintroduce Microsoft Entra ID auth and Azure OpenAI before any public exposure)
+**Last Updated:** 2026-03-09 (v3.3 guide polish remains open; keep the stack local for now, but before any colleague-facing online rollout add Microsoft Entra work-account auth, Azure OpenAI, per-user chat history, and a more ChatGPT-like product surface)
 **Purpose:** Medium-term roadmap from the current repo state to a credible demo first and production readiness later
 
 ## How To Use This File
@@ -33,6 +33,8 @@ Current constraints that shape this roadmap:
 - Resend is the accepted email activation platform for the current POC; Flexmail parity is not a near-term blocker unless the user explicitly reopens it
 - do **not** put the project online before Microsoft Entra ID auth exists
 - when Azure work resumes, limit the first scoped re-entry to `Entra auth + Azure OpenAI`; keep PostgreSQL, Tracardi, and the rest of the runtime local
+- colleague-facing rollout should use Microsoft work accounts with per-user chat history/workspace, not a shared chatbot surface
+- the current Chainlit surface is a baseline only; the colleague-facing product should feel closer to ChatGPT and may include web search once privacy/policy boundaries are defined
 - longer-term deployment target is the user's server farm, not a return to full Azure app hosting
 - the user must do the final verification and wants at least one stable week before sign-off
 
@@ -185,8 +187,8 @@ poetry run python scripts/test_poc_activation.py --mock
 | Priority | Item | Status | What still needs to happen |
 |----------|------|--------|-----------------------------|
 | High | Define a thin read-only MCP contract | Pending | Standardize `search`, `count`, `company_360`, and normalized source-adapter tools across real/mock backends |
-| High | Add reproducible agent evals / trace grading | Pending | Build a self-contained scenario set that measures prompt stability, source provenance, tool correctness, and regression risk without relying on hidden session memory |
-| High | Standardize self-contained eval prompt format | Pending | Define one reusable template covering role/context, goal, constraints, workflow expectation, output format, and success criteria; rewrite the existing scenario bank into that format |
+| High | Add reproducible agent evals / trace grading | Partial | `docs/evals/` now contains a starter bank, scorecard template, and validation test; still need executable runs against the chatbot plus per-run artifacts |
+| High | Standardize self-contained eval prompt format | Partial | A canonical template plus `operator_eval_cases.v1.json` now exist under `docs/evals/`; full historical scenario migration and runtime execution still need to happen |
 | Medium | Add GenAI observability conventions | Pending | Standardize traces for model calls, tool calls, latency, failures, and token/cost tracking |
 | Medium | Create a small internal agent skill library | Pending | Standardize demo prep, mock-authoring, and doc-hygiene workflows for future agent sessions |
 | Medium | Keep new agentic work Responses-compatible | Pending | Avoid new deprecated Assistants-style patterns and define an incremental migration posture |
@@ -201,24 +203,42 @@ poetry run python scripts/test_poc_activation.py --mock
 - Eval prompts should be self-contained by default so each test still works if the previous conversation turns are wiped.
 - The eval bank should include the visible product-failure cases from the screenshots, especially the `ClipboardItem is not defined` copy failure and export flows that return an internal path instead of a real download.
 - Future scoring should separate `intent`, `autonomy`, `trust`, `actionability`, and `UX/product polish` so strong analysis does not hide weak operator experience.
+- The first concrete assets now exist in `docs/evals/`, but they still need to be wired into an executable local harness.
 
 ### Milestone 0B: Privacy-Critical Hybrid Azure Re-Entry
 
-**Why this matters:** The user does not want to put the project online until authentication is handled through Microsoft Entra ID and the public-facing LLM path uses Azure OpenAI. At the same time, the rest of the stack should remain local for now, and the longer-term deployment target is an internal server farm.
+**Why this matters:** The user does not want to put the project online until authentication is handled through Microsoft Entra ID and the public-facing LLM path uses Azure OpenAI. At the same time, the rest of the stack should remain local for now, the colleague-facing access path should use Microsoft work accounts, and the longer-term deployment target is an internal server farm.
 
 | Priority | Item | Status | What still needs to happen |
 |----------|------|--------|-----------------------------|
-| Critical | Put Microsoft Entra ID auth in front of any public deployment | Blocked until `2026-03-14` | Scope the minimal Azure identity work: app registration, allowed-tenant/user policy, login/logout flow, callback configuration, and local/runtime secret handling |
+| Critical | Put Microsoft Entra ID work-account auth in front of any public deployment | Blocked until `2026-03-14` | Scope the minimal Azure identity work: app registration, allowed-tenant/user policy, login/logout flow, callback configuration, and colleague-specific sign-in through Microsoft work accounts |
 | Critical | Use Azure OpenAI for the public-facing chatbot path | Blocked until `2026-03-14` | Re-enable the Azure OpenAI provider path, verify config/env handling, and document when public mode must use Azure OpenAI rather than a non-Azure provider |
 | High | Keep the rest of the platform local during this phase | Pending | Do not reopen full Azure hosting for PostgreSQL, Tracardi, or the compose stack just to satisfy auth/LLM compliance requirements |
 | High | Define the eventual server-farm deployment target | Pending | Design the non-Azure hosting path for the app/runtime so the compliance-sensitive Azure dependencies stay limited to identity and model access where justified |
 | High | Document the hybrid privacy/compliance posture clearly | Pending | Explain why `Entra auth + Azure OpenAI + local data/runtime` is the interim architecture and what still remains local vs cloud-managed |
 
 **Exit criteria:**
-- No public URL exists without Microsoft Entra ID authentication in front of it
+- No public URL exists without Microsoft Entra work-account authentication in front of it
 - Azure OpenAI is the active provider for the public-facing chatbot mode
 - PostgreSQL, Tracardi, and the remaining runtime stay local until the server-farm deployment path is ready
 - The hybrid boundary is documented clearly enough that future sessions do not accidentally reopen full Azure hosting
+
+### Milestone 0C: Multi-User Chatbot Experience
+
+**Why this matters:** A colleague-facing rollout is not just an auth problem. Each user should have a private chatbot workspace with stored conversations, and the interface should feel closer to ChatGPT than to a default Chainlit shell.
+
+| Priority | Item | Status | What still needs to happen |
+|----------|------|--------|-----------------------------|
+| Critical | Add user-scoped chat persistence and conversation ownership | Pending | Persist per-user threads, titles, timestamps, and access control so each colleague sees only their own chats |
+| High | Modernize the Chainlit surface toward ChatGPT-like UX | Pending | Improve conversation history, layout density, interaction affordances, and general product polish before broader colleague rollout |
+| High | Decide which colleague-facing options belong in the UI | Pending | Define what should be exposed directly to users, such as export actions, search modes, or tool/web-search toggles |
+| High | Add web search as a deliberate capability with privacy/compliance guardrails | Pending | Decide when web search is available, how source attribution works, and how external-query risks are controlled for sensitive use cases |
+
+**Exit criteria:**
+- Authenticated users get isolated conversation history and a private workspace
+- The product no longer depends on a shared or ephemeral chat session model
+- The interface no longer feels like a bare default Chainlit surface
+- Web-search behavior is either implemented with clear guardrails or explicitly deferred
 
 ### Milestone 0: Credible Demo Under Current Constraints
 
@@ -363,8 +383,8 @@ poetry run python scripts/test_poc_activation.py --mock
 | High | Remove user-visible tool leakage in normal chatbot mode | Pending | Hide internal tool names and planning traces such as `I will use...`, `search_profiles`, or `query_unified_360`; default to answer-first phrasing unless the user explicitly asks for internals |
 | High | Add interpretation-first response patterns for operator workflows | Pending | Make the bot explain what low contact coverage, cross-source mismatches, or uncertain data mean operationally instead of only listing fields |
 | High | Add explicit validation and uncertainty blocks to 360/stats outputs | Pending | Standardize sections such as `Te valideren`, `Top onzekerheden`, and `Next best action` so account summaries do more than dump source data |
-| High | Add end-to-end UX regression coverage for copy and export flows | Pending | Verify that copy actions degrade gracefully when `ClipboardItem` is unavailable and that exports return a real downloadable artifact or an explicit user-facing limitation message |
-| High | Rewrite legacy scenario tests into a self-contained operator eval suite | Pending | Rework the existing search, segment, 360, publication-parsing, export, troubleshooting, and prioritization prompts so each one carries enough context to be reproducible and comparable across versions |
+| High | Add end-to-end UX regression coverage for copy and export flows | Partial | Starter self-contained cases now exist in `docs/evals/operator_eval_cases.v1.json`; still need executable runtime coverage against the live chatbot |
+| High | Rewrite legacy scenario tests into a self-contained operator eval suite | Partial | `docs/evals/` now defines the prompt standard, v1 starter bank, scorecard template, and validation test; full scenario migration and automated execution still remain |
 
 **Exit criteria:**
 - The chatbot is deterministic for counts, search, and analytics

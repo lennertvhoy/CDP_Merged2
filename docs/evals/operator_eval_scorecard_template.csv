@@ -1,0 +1,1 @@
+run_id,run_date,app_revision,model_provider,model_name,case_id,case_version,category,prompt_language,intent_score,autonomy_score,trust_score,actionability_score,ux_product_polish_score,weighted_total,answer_first_pass,tool_leakage_fail,hallucinated_missing_data_fail,copy_ux_failure,export_ux_failure,severity,reviewer,notes,recommended_fix

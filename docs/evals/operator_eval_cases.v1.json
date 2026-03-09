@@ -1,0 +1,460 @@
+{
+  "schema_version": "operator_eval_bank.v1",
+  "created_at": "2026-03-09",
+  "scoring_dimensions": [
+    "intent",
+    "autonomy",
+    "trust",
+    "actionability",
+    "ux_product_polish"
+  ],
+  "required_sections": [
+    "role_context",
+    "goal",
+    "constraints",
+    "workflow_expectation",
+    "desired_output",
+    "success_criteria"
+  ],
+  "cases": [
+    {
+      "case_id": "segment_search_antwerp_it_support_preview",
+      "version": 1,
+      "category": "segment_search",
+      "source_basis": "2026-03-09 user feedback rewrite",
+      "risk_tags": [
+        "hidden_session_memory",
+        "preview_before_mutation",
+        "filter_scope"
+      ],
+      "sections": {
+        "role_context": "You are a B2B customer-intelligence assistant for Belgian company data. You can search companies by location, activity, contact coverage, and exclusions, and you can save segments.",
+        "goal": "Build a prospecting segment of companies in Antwerp that are likely to need B2B IT support or managed services.",
+        "constraints": [
+          "Exclude freelancers and sole proprietorships.",
+          "Exclude very large enterprises.",
+          "Keep only companies with at least one business contact channel: phone or email.",
+          "Do not save anything yet."
+        ],
+        "workflow_expectation": [
+          "If criteria are still vague, explain what assumptions you are making.",
+          "Show why a company is or is not in scope.",
+          "Preview before asking for save confirmation."
+        ],
+        "desired_output": [
+          "Short summary of search logic.",
+          "Preview of the segment.",
+          "Explicit list of filters used.",
+          "A final confirmation question before saving."
+        ],
+        "success_criteria": [
+          "The answer is self-contained and does not rely on earlier turns.",
+          "The answer is answer-first and does not expose internal tool names.",
+          "The answer makes the preview-before-save behavior explicit."
+        ]
+      },
+      "prompt": "Role/Context:\nYou are a B2B customer-intelligence assistant for Belgian company data. You can search companies by location, activity, contact coverage, and exclusions, and you can save segments.\n\nGoal:\nBuild a prospecting segment of companies in Antwerp that are likely to need B2B IT support or managed services.\n\nConstraints:\n- Exclude freelancers and sole proprietorships.\n- Exclude very large enterprises.\n- Keep only companies with at least one business contact channel: phone or email.\n- Do not save anything yet.\n\nWorkflow Expectation:\n- If criteria are still vague, explain what assumptions you are making.\n- Show why a company is or is not in scope.\n- Preview before asking for save confirmation.\n\nDesired Output:\n- Short summary of search logic.\n- Preview of the segment.\n- Explicit list of filters used.\n- A final confirmation question before saving.\n\nSuccess Criteria:\n- The answer is self-contained and does not rely on earlier turns.\n- The answer is answer-first and does not expose internal tool names.\n- The answer makes the preview-before-save behavior explicit.",
+      "score_focus": {
+        "primary_dimensions": [
+          "intent",
+          "autonomy",
+          "actionability"
+        ],
+        "must_fail_if": [
+          "tool_leakage",
+          "answer_first_failure"
+        ]
+      }
+    },
+    {
+      "case_id": "account_360_blueharbor_source_disciplined",
+      "version": 1,
+      "category": "account_360",
+      "source_basis": "2026-03-09 user feedback rewrite",
+      "risk_tags": [
+        "cross_source_inconsistency",
+        "hallucination_risk",
+        "interpretation_required"
+      ],
+      "sections": {
+        "role_context": "You are an account-intelligence assistant that consolidates data from multiple internal and external sources.",
+        "goal": "Explain what is most likely going on in this company dossier without inventing missing facts.",
+        "constraints": [
+          "Company: BlueHarbor Systems BV, Gent, BE 0784.221.113.",
+          "CRM says active customer, account owner Sarah, last closed-won 2024-10-14, product Managed IT Support, contract status ongoing.",
+          "Accounting says last paid invoice 2024-11-02, no invoices in 2025, no active subscription line visible, open balance 0 EUR.",
+          "Support says 4 tickets in the last 60 days.",
+          "Sales note says renewal may be in progress but not confirmed.",
+          "Do not invent missing data."
+        ],
+        "workflow_expectation": [
+          "Rank the most plausible explanations.",
+          "Separate factual tensions from inference.",
+          "End with the most likely core hypothesis."
+        ],
+        "desired_output": [
+          "Observed inconsistencies.",
+          "Most likely explanations ranked.",
+          "Concrete validation checks.",
+          "A short core hypothesis."
+        ],
+        "success_criteria": [
+          "The answer explicitly labels uncertainty instead of presenting guesses as facts.",
+          "The answer interprets the mismatch instead of only restating source fields.",
+          "The answer stays user-facing and avoids debug phrasing."
+        ]
+      },
+      "prompt": "Role/Context:\nYou are an account-intelligence assistant that consolidates data from multiple internal and external sources.\n\nGoal:\nExplain what is most likely going on in this company dossier without inventing missing facts.\n\nConstraints:\n- Company: BlueHarbor Systems BV, Gent, BE 0784.221.113.\n- CRM says active customer, account owner Sarah, last closed-won 2024-10-14, product Managed IT Support, contract status ongoing.\n- Accounting says last paid invoice 2024-11-02, no invoices in 2025, no active subscription line visible, open balance 0 EUR.\n- Support says 4 tickets in the last 60 days.\n- Sales note says renewal may be in progress but not confirmed.\n- Do not invent missing data.\n\nWorkflow Expectation:\n- Rank the most plausible explanations.\n- Separate factual tensions from inference.\n- End with the most likely core hypothesis.\n\nDesired Output:\n- Observed inconsistencies.\n- Most likely explanations ranked.\n- Concrete validation checks.\n- A short core hypothesis.\n\nSuccess Criteria:\n- The answer explicitly labels uncertainty instead of presenting guesses as facts.\n- The answer interprets the mismatch instead of only restating source fields.\n- The answer stays user-facing and avoids debug phrasing.",
+      "score_focus": {
+        "primary_dimensions": [
+          "trust",
+          "actionability",
+          "autonomy"
+        ],
+        "must_fail_if": [
+          "hallucinated_missing_data",
+          "tool_leakage"
+        ]
+      }
+    },
+    {
+      "case_id": "account_360_bbs_call_prep",
+      "version": 1,
+      "category": "account_360",
+      "source_basis": "2026-03-09 user feedback rewrite",
+      "risk_tags": [
+        "call_prep",
+        "sales_actionability",
+        "missing_decision_maker_data"
+      ],
+      "sections": {
+        "role_context": "You are an account-intelligence chatbot that prepares Belgian account managers for customer and prospect calls.",
+        "goal": "Produce a usable pre-call brief for a call tomorrow.",
+        "constraints": [
+          "Company: B.B.S. Enterprise BV, Eeklo, BE 0899.456.210.",
+          "KBO active, legal form BV, main activity wholesale in technical products.",
+          "CRM lifecycle stage prospect, owner Thomas, last contact 2025-01-18.",
+          "Accounting has 3 historical invoices in 2023 and none in 2024 or 2025.",
+          "Support has no tickets.",
+          "Sales pipeline has 1 open opportunity in proposal sent for 18,000 EUR.",
+          "Known contact: Els Vermeulen, office@bbs-enterprise.be."
+        ],
+        "workflow_expectation": [
+          "Summarize what matters for the call first.",
+          "Separate factual snapshot from likely interpretation.",
+          "End with concrete next-step questions."
+        ],
+        "desired_output": [
+          "Short snapshot.",
+          "Interpretation for the account manager.",
+          "Call objective.",
+          "Suggested question list.",
+          "Post-call CRM actions."
+        ],
+        "success_criteria": [
+          "The answer helps a real account manager run the call.",
+          "The answer does not overstate interpretations as confirmed facts.",
+          "The answer adds operational next steps instead of only summarizing data."
+        ]
+      },
+      "prompt": "Role/Context:\nYou are an account-intelligence chatbot that prepares Belgian account managers for customer and prospect calls.\n\nGoal:\nProduce a usable pre-call brief for a call tomorrow.\n\nConstraints:\n- Company: B.B.S. Enterprise BV, Eeklo, BE 0899.456.210.\n- KBO active, legal form BV, main activity wholesale in technical products.\n- CRM lifecycle stage prospect, owner Thomas, last contact 2025-01-18.\n- Accounting has 3 historical invoices in 2023 and none in 2024 or 2025.\n- Support has no tickets.\n- Sales pipeline has 1 open opportunity in proposal sent for 18,000 EUR.\n- Known contact: Els Vermeulen, office@bbs-enterprise.be.\n\nWorkflow Expectation:\n- Summarize what matters for the call first.\n- Separate factual snapshot from likely interpretation.\n- End with concrete next-step questions.\n\nDesired Output:\n- Short snapshot.\n- Interpretation for the account manager.\n- Call objective.\n- Suggested question list.\n- Post-call CRM actions.\n\nSuccess Criteria:\n- The answer helps a real account manager run the call.\n- The answer does not overstate interpretations as confirmed facts.\n- The answer adds operational next steps instead of only summarizing data.",
+      "score_focus": {
+        "primary_dimensions": [
+          "actionability",
+          "intent",
+          "trust"
+        ],
+        "must_fail_if": [
+          "tool_leakage",
+          "answer_first_failure"
+        ]
+      }
+    },
+    {
+      "case_id": "segment_fit_nexa_cloud_brussels",
+      "version": 1,
+      "category": "segment_fit",
+      "source_basis": "2026-03-09 user feedback rewrite",
+      "risk_tags": [
+        "filter_alignment",
+        "tag_noise",
+        "rule_by_rule_explanation"
+      ],
+      "sections": {
+        "role_context": "You are a customer-intelligence chatbot for Belgian prospecting segments.",
+        "goal": "Evaluate one company against an already defined segment and explain whether it belongs there.",
+        "constraints": [
+          "Segment: Brussels companies active in IT services, cloud, managed services, or cybersecurity; no sole proprietorships; company size 5 to 200 employees; at least one business contact channel.",
+          "Company: Nexa Cloud Partners NV, Brussels, 42 employees, legal form NV.",
+          "Website text: We provide managed cloud infrastructure, Microsoft 365 administration, endpoint security and outsourced IT support.",
+          "Business contact: hello@nexacloud.be.",
+          "Extra source label: consultancy."
+        ],
+        "workflow_expectation": [
+          "Check every segment rule explicitly.",
+          "Treat the consultancy label as possible noise or overlap rather than a deciding fact.",
+          "Give a direct inclusion decision at the end."
+        ],
+        "desired_output": [
+          "Rule-by-rule assessment.",
+          "Short interpretation of the consultancy label.",
+          "Final yes or no conclusion."
+        ],
+        "success_criteria": [
+          "The answer is systematic and easy to audit.",
+          "The answer avoids overclaiming beyond the given facts.",
+          "The answer reaches a direct conclusion."
+        ]
+      },
+      "prompt": "Role/Context:\nYou are a customer-intelligence chatbot for Belgian prospecting segments.\n\nGoal:\nEvaluate one company against an already defined segment and explain whether it belongs there.\n\nConstraints:\n- Segment: Brussels companies active in IT services, cloud, managed services, or cybersecurity; no sole proprietorships; company size 5 to 200 employees; at least one business contact channel.\n- Company: Nexa Cloud Partners NV, Brussels, 42 employees, legal form NV.\n- Website text: We provide managed cloud infrastructure, Microsoft 365 administration, endpoint security and outsourced IT support.\n- Business contact: hello@nexacloud.be.\n- Extra source label: consultancy.\n\nWorkflow Expectation:\n- Check every segment rule explicitly.\n- Treat the consultancy label as possible noise or overlap rather than a deciding fact.\n- Give a direct inclusion decision at the end.\n\nDesired Output:\n- Rule-by-rule assessment.\n- Short interpretation of the consultancy label.\n- Final yes or no conclusion.\n\nSuccess Criteria:\n- The answer is systematic and easy to audit.\n- The answer avoids overclaiming beyond the given facts.\n- The answer reaches a direct conclusion.",
+      "score_focus": {
+        "primary_dimensions": [
+          "intent",
+          "trust"
+        ],
+        "must_fail_if": [
+          "hallucinated_missing_data"
+        ]
+      }
+    },
+    {
+      "case_id": "export_ux_brussels_it_servicebedrijven_q1",
+      "version": 1,
+      "category": "export_ux",
+      "source_basis": "2026-03-09 user feedback rewrite",
+      "risk_tags": [
+        "download_affordance",
+        "user_facing_failure_handling",
+        "preview_before_export"
+      ],
+      "sections": {
+        "role_context": "You are a customer-data assistant inside a web application that can export saved segments.",
+        "goal": "Provide a usable CSV export experience for an existing segment.",
+        "constraints": [
+          "Existing segment name: Brusselse IT Servicebedrijven Q1.",
+          "Known segment size: 124 records.",
+          "Requested columns only: bedrijfsnaam, e-mail, telefoon, stad, juridische vorm.",
+          "Show a preview of the first 5 rows before the export.",
+          "Do not expose an internal server path.",
+          "If export is not truly downloadable, say that explicitly and give the next best user-facing step."
+        ],
+        "workflow_expectation": [
+          "Act like a product assistant, not a debug console.",
+          "Confirm the requested columns first.",
+          "Then show the preview and the download action or limitation."
+        ],
+        "desired_output": [
+          "Column confirmation.",
+          "First 5 rows preview.",
+          "Real download action or explicit limitation plus next step."
+        ],
+        "success_criteria": [
+          "The answer never returns only an internal file path.",
+          "The answer is explicit if export is unavailable or empty.",
+          "The answer stays fully user-facing."
+        ]
+      },
+      "prompt": "Role/Context:\nYou are a customer-data assistant inside a web application that can export saved segments.\n\nGoal:\nProvide a usable CSV export experience for an existing segment.\n\nConstraints:\n- Existing segment name: Brusselse IT Servicebedrijven Q1.\n- Known segment size: 124 records.\n- Requested columns only: bedrijfsnaam, e-mail, telefoon, stad, juridische vorm.\n- Show a preview of the first 5 rows before the export.\n- Do not expose an internal server path.\n- If export is not truly downloadable, say that explicitly and give the next best user-facing step.\n\nWorkflow Expectation:\n- Act like a product assistant, not a debug console.\n- Confirm the requested columns first.\n- Then show the preview and the download action or limitation.\n\nDesired Output:\n- Column confirmation.\n- First 5 rows preview.\n- Real download action or explicit limitation plus next step.\n\nSuccess Criteria:\n- The answer never returns only an internal file path.\n- The answer is explicit if export is unavailable or empty.\n- The answer stays fully user-facing.",
+      "score_focus": {
+        "primary_dimensions": [
+          "ux_product_polish",
+          "actionability",
+          "autonomy"
+        ],
+        "must_fail_if": [
+          "export_ux_failure",
+          "tool_leakage"
+        ]
+      }
+    },
+    {
+      "case_id": "copy_troubleshooting_clipboarditem_not_defined",
+      "version": 1,
+      "category": "copy_ux",
+      "source_basis": "2026-03-09 user feedback rewrite",
+      "risk_tags": [
+        "browser_capability_fallback",
+        "user_workaround",
+        "developer_fix_guidance"
+      ],
+      "sections": {
+        "role_context": "You are a technical support assistant for a business web application.",
+        "goal": "Explain and troubleshoot this copy failure in simple language.",
+        "constraints": [
+          "Observed error: Failed to copy: ReferenceError: ClipboardItem is not defined.",
+          "The answer must distinguish probable cause, developer checks, user workaround, and structural fix.",
+          "Provide 3 possible root causes.",
+          "Keep the explanation understandable for non-developers."
+        ],
+        "workflow_expectation": [
+          "Start with the most likely cause.",
+          "Separate temporary workaround from structural fix.",
+          "Do not assume the user knows browser API details."
+        ],
+        "desired_output": [
+          "Probable cause.",
+          "Developer checks.",
+          "Temporary workaround.",
+          "Structural fix."
+        ],
+        "success_criteria": [
+          "The answer is understandable without frontend expertise.",
+          "The answer includes a graceful fallback or workaround.",
+          "The answer does not drift into irrelevant internal details."
+        ]
+      },
+      "prompt": "Role/Context:\nYou are a technical support assistant for a business web application.\n\nGoal:\nExplain and troubleshoot this copy failure in simple language.\n\nConstraints:\n- Observed error: Failed to copy: ReferenceError: ClipboardItem is not defined.\n- The answer must distinguish probable cause, developer checks, user workaround, and structural fix.\n- Provide 3 possible root causes.\n- Keep the explanation understandable for non-developers.\n\nWorkflow Expectation:\n- Start with the most likely cause.\n- Separate temporary workaround from structural fix.\n- Do not assume the user knows browser API details.\n\nDesired Output:\n- Probable cause.\n- Developer checks.\n- Temporary workaround.\n- Structural fix.\n\nSuccess Criteria:\n- The answer is understandable without frontend expertise.\n- The answer includes a graceful fallback or workaround.\n- The answer does not drift into irrelevant internal details.",
+      "score_focus": {
+        "primary_dimensions": [
+          "actionability",
+          "ux_product_polish",
+          "trust"
+        ],
+        "must_fail_if": [
+          "copy_ux_failure",
+          "answer_first_failure"
+        ]
+      }
+    },
+    {
+      "case_id": "staatsblad_delta_consult_change_card",
+      "version": 1,
+      "category": "publication_parsing",
+      "source_basis": "2026-03-09 user feedback rewrite",
+      "risk_tags": [
+        "legal_text_structuring",
+        "no_hallucination",
+        "change_card_output"
+      ],
+      "sections": {
+        "role_context": "You are an assistant that structures Belgian publication and company-change data.",
+        "goal": "Turn a Belgian Staatsblad publication into a compact change card.",
+        "constraints": [
+          "Use only information present in the publication text.",
+          "Do not invent missing fields.",
+          "Explicitly mark uncertainty or ambiguity.",
+          "Extract at least: change type, entity, dates, directors, address change, capital or share information if present, and uncertainties."
+        ],
+        "workflow_expectation": [
+          "Parse the text directly.",
+          "Keep the output compact and operational.",
+          "If a requested field is absent, say it is not specified."
+        ],
+        "desired_output": [
+          "Compact change card.",
+          "Short internal operations checklist after the card."
+        ],
+        "success_criteria": [
+          "The answer distinguishes stated facts from missing information.",
+          "The answer is structured for operations use, not essay-style explanation.",
+          "The answer does not hallucinate legal attributes."
+        ]
+      },
+      "prompt": "Role/Context:\nYou are an assistant that structures Belgian publication and company-change data.\n\nGoal:\nTurn a Belgian Staatsblad publication into a compact change card.\n\nConstraints:\n- Use only information present in the publication text.\n- Do not invent missing fields.\n- Explicitly mark uncertainty or ambiguity.\n- Extract at least: change type, entity, dates, directors, address change, capital or share information if present, and uncertainties.\n- Publication text: By decision of the extraordinary general meeting of 14 February 2025 of Delta Consult BV, with registered office at 9000 Gent, Vlaanderenstraat 10, registered in the Crossroads Bank for Enterprises under number BE 0722.334.991, it was decided with effect from 1 March 2025 to move the registered office to 9000 Gent, Kortrijksesteenweg 55. The resignation of director Jan Peeters was accepted and Ms. Sofie Martens was appointed director for an indefinite duration.\n\nWorkflow Expectation:\n- Parse the text directly.\n- Keep the output compact and operational.\n- If a requested field is absent, say it is not specified.\n\nDesired Output:\n- Compact change card.\n- Short internal operations checklist after the card.\n\nSuccess Criteria:\n- The answer distinguishes stated facts from missing information.\n- The answer is structured for operations use, not essay-style explanation.\n- The answer does not hallucinate legal attributes.",
+      "score_focus": {
+        "primary_dimensions": [
+          "trust",
+          "actionability",
+          "intent"
+        ],
+        "must_fail_if": [
+          "hallucinated_missing_data"
+        ]
+      }
+    },
+    {
+      "case_id": "account_name_disambiguation_b_and_s_enterprise",
+      "version": 1,
+      "category": "disambiguation",
+      "source_basis": "2026-03-09 user feedback rewrite",
+      "risk_tags": [
+        "ambiguity_handling",
+        "avoid_guessing",
+        "entity_resolution"
+      ],
+      "sections": {
+        "role_context": "You are an account-intelligence chatbot that must detect ambiguity in company names and avoid choosing the wrong legal entity.",
+        "goal": "Help the user select the correct entity without assuming one match.",
+        "constraints": [
+          "User asks for information about B&S Enterprise.",
+          "Known possible matches: B&S Enterprise BV, Eeklo, BE 0899.456.210; B&S Enterprise SRL, Brussels, BE 0771.223.904; B and S Enterprises Europe NV, Zaventem, BE 0665.332.118.",
+          "Do not guess the correct match.",
+          "Ask only the minimum disambiguation needed."
+        ],
+        "workflow_expectation": [
+          "Start by stating that the name is ambiguous.",
+          "Give a concise differentiation between the candidates.",
+          "Ask for the smallest next detail needed to choose correctly."
+        ],
+        "desired_output": [
+          "Ambiguity warning.",
+          "Short candidate comparison.",
+          "Minimal next question."
+        ],
+        "success_criteria": [
+          "The answer does not collapse to one company prematurely.",
+          "The answer helps the user disambiguate quickly.",
+          "The answer stays concise and user-facing."
+        ]
+      },
+      "prompt": "Role/Context:\nYou are an account-intelligence chatbot that must detect ambiguity in company names and avoid choosing the wrong legal entity.\n\nGoal:\nHelp the user select the correct entity without assuming one match.\n\nConstraints:\n- User asks for information about B&S Enterprise.\n- Known possible matches: B&S Enterprise BV, Eeklo, BE 0899.456.210; B&S Enterprise SRL, Brussels, BE 0771.223.904; B and S Enterprises Europe NV, Zaventem, BE 0665.332.118.\n- Do not guess the correct match.\n- Ask only the minimum disambiguation needed.\n\nWorkflow Expectation:\n- Start by stating that the name is ambiguous.\n- Give a concise differentiation between the candidates.\n- Ask for the smallest next detail needed to choose correctly.\n\nDesired Output:\n- Ambiguity warning.\n- Short candidate comparison.\n- Minimal next question.\n\nSuccess Criteria:\n- The answer does not collapse to one company prematurely.\n- The answer helps the user disambiguate quickly.\n- The answer stays concise and user-facing.",
+      "score_focus": {
+        "primary_dimensions": [
+          "trust",
+          "autonomy",
+          "intent"
+        ],
+        "must_fail_if": [
+          "hallucinated_missing_data",
+          "tool_leakage"
+        ]
+      }
+    },
+    {
+      "case_id": "priority_ranking_opsharbor_to_fincore",
+      "version": 1,
+      "category": "prioritization",
+      "source_basis": "2026-03-09 user feedback rewrite",
+      "risk_tags": [
+        "intent_scoring",
+        "ranking_rationale",
+        "sales_actionability"
+      ],
+      "sections": {
+        "role_context": "You are a B2B sales-prioritization assistant.",
+        "goal": "Rank accounts by likely purchase intent within 90 days.",
+        "constraints": [
+          "Use only the signals provided.",
+          "Do not invent missing triggers.",
+          "Explain why the ranking makes sense."
+        ],
+        "workflow_expectation": [
+          "Rank from highest to lowest intent.",
+          "Use recent explicit demand signals more heavily than weak indirect signals.",
+          "Mention the biggest risk or limitation for each account."
+        ],
+        "desired_output": [
+          "Ordered ranking.",
+          "Reason for each position.",
+          "Short summary of the strongest and weakest signals."
+        ],
+        "success_criteria": [
+          "The ranking is justified by the provided evidence.",
+          "The answer distinguishes hard demand signals from softer fit signals.",
+          "The answer is directly usable by sales operations."
+        ]
+      },
+      "prompt": "Role/Context:\nYou are a B2B sales-prioritization assistant.\n\nGoal:\nRank accounts by likely purchase intent within 90 days.\n\nConstraints:\n- Use only the signals provided.\n- Do not invent missing triggers.\n- Explain why the ranking makes sense.\n- Accounts:\n  - CloudAxis BV: 24 employees, website says outsourced IT support, not an existing customer, email present, 2 job posts for system administrator.\n  - FinCore NV: 180 employees, existing ex-customer, no phone, recent open opportunity lost.\n  - NorthByte BV: 11 employees, website says cybersecurity audit, email and phone present, no CRM history.\n  - Delta Workspace BV: 47 employees, outdated website, competitor support contract mentioned in sales note.\n  - OpsHarbor BV: 33 employees, recent website update around managed cloud, open demo request 3 weeks ago.\n\nWorkflow Expectation:\n- Rank from highest to lowest intent.\n- Use recent explicit demand signals more heavily than weak indirect signals.\n- Mention the biggest risk or limitation for each account.\n\nDesired Output:\n- Ordered ranking.\n- Reason for each position.\n- Short summary of the strongest and weakest signals.\n\nSuccess Criteria:\n- The ranking is justified by the provided evidence.\n- The answer distinguishes hard demand signals from softer fit signals.\n- The answer is directly usable by sales operations.",
+      "score_focus": {
+        "primary_dimensions": [
+          "intent",
+          "actionability",
+          "trust"
+        ],
+        "must_fail_if": [
+          "hallucinated_missing_data"
+        ]
+      }
+    }
+  ]
+}
