@@ -4,6 +4,44 @@
 
 ---
 
+## 2026-03-09 (Enrichment Priority Reordered)
+
+### Task: Promote enrichment to the top priority and lock AI descriptions to Ollama
+
+**Type:** docs_or_process_only
+**Status:** COMPLETE
+**Timestamp:** 2026-03-09 18:05 CET
+**Git Head:** `30d0d09`
+
+**Summary:**
+The user changed the priority order again: enrichment is now the top operational focus, and AI descriptions should be generated with Ollama rather than Azure OpenAI. I rechecked the current runner state before updating the docs: geocoding and website discovery are still running, CBE completed successfully on 2026-03-08, and there is no active AI-description runner in the current process list. The active queue, backlog, and live-state docs now reflect that priority shift.
+
+**Files Changed:**
+- Updated `NEXT_ACTIONS.md`
+- Updated `BACKLOG.md`
+- Updated `STATUS.md`
+- Updated `PROJECT_STATE.yaml`
+- Updated `WORKLOG.md`
+
+**Verification:**
+```bash
+pgrep -af "run_enrichment|enrich_companies|website|geocod|cbe|supervisor"
+tail -n 12 logs/enrichment/cbe_running_20260308_140526.log
+cat logs/enrichment/cbe_running_cursor.json
+tail -n 12 logs/enrichment/geocoding_parallel_20260308_140529.log
+cat logs/enrichment/geocoding_parallel_cursor.json
+tail -n 8 logs/enrichment/website_discovery_20260308_140530.log
+cat logs/enrichment/website_discovery_cursor.json
+```
+
+**Observed Results:**
+- `CBE` is no longer active because it completed successfully on 2026-03-08 15:07 CET
+- `geocoding` is still active and its cursor updated on 2026-03-09
+- `website discovery` is still active and its cursor updated on 2026-03-09
+- No active AI-description runner is currently running; the next description phase should use `Ollama`
+
+---
+
 ## 2026-03-09 (Operator Eval Foundation And Chat Product Roadmap Update)
 
 ### Task: Start the operator-eval backlog and then record new multi-user auth/UI requirements

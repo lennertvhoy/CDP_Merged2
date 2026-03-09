@@ -9,6 +9,33 @@
 
 ## Active
 
+### P0: Enrichment Coverage And Optimization
+
+**Status:** ACTIVE
+**Discovered:** 2026-03-09 via direct user instruction, with live runner recheck the same session
+**Last Updated:** 2026-03-09 18:05 CET
+**Severity:** CRITICAL
+**Goal:** Make enrichment the top operational priority and ensure the background enrichment setup is both effective and aligned with the current cost/privacy direction.
+
+#### Current Observed State
+
+- `CBE` completed successfully on `2026-03-08 15:07 CET`.
+- `geocoding` is still running; latest cursor update observed this session: `2026-03-09 14:42 CET`.
+- `website discovery` is still running; latest cursor update observed this session: `2026-03-09 17:16 CET`.
+- No active AI-description runner was seen in the live process list during the same-session check.
+
+#### Accepted Decisions
+
+- Enrichment is now the top priority.
+- AI descriptions should be generated with `Ollama`, not Azure OpenAI.
+- The next AI-description work should optimize coverage and restartability, not reopen Azure cost.
+
+#### Next action
+
+1. Re-verify the current PostgreSQL enrichment coverage from the database, not only from runner logs.
+2. Restart or schedule the AI-description phase using `DESCRIPTION_ENRICHER=ollama`.
+3. Review whether geocoding and website discovery are progressing at the right chunk sizes and failure rates for sustained local operation.
+
 ### P0: Demo Polish And Source-Of-Truth Hardening
 
 **Status:** ✅ COMPLETE v3.0; v3.2 local polish pass exported and positively reviewed. Remaining work is now a focused v3.3 credibility pass: timestamp alignment, count semantics, screenshot/prose label alignment, maturity wording tightening, API/code-page styling, PDF export quality, and a reviewer-friendly conformity/acceptance appendix.
@@ -709,18 +736,6 @@ Resume when:
 
 Next action:
 1. Re-check the latest Azure revision and deployment health only after the user reopens the cloud path.
-
-### P1: Reconcile Canonical Enrichment Truth And Runner Behavior
-
-**Status:** PAUSED
-**Paused:** 2026-03-06
-**Reason:** The enrichment runners are currently active and PostgreSQL remains usable; user priority shifted to chatbot performance work.
-
-Resume when:
-- a runner exits non-zero, PostgreSQL-backed counts stop moving, or chatbot work no longer blocks higher-value progress
-
-Next action:
-1. If website, geocoding, or CBE supervision degrades, resume runner-specific verification from the current logs and rerun canonical PostgreSQL counts.
 
 ### P1: Chatbot Performance Tracing
 
