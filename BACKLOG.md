@@ -2,7 +2,7 @@
 
 **Platform:** AZURE (VMs, Container Apps, OpenAI)  
 **Architecture:** Source systems PII truth + PostgreSQL intelligence truth + Tracardi activation runtime + AI chatbot  
-**Last Updated:** 2026-03-09 (v3.3 guide polish remains open; keep the stack local for now, but before any colleague-facing online rollout add Microsoft Entra work-account auth, Azure OpenAI, per-user chat history, and a more ChatGPT-like product surface)
+**Last Updated:** 2026-03-09 (v3.3 guide polish remains open; enrichment counts were rechecked from PostgreSQL, `description_ollama` was restarted locally, and the current geocoding batch now needs a stall check before any broader optimization claims)
 **Purpose:** Medium-term roadmap from the current repo state to a credible demo first and production readiness later
 
 ## How To Use This File
@@ -315,14 +315,14 @@ poetry run python scripts/test_poc_activation.py --mock
 
 | Priority | Item | Status | What still needs to happen |
 |----------|------|--------|-----------------------------|
-| Critical | Finish phased enrichment on the 1.94M-company dataset | Top priority | CBE is complete; keep geocoding and website discovery moving, then restart AI-description phases with `Ollama` and checkpoints/resumability |
-| Critical | Re-verify actual enriched counts from PostgreSQL after each phase | Pending | Replace stale/conflicting progress notes with DB-verified counts and percentages |
-| Critical | Move the continuous enrichment loop from ad hoc runtime state to a repo-managed, restartable workflow | Partial | CBE and geocoding runners are repo-managed and stable; website discovery continuous runner decision made, needs implementation |
+| Critical | Finish phased enrichment on the 1.94M-company dataset | Top priority | CBE is complete; keep website discovery and `description_ollama` moving, and resolve the fresh geocoding stall risk before claiming that phase is healthy |
+| Critical | Re-verify actual enriched counts from PostgreSQL after each phase | Partial | 2026-03-09 direct counts now show `website_url=64,900`, `geo_latitude=52,978`, `ai_description=913`, and `cbe_enriched=1,252,019`; keep repeating this after each material runner change |
+| Critical | Move the continuous enrichment loop from ad hoc runtime state to a repo-managed, restartable workflow | Partial | CBE, website discovery, and AI descriptions are now repo-managed and restartable; geocoding is also repo-managed, but the current 10,000-row batch showed a fresh stall risk |
 | High | Add per-phase cost controls and active-company prioritization | Pending | Avoid burning API budget on low-value records first |
 | High | Add a separate/API-backed path for NACE-less CBE residuals | Pending | The main local-only selector now excludes `688,581` rows lacking both `industry_nace_code` and `enrichment_data.all_nace_codes`; decide whether to backfill them from a richer source/API or keep them explicitly deferred |
 | High | Classify enriched fields by trust, freshness, and production usability | Pending | Distinguish KBO import data from enrichment-derived facts |
 | High | Add dashboards and alerts for enrichment lag, failures, and throughput | Pending | Make long-running enrichment operationally visible |
-| High | Standardize AI-description enrichment on Ollama | Pending | Use `DESCRIPTION_ENRICHER=ollama` as the default runtime path, tune chunk sizes/model choice, and keep Azure OpenAI out of this phase |
+| High | Standardize AI-description enrichment on Ollama | Partial | `DESCRIPTION_ENRICHER=ollama` is already the default local runtime path and the `description_ollama` supervisor was relaunched on 2026-03-09; next work is throughput tuning and better runtime visibility, not provider selection |
 
 **Exit criteria:**
 - Verified coverage targets recorded in `PROJECT_STATE.yaml`
