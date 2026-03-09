@@ -3,22 +3,21 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-09T18:05:00+01:00
+  updated_at: 2026-03-09T17:31:00+01:00
   updated_by: agent
   repo_head:
-    value: fe9d51a
-    status: reported
-    checked_at: 2026-03-07T18:44:00+01:00
+    value: 9cbc5cf
+    status: observed
+    checked_at: 2026-03-09T17:04:00+01:00
     evidence:
-      - git log --oneline --decorate -n 3 -> f0ce453 (HEAD -> main) docs(state): refresh repo metadata after local segment fix
-      - Additional local commits may supersede this block; use the handoff or a fresh `git log` for the exact final SHA.
+      - git log --oneline --decorate -n 5 -> 9cbc5cf (HEAD -> main) docs(roadmap): prioritize enrichment and ollama descriptions
   branch:
     value: main
     status: observed
-    checked_at: 2026-03-07T18:43:00+01:00
+    checked_at: 2026-03-09T17:04:00+01:00
     evidence:
-      - git status --short -> M BACKLOG.md; M infra/scripts/shutdown-restart-test.sh; M scripts/*; M src/ingestion/kbo_ingest.py; ?? .full_import.pid; ?? output/agent_artifacts/software-companies-in-brussels_20260307_171512.markdown; ?? scripts/test_chatbot_10k_quality.py
-      - git log --oneline --decorate -n 3 -> 0001ac6 (HEAD -> main)
+      - git status --short -> (clean)
+      - git log --oneline --decorate -n 5 -> 9cbc5cf (HEAD -> main) docs(roadmap): prioritize enrichment and ollama descriptions
   live_docs:
     status: observed
     checked_at: 2026-03-06T13:49:38+01:00
@@ -564,13 +563,18 @@ current_state:
     note: Same-day local verification confirmed the default compose-managed stack now boots PostgreSQL, Tracardi, and the chatbot locally with healthy `/healthz` and `/readinessz` probes. Full-dataset counts, aggregation, email-domain filtering, single-NACE-code aliasing, local artifact generation, and the updated quick demo smoke all passed locally. Tool exposure now includes create_data_artifact, get_data_coverage_stats, export_segment_to_csv, and email_segment_export for the local operator/runtime path, and canonical PostgreSQL segment creation/stats/export now work locally after the missing support tables were bootstrapped. Azure deployment follow-up is intentionally deferred while the user keeps the project in local-only cost-control mode.
   enrichment:
     status: observed
-    verified_at: 2026-03-09T18:00:00+01:00
+    verified_at: 2026-03-09T17:31:00+01:00
     health_check_summary: |
-      Same-session runner/process recheck on 2026-03-09 showed:
+      Same-session PostgreSQL + process recheck on 2026-03-09 showed:
+      - Canonical coverage now reads total=1940603, website_url=64900,
+        geo_latitude=52978, ai_description=913, cbe_enriched=1252019
       - CBE completed successfully on 2026-03-08 15:07 CET
-      - Geocoding is still running; cursor file updated at 2026-03-09T13:42:50+00:00
-      - Website discovery is still running; cursor file updated at 2026-03-09T16:16:34+00:00
-      - No active AI-description runner was observed in the live process list
+      - Geocoding supervisor is still present, but the next 10000-row batch launched
+        after the 14:42 CET completion has produced no fresh log output; stall risk observed
+      - Website discovery is still active; the latest completed chunk finished at
+        2026-03-09 17:24 CET with 62 discoveries and the next batch child was observed live
+      - AI-description enrichment was restarted at 2026-03-09 17:26 CET with Ollama;
+        ai_description count rose from 706 to 913 within the first few minutes
       Root cause for the earlier supervisor failure (stale .openclaw path + missing
       .env.local sourcing) remains fixed by commit 3eb9ec1.
     canonical_target:
@@ -581,19 +585,18 @@ current_state:
       total_companies: 1940603
       industry_nace_code: 1252022
       legal_form: 1176853
-      website_url: 36091
-      geo_latitude: 8609
-      ai_description: 441
+      website_url: 64900
+      geo_latitude: 52978
+      ai_description: 913
+      cbe_enriched: 1252019
       sync_status_pending: 0
       sync_status_enriched: 1940603
-      updated_last_hour: 0
-      updated_last_10_minutes: 0
+      updated_last_hour: 5506
+      updated_last_10_minutes: 1815
       note: |
-        2026-03-08 health check: website_url slightly lower (35,844 vs 36,091), 
-        geo_latitude showing 0 (may be in JSONB enrichment_data column rather than 
-        dedicated column). No updates in last hour because enrichment runners offline
-        since 2026-03-06 due to supervisor script path/config issues (now fixed).
-    count_scope_note: The 2026-03-06 16:57 CET escalated PostgreSQL recheck recorded total=1940603, website_url=36091, geo_latitude=8609, ai_description=0, and updated_last_10_minutes=11697 while CBE, geocoding, and website supervisors all remained active. The second supervised outside-sandbox website chunk had already completed successfully before this recount; total_companies, industry_nace_code, legal_form, updated_last_hour, and sync_status counts otherwise remain from earlier 2026-03-06 queries.
+        2026-03-09 17:31 CET direct PostgreSQL recheck. These field-level counts are
+        the authoritative enrichment progress signal; sync_status remains misleading.
+    count_scope_note: The 2026-03-09 17:31 CET direct PostgreSQL recheck supersedes the earlier exact coverage snapshot for current-state reporting: total=1940603, website_url=64900, geo_latitude=52978, ai_description=913, cbe_enriched=1252019, updated_last_hour=5506, updated_last_10_minutes=1815. Earlier 2026-03-06 and 2026-03-08 count lines remain historical evidence only.
     runner_state:
       cbe:
         status: completed
@@ -610,27 +613,29 @@ current_state:
         deferred_no_usable_nace_rows: 688581
         note: Latest supervisor log shows successful completion rather than an active run.
       geocoding:
-        status: running
+        status: stall_risk_observed
         mode: repo_supervised_cursor_runner
         restarted_at: 2026-03-08T14:05:29+01:00
         supervisor_pid: 1308025
         current_cursor: 0fb9ee37-0134-484d-be5b-0f17c9faf300
         cursor_updated_at: 2026-03-09T13:42:50.014537+00:00
+        current_batch_pid: 2679323
         recent_chunk_enrichments:
           - 7979
         explicit_429_lines_in_new_log: 0
-        note: Current log shows 7979 geocoding enrichments, 2021 skipped, 0 failed in the latest observed chunk summary.
+        note: Latest completed chunk ended at 2026-03-09 14:42:49 CET with 7979 enrichments, 2021 skipped, and 0 failed. The next batch process stayed alive but produced no fresh log output through the 17:25 CET recheck, so this runner should be treated as stalled until revalidated or restarted.
       website_discovery:
         status: running
         mode: repo_supervised_cursor_runner
         restarted_at: 2026-03-08T14:05:30+01:00
         supervisor_pid: 1308060
-        current_cursor: 10f400bc-bf0d-4a0c-9964-97fecc57f2b4
-        cursor_updated_at: 2026-03-09T16:16:34.155890+00:00
-        latest_verified_website_url_count: 35844
-        latest_observed_website_discoveries: 55
+        current_cursor: 110ecde7-2da5-40b8-a3ad-6211e95526af
+        cursor_updated_at: 2026-03-09T16:28:26.992867+00:00
+        current_batch_pid: 2842536
+        latest_verified_website_url_count: 64900
+        latest_observed_website_discoveries: 62
         current_cursor_file: logs/enrichment/website_discovery_cursor.json
-        note: Current log still advances and shows zero errors in the latest observed chunk summary.
+        note: Latest completed chunk ended at 2026-03-09 17:24:10 CET with 62 discoveries and zero failed rows; a fresh child batch was observed active immediately after that completion.
     ai_description_enrichers:
       azure_openai:
         status: available_not_preferred_for_current_phase
@@ -673,12 +678,23 @@ current_state:
           status: working_in_production
     ai_description_runtime:
       status: observed
-      checked_at: 2026-03-09T18:00:00+01:00
-      active_runner: false
+      checked_at: 2026-03-09T17:31:00+01:00
+      active_runner: true
+      runner_name: description_ollama
+      supervisor_pid: 2844752
+      chunked_pid: 2844758
+      current_batch_pid: 2844792
       preferred_provider: ollama
+      observed_count_before_restart: 706
+      observed_count_after_restart: 913
+      recent_updates_last_5_minutes: 207
+      pending_with_nace: 1251109
       evidence:
-        - pgrep -af "run_enrichment|enrich_companies|description" showed no active AI-description enrichment process
+        - pgrep -af "description_ollama|enrich_companies_chunked.py --enrichers description|enrich_companies_batch.py --enrichers description|ollama serve" showed the Ollama service plus active description supervisor, chunked runner, and batch worker
+        - setsid env ENRICHERS=description RUN_NAME=description_ollama CHUNK_SIZE=1000 BATCH_SIZE=20 bash scripts/run_enrichment_persistent.sh
+        - psql "$DATABASE_URL" direct count recheck -> ai_description rose from 706 before launch to 913 after launch, with 207 description rows updated in the last 5 minutes
         - user instruction on 2026-03-09 set AI descriptions to Ollama for the active priority phase
+      note: The first supervised chunk was still in progress at this snapshot, so the cursor/log file had not yet emitted a completed-chunk summary.
     truth_notes:
       - sync_status_does_not_equal_field_complete_enrichment
       - canonical_sql_counts_override_stale_dashboard_or_loop_narratives
@@ -1268,13 +1284,29 @@ active_problems:
     discovered_at: 2026-03-06
     summary: The canonical companies table shows every row as sync_status enriched while website, geocoding, and AI-description coverage remain sparse.
     evidence:
-      - Same-day canonical counts still show sync_status_pending=0 and sync_status_enriched=1940603 while website_url=35922, geo_latitude=4142, and ai_description=0.
+      - 2026-03-09 17:31 CET canonical counts still show sync_status_pending=0 and sync_status_enriched=1940603 while website_url=64900, geo_latitude=52978, and ai_description=913.
     affects:
       - enrichment_monitoring
       - progress_reporting
       - operator_confidence
     owner: agent
     next_action: Keep progress reporting anchored to canonical field counts instead of sync_status alone.
+  geocoding_runner_stall_risk_2026_03_09:
+    status: observed
+    severity: high
+    discovered_at: 2026-03-09
+    summary: The repo-managed geocoding supervisor completed a 10000-row chunk at 2026-03-09 14:42 CET, but the next batch child has remained alive without any fresh log output through the 17:25 CET recheck.
+    evidence:
+      - pgrep -af "run_enrichment|enrich_companies|website|geocod|cbe|supervisor|ollama" showed active geocoding supervisor and batch processes after the 14:42 CET chunk completion.
+      - ps -p 1308025,1308031,2679323 -o pid,ppid,etime,%cpu,%mem,stat,cmd -> current geocoding batch pid 2679323 present for 02:42:23 in state Dl at the time of the recheck.
+      - tail -n 60 logs/enrichment/geocoding_parallel_20260308_140529.log -> latest completed chunk ended at 2026-03-09 14:42:49 CET with 7979 enrichments, 2021 skipped, 0 failed.
+      - stat -c '%y %n' logs/enrichment/geocoding_parallel_20260308_140529.log logs/enrichment/geocoding_parallel_cursor.json -> both files last updated at approximately 2026-03-09 14:42:50 CET.
+    affects:
+      - enrichment_completeness
+      - geocoding_runner_confidence
+      - progress_reporting
+    owner: agent
+    next_action: Recheck the stuck batch from the current cursor, then restart or reduce the geocoding chunk size if the process is still stalled.
   postgresql_search_min_start_date_ignored:
     status: observed
     severity: medium
@@ -1330,8 +1362,10 @@ active_problems:
     status: observed
     severity: high
     discovered_at: 2026-03-06
-    summary: Website coverage is still low overall, but outside-sandbox direct batches plus two supervised 250-row chunks moved canonical website_url from 35922 to 36091. The remaining issue is low overall coverage, not immediate runner viability.
+    summary: Website coverage is still low overall, but the 2026-03-09 PostgreSQL recheck now shows canonical website_url at 64900 and the repo-managed website supervisor is still completing 250-row chunks. The remaining issue is low overall coverage, not immediate runner viability.
     evidence:
+      - 2026-03-09 17:31 CET PostgreSQL recheck recorded website_url=64900 (~3.35% of 1.94M companies).
+      - 2026-03-09 17:24 CET website log tail showed a completed 250-row chunk with 62 discoveries and 0 failed rows.
       - 2026-03-06 13:59 CET PostgreSQL recheck still recorded website_url=35922 while geo_latitude rose to 4142.
       - 2026-03-06 10:35 CET log showed website discovery processed 1000, discovered 78 websites (7.8% success rate).
       - Estimated ~1.3M companies need scanning to approach saturation at current selector criteria.
@@ -1573,7 +1607,7 @@ active_problems:
       - business_case_alignment
     owner: agent
     next_action:
-      - Latest local guide export is `docs/ILLUSTRATED_GUIDE_v3.2.pdf`, with the cover-page, CSV-proof, and wording cleanup verified locally
+      - Latest local guide export is `docs/illustrated_guide/ILLUSTRATED_GUIDE.pdf`, with the cover-page, CSV-proof, and wording cleanup verified locally
       - Next guide cleanup step is a focused v3.3 credibility pass: tighten the Autotask maturity wording, refresh the local event-processor daemon before claiming `/api/scoring-model` as live-runtime evidence, improve the API/code-page styling plus PDF text-layer/export quality, and then add a short business-case conformity/acceptance-criteria appendix without changing the verified content claims
   local_compose_projection_tables_missing:
     status: resolved

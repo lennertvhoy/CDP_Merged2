@@ -5,7 +5,7 @@
 **Date:** 2026-03-09
 **Owner:** AI Agent / Developer
 **Purpose:** Active queue only. Older completions now live in `WORKLOG.md`; roadmap items live in `BACKLOG.md`.
-**Canonical Counts:** `total=1,940,603; website_url=36,091; geo_latitude=8,609; ai_description=441`
+**Canonical Counts:** `total=1,940,603; website_url=64,900; geo_latitude=52,978; ai_description=913; cbe_enriched=1,252,019`
 
 ## Active
 
@@ -13,16 +13,17 @@
 
 **Status:** ACTIVE
 **Discovered:** 2026-03-09 via direct user instruction, with live runner recheck the same session
-**Last Updated:** 2026-03-09 18:05 CET
+**Last Updated:** 2026-03-09 17:31 CET
 **Severity:** CRITICAL
 **Goal:** Make enrichment the top operational priority and ensure the background enrichment setup is both effective and aligned with the current cost/privacy direction.
 
 #### Current Observed State
 
+- Fresh PostgreSQL counts at `2026-03-09 17:31 CET`: `website_url=64,900`, `geo_latitude=52,978`, `ai_description=913`, `cbe_enriched=1,252,019`.
 - `CBE` completed successfully on `2026-03-08 15:07 CET`.
-- `geocoding` is still running; latest cursor update observed this session: `2026-03-09 14:42 CET`.
-- `website discovery` is still running; latest cursor update observed this session: `2026-03-09 17:16 CET`.
-- No active AI-description runner was seen in the live process list during the same-session check.
+- `geocoding` is repo-supervised but the current `10,000`-row batch has shown no new log output since the previous chunk completed at `2026-03-09 14:42 CET`; treat this as a stall risk until rechecked.
+- `website discovery` is still active; latest completed chunk ended at `2026-03-09 17:24 CET` with `62` discoveries, and the cursor advanced again to `2026-03-09 17:28 CET`.
+- `description_ollama` was started at `2026-03-09 17:26 CET`; canonical `ai_description` count rose from `706` pre-launch to `913`, with `207` description rows updated in the last `5` minutes.
 
 #### Accepted Decisions
 
@@ -32,9 +33,9 @@
 
 #### Next action
 
-1. Re-verify the current PostgreSQL enrichment coverage from the database, not only from runner logs.
-2. Restart or schedule the AI-description phase using `DESCRIPTION_ENRICHER=ollama`.
-3. Review whether geocoding and website discovery are progressing at the right chunk sizes and failure rates for sustained local operation.
+1. Investigate or restart the current geocoding batch from cursor `0fb9ee37-0134-484d-be5b-0f17c9faf300` if the stall risk is still present on the next recheck.
+2. Let the restarted `description_ollama` runner finish its first chunk, then capture cursor/log throughput and tune chunk size only if needed.
+3. Keep website discovery monitored from PostgreSQL counts plus chunk logs, not just the supervisor process list.
 
 ### P0: Demo Polish And Source-Of-Truth Hardening
 
@@ -42,7 +43,7 @@
 **Discovered:** 2026-03-08 (initial audit), reopened 2026-03-08 via direct user feedback and source-of-truth review
 **Last Updated:** 2026-03-08 23:24 CET
 **Severity:** HIGH
-**Guide:** `docs/ILLUSTRATED_GUIDE.md` / `docs/ILLUSTRATED_GUIDE_v3.2.pdf` local export
+**Guide:** `docs/ILLUSTRATED_GUIDE.md` / `docs/illustrated_guide/ILLUSTRATED_GUIDE.pdf` local export
 **User Feedback:** v3.2 is the best version so far: good as an illustrated evidence guide, credible but not perfect as a source-of-truth support document, and aligned with the core CDP+AI POC slice. The main remaining blockers are mixed-year timestamps, one screenshot/prose naming mismatch, still-flat API/code pages, PDF text-layer/export quality, and the lack of a reviewer-friendly conformity matrix for the business-case acceptance criteria.
 
 #### Accepted Decisions
