@@ -2,7 +2,7 @@
 
 **Platform:** AZURE (VMs, Container Apps, OpenAI)  
 **Architecture:** Source systems PII truth + PostgreSQL intelligence truth + Tracardi activation runtime + AI chatbot  
-**Last Updated:** 2026-03-09 (v3.3 guide polish remains open; new user feedback raised the priority of self-contained eval prompts, answer-first user mode, and copy/export UX regression coverage)
+**Last Updated:** 2026-03-09 (v3.3 guide polish remains open; user feedback now also fixes the cloud roadmap: keep the stack local for now, but reintroduce Microsoft Entra ID auth and Azure OpenAI before any public exposure)
 **Purpose:** Medium-term roadmap from the current repo state to a credible demo first and production readiness later
 
 ## How To Use This File
@@ -27,9 +27,13 @@ Current constraints that shape this roadmap:
 - no Tracardi license yet
 - Azure budget is approximately `EUR 150/month`
 - Azure deployment currently PAUSED for cost control (local-only mode active)
+- Azure usage limit is reported reached until `2026-03-14`, so new Azure work is blocked until that reset
 - **DEMO ENVIRONMENTS AVAILABLE:** Teamleader and Exact demo envs accessible for integration
 - Autotask already has a production-capable client/sync path plus local unified-360 linkage, but the currently verified dataset still runs in demo mode until vendor access is granted
 - Resend is the accepted email activation platform for the current POC; Flexmail parity is not a near-term blocker unless the user explicitly reopens it
+- do **not** put the project online before Microsoft Entra ID auth exists
+- when Azure work resumes, limit the first scoped re-entry to `Entra auth + Azure OpenAI`; keep PostgreSQL, Tracardi, and the rest of the runtime local
+- longer-term deployment target is the user's server farm, not a return to full Azure app hosting
 - the user must do the final verification and wants at least one stable week before sign-off
 
 Near-term planning rule:
@@ -197,6 +201,24 @@ poetry run python scripts/test_poc_activation.py --mock
 - Eval prompts should be self-contained by default so each test still works if the previous conversation turns are wiped.
 - The eval bank should include the visible product-failure cases from the screenshots, especially the `ClipboardItem is not defined` copy failure and export flows that return an internal path instead of a real download.
 - Future scoring should separate `intent`, `autonomy`, `trust`, `actionability`, and `UX/product polish` so strong analysis does not hide weak operator experience.
+
+### Milestone 0B: Privacy-Critical Hybrid Azure Re-Entry
+
+**Why this matters:** The user does not want to put the project online until authentication is handled through Microsoft Entra ID and the public-facing LLM path uses Azure OpenAI. At the same time, the rest of the stack should remain local for now, and the longer-term deployment target is an internal server farm.
+
+| Priority | Item | Status | What still needs to happen |
+|----------|------|--------|-----------------------------|
+| Critical | Put Microsoft Entra ID auth in front of any public deployment | Blocked until `2026-03-14` | Scope the minimal Azure identity work: app registration, allowed-tenant/user policy, login/logout flow, callback configuration, and local/runtime secret handling |
+| Critical | Use Azure OpenAI for the public-facing chatbot path | Blocked until `2026-03-14` | Re-enable the Azure OpenAI provider path, verify config/env handling, and document when public mode must use Azure OpenAI rather than a non-Azure provider |
+| High | Keep the rest of the platform local during this phase | Pending | Do not reopen full Azure hosting for PostgreSQL, Tracardi, or the compose stack just to satisfy auth/LLM compliance requirements |
+| High | Define the eventual server-farm deployment target | Pending | Design the non-Azure hosting path for the app/runtime so the compliance-sensitive Azure dependencies stay limited to identity and model access where justified |
+| High | Document the hybrid privacy/compliance posture clearly | Pending | Explain why `Entra auth + Azure OpenAI + local data/runtime` is the interim architecture and what still remains local vs cloud-managed |
+
+**Exit criteria:**
+- No public URL exists without Microsoft Entra ID authentication in front of it
+- Azure OpenAI is the active provider for the public-facing chatbot mode
+- PostgreSQL, Tracardi, and the remaining runtime stay local until the server-farm deployment path is ready
+- The hybrid boundary is documented clearly enough that future sessions do not accidentally reopen full Azure hosting
 
 ### Milestone 0: Credible Demo Under Current Constraints
 

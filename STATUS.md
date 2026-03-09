@@ -2,12 +2,13 @@
 
 **Platform:** Azure target architecture with local-only execution mode
 **Current Execution Mode:** Local-only (`Azure deployment path paused to save costs`)
-**Last Updated:** 2026-03-08 23:24 CET
+**Last Updated:** 2026-03-09 12:45 CET
 **Purpose:** Human-readable current snapshot
 **Structured Source:** `PROJECT_STATE.yaml`
 
 ## Current Headline
 
+- `reported` from 2026-03-09 via direct user instruction: **THE NEXT CLOUD PIECES SHOULD BE LIMITED TO ENTRA AUTH + AZURE OPENAI.** Do not put the project online before Microsoft Entra ID auth exists. Keep PostgreSQL, Tracardi, and the rest of the runtime local for now. The user also reported that the Azure usage limit is reached until **March 14, 2026**, so this hybrid cloud step is blocked until that reset. The longer-term hosting target is the user's internal server farm.
 - `observed` from 2026-03-08 23:24 CET: **DEMO 100% READY - Illustrated Guide v3.2 is now the best version so far and credibly proves the core local-only CDP+AI POC slice.** The PDF now opens with a real cover page, the CSV evidence page is self-contained around the opened artifact, and the maturity/privacy wording no longer overclaims beyond the evidence tables. The remaining v3.3 blockers are narrower: timestamp consistency, screenshot/prose label alignment, count/maturity precision, API/code-page styling, PDF text-layer/export quality, and acceptance-criteria packaging.
 - `observed` from 2026-03-08 20:06 CET: **EVENT PROCESSOR ALTERNATIVE VERIFIED LOCALLY.** `scripts/cdp_event_processor.py` now passes targeted unit tests, initializes `company_engagement` in PostgreSQL, serves `/health`, `/api/next-best-action/{kbo}`, and `/api/engagement/leads`, and accepts signed Resend-style webhook events. Verified outputs: B.B.S. Entreprise reached `engagement_score=15` after `email.opened` + `email.clicked` with support-expansion/re-activation recommendations, and Accountantskantoor Dubois produced cross-sell + multi-division recommendations through the same processor.
 - `observed` from 2026-03-08 21:45 CET: **TRACARDI WORKFLOW RUNTIME IS BLOCKED BY CE LIMITATION.** Investigation confirmed that Tracardi Community Edition does not support production workflow execution. The `/deploy/{path}` endpoint is licensed (premium), and rule updates to `production=true`/`running=true` do not persist. Workflow draft screenshots are the maximum verifiable evidence; live execution requires Tracardi Premium or an alternative implementation.
@@ -90,7 +91,7 @@
 
 ## Immediate Focus
 
-1. **Keep the active work local-only** and avoid Azure deployment, Azure smoke, or cloud verification until the user explicitly reopens that path
+1. **Keep the active work local-only** for now; when Azure work resumes after the reported **March 14, 2026** quota reset, scope it narrowly to Microsoft Entra ID auth plus Azure OpenAI instead of reopening full Azure hosting
 2. **Keep Illustrated Guide alignment stable and finish the remaining v3.3 credibility pass**: fix the 2024/2026 timestamp mismatch, add the count-semantics dictionary, finish the CSV integrity proof, tighten maturity wording, improve the API/code-page styling plus PDF export/text-layer quality, and then add a short conformity/acceptance appendix without reopening Azure work
 3. **Treat Resend as the accepted POC activation platform** unless the user later reopens a Flexmail requirement
 4. **Document Tracardi CE limitation** - workflow execution requires Premium license; consider alternative approaches (Python bridge, direct webhook handling) for writeback automation

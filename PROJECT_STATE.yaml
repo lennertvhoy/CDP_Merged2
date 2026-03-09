@@ -3,7 +3,7 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-09T00:31:00+01:00
+  updated_at: 2026-03-09T12:45:00+01:00
   updated_by: agent
   repo_head:
     value: fe9d51a
@@ -80,11 +80,22 @@ current_state:
       - no_tracardi_license_yet
       - azure_budget_about_150_eur_per_month
       - azure_deployment_path_temporarily_paused_to_save_costs
+      - azure_usage_limit_reported_reached_until_2026_03_14
       - no_live_exact_tenant_yet
       - no_live_autotask_tenant_yet
     acceptance:
       - user_final_verification_required
       - one_week_of_user_observed_stability_required_before_signoff
+  cloud_reentry_plan:
+    status: reported
+    decided_at: 2026-03-09
+    summary: The next cloud re-entry should be limited to Microsoft Entra ID authentication and Azure OpenAI for privacy/compliance. Keep PostgreSQL, Tracardi, and the rest of the runtime local for now, and do not put the project online before Entra auth exists.
+    constraints:
+      - no_public_exposure_before_entra_auth
+      - prefer_azure_openai_for_public_facing_mode
+      - keep_remaining_runtime_local_during_this_phase
+      - azure_usage_limit_reported_reached_until_2026_03_14
+      - longer_term_target_is_server_farm_deployment
   deployment:
     status: reported
     verified_at: 2026-03-06T20:09:00+01:00
