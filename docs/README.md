@@ -18,6 +18,7 @@ Use the rest of `docs/` for durable technical references such as:
 - `ILLUSTRATED_GUIDE.md`
 - `ARCHITECTURE_AZURE.md`
 - `ARCHITECTURE_DECISION_RECORD.md`
+- `evals/`
 - `KBO_INGESTION.md`
 - `SECRETS_AUDIT.md`
 - `illustrated_guide/demo_screenshots/`

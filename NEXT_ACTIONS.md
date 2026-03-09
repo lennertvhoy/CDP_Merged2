@@ -111,21 +111,45 @@ Per the latest v3.2 review:
 **Discovered:** 2026-03-09 via direct user instruction
 **Last Updated:** 2026-03-09
 **Severity:** HIGH
-**Goal:** Before the project is put online, add Microsoft Entra ID authentication and use Azure OpenAI for the user-facing chatbot path, while keeping PostgreSQL, Tracardi, and the rest of the runtime local for now.
+**Goal:** Before the project is put online, add Microsoft Entra ID work-account authentication and use Azure OpenAI for the user-facing chatbot path, while keeping PostgreSQL, Tracardi, and the rest of the runtime local for now.
 **Blocker:** The user reported that the Azure usage limit has been reached and only resets on 2026-03-14.
 
 #### Accepted Decisions
 
 - Do **not** put the project online before Entra auth exists.
+- Use colleagues' Microsoft work accounts, not a shared generic login.
 - Reintroduce Azure in a narrow, hybrid way first: `Entra auth + Azure OpenAI`.
 - Keep the rest of the stack local in this phase.
 - Treat the long-term hosting target as the user's server farm, not a return to full Azure app hosting.
 
 #### Next action after 2026-03-14
 
-1. Scope the minimum Azure work needed for Entra auth and Azure OpenAI only.
+1. Scope the minimum Azure work needed for Entra work-account auth and Azure OpenAI only.
 2. Wire the app auth flow and provider configuration without reopening full Azure deployment work.
 3. Verify that the hybrid path is clearly documented as `Azure identity + Azure OpenAI + local runtime`.
+
+---
+
+### P1: Multi-User Chat Experience
+
+**Status:** PENDING
+**Discovered:** 2026-03-09 via direct user instruction
+**Last Updated:** 2026-03-09
+**Severity:** HIGH
+**Goal:** After auth exists, give each colleague a private chatbot workspace with stored conversations, and make the Chainlit interface feel closer to ChatGPT with better affordances and a deliberate web-search capability.
+
+#### Accepted Decisions
+
+- Each colleague should get their own chatbot view and their own conversation history.
+- The product should not rely on a shared or purely thread-ephemeral chat model for colleague testing.
+- The current default Chainlit feel is not the desired colleague-facing finish state.
+- Web search is desirable, but only with explicit privacy/compliance boundaries.
+
+#### Next action
+
+1. Define the minimum data model for users, conversations, messages, thread ownership, titles, and last-active timestamps.
+2. Define the smallest high-leverage UX changes that move the current Chainlit surface toward a more ChatGPT-like experience.
+3. Decide whether web search is opt-in, default-on, or restricted to specific modes, and document the policy.
 
 ---
 
@@ -661,6 +685,18 @@ Evidence:
 5. Keep Resend transport setup as supporting infrastructure
 
 ## Paused
+
+### P1: Operator Eval Harness Automation
+
+**Status:** PAUSED
+**Paused:** 2026-03-09
+**Reason:** A foundation slice was completed (`docs/evals/` standard, starter bank, scorecard template, and validation test), then the user redirected the immediate planning priority toward Entra-based multi-user auth and colleague-facing product requirements.
+
+Resume when:
+- the new auth/product-surface backlog updates are recorded and eval execution becomes the highest-value chatbot quality step again
+
+Next action:
+1. Wire `docs/evals/operator_eval_cases.v1.json` into a local execution path and collect the first baseline scorecard against the live chatbot.
 
 ### P0: Azure Deployment Path
 

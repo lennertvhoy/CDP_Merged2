@@ -4,6 +4,46 @@
 
 ---
 
+## 2026-03-09 (Operator Eval Foundation And Chat Product Roadmap Update)
+
+### Task: Start the operator-eval backlog and then record new multi-user auth/UI requirements
+
+**Type:** app_code
+**Status:** COMPLETE
+**Timestamp:** 2026-03-09 13:20 CET
+**Git Head:** `4d7e568`
+
+**Summary:**
+Built the first concrete operator-eval foundation instead of leaving that backlog item as roadmap text only: added a durable prompt standard, a machine-readable starter bank of self-contained cases, a reusable scorecard template, and a unit test that validates the assets. While doing that, the user redirected the planning scope and asked to record a stronger colleague-facing product direction: Microsoft work-account login per colleague, private conversation history/workspace per user, and a more ChatGPT-like Chainlit surface with explicit web-search planning. The backlog and live planning docs now capture that direction, and further operator-eval automation is paused behind the new priority change.
+
+**Files Changed:**
+- Updated `BACKLOG.md`
+- Updated `NEXT_ACTIONS.md`
+- Updated `PROJECT_STATE.yaml`
+- Updated `STATUS.md`
+- Updated `WORKLOG.md`
+- Updated `docs/README.md`
+- Added `docs/evals/README.md`
+- Added `docs/evals/OPERATOR_EVAL_STANDARD.md`
+- Added `docs/evals/operator_eval_cases.v1.json`
+- Added `docs/evals/operator_eval_scorecard_template.csv`
+- Added `tests/unit/test_operator_eval_assets.py`
+
+**Verification:**
+```bash
+poetry run pytest tests/unit/test_operator_eval_assets.py -q
+python scripts/doc_lint.py
+git diff --check
+```
+
+**Observed Results:**
+- The repo now has a concrete `docs/evals/` foundation for self-contained operator evals instead of backlog text only
+- The v1 eval bank covers search, 360, export UX, copy troubleshooting, publication parsing, disambiguation, and prioritization cases
+- The roadmap now explicitly requires Microsoft work-account login, private per-user chat history, and a more ChatGPT-like colleague-facing surface before broader online rollout
+- Further operator-eval execution work is now recorded as paused so it can resume cleanly after the product-direction update
+
+---
+
 ### Task: Deep repo cleanup pass for docs, handoffs, guide assets, and generated clutter
 
 **Type:** docs_or_process_only
