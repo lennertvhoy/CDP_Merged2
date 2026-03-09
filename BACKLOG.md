@@ -28,9 +28,11 @@ Current constraints that shape this roadmap:
 - Azure budget is approximately `EUR 150/month`
 - Azure deployment currently PAUSED for cost control (local-only mode active)
 - Azure usage limit is reported reached until `2026-03-14`, so new Azure work is blocked until that reset
+- enrichment is now the top operational priority
 - **DEMO ENVIRONMENTS AVAILABLE:** Teamleader and Exact demo envs accessible for integration
 - Autotask already has a production-capable client/sync path plus local unified-360 linkage, but the currently verified dataset still runs in demo mode until vendor access is granted
 - Resend is the accepted email activation platform for the current POC; Flexmail parity is not a near-term blocker unless the user explicitly reopens it
+- AI descriptions should use `Ollama`, not Azure OpenAI
 - do **not** put the project online before Microsoft Entra ID auth exists
 - when Azure work resumes, limit the first scoped re-entry to `Entra auth + Azure OpenAI`; keep PostgreSQL, Tracardi, and the rest of the runtime local
 - colleague-facing rollout should use Microsoft work accounts with per-user chat history/workspace, not a shared chatbot surface
@@ -313,13 +315,14 @@ poetry run python scripts/test_poc_activation.py --mock
 
 | Priority | Item | Status | What still needs to happen |
 |----------|------|--------|-----------------------------|
-| Critical | Finish phased enrichment on the 1.94M-company dataset | In progress | Complete CBE (tightened selector active), geocoding (verified durable), website discovery (continuous runner decision made), phone, and AI-description phases with checkpoints and resumability |
+| Critical | Finish phased enrichment on the 1.94M-company dataset | Top priority | CBE is complete; keep geocoding and website discovery moving, then restart AI-description phases with `Ollama` and checkpoints/resumability |
 | Critical | Re-verify actual enriched counts from PostgreSQL after each phase | Pending | Replace stale/conflicting progress notes with DB-verified counts and percentages |
 | Critical | Move the continuous enrichment loop from ad hoc runtime state to a repo-managed, restartable workflow | Partial | CBE and geocoding runners are repo-managed and stable; website discovery continuous runner decision made, needs implementation |
 | High | Add per-phase cost controls and active-company prioritization | Pending | Avoid burning API budget on low-value records first |
 | High | Add a separate/API-backed path for NACE-less CBE residuals | Pending | The main local-only selector now excludes `688,581` rows lacking both `industry_nace_code` and `enrichment_data.all_nace_codes`; decide whether to backfill them from a richer source/API or keep them explicitly deferred |
 | High | Classify enriched fields by trust, freshness, and production usability | Pending | Distinguish KBO import data from enrichment-derived facts |
 | High | Add dashboards and alerts for enrichment lag, failures, and throughput | Pending | Make long-running enrichment operationally visible |
+| High | Standardize AI-description enrichment on Ollama | Pending | Use `DESCRIPTION_ENRICHER=ollama` as the default runtime path, tune chunk sizes/model choice, and keep Azure OpenAI out of this phase |
 
 **Exit criteria:**
 - Verified coverage targets recorded in `PROJECT_STATE.yaml`
