@@ -14,7 +14,7 @@ on:
   #     - ".dockerignore"
   #     - "README.md"
   #     - "chainlit.md"
-  #     - "poetry.lock"
+  #     - "uv.lock"
   #     - "pyproject.toml"
   #     - "public/**"
   #     - "src/**"
@@ -128,26 +128,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
         with:
-          version: latest
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Cache Poetry virtualenv
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: ${{ runner.os }}-cd-migration-gates-${{ hashFiles('pyproject.toml') }}
+          version: "0.10.4"
+          enable-cache: true
 
       - name: Install dependencies
-        run: poetry install --no-interaction
+        run: uv sync --locked
 
       - name: Run citation/shadow unit gate
         env:
@@ -165,7 +158,7 @@ jobs:
           DATABASE_URL: postgresql://test:test@localhost:5432/test
         run: |
           mkdir -p artifacts
-          poetry run pytest \
+          uv run --frozen pytest \
             tests/unit/test_config.py \
             tests/unit/test_nodes.py \
             tests/unit/test_tools.py \
@@ -191,7 +184,7 @@ jobs:
           LOG_LEVEL: WARNING
           DATABASE_URL: postgresql://test:test@localhost:5432/test
         run: |
-          poetry run pytest \
+          uv run --frozen pytest \
             tests/integration/test_multi_turn_user_stories.py \
             -m integration \
             --junitxml=artifacts/cd-migration-integration-junit.xml \

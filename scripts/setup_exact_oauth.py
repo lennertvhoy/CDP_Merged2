@@ -14,10 +14,10 @@ Prerequisites:
 
 Usage:
     # Step 1: Generate auth URL
-    poetry run python scripts/setup_exact_oauth.py --generate-url
+    uv run python scripts/setup_exact_oauth.py --generate-url
     
     # Step 2: After authorizing and getting code, exchange for tokens
-    poetry run python scripts/setup_exact_oauth.py --exchange-code YOUR_CODE
+    uv run python scripts/setup_exact_oauth.py --exchange-code YOUR_CODE
 """
 
 from __future__ import annotations
@@ -93,7 +93,7 @@ EXACT_BASE_URL=https://start.exactonline.be
     print(f"✅ Credentials saved to {env_path}")
     print()
     print("You can now run:")
-    print("  poetry run python scripts/sync_exact_to_postgres.py --full")
+    print("  uv run python scripts/sync_exact_to_postgres.py --full")
 
 
 def print_setup_instructions() -> None:
@@ -119,7 +119,7 @@ def print_setup_instructions() -> None:
     print("  - Copy the https URL (e.g., https://abc123.ngrok.io)")
     print()
     print("Step 4: Generate Auth URL")
-    print("  - Run: poetry run python scripts/setup_exact_oauth.py --generate-url")
+    print("  - Run: uv run python scripts/setup_exact_oauth.py --generate-url")
     print("  - Or manually build the URL (see docs)")
     print()
     print("Step 5: Authorize")
@@ -130,10 +130,10 @@ def print_setup_instructions() -> None:
     print("  - Copy the 'code' parameter from the URL")
     print()
     print("Step 6: Exchange Code for Tokens")
-    print("  - Run: poetry run python scripts/setup_exact_oauth.py --exchange-code YOUR_CODE")
+    print("  - Run: uv run python scripts/setup_exact_oauth.py --exchange-code YOUR_CODE")
     print()
     print("Step 7: Test Sync")
-    print("  - Run: poetry run python scripts/sync_exact_to_postgres.py --full")
+    print("  - Run: uv run python scripts/sync_exact_to_postgres.py --full")
     print()
 
 
@@ -184,7 +184,7 @@ def main() -> int:
             print("Error: --client-id and --redirect-uri are required")
             print()
             print("Example:")
-            print("  poetry run python scripts/setup_exact_oauth.py --generate-url \\")
+            print("  uv run python scripts/setup_exact_oauth.py --generate-url \\")
             print("    --client-id YOUR_CLIENT_ID \\")
             print("    --redirect-uri https://abc123.ngrok.io/callback/exact")
             return 1
@@ -206,7 +206,7 @@ def main() -> int:
         print()
         print("After authorizing, copy the 'code' from the redirect URL")
         print("and run:")
-        print(f"  poetry run python scripts/setup_exact_oauth.py --exchange-code CODE \\")
+        print(f"  uv run python scripts/setup_exact_oauth.py --exchange-code CODE \\")
         print(f"    --client-id {args.client_id} \\")
         print(f"    --client-secret YOUR_SECRET \\")
         print(f"    --redirect-uri {args.redirect_uri}")

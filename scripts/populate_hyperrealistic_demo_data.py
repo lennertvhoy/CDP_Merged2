@@ -14,9 +14,9 @@ This provides credible data for:
 - ROI tracking examples
 
 Usage:
-    poetry run python scripts/populate_hyperrealistic_demo_data.py --dry-run  # Preview
-    poetry run python scripts/populate_hyperrealistic_demo_data.py           # Execute
-    poetry run python scripts/populate_hyperrealistic_demo_data.py --reset   # Clear first
+    uv run python scripts/populate_hyperrealistic_demo_data.py --dry-run  # Preview
+    uv run python scripts/populate_hyperrealistic_demo_data.py           # Execute
+    uv run python scripts/populate_hyperrealistic_demo_data.py --reset   # Clear first
 """
 
 from __future__ import annotations
@@ -768,7 +768,7 @@ async def main() -> int:
         else:
             print("\n✅ Demo data population complete!")
             print("\nNext steps:")
-            print("  1. Sync Teamleader: poetry run python scripts/sync_teamleader_to_postgres.py --full")
+            print("  1. Sync Teamleader: uv run python scripts/sync_teamleader_to_postgres.py --full")
             print("  2. Test 360° view: Query 'Show me TechVision Solutions'")
             print("  3. Create segment: 'Software companies in Brussels'")
             print("  4. Activate to Resend: Push segment and capture screenshot")

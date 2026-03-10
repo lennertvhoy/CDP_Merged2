@@ -24,7 +24,7 @@ The goal is to make chatbot evaluation reproducible even when conversation histo
 Prepare a review bundle with:
 
 ```bash
-poetry run python scripts/prepare_operator_eval_run.py \
+uv run python scripts/prepare_operator_eval_run.py \
   --output-dir output/operator_eval_runs \
   --model-provider openai \
   --model-name gpt-5

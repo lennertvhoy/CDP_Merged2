@@ -4,16 +4,16 @@ This directory contains operational helpers, sync jobs, enrichment runners, demo
 
 ## Dependency And Runtime Model
 
-Use the repo root as the working directory and use Poetry for Python dependencies:
+Use the repo root as the working directory and use `uv` for Python dependencies:
 
 ```bash
-poetry install
+uv sync --locked
 ```
 
-Run Python entry points through Poetry so they use the same environment as the application:
+Run Python entry points through `uv` so they use the same environment as the application:
 
 ```bash
-poetry run python scripts/<script_name>.py ...
+uv run python scripts/<script_name>.py ...
 ```
 
 Run shell helpers from the repo root:
@@ -36,15 +36,15 @@ docker compose up -d --build
 ### Sync source data into PostgreSQL
 
 ```bash
-poetry run python scripts/sync_teamleader_to_postgres.py --full
-poetry run python scripts/sync_exact_to_postgres.py --full
-poetry run python scripts/sync_autotask_to_postgres.py --full
+uv run python scripts/sync_teamleader_to_postgres.py --full
+uv run python scripts/sync_exact_to_postgres.py --full
+uv run python scripts/sync_autotask_to_postgres.py --full
 ```
 
 ### Run enrichment
 
 ```bash
-poetry run python scripts/enrich_companies_batch.py --enrichers website --limit 25 --batch-size 25
+uv run python scripts/enrich_companies_batch.py --enrichers website --limit 25 --batch-size 25
 bash scripts/run_enrichment_persistent.sh
 bash scripts/monitor_enrichment.sh
 ```
@@ -52,8 +52,8 @@ bash scripts/monitor_enrichment.sh
 ### Verify chatbot or auth behavior
 
 ```bash
-poetry run python scripts/regression_local_chatbot.py
-poetry run python scripts/setup_azure_ad_auth.py
+uv run python scripts/regression_local_chatbot.py
+uv run python scripts/setup_azure_ad_auth.py
 python3 scripts/doc_lint.py
 ```
 

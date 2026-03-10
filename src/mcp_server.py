@@ -44,6 +44,7 @@ from services.unified_360_queries import Unified360Service
 # Server metadata
 SERVER_NAME = "cdp-postgresql-query-server"
 SERVER_VERSION = "1.0.0"
+DEFAULT_SSE_HOST = os.getenv("MCP_SSE_HOST", "127.0.0.1")
 
 
 def _setup_environment():
@@ -593,9 +594,14 @@ async def main():
         )
 
         import uvicorn
-        config = uvicorn.Config(starlette_app, host="0.0.0.0", port=args.port, log_level="info")
+        config = uvicorn.Config(
+            starlette_app,
+            host=DEFAULT_SSE_HOST,
+            port=args.port,
+            log_level="info",
+        )
         server = uvicorn.Server(config)
-        print(f"Starting MCP server on http://0.0.0.0:{args.port}")
+        print(f"Starting MCP server on http://{DEFAULT_SSE_HOST}:{args.port}")
         print(f"Health check: http://localhost:{args.port}/health")
         print(f"SSE endpoint: http://localhost:{args.port}/sse")
         await server.serve()

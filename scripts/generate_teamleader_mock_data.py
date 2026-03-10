@@ -6,8 +6,8 @@ Creates 50+ realistic Belgian companies with proper VAT numbers,
 addresses, contacts, and deals for credible demo data.
 
 Usage:
-    poetry run python scripts/generate_teamleader_mock_data.py --count 50
-    poetry run python scripts/generate_teamleader_mock_data.py --dry-run  # Preview only
+    uv run python scripts/generate_teamleader_mock_data.py --count 50
+    uv run python scripts/generate_teamleader_mock_data.py --dry-run  # Preview only
 """
 
 from __future__ import annotations
@@ -379,7 +379,7 @@ def main():
     
     if success_count > 0:
         logger.info("\nNext steps:")
-        logger.info("1. Run: poetry run python scripts/sync_teamleader_to_postgres.py --full")
+        logger.info("1. Run: uv run python scripts/sync_teamleader_to_postgres.py --full")
         logger.info("2. Verify in PostgreSQL: SELECT COUNT(*) FROM crm_companies")
 
 

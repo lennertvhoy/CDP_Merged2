@@ -1,9 +1,9 @@
 .PHONY: help install dev test lint format type-check coverage docker-up docker-down clean pre-commit-install az-login tf-init tf-plan tf-apply tf-destroy tf-output tf-tracardi-init tf-tracardi-plan tf-tracardi-apply tf-tracardi-output aoai-print containerapp-update-print eval-suite
 
-PYTHON := poetry run python
-PYTEST := poetry run pytest
-RUFF   := poetry run ruff
-MYPY   := poetry run mypy
+PYTHON := uv run python
+PYTEST := uv run pytest
+RUFF   := uv run ruff
+MYPY   := uv run mypy
 AZURE_CONFIG_DIR ?= $(PWD)/.azure-config
 TFVARS ?= infra/terraform/terraform.tfvars
 TF_TRACARDI_VARS ?= infra/tracardi/terraform.tfvars
@@ -13,10 +13,10 @@ help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 install: ## Install all dependencies (production + dev)
-	poetry install
+	uv sync --locked
 
 dev: ## Run the application in development mode
-	CHAINLIT_DEBUG=true poetry run chainlit run src/app.py --watch
+	CHAINLIT_DEBUG=true uv run chainlit run src/app.py --watch
 
 test: ## Run unit tests (no external services required)
 	$(PYTEST) tests/ -m "not integration and not e2e" -v
@@ -46,10 +46,10 @@ coverage: ## Run tests with coverage report
 		--cov-fail-under=60
 
 pre-commit-install: ## Install pre-commit hooks
-	poetry run pre-commit install
+	uv run pre-commit install
 
 pre-commit-run: ## Run pre-commit on all files
-	poetry run pre-commit run --all-files
+	uv run pre-commit run --all-files
 
 docker-up: ## Start the full local stack (PostgreSQL, Tracardi, chatbot)
 	docker compose up -d --build

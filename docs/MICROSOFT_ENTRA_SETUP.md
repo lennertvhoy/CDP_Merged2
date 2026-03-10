@@ -46,7 +46,7 @@ Retrieve the secret from the approved secret source only. Do not copy a real cli
 ### 3. Run Setup Validation
 
 ```bash
-poetry run python scripts/setup_azure_ad_auth.py
+uv run python scripts/setup_azure_ad_auth.py
 ```
 
 ### 4. Start Application
@@ -54,7 +54,7 @@ poetry run python scripts/setup_azure_ad_auth.py
 ```bash
 docker compose up -d --build
 # Or for local development:
-poetry run python -m uvicorn src.app:chainlit_server_app --host 0.0.0.0 --port 8000
+uv run python -m uvicorn src.app:chainlit_server_app --host 0.0.0.0 --port 8000
 ```
 
 ### 5. Test Authentication

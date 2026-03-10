@@ -415,3 +415,103 @@ The user redirected the immediate session away from the v3.3 guide pass and onto
 1. Use `scripts/prepare_operator_eval_run.py` to create the first full baseline bundle against the current local chatbot revision and actually fill the scorecard.
 2. Decide whether the first baseline should be captured through the live localhost UI, a direct conversation-driver path, or both, then codify that execution path.
 3. Resume the paused v3.3 guide pass only after the operator-eval baseline path is recorded cleanly.
+
+## 2026-03-10 (Poetry To uv Pivot)
+
+### Task: Pause the in-flight CI repair and redirect the session to a Poetry-to-uv migration
+
+**Type:** docs_or_process_only
+**Status:** COMPLETE
+**Timestamp:** 2026-03-10 17:00 CET
+**Git Head:** `d88f69b`
+
+**Summary:**
+Started the session by triaging the current GitHub CI state for `d88f69b`. Verified that run `22891271161` is genuinely red, with failures in `Lint & Type Check`, `Unit Tests (3.12)`, and `Security Scan`. The concrete causes observed before the pivot were a large Ruff backlog, a `tests/unit/test_cdp_event_processor.py` collection failure because `scripts/cdp_event_processor.py` imports `psycopg2` under the Poetry-based CI environment, and a Bandit `B104` finding on the hardcoded `0.0.0.0` bind in `src/mcp_server.py`. Before landing any of those fixes, the user redirected the work to make Poetry-to-uv migration the priority. Per repo protocol, I paused the CI repair in `NEXT_ACTIONS.md`, recorded the red CI state in `PROJECT_STATE.yaml` and `STATUS.md`, and moved the queue/backlog to make the dependency-manager migration the active foreground task. No partial CI-fix code changes were left in the worktree.
+
+**Files Changed:**
+- `NEXT_ACTIONS.md`
+- `PROJECT_STATE.yaml`
+- `STATUS.md`
+- `BACKLOG.md`
+- `WORKLOG.md`
+
+**Verification:**
+- `gh run list --workflow ci.yml --limit 5` -> latest CI run `22891271161` for `d88f69b` completed with `failure`
+- `gh run view 22891271161` -> `Lint & Type Check`, `Unit Tests (3.12)`, and `Security Scan` failed; `Detect Change Scope` and `Secret Detection` passed
+- `gh run view 22891271161 --job 66414843105 --log | rg -n "test_cdp_event_processor|ModuleNotFoundError|psycopg2" -C 3` -> collection failure because `scripts/cdp_event_processor.py` imports `psycopg2`
+- `gh run view 22891271161 --job 66414843128 --log` -> Bandit `B104` on `src/mcp_server.py:596`
+- `poetry run ruff check src/ tests/` -> `165` violations reported locally
+- `git status --short` -> clean before starting the uv migration edits
+
+**Follow-up:**
+1. Inventory all active Poetry touchpoints and migrate the repo to `uv`.
+2. After the migration lands, rerun local validation and GitHub CI on the uv-based path.
+3. Resume the paused code-level CI repair only if failures remain after the dependency-manager migration.
+
+## 2026-03-10 (Poetry To uv Migration)
+
+### Task: Replace Poetry with uv across the repo's active dependency-manager, CI, Docker, and operator workflow surfaces
+
+**Type:** app_code
+**Status:** PARTIAL
+**Timestamp:** 2026-03-10 17:21 CET
+
+**Summary:**
+Implemented the repo's local `uv` migration end-to-end. `pyproject.toml` now uses PEP 621 plus `[dependency-groups]`, a fresh tracked `uv.lock` was generated, and the active install/run path was switched off Poetry across `.github/workflows/ci.yml`, `.github/workflows/cd.yml`, `Dockerfile`, `Makefile`, `scripts/setup.sh`, `scripts/start_mcp_server.sh`, `scripts/run_enrichment_persistent.sh`, `scripts/seed_data.sh`, and the current operator docs. I also removed the tracked `poetry.lock`, `requirements.txt`, and `requirements-dev.txt` files so the repo no longer carries a second dependency-manager story. While validating the new path, I folded in the small CI-adjacent fixes that were directly blocked by the old tooling surface: the event-processor tests now install `psycopg2-binary` under uv, and the MCP SSE server no longer hardcodes `0.0.0.0`, which cleared the local Bandit finding. The migration itself is working, but the repo is still not CI-clean: the Ruff backlog remains at `165` issues, and a fresh uv-based non-integration test run still reports `11` failures. Remote GitHub CI has not been rerun yet on the uv-based tree.
+
+**Files Changed:**
+- `pyproject.toml`
+- `uv.lock`
+- `poetry.lock` (deleted)
+- `requirements.txt` (deleted)
+- `requirements-dev.txt` (deleted)
+- `.github/workflows/ci.yml`
+- `.github/workflows/cd.yml`
+- `Dockerfile`
+- `Makefile`
+- `scripts/setup.sh`
+- `scripts/start_mcp_server.sh`
+- `scripts/run_enrichment_persistent.sh`
+- `scripts/seed_data.sh`
+- `scripts/setup_azure_ad_auth.py`
+- `scripts/setup_exact_oauth.py`
+- `scripts/setup_resend_audience.py`
+- `scripts/sync_teamleader_to_postgres.py`
+- `scripts/sync_exact_to_postgres.py`
+- `scripts/sync_autotask_to_postgres.py`
+- `scripts/populate_hyperrealistic_demo_data.py`
+- `scripts/generate_teamleader_mock_data.py`
+- `scripts/test_poc_activation.py`
+- `scripts/test_poc_resend_activation.py`
+- `scripts/verify_kbo_matching.py`
+- `scripts/README.md`
+- `src/mcp_server.py`
+- `docs/MICROSOFT_ENTRA_SETUP.md`
+- `docs/TEST_PLAN.md`
+- `docs/TROUBLESHOOTING.md`
+- `docs/AUTOTASK_INTEGRATION.md`
+- `docs/evals/README.md`
+- `docs/ILLUSTRATED_GUIDE.md`
+- `docs/illustrated_guide/ILLUSTRATED_GUIDE.md`
+- `docs/SYSTEM_SPEC.md`
+- `PROJECT_STATE.yaml`
+- `STATUS.md`
+- `NEXT_ACTIONS.md`
+- `BACKLOG.md`
+- `WORKLOG.md`
+
+**Verification:**
+- `UV_CACHE_DIR=/tmp/uv-cache uv lock` -> resolved `216` packages and generated `uv.lock`
+- `UV_CACHE_DIR=/tmp/uv-cache uv sync --locked` -> created `.venv` and installed the locked environment successfully
+- `UV_CACHE_DIR=/tmp/uv-cache uv export --frozen --all-groups --no-emit-project --no-hashes --output-file /tmp/cdp_requirements_audit.txt` -> succeeded, so the security job can audit the lock-derived requirements without tracked `requirements*.txt` files
+- `UV_CACHE_DIR=/tmp/uv-cache uv run --frozen pytest tests/unit/test_cdp_event_processor.py -q` -> `6 passed`
+- `UV_CACHE_DIR=/tmp/uv-cache uv run --frozen pytest tests/unit/test_config.py tests/unit/test_nodes.py tests/unit/test_tools.py tests/unit/test_validation.py -k "citation or shadow or azure_search" -q` -> `7 passed`, `2 skipped`
+- `UV_CACHE_DIR=/tmp/uv-cache uv run --with bandit bandit -c .bandit.yml -r src/ -ll` -> no issues identified
+- `UV_CACHE_DIR=/tmp/uv-cache uv run --frozen ruff check src/ tests/ --statistics` -> still `165` issues
+- `UV_CACHE_DIR=/tmp/uv-cache uv run --frozen ruff format --check src/ tests/` -> `25` files would be reformatted
+- `UV_CACHE_DIR=/tmp/uv-cache uv run --frozen pytest tests/ -m "not integration and not e2e" -q` -> still `11` failing tests (`tests/integration/test_api_suite.py`, `tests/unit/test_ai_email.py`, `tests/unit/test_app.py`, `tests/unit/test_tql_builder.py`)
+
+**Follow-up:**
+1. Commit and push the uv migration snapshot, then rerun GitHub CI on the new SHA.
+2. Fix the remaining Ruff backlog and the `11` non-integration test failures that still reproduce locally under uv.
+3. Only claim CI/CD success after the new uv-based GitHub Actions run is green for the pushed SHA.

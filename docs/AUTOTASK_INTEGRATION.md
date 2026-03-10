@@ -68,7 +68,7 @@ cp .env.autotask.example .env.autotask
 
 # Run in production mode
 export AUTOTASK_DEMO_MODE=false
-poetry run python scripts/sync_autotask_to_postgres.py --full
+uv run python scripts/sync_autotask_to_postgres.py --full
 ```
 
 ---
@@ -180,14 +180,14 @@ with AutotaskClient() as client:
 
 ```bash
 # Demo mode (default)
-poetry run python scripts/sync_autotask_to_postgres.py
+uv run python scripts/sync_autotask_to_postgres.py
 
 # Full sync (clears existing data)
-poetry run python scripts/sync_autotask_to_postgres.py --full
+uv run python scripts/sync_autotask_to_postgres.py --full
 
 # Production sync
 export AUTOTASK_DEMO_MODE=false
-poetry run python scripts/sync_autotask_to_postgres.py --full --production
+uv run python scripts/sync_autotask_to_postgres.py --full --production
 ```
 
 ### Query Synced Data

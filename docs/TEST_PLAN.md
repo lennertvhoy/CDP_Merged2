@@ -7,7 +7,7 @@ This document outlines how to verify that the merged project works correctly.
 ## Prerequisites
 
 1. Docker and Docker Compose installed
-2. Python 3.11+ with Poetry
+2. Python 3.12+ with uv
 3. OpenAI API key (or Ollama installed)
 
 ## Test Categories
@@ -16,7 +16,7 @@ This document outlines how to verify that the merged project works correctly.
 
 #### Test 1.1: Docker Compose Starts Successfully
 ```bash
-cd /home/ff/.openclaw/workspace/repos/CDP_Merged
+cd /home/ff/Documents/CDP_Merged
 docker-compose up -d
 ```
 **Expected:** All services start without errors
@@ -46,14 +46,14 @@ curl http://localhost:9200/_cluster/health
 ```bash
 cp .env.example .env
 # Edit with test values
-poetry run python -c "from src.config import settings; print(settings.TRACARDI_API_URL)"
+uv run python -c "from src.config import settings; print(settings.TRACARDI_API_URL)"
 ```
 **Expected:** Prints the configured URL
 
 #### Test 2.2: Multi-LLM Provider Selection
 ```bash
 # Test OpenAI
-LLM_PROVIDER=openai poetry run python -c "
+LLM_PROVIDER=openai uv run python -c "
 from src.core.llm_provider import get_llm_provider
 p = get_llm_provider()
 print(type(p).__name__)
@@ -63,7 +63,7 @@ print(type(p).__name__)
 
 ```bash
 # Test Mock (no API key needed)
-LLM_PROVIDER=mock poetry run python -c "
+LLM_PROVIDER=mock uv run python -c "
 from src.core.llm_provider import get_llm_provider
 p = get_llm_provider()
 print(type(p).__name__)
@@ -77,7 +77,7 @@ print(type(p).__name__)
 
 #### Test 3.1: Tracardi Client Authentication
 ```bash
-poetry run python -c "
+uv run python -c "
 import asyncio
 from src.services.tracardi import TracardiClient
 
@@ -93,7 +93,7 @@ asyncio.run(test())
 
 #### Test 3.2: Profile Search (Empty)
 ```bash
-poetry run python -c "
+uv run python -c "
 import asyncio
 from src.services.tracardi import TracardiClient
 
@@ -113,7 +113,7 @@ asyncio.run(test())
 
 #### Test 4.1: TQL Builder
 ```bash
-poetry run python -c "
+uv run python -c "
 from src.search_engine.schema import ProfileSearchParams
 from src.search_engine.builders.tql_builder import TQLBuilder
 
@@ -127,7 +127,7 @@ print('TQL:', query)
 
 #### Test 4.2: NACE Code Lookup
 ```bash
-poetry run python -c "
+uv run python -c "
 from src.ai_interface.tools import _get_nace_codes_from_keyword
 codes = _get_nace_codes_from_keyword('IT')
 print('IT codes:', codes)
@@ -142,14 +142,14 @@ print('IT codes:', codes)
 #### Test 5.1: KBO Data Ingestion (if data available)
 ```bash
 # Place KBO CSVs in data/kbo/
-poetry run python src/ingestion/tracardi_loader.py
+uv run python src/ingestion/tracardi_loader.py
 ```
 **Expected:** Successfully imports profiles to Tracardi
 
 #### Test 5.2: End-to-End NLQ Flow
 ```bash
 # Start the app
-poetry run chainlit run src/app.py &
+uv run chainlit run src/app.py &
 
 # In browser, test:
 # 1. Open http://localhost:8000
@@ -163,7 +163,7 @@ poetry run chainlit run src/app.py &
 
 #### Test 6.1: Query Validation (Critic)
 ```bash
-poetry run python -c "
+uv run python -c "
 from src.core.validation import validate_query
 
 # Safe query
@@ -184,7 +184,7 @@ print('Error:', result.get('error'))
 
 Run all tests:
 ```bash
-poetry run pytest tests/ -v
+uv run pytest tests/ -v
 ```
 
 ## Manual Acceptance Criteria

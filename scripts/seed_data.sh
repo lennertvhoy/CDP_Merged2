@@ -20,7 +20,7 @@ fi
 echo "📦 Loading KBO data from: $KBO_CSV"
 echo "🚀 Starting ingestion..."
 
-poetry run python3 -c "
+uv run python -c "
 import asyncio
 import sys
 from src.ingestion.tracardi_loader import TracardiBatchLoader

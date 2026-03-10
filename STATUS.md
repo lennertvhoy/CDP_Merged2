@@ -2,12 +2,14 @@
 
 **Platform:** Azure target architecture with local-only execution mode
 **Current Execution Mode:** Local-only (`Azure deployment path paused to save costs`)
-**Last Updated:** 2026-03-09 23:38 CET
+**Last Updated:** 2026-03-10 17:21 CET
 **Purpose:** Human-readable current snapshot
 **Structured Source:** `PROJECT_STATE.yaml`
 
 ## Current Headline
 
+- `observed` from 2026-03-10 17:21 CET: **THE REPO'S UV MIGRATION IS IMPLEMENTED LOCALLY.** `pyproject.toml` now uses PEP 621 plus `uv` dependency groups, `uv.lock` was generated, Poetry-specific CI/Docker/script paths were replaced, `poetry.lock` plus the tracked `requirements*.txt` files were removed, and current operator docs now point at `uv sync` / `uv run`.
+- `observed` from 2026-03-10 17:21 CET: **CI IS STILL NOT READY TO BE CLAIMED GREEN.** The migration removed the old `psycopg2` test-collection blocker and the Bandit `B104` bind issue locally, but a fresh `uv`-based recheck still reports `165` Ruff violations and `11` failing non-integration tests, and no GitHub Actions run has been rerun yet for the new uv-based tree.
 - `reported` from 2026-03-09 via direct user instruction: **THE NEXT CLOUD PIECES SHOULD BE LIMITED TO ENTRA AUTH + AZURE OPENAI.** Do not put the project online before Microsoft Entra ID auth exists. Keep PostgreSQL, Tracardi, and the rest of the runtime local for now. The user also reported that the Azure usage limit is reached until **March 14, 2026**, so this hybrid cloud step is blocked until that reset. The longer-term hosting target is the user's internal server farm.
 - `reported` from 2026-03-09 via direct user instruction: **COLLEAGUE-FACING ROLLOUT SHOULD BE PER-USER, NOT SHARED.** Each colleague should sign in with a Microsoft work account, get a private chatbot workspace with stored conversation history, and use a more ChatGPT-like interface. Web search is also desired, but only with explicit privacy/compliance guardrails.
 - `observed` from 2026-03-09 22:38 CET: **THE EXPOSED ENTRA CLIENT SECRET WAS ROTATED AND THE LOCAL ACTIVE VALUE WAS REPLACED.** Azure CLI access to the `CDP Chatbot` app registration was verified, the compromised password credential was reset, `.env.local` was updated immediately with the replacement secret, and tracked Entra secret examples are now guarded by `scripts/doc_lint.py` plus CI so future doc-only changes fail fast.
@@ -33,7 +35,7 @@
 - `observed` from 2026-03-08 13:38 CET: **360° TOOL SELECTION FIXED!** Option D routing guard implemented in critic_node. All 3 previously-failing queries now select correct tools: KBO linkage → `get_identity_link_quality`, Revenue distribution → `get_geographic_revenue_distribution`, Pipeline value → `get_industry_summary`. Commit `5c3117e`, 27 unit tests passed.
 
 - `observed` from 2026-03-08 11:00 CET: **360° TOOL SELECTION FIXED!** Option D routing guard implemented in critic_node. All 3 previously-failing queries now select correct tools: KBO linkage → `get_identity_link_quality`, Revenue distribution → `get_geographic_revenue_distribution`, Pipeline value → `get_industry_summary`. Commit `5c3117e`, 27 unit tests passed.
-- `observed` from 2026-03-07 22:46 CET: **EXACT ONLINE SYNC WORKING!** OAuth authorization completed. Current verified sync state in the guide/audit context is 258 GL accounts, 9 customers, and 78 invoices in PostgreSQL. Tokens saved to `.env.exact`. Run anytime: `poetry run python scripts/sync_exact_to_postgres.py --full`
+- `observed` from 2026-03-07 22:46 CET: **EXACT ONLINE SYNC WORKING!** OAuth authorization completed. Current verified sync state in the guide/audit context is 258 GL accounts, 9 customers, and 78 invoices in PostgreSQL. Tokens saved to `.env.exact`. Run anytime: `uv run python scripts/sync_exact_to_postgres.py --full`
 - `observed` from 2026-03-07 21:00 CET: **Resend to Tracardi bridge script fixed.** The bridge script (`scripts/resend_to_tracardi_bridge.py`) now uses FastAPI for proper async handling, correctly translates Resend webhook format to Tracardi `/track` format with signature verification, and handles the `events` array properly. Tested and imports successfully.
 - `observed` from 2026-03-07 20:45 CET, refined by 2026-03-08 21:35 CET recheck: **Resend transport setup is only partially verified.** The `resend-webhook` event source is fixed to REST type and `/track` accepts events, but the earlier "all 5 workflows deployed and active" claim was contradicted by live re-verification: the drafts had to be repaired on 2026-03-08 and runtime execution is still not proven.
 - `observed` from 2026-03-07 20:00 CET: **Tracardi workflows created via GUI.** All 5 Resend email processing workflows have been created in the Tracardi GUI: Email Engagement Processor, Email Bounce Processor, Email Delivery Processor, High Engagement Segment, and Email Complaint Processor. Workflows are created but not yet deployed (need node configuration). Screenshots saved: tracardi_workflows_created.png, tracardi_workflow_editor.png, tracardi_event_sources_list.png.
@@ -81,6 +83,8 @@
 
 ## Top Risks
 
+- GitHub CI is currently failing on `d88f69b` (`22891271161`), and the uv-based follow-up has not been pushed or rerun remotely yet.
+- The dependency-manager migration is no longer the blocker: the remaining blockers are the repo-wide Ruff backlog and an 11-test failure set that still reproduces locally under `uv`.
 - If the local-only mode is not kept explicit in the docs, future sessions will keep reopening Azure verification and deployment work that is intentionally paused for cost control.
 - A real Microsoft Entra client secret was written into tracked docs on 2026-03-09. The credential was rotated at `22:38 CET`, the local active value was replaced immediately, and tracked examples are now lint-guarded, but the retired value remains historically exposed in earlier local/git surfaces and must never be reused.
 - The Illustrated Guide now has the core local-only business-case proof in place and the worst layout failures are fixed, but the next credibility pass still needs evidence-timestamp alignment, one screenshot/prose naming fix, the count-semantics dictionary, tighter maturity wording, cleaner API/code-page styling, a better PDF text layer, and a reviewer-friendly acceptance/conformity appendix.
@@ -102,12 +106,12 @@
 
 ## Immediate Focus
 
-1. **Treat enrichment as the top active priority**: keep geocoding on background monitoring now that the first post-`5bf2595` chunk is clean, keep website discovery progressing, and keep `description_ollama` at its current settings while recent completed chunks stay in the current `2.2-2.4/s` band
-2. **Keep foreground repo hygiene scoped to verified contradictions only**: the stale script workflow docs and the zero-byte `src/enrichment/website_discovery.py.patch` artifact are now cleaned up, so do not reopen repo-hygiene work without a fresh concrete mismatch
-3. **Keep the active work local-only** for now; when Azure work resumes after the reported **March 14, 2026** quota reset, scope it narrowly to Microsoft Entra work-account login plus Azure OpenAI instead of reopening full Azure hosting
-4. **Finish the colleague-facing chatbot rollout path**: decide whether the current first-message-derived history/title behavior needs the smallest possible polish, connect the now-verified local continuity path to Microsoft work-account login, and then tighten the minimum ChatGPT-like UX improvements before broader colleague rollout
-5. **Keep Illustrated Guide alignment stable and finish the remaining v3.3 credibility pass**: fix the 2024/2026 timestamp mismatch, add the count-semantics dictionary, finish the CSV integrity proof, tighten maturity wording, improve the API/code-page styling plus PDF export/text-layer quality, and then add a short conformity/acceptance appendix without reopening Azure work
-6. **Treat Resend as the accepted POC activation platform** unless the user later reopens a Flexmail requirement
+1. **Push the uv migration and rerun GitHub CI on the new SHA**: the repo surface is switched locally, but remote verification is still missing.
+2. **Repair the remaining code-level CI failures under uv**: the current local evidence is `165` Ruff violations plus `11` failing non-integration tests; the old Bandit and `psycopg2` blockers are no longer the lead issues.
+3. **Keep enrichment as the top operational background priority**: leave geocoding on background monitoring, keep website discovery progressing, and keep `description_ollama` at its current settings while recent completed chunks stay in the current `2.2-2.4/s` band.
+4. **Keep the active work local-only** for now; when Azure work resumes after the reported **March 14, 2026** quota reset, scope it narrowly to Microsoft Entra work-account login plus Azure OpenAI instead of reopening full Azure hosting.
+5. **Finish the colleague-facing chatbot rollout path** once the dependency-manager work is stable: connect the verified local continuity path to Microsoft work-account login and then tighten the minimum ChatGPT-like UX improvements before broader colleague rollout.
+6. **Keep Illustrated Guide alignment stable for now**: resume the v3.3 credibility pass only after the current tooling migration and follow-on CI state are recorded cleanly.
 
 ---
 

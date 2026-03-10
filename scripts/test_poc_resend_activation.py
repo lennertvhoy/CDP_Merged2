@@ -13,11 +13,11 @@ Prerequisites:
 
 Usage:
     # Test with mock Resend (no API key required)
-    poetry run python scripts/test_poc_resend_activation.py --mock
+    uv run python scripts/test_poc_resend_activation.py --mock
     
     # Test with real Resend (requires RESEND_API_KEY)
     export RESEND_API_KEY="your-api-key"
-    poetry run python scripts/test_poc_resend_activation.py
+    uv run python scripts/test_poc_resend_activation.py
 """
 
 from __future__ import annotations

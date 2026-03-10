@@ -278,13 +278,13 @@ AI successfully creates segments from natural language:
 
 2. **Initial Data Load**
    ```bash
-   poetry run python scripts/sync_teamleader_to_postgres.py --full --production
-   poetry run python scripts/sync_exact_to_postgres.py --full --production
+   uv run python scripts/sync_teamleader_to_postgres.py --full --production
+   uv run python scripts/sync_exact_to_postgres.py --full --production
    ```
 
 3. **Verification**
    ```bash
-   poetry run python scripts/production_go_live_check.py
+   uv run python scripts/production_go_live_check.py
    ```
 
 ### Phase 3: Backend Verification (2026-03-08)

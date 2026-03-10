@@ -3,7 +3,7 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-09T23:38:42+01:00
+  updated_at: 2026-03-10T17:21:45+01:00
   updated_by: agent
   verified_head_before_docs_commit:
     value: 946ccf4
@@ -58,19 +58,22 @@ current_state:
       summary: Current live state now lives only in PROJECT_STATE.yaml, STATUS.md, and NEXT_ACTIONS.md. History belongs in WORKLOG.md and roadmap material belongs in BACKLOG.md.
     script_workflow_docs:
       status: observed
-      checked_at: 2026-03-09T23:08:00+01:00
+      checked_at: 2026-03-10T17:21:45+01:00
       summary: |
-        The maintained script workflow now points to repo-root Poetry usage.
+        The maintained script workflow now points to repo-root uv usage.
         `scripts/README.md` tells operators to install dependencies with
-        `poetry install` and run Python entry points via
-        `poetry run python scripts/...`. The stale `scripts/requirements.txt`
-        file was removed because no live repo path consumed it, and the old
-        KBO cleanup completion summary is explicitly quarantined as historical.
+        `uv sync --locked` and run Python entry points via
+        `uv run python scripts/...`. The old `poetry.lock` plus tracked
+        `requirements.txt` and `requirements-dev.txt` files were removed so
+        the repo has one current dependency-manager path, and the old KBO
+        cleanup completion summary remains explicitly quarantined as historical.
       evidence:
         - file: scripts/README.md
-          finding: README now documents repo-root Poetry install and execution commands
-        - command: test ! -f scripts/requirements.txt && echo missing
-          result: missing
+          finding: README now documents repo-root uv install and execution commands
+        - command: UV_CACHE_DIR=/tmp/uv-cache uv lock
+          result: resolved successfully and generated tracked uv.lock
+        - command: UV_CACHE_DIR=/tmp/uv-cache uv sync --locked
+          result: installed the repo environment successfully under uv
         - file: docs/KBO_CLEANUP_COMPLETION_SUMMARY.md
           finding: file is explicitly labeled QUARANTINED and points readers at historical legacy artifacts
     website_discovery_patch_artifact:
@@ -1167,6 +1170,34 @@ current_state:
       note: Local Tracardi still has working authentication, event sources, and `/track`, but the current truth is draft repair plus runtime blockage. `scripts/setup_tracardi_workflows.py` repaired the 5 email workflow drafts through `/flow/draft`, yet the engagement rules remain `running=false` / `production=false` and local event probes still produce zero flow logs. GUI accessible at http://localhost:8787.
 
 active_problems:
+  github_ci_failing_on_d88f69b:
+    status: observed
+    severity: high
+    discovered_at: 2026-03-10
+    summary: GitHub CI for `d88f69b` is red, and while the local uv migration removed the old `psycopg2` collection blocker and Bandit bind finding, the repo still has broader Ruff and non-integration test failures that must be fixed before the updated workflow can be claimed green.
+    evidence:
+      - command: gh run list --workflow ci.yml --limit 5
+      - result: run `22891271161` for `d88f69b` completed with `failure`
+      - command: gh run view 22891271161
+      - result: `Lint & Type Check`, `Unit Tests (3.12)`, and `Security Scan` failed; `Detect Change Scope` and `Secret Detection` passed
+      - command: gh run view 22891271161 --job 66414843105 --log | rg -n "test_cdp_event_processor|ModuleNotFoundError|psycopg2"
+      - result: `tests/unit/test_cdp_event_processor.py` failed during collection because `scripts/cdp_event_processor.py` imports `psycopg2` and the Poetry-based CI environment does not provide it
+      - command: gh run view 22891271161 --job 66414843128 --log
+      - result: Bandit `B104` flagged `src/mcp_server.py:596` for a hardcoded `0.0.0.0` bind
+      - command: UV_CACHE_DIR=/tmp/uv-cache uv run --frozen pytest tests/unit/test_cdp_event_processor.py -q
+      - result: `6 passed`; the old `psycopg2` import-time failure is no longer reproducing locally
+      - command: UV_CACHE_DIR=/tmp/uv-cache uv run --with bandit bandit -c .bandit.yml -r src/ -ll
+      - result: `No issues identified`; the old Bandit `B104` finding is no longer reproducing locally
+      - command: UV_CACHE_DIR=/tmp/uv-cache uv run --frozen ruff check src/ tests/ --statistics
+      - result: local recheck still reports `165` Ruff violations across `src/` and `tests/`
+      - command: UV_CACHE_DIR=/tmp/uv-cache uv run --frozen pytest tests/ -m "not integration and not e2e" -q
+      - result: local recheck still reports `11` failing tests, including `tests/integration/test_api_suite.py`, `tests/unit/test_ai_email.py`, `tests/unit/test_app.py`, and `tests/unit/test_tql_builder.py`
+    affects:
+      - github_actions_ci
+      - push_verification_confidence
+      - local_release_confidence
+    owner: agent
+    next_action: Push the uv migration, rerun GitHub CI on the new SHA, and then fix the remaining Ruff plus non-integration test failures that still reproduce locally under uv.
   legacy_it_nace_mapping_in_codebase:
     status: resolved
     severity: high
