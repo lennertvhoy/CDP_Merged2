@@ -8,49 +8,7 @@
 **Canonical Counts:** `total=1,940,603; website_url=70,922; geo_latitude=63,979; ai_description=31,033; cbe_enriched=1,252,019`
 
 ## Active
-
-### P0: Push uv Migration And Recheck CI
-
-**Status:** ACTIVE
-**Discovered:** 2026-03-10 via direct user instruction
-**Last Updated:** 2026-03-10 17:21 CET
-**Severity:** CRITICAL
-**Goal:** Push the locally completed `uv` migration, rerun GitHub CI on the new SHA, and move immediately to the remaining code-level failures that still block green verification.
-
-#### Current Observed State
-
-- `pyproject.toml` now uses PEP 621 metadata plus `[dependency-groups]`, and `uv.lock` was generated successfully.
-- `.github/workflows/ci.yml`, `.github/workflows/cd.yml`, `Dockerfile`, `Makefile`, and the active shell/helper scripts now use `uv` instead of Poetry.
-- The tracked `poetry.lock`, `requirements.txt`, and `requirements-dev.txt` files were removed so the repo has one dependency-manager story.
-- Fresh local validation shows the migration path itself works: `uv sync --locked`, `uv export --frozen --all-groups --no-emit-project`, `tests/unit/test_cdp_event_processor.py`, the migration-flags test subset, and Bandit all passed locally.
-- Fresh local validation also shows CI is still red for code reasons after the tooling switch: `uv run --frozen ruff check src/ tests/ --statistics` still reports `165` violations, and `uv run --frozen pytest tests/ -m "not integration and not e2e" -q` still reports `11` failing tests.
-
-#### Next action
-
-1. Commit and push the uv migration snapshot.
-2. Rerun GitHub CI on the new SHA so remote verification matches the new dependency-manager path.
-3. Fix the remaining Ruff and non-integration test failures that still reproduce under `uv`.
-
-### P1: GitHub CI Repair For `d88f69b`
-
-**Status:** ACTIVE - 2026-03-10 17:21 CET the uv migration is now implemented locally, so the remaining work is the code-level CI backlog plus remote rerun
-**Discovered:** 2026-03-10 via GitHub Actions recheck
-**Last Updated:** 2026-03-10 17:21 CET
-**Severity:** HIGH
-**Goal:** Return the active GitHub CI workflow to green on the current head after the dependency-manager migration settles.
-
-#### Current Observed State
-
-- `gh run list --workflow ci.yml --limit 5` showed run `22891271161` for commit `d88f69b` completed with `failure`.
-- `gh run view 22891271161` showed `Lint & Type Check`, `Unit Tests (3.12)`, and `Security Scan` failing, while `Detect Change Scope` and `Secret Detection` passed.
-- `gh run view 22891271161 --job 66414843105 --log` showed `tests/unit/test_cdp_event_processor.py` failing during collection because `scripts/cdp_event_processor.py` imports `psycopg2` at module load and the Poetry-based CI environment does not provide it.
-- `gh run view 22891271161 --job 66414843128 --log` showed Bandit `B104` on `src/mcp_server.py:596` for a hardcoded `0.0.0.0` bind.
-- Fresh local `uv` rechecks show the old `psycopg2` import blocker and Bandit finding are fixed, but the repo still has `165` Ruff violations plus `11` failing non-integration tests.
-
-#### Next action
-
-1. Push the uv migration commit so GitHub Actions runs against the updated workflow/install path.
-2. Fix the still-failing Ruff and non-integration test cases that reproduce locally under `uv`.
+Dependency-manager note: `uv` migration plus the follow-on GitHub CI repair are complete as of 2026-03-10 17:50 CET. Commit `7e6c432` is green on run `22913778035`; the first red uv push (`1978e31`) and the intermediate partial repair (`fb85742`) are now superseded history, not active queue items.
 
 ### P0: Enrichment Coverage And Optimization
 

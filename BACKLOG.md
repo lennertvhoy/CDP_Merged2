@@ -3,7 +3,7 @@
 **Platform:** Azure target architecture with local-only execution mode
 **Azure Scope:** Next cloud re-entry should be limited to Entra ID auth + Azure OpenAI
 **Architecture:** Source systems PII truth + PostgreSQL intelligence truth + Tracardi activation runtime + AI chatbot  
-**Last Updated:** 2026-03-10 (uv migration implemented locally; remaining CI follow-up promoted back to the active queue)
+**Last Updated:** 2026-03-10 (uv migration plus follow-on CI repair completed; roadmap focus returns to enrichment and colleague rollout)
 **Purpose:** Medium-term roadmap from the current repo state to a credible demo first and production readiness later
 
 ## How To Use This File
@@ -579,7 +579,7 @@ With 50+ connected records:
 | Priority | Item | Status | What still needs to happen |
 |----------|------|--------|-----------------------------|
 | High | Keep Python cache artifacts out of git | Complete | A 2026-03-09 git-tracked recheck found `git ls-files '*.pyc' -> 0` and no `__pycache__` matches; the earlier `find` count referred to local untracked cache files, and `.gitignore` already blocks these paths |
-| High | Migrate the repo from Poetry to uv | Complete | Completed locally on 2026-03-10: `pyproject.toml` now uses PEP 621 plus `uv` dependency groups, `uv.lock` replaced `poetry.lock`, CI/Docker/Make/scripts switched to `uv`, and the tracked `requirements*.txt` files were removed. Remaining follow-up is code-level CI repair, now tracked in `NEXT_ACTIONS.md` |
+| High | Migrate the repo from Poetry to uv | Complete | Completed and verified on 2026-03-10: `pyproject.toml` now uses PEP 621 plus `uv` dependency groups, `uv.lock` replaced `poetry.lock`, CI/Docker/Make/scripts switched to `uv`, the tracked `requirements*.txt` files were removed, and follow-on commit `7e6c432` cleared the remaining lint/test/type gates with GitHub Actions run `22913778035` green |
 | High | Reconcile legacy script docs with the actual uv-based workflow | Complete | Completed 2026-03-10: `scripts/README.md`, active helper-script usage strings, and current operator docs now point to the repo-root `uv sync` / `uv run` flow instead of Poetry |
 | High | Decide whether to keep or delete `src/enrichment/website_discovery.py.patch` | Complete | Completed 2026-03-09: the tracked file was a zero-byte initial-import artifact with no live non-doc references, so it was deleted |
 | Medium | Break up oversized entry points that are accumulating unrelated responsibilities | Pending | `src/app.py`, `src/mcp_server.py`, `src/services/writeback.py`, and `scripts/cdp_event_processor.py` are each several hundred lines and should be split along clearer seams when adjacent work touches them |
