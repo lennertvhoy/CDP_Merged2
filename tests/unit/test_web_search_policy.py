@@ -15,8 +15,8 @@ class TestWebSearchPolicyEnforcer:
 
     def test_disabled_policy_blocks_all(self):
         """Test that disabled policy blocks all queries."""
-        with patch.object(WebSearchPolicyEnforcer, '_parse_domains', return_value=[]):
-            with patch.object(WebSearchPolicyEnforcer, '_parse_patterns', return_value=[]):
+        with patch.object(WebSearchPolicyEnforcer, "_parse_domains", return_value=[]):
+            with patch.object(WebSearchPolicyEnforcer, "_parse_patterns", return_value=[]):
                 enforcer = WebSearchPolicyEnforcer()
                 enforcer.policy = WebSearchPolicy.DISABLED
 
@@ -28,7 +28,9 @@ class TestWebSearchPolicyEnforcer:
         """Test that email addresses are blocked."""
         enforcer = WebSearchPolicyEnforcer()
         enforcer.policy = WebSearchPolicy.RESTRICTED
-        enforcer.blocked_patterns = [re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}")]
+        enforcer.blocked_patterns = [
+            re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}")
+        ]
 
         result = enforcer.validate_query("Contact john.doe@company.com for help")
         assert result.allowed is False
@@ -131,7 +133,7 @@ class TestWebSearchPolicyEnforcer:
 class TestValidateWebSearchQuery:
     """Test the convenience function."""
 
-    @patch('src.services.web_search_policy.web_search_enforcer')
+    @patch("src.services.web_search_policy.web_search_enforcer")
     def test_convenience_function(self, mock_enforcer):
         """Test that convenience function delegates to enforcer."""
         mock_enforcer.validate_query.return_value.allowed = True

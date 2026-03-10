@@ -6,6 +6,7 @@ This module provides tools for email marketing via Flexmail and Resend.
 from __future__ import annotations
 
 import json
+from typing import Any
 
 import httpx
 from langchain_core.tools import tool
@@ -29,7 +30,7 @@ async def _load_segment_contacts(
     Returns:
         Tuple of (profiles, total_count, backend, diagnostics)
     """
-    diagnostics = {
+    diagnostics: dict[str, Any] = {
         "segment_id": segment_id,
         "postgresql_checked": False,
         "postgresql_count": 0,
@@ -53,7 +54,9 @@ async def _load_segment_contacts(
     except Exception as exc:
         diagnostics["postgresql_checked"] = True
         diagnostics["errors"].append(f"PostgreSQL: {exc}")
-        logger.warning("canonical_segment_contact_lookup_failed", segment=segment_id, error=str(exc))
+        logger.warning(
+            "canonical_segment_contact_lookup_failed", segment=segment_id, error=str(exc)
+        )
 
     # Fall back to Tracardi
     try:
@@ -96,16 +99,12 @@ async def _load_segment_contacts(
         raise RuntimeError(
             f"Failed to retrieve segment '{segment_id}' from any source. "
             f"Errors: {'; '.join(diagnostics['errors'])}"
-        )
+        ) from exc
 
 
 def _extract_segment_email(profile: dict) -> str | None:
     traits = profile.get("traits") or profile.get("data", {}).get("properties", {})
-    email = (
-        profile.get("main_email")
-        or traits.get("email")
-        or traits.get("contact_email")
-    )
+    email = profile.get("main_email") or traits.get("email") or traits.get("contact_email")
     if not email and "@" in profile.get("id", ""):
         email = profile["id"]
     return email
@@ -129,7 +128,9 @@ async def push_to_flexmail(segment_id: str) -> str:
     flexmail = FlexmailClient()
     logger.info("flexmail_push_start", segment=segment_id)
     try:
-        profiles_to_push, total_count, backend, _diagnostics = await _load_segment_contacts(segment_id)
+        profiles_to_push, total_count, backend, _diagnostics = await _load_segment_contacts(
+            segment_id
+        )
     except RuntimeError:
         return f"Failed to retrieve segment '{segment_id}' for Flexmail push."
 
@@ -181,10 +182,7 @@ async def push_to_flexmail(segment_id: str) -> str:
     suffix = ""
     if total_count > len(profiles_to_push):
         suffix = f" Loaded {len(profiles_to_push)} of {total_count} total members in this run."
-    return (
-        f"Pushed {pushed_count} profiles to Flexmail. Target Interest: {interest_name}."
-        f"{suffix}"
-    )
+    return f"Pushed {pushed_count} profiles to Flexmail. Target Interest: {interest_name}.{suffix}"
 
 
 @tool
@@ -290,31 +288,39 @@ async def push_segment_to_resend(segment_id: str, audience_name: str | None = No
     resend = ResendClient()
     logger.info("resend_push_start", segment=segment_id)
     try:
-        profiles_to_push, total_count, backend, diagnostics = await _load_segment_contacts(segment_id, limit=1000)
+        profiles_to_push, total_count, backend, diagnostics = await _load_segment_contacts(
+            segment_id, limit=1000
+        )
     except RuntimeError as exc:
-        return json.dumps({
-            "status": "error",
-            "error": str(exc),
-            "segment_id": segment_id,
-            "suggestions": [
-                "Verify the segment name is correct",
-                "Check if the segment has any members with: get_segment_stats",
-                "Try recreating the segment if it was deleted",
-                "Check if PostgreSQL and Tracardi are both accessible"
-            ]
-        }, ensure_ascii=False)
+        return json.dumps(
+            {
+                "status": "error",
+                "error": str(exc),
+                "segment_id": segment_id,
+                "suggestions": [
+                    "Verify the segment name is correct",
+                    "Check if the segment has any members with: get_segment_stats",
+                    "Try recreating the segment if it was deleted",
+                    "Check if PostgreSQL and Tracardi are both accessible",
+                ],
+            },
+            ensure_ascii=False,
+        )
 
     if total_count == 0:
-        return json.dumps({
-            "status": "error",
-            "error": f"Segment '{segment_id}' contains no profiles to push.",
-            "diagnostics": diagnostics,
-            "suggestions": [
-                "The segment search criteria may be too restrictive",
-                "Check if companies have email addresses (required for Resend)",
-                "Verify segment members were successfully projected to Tracardi"
-            ]
-        }, ensure_ascii=False)
+        return json.dumps(
+            {
+                "status": "error",
+                "error": f"Segment '{segment_id}' contains no profiles to push.",
+                "diagnostics": diagnostics,
+                "suggestions": [
+                    "The segment search criteria may be too restrictive",
+                    "Check if companies have email addresses (required for Resend)",
+                    "Verify segment members were successfully projected to Tracardi",
+                ],
+            },
+            ensure_ascii=False,
+        )
 
     # Create audience name
     audience_name = audience_name or segment_id
@@ -390,28 +396,33 @@ async def push_segment_to_resend(segment_id: str, audience_name: str | None = No
         }
 
         if total_count > len(profiles_to_push):
-            result["note"] = f"Loaded {len(profiles_to_push)} of {total_count} total members in this tool call."
+            result["note"] = (
+                f"Loaded {len(profiles_to_push)} of {total_count} total members in this tool call."
+            )
 
         if skipped_count > 0:
             result["suggestions"] = [
                 f"{skipped_count} profiles were skipped - likely due to missing/invalid emails",
                 "Verify segment members have valid email addresses",
-                "Check Tracardi profile data completeness"
+                "Check Tracardi profile data completeness",
             ]
 
         return json.dumps(result, ensure_ascii=False, indent=2)
     except Exception as exc:
         logger.error("resend_push_error", segment=segment_id, error=str(exc))
-        return json.dumps({
-            "status": "error",
-            "error": f"Failed to push segment to Resend: {exc}",
-            "segment_id": segment_id,
-            "suggestions": [
-                "Check Resend API key is valid",
-                "Verify network connectivity to Resend API",
-                "Check if audience name is unique in Resend"
-            ]
-        }, ensure_ascii=False)
+        return json.dumps(
+            {
+                "status": "error",
+                "error": f"Failed to push segment to Resend: {exc}",
+                "segment_id": segment_id,
+                "suggestions": [
+                    "Check Resend API key is valid",
+                    "Verify network connectivity to Resend API",
+                    "Check if audience name is unique in Resend",
+                ],
+            },
+            ensure_ascii=False,
+        )
 
 
 @tool

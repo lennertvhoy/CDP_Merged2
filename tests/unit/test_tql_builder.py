@@ -31,7 +31,7 @@ class TestTQLBuilderCity:
         params = ProfileSearchParams()
         query = builder.build(params)
         # Empty params returns just the name EXISTS filter (no default status)
-        assert query == 'traits.name EXISTS'
+        assert query == "traits.name EXISTS"
 
 
 class TestTQLBuilderNACE:

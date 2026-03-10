@@ -97,7 +97,7 @@ async def _load_segment_rows(
     Returns:
         Tuple of (rows, total_count, backend, diagnostics)
     """
-    diagnostics = {
+    diagnostics: dict[str, Any] = {
         "segment_id": segment_id,
         "postgresql_checked": False,
         "postgresql_count": 0,
@@ -124,7 +124,9 @@ async def _load_segment_rows(
     except Exception as exc:
         diagnostics["postgresql_checked"] = True
         diagnostics["errors"].append(f"PostgreSQL lookup failed: {exc}")
-        logger.warning("canonical_segment_export_lookup_failed", segment=segment_id, error=str(exc))
+        logger.warning(
+            "canonical_segment_export_lookup_failed", segment=segment_id, error=str(exc)
+        )
 
     # Fall back to Tracardi
     try:
@@ -145,7 +147,11 @@ async def _load_segment_rows(
 
         if tracardi_count == 0:
             # Both sources empty - provide helpful explanation
-            pg_status = f"PostgreSQL: {diagnostics['postgresql_count']} members" if diagnostics["postgresql_checked"] else "PostgreSQL: not checked"
+            pg_status = (
+                f"PostgreSQL: {diagnostics['postgresql_count']} members"
+                if diagnostics["postgresql_checked"]
+                else "PostgreSQL: not checked"
+            )
             raise RuntimeError(
                 f"Segment '{segment_id}' exists but contains no members. "
                 f"{pg_status}, Tracardi: 0 profiles. "
@@ -162,7 +168,7 @@ async def _load_segment_rows(
         raise RuntimeError(
             f"Failed to retrieve segment '{segment_id}' from any source. "
             f"Errors: {diagnostics['errors']}"
-        )
+        ) from exc
 
 
 def _row_matches_canonical_filters(
@@ -296,7 +302,9 @@ async def export_segment_to_csv(
     logger.info("csv_export_start", segment=segment_id, fields=include_fields)
 
     try:
-        profiles, total_count, backend, diagnostics = await _load_segment_rows(segment_id, limit=max_records)
+        profiles, total_count, backend, diagnostics = await _load_segment_rows(
+            segment_id, limit=max_records
+        )
     except RuntimeError as exc:
         error_msg = str(exc)
         logger.error("csv_export_failed", segment=segment_id, error=error_msg)
@@ -309,8 +317,8 @@ async def export_segment_to_csv(
                     "Verify the segment name is correct",
                     "Check if the segment has any members with: get_segment_stats",
                     "Try recreating the segment if it was deleted",
-                    "Check if PostgreSQL and Tracardi are both accessible"
-                ]
+                    "Check if PostgreSQL and Tracardi are both accessible",
+                ],
             },
             ensure_ascii=False,
         )
@@ -327,8 +335,8 @@ async def export_segment_to_csv(
                 "suggestions": [
                     "The segment search criteria may be too restrictive",
                     "Try broadening your search filters",
-                    "Check if companies in the segment have the requested fields"
-                ]
+                    "Check if companies in the segment have the requested fields",
+                ],
             },
             ensure_ascii=False,
         )

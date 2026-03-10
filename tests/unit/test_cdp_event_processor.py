@@ -81,7 +81,12 @@ def test_lookup_company_prefers_kbo_number_from_payload():
         event_data={"metadata": {"kbo_number": "BE0438.437.723"}},
     )
 
-    assert row == ("123e4567-e89b-12d3-a456-426614174000", "0438437723", "B.B.S. Entreprise", "43320")
+    assert row == (
+        "123e4567-e89b-12d3-a456-426614174000",
+        "0438437723",
+        "B.B.S. Entreprise",
+        "43320",
+    )
     assert cursor.executed[0][1] == ("0438437723",)
 
 

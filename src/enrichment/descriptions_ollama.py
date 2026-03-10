@@ -80,7 +80,9 @@ class OllamaDescriptionEnricher:
                 cache = MultiTierCache(l1=l1, l2=l2)
                 logger.info("OllamaDescriptionEnricher: using MultiTierCache (SQLite + Redis)")
             else:
-                logger.debug("OllamaDescriptionEnricher: REDIS_URL not set, using SQLiteCache only")
+                logger.debug(
+                    "OllamaDescriptionEnricher: REDIS_URL not set, using SQLiteCache only"
+                )
 
         # Initialize cache from parent pattern
         if cache is None:
@@ -100,12 +102,16 @@ class OllamaDescriptionEnricher:
         self.inference_count = 0
 
         # Stats object for compatibility with DescriptionEnricher interface
-        self.stats = type('Stats', (), {
-            'total': 0,
-            'success': 0,
-            'failed': 0,
-            'skipped': 0,
-        })()
+        self.stats = type(
+            "Stats",
+            (),
+            {
+                "total": 0,
+                "success": 0,
+                "failed": 0,
+                "skipped": 0,
+            },
+        )()
 
     def _get_nace_codes(self, profile: dict) -> list[str]:
         """Extract NACE codes from profile."""
@@ -255,18 +261,18 @@ Description:"""
 
         for prefix in prefixes_to_remove:
             if description.lower().startswith(prefix.lower()):
-                description = description[len(prefix):]
+                description = description[len(prefix) :]
 
         # Remove leading/trailing whitespace and newlines
         description = description.strip()
 
         # If there are multiple paragraphs, take only the first one
-        lines = description.split('\n')
+        lines = description.split("\n")
         if len(lines) > 1:
             # Find the first non-empty line that looks like a description
             for line in lines:
                 line = line.strip()
-                if line and not line.startswith('Here') and not line.startswith('This'):
+                if line and not line.startswith("Here") and not line.startswith("This"):
                     description = line
                     break
 

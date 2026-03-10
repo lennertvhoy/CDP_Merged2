@@ -35,6 +35,8 @@ def _get_base_url() -> str:
     # Default to localhost for local development
     port = os.getenv("CHAINLIT_PORT", "8000")
     return f"http://localhost:{port}"
+
+
 SEARCH_RESULT_FIELDS = [
     "kbo_number",
     "company_name",

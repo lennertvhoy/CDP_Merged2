@@ -217,6 +217,8 @@ class ExactClient:
         """Get the Exact division ID, auto-discovering if needed."""
         if self._division_id is None:
             self._discover_division()
+        if self._division_id is None:
+            raise RuntimeError("Exact division ID could not be resolved")
         return self._division_id
 
     def _discover_division(self) -> None:

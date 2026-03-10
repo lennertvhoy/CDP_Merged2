@@ -88,7 +88,7 @@ class TestRouterNode:
         assert "counts.authoritative_total" in prompt
         assert "add counts across turns" in prompt.lower()
         assert "dataset_state.companies_table_empty=true" in prompt
-        assert "Only set `status=\"AC\"` if the user explicitly asks" in prompt
+        assert 'Only set `status="AC"` if the user explicitly asks' in prompt
 
     @pytest.mark.asyncio
     async def test_router_injects_citation_rules_when_flags_enabled(self, monkeypatch):

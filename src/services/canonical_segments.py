@@ -219,7 +219,9 @@ class CanonicalSegmentService:
                 assert segment_row is not None
                 segment_id = segment_row["segment_id"]
 
-                await conn.execute("DELETE FROM segment_memberships WHERE segment_id = $1::uuid", segment_id)
+                await conn.execute(
+                    "DELETE FROM segment_memberships WHERE segment_id = $1::uuid", segment_id
+                )
 
                 insert_membership_sql = f"""
                     INSERT INTO segment_memberships (
@@ -381,9 +383,7 @@ class CanonicalSegmentService:
             "top_cities": [
                 {"city": row["label"], "count": int(row["count"] or 0)} for row in city_rows
             ],
-            "status_distribution": {
-                row["label"]: int(row["count"] or 0) for row in status_rows
-            },
+            "status_distribution": {row["label"]: int(row["count"] or 0) for row in status_rows},
             "juridical_form_distribution": {
                 row["label"]: int(row["count"] or 0) for row in legal_form_rows
             },

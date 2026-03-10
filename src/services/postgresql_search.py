@@ -263,9 +263,7 @@ class PostgreSQLSearchService:
 
         normalized_email_domain = self._normalize_email_domain(filters.email_domain)
         if normalized_email_domain:
-            conditions.append(
-                f"LOWER(SPLIT_PART(main_email, '@', 2)) = LOWER({next_param()})"
-            )
+            conditions.append(f"LOWER(SPLIT_PART(main_email, '@', 2)) = LOWER({next_param()})")
             params.append(normalized_email_domain)
 
         where_clause = " AND ".join(conditions) if conditions else "1=1"

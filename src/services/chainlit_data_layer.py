@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import uuid
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 
 import asyncpg
 from chainlit.data.base import BaseDataLayer
@@ -14,6 +14,7 @@ from chainlit.element import Element, ElementDict
 from chainlit.step import StepDict
 from chainlit.types import (
     Feedback,
+    FeedbackDict,
     PageInfo,
     PaginatedResponse,
     Pagination,
@@ -291,7 +292,7 @@ class PostgreSQLChainlitDataLayer(BaseDataLayer):
                 await self.create_step(
                     StepDict(
                         id=parent_id,
-                        threadId=thread_id,
+                        threadId=thread_id or "",
                         type="run",
                         metadata={},
                     )
@@ -412,7 +413,7 @@ class PostgreSQLChainlitDataLayer(BaseDataLayer):
                 u.identifier AS user_identifier
             FROM app_chat_threads t
             LEFT JOIN app_chat_users u ON t.user_id = u.user_id
-            WHERE {' AND '.join(clauses)}
+            WHERE {" AND ".join(clauses)}
             ORDER BY t.updated_at DESC
             LIMIT ${param_index}
         """
@@ -505,7 +506,9 @@ class PostgreSQLChainlitDataLayer(BaseDataLayer):
             tags=_parse_json(row.get("tags"), []),
             metadata=_parse_json(row.get("metadata"), {}),
             steps=[self._convert_step_row_to_dict(step_row) for step_row in step_rows],
-            elements=[self._convert_element_row_to_dict(element_row) for element_row in element_rows],
+            elements=[
+                self._convert_element_row_to_dict(element_row) for element_row in element_rows
+            ],
         )
 
     async def update_thread(
@@ -534,7 +537,9 @@ class PostgreSQLChainlitDataLayer(BaseDataLayer):
             cleaned_incoming = {key: value for key, value in metadata.items() if value is not None}
             merged_metadata = {**cleaned_existing, **cleaned_incoming}
 
-        metadata_payload = json.dumps(merged_metadata) if merged_metadata is not None else json.dumps({})
+        metadata_payload = (
+            json.dumps(merged_metadata) if merged_metadata is not None else json.dumps({})
+        )
         tags_payload = json.dumps(tags) if tags is not None else json.dumps([])
         now = _utcnow()
         await self.execute_query(
@@ -598,14 +603,17 @@ class PostgreSQLChainlitDataLayer(BaseDataLayer):
 
     def _convert_step_row_to_dict(self, row: dict[str, Any]) -> StepDict:
         payload = _parse_json(row.get("step_json"), {})
-        feedback = None
+        feedback: FeedbackDict | None = None
         if row.get("feedback_id") is not None:
-            feedback = {
-                "forId": str(row["step_id"]),
-                "id": str(row["feedback_id"]),
-                "value": row.get("feedback_value"),
-                "comment": row.get("feedback_comment"),
-            }
+            feedback = cast(
+                FeedbackDict,
+                {
+                    "forId": str(row["step_id"]),
+                    "id": str(row["feedback_id"]),
+                    "value": row.get("feedback_value"),
+                    "comment": row.get("feedback_comment"),
+                },
+            )
 
         return StepDict(
             id=str(row["step_id"]),

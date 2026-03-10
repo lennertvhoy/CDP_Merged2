@@ -18,6 +18,8 @@ from src.enrichment.phone_discovery import PhoneDiscoveryEnricher
 # Import services under test
 from src.services.cbe_extended import CBEExtendedClient
 
+pytestmark = pytest.mark.integration
+
 
 class TestCBEExtendedClient:
     """Tests for CBE Extended Client (revenue, employees, founding date)."""
