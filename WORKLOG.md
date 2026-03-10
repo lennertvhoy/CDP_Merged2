@@ -555,3 +555,47 @@ Following the Poetry-to-uv migration (commit 1978e31), CI was failing with test 
 **Remaining Work:**
 The 3 failing tests in `tests/integration/test_api_suite.py` need to be marked with `@pytest.mark.integration` so they're excluded from the unit test run, OR the CI needs PostgreSQL service configured for integration tests.
 
+## 2026-03-10 (Finish uv CI Repair And Verify Green Run)
+
+### Task: Clear the remaining uv-path lint/test/type blockers and verify GitHub CI green on the new SHA
+
+**Type:** app_code
+**Status:** COMPLETE
+**Timestamp:** 2026-03-10 17:50 CET
+**Git Head:** `7e6c432`
+
+**Summary:**
+Continued from the uv-migration handoff, but first re-triaged the current head and discovered the repo had already moved past `1978e31` to `8bd65a1`. The previous docs commit was green only on the docs fast path, while the last full run on code commit `fb85742` was still red. Reproduced the real remaining blockers locally under `uv`: two Ruff `B904` violations, three export tests in `tests/integration/test_api_suite.py` that were still being collected by the unit gate, the repo-wide `ruff format --check` backlog, and the full `mypy` errors that the earlier worklog had not closed. Fixed those issues in a single scoped pass, ran the same local gates the workflow uses, pushed commit `7e6c432`, and verified GitHub Actions run `22913778035` completed green for that exact SHA.
+
+**Files Changed:**
+- `src/ai_interface/tools/email.py`
+- `src/ai_interface/tools/export.py`
+- `src/ai_interface/tools/search.py`
+- `src/ai_interface/tools/unified_360.py`
+- `src/app.py`
+- `src/graph/nodes.py`
+- `src/mcp_server.py`
+- `src/services/autotask.py`
+- `src/services/chainlit_data_layer.py`
+- `src/services/exact.py`
+- `src/services/unified_360_queries.py`
+- `tests/integration/test_api_suite.py`
+- repo-wide Ruff formatter output across the files it flagged
+- `PROJECT_STATE.yaml`
+- `STATUS.md`
+- `NEXT_ACTIONS.md`
+- `BACKLOG.md`
+- `WORKLOG.md`
+
+**Verification:**
+- `python3 scripts/doc_lint.py` -> `doc_lint: OK`
+- `UV_CACHE_DIR=/tmp/uv-cache uv run --frozen ruff check src/ tests/` -> `All checks passed!`
+- `UV_CACHE_DIR=/tmp/uv-cache uv run --frozen ruff format --check src/ tests/` -> `174 files already formatted`
+- `UV_CACHE_DIR=/tmp/uv-cache uv run --frozen mypy src/ --ignore-missing-imports` -> `Success: no issues found in 102 source files`
+- `UV_CACHE_DIR=/tmp/uv-cache uv run --frozen pytest tests/ -m "not integration and not e2e" -q` -> passed locally; only warnings remained
+- `git push origin main` -> success (`8bd65a1..7e6c432  main -> main`)
+- `gh run view 22913778035 --json status,conclusion,headSha,url,jobs` -> run `22913778035` completed `success` for commit `7e6c432`
+
+**Follow-up:**
+1. Return the foreground queue to enrichment progress, colleague-facing auth rollout, and the remaining local product hardening work.
+2. Keep the uv path as the only supported dependency-manager flow; if future docs-only commits touch status docs, remember that docs-fast-path green is not a substitute for the last full green code SHA.
