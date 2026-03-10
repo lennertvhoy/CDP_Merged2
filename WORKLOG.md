@@ -515,3 +515,43 @@ Implemented the repo's local `uv` migration end-to-end. `pyproject.toml` now use
 1. Commit and push the uv migration snapshot, then rerun GitHub CI on the new SHA.
 2. Fix the remaining Ruff backlog and the `11` non-integration test failures that still reproduce locally under uv.
 3. Only claim CI/CD success after the new uv-based GitHub Actions run is green for the pushed SHA.
+
+
+---
+
+## 2026-03-10 (Fix CI/CD Failures After uv Migration)
+
+### Task: Fix test failures and Ruff issues following Poetry-to-uv migration
+
+**Type:** app_code  
+**Status:** PARTIAL  
+**Timestamp:** 2026-03-10 17:35 CET  
+**Git Head:** `fb85742`  
+
+**Summary:**
+Following the Poetry-to-uv migration (commit 1978e31), CI was failing with test errors and 165 Ruff issues. Fixed all unit test failures and auto-resolved Ruff issues. The remaining 3 failures are in `tests/integration/test_api_suite.py` - these are integration tests not marked with `@pytest.mark.integration` that require PostgreSQL (not available in CI).
+
+**Fixes Applied:**
+1. **email.py line 132**: Fixed `_load_segment_contacts` unpacking to handle 4 return values (profiles, total_count, backend, diagnostics)
+2. **TQL builder**: Fixed to only add status filter when explicitly provided (aligns with schema description)
+3. **test_app.py line 416**: Updated metadata assertion to include email field that code adds
+4. **test_ai_email.py**: Updated 4 tests to check JSON structure instead of old string format
+5. **test_tql_builder.py**: Updated empty params test to expect `traits.name EXISTS` (no default status)
+6. **Ruff auto-fixes**: Fixed 165 issues (W293 blank line whitespace, W291 trailing whitespace, I001 unsorted imports, F401 unused imports, UP028 yield-in-for-loop, UP035 deprecated imports, F541 f-string without placeholders)
+
+**Files Changed:**
+- `src/ai_interface/tools/email.py` (unpacking fix)
+- `src/search_engine/builders/tql_builder.py` (status filter logic)
+- `tests/unit/test_app.py` (metadata assertion)
+- `tests/unit/test_ai_email.py` (JSON assertions)
+- `tests/unit/test_tql_builder.py` (empty params expectation)
+- Plus 17 files with Ruff auto-fixes
+
+**Test Results:**
+- Unit tests: 628 passed, 2 skipped (100% pass rate)
+- Ruff: 2 remaining B904 issues (exception chaining - pre-existing)
+- CI run: https://github.com/lennertvhoy/CDP_Merged2/actions/runs/22913216042
+
+**Remaining Work:**
+The 3 failing tests in `tests/integration/test_api_suite.py` need to be marked with `@pytest.mark.integration` so they're excluded from the unit test run, OR the CI needs PostgreSQL service configured for integration tests.
+
