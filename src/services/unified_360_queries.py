@@ -5,13 +5,13 @@ combining KBO, Teamleader CRM, Exact Online financial data, and Autotask support
 
 Example usage:
     service = Unified360Service(database_url)
-    
+
     # Query: "What is the total pipeline value for software companies in Brussels?"
     result = await service.get_industry_pipeline_summary(
         nace_prefix='62',
         city='Brussels'
     )
-    
+
     # Query: "Show me IT companies in Gent with open deals over EUR 10k"
     result = await service.find_companies_with_pipeline(
         nace_codes=['62010', '62020', '62030'],
@@ -37,7 +37,7 @@ class Company360Profile:
     company_uid: str
     kbo_number: str | None
     vat_number: str | None
-    
+
     # KBO Data
     kbo_company_name: str | None
     legal_form: str | None
@@ -47,7 +47,7 @@ class Company360Profile:
     kbo_city: str | None
     website_url: str | None
     employee_count: int | None
-    
+
     # Teamleader Data
     tl_company_id: str | None
     tl_company_name: str | None
@@ -55,7 +55,7 @@ class Company360Profile:
     tl_customer_type: str | None
     tl_email: str | None
     tl_phone: str | None
-    
+
     # Exact Data
     exact_customer_id: str | None
     exact_company_name: str | None
@@ -85,7 +85,7 @@ class Company360Profile:
     # Identity Link Status
     identity_link_status: str
     last_updated_at: datetime
-    
+
     # Related data (populated on demand)
     pipeline: PipelineSummary | None = None
     financials: FinancialSummary | None = None
@@ -185,8 +185,8 @@ class Unified360Service:
             if not self._database_url:
                 raise ValueError("Either pool or database_url must be provided")
             self._pool = await asyncpg.create_pool(
-                self._database_url, 
-                min_size=1, 
+                self._database_url,
+                min_size=1,
                 max_size=3
             )
         return self._pool
@@ -198,21 +198,21 @@ class Unified360Service:
             self._pool = None
 
     async def get_company_360_profile(
-        self, 
+        self,
         kbo_number: str | None = None,
         company_uid: str | None = None
     ) -> Company360Profile | None:
         """Get complete 360° profile for a company.
-        
+
         Args:
             kbo_number: KBO number to look up
             company_uid: Or use company UID instead
-            
+
         Returns:
             Company360Profile or None if not found
         """
         pool = await self._get_pool()
-        
+
         async with pool.acquire() as conn:
             if kbo_number:
                 row = await conn.fetchrow(
@@ -277,12 +277,12 @@ class Unified360Service:
             # Load pipeline data
             pipeline_row = await conn.fetchrow(
                 """
-                SELECT * FROM unified_pipeline_revenue 
+                SELECT * FROM unified_pipeline_revenue
                 WHERE kbo_number = $1
                 """,
                 row['kbo_number']
             )
-            
+
             if pipeline_row:
                 profile.pipeline = PipelineSummary(
                     open_deals_count=pipeline_row['tl_open_deals'] or 0,
@@ -311,9 +311,9 @@ class Unified360Service:
         limit: int = 100
     ) -> list[dict[str, Any]]:
         """Find companies matching criteria with pipeline/revenue data.
-        
+
         Example: "IT companies in Gent with open deals over €10k"
-        
+
         Args:
             nace_codes: Specific NACE codes to filter
             nace_prefix: NACE code prefix (e.g., '62' for software)
@@ -323,12 +323,12 @@ class Unified360Service:
             has_financial_data: Filter for companies with Exact data
             has_crm_data: Filter for companies with Teamleader data
             limit: Maximum results
-            
+
         Returns:
             List of matching companies with summary data
         """
         pool = await self._get_pool()
-        
+
         conditions = ["kbo_number IS NOT NULL"]
         params = []
         param_idx = 1
@@ -375,7 +375,7 @@ class Unified360Service:
         async with pool.acquire() as conn:
             rows = await conn.fetch(
                 f"""
-                SELECT 
+                SELECT
                     kbo_number,
                     kbo_company_name,
                     nace_code,
@@ -407,19 +407,19 @@ class Unified360Service:
         limit: int = 50
     ) -> list[IndustrySummary]:
         """Get industry-level pipeline and revenue summary.
-        
+
         Example: "What is the total pipeline value for software companies in Brussels?"
-        
+
         Args:
             nace_prefix: Filter by NACE code prefix (e.g., '62' for software/IT)
             city: Filter by city
             limit: Maximum results
-            
+
         Returns:
             List of industry summaries
         """
         pool = await self._get_pool()
-        
+
         conditions = ["1=1"]
         params = []
         param_idx = 1
@@ -440,7 +440,7 @@ class Unified360Service:
         async with pool.acquire() as conn:
             rows = await conn.fetch(
                 f"""
-                SELECT 
+                SELECT
                     industry_category,
                     nace_code,
                     nace_description,
@@ -481,20 +481,20 @@ class Unified360Service:
         limit: int = 100
     ) -> list[GeographicSummary]:
         """Get geographic distribution of companies with data coverage.
-        
+
         Args:
             min_companies: Minimum number of companies to include
             limit: Maximum results
-            
+
         Returns:
             List of geographic summaries
         """
         pool = await self._get_pool()
-        
+
         async with pool.acquire() as conn:
             rows = await conn.fetch(
                 """
-                SELECT 
+                SELECT
                     city,
                     total_companies,
                     companies_with_crm,
@@ -534,17 +534,17 @@ class Unified360Service:
         activity_types: list[str] | None = None
     ) -> list[ActivityRecord]:
         """Get chronological activity timeline for a company.
-        
+
         Args:
             kbo_number: KBO number
             limit: Maximum activities to return
             activity_types: Filter by activity types
-            
+
         Returns:
             List of activity records
         """
         pool = await self._get_pool()
-        
+
         conditions = ["kbo_number = $1"]
         params = [kbo_number]
         param_idx = 2
@@ -561,7 +561,7 @@ class Unified360Service:
         async with pool.acquire() as conn:
             rows = await conn.fetch(
                 f"""
-                SELECT 
+                SELECT
                     source_system,
                     activity_type,
                     activity_description,
@@ -593,17 +593,17 @@ class Unified360Service:
         limit: int = 50
     ) -> list[dict[str, Any]]:
         """Get high-value accounts with risk/opportunity indicators.
-        
+
         Args:
             min_exposure: Minimum total exposure (pipeline + outstanding)
             account_priority: Filter by priority ('high_risk', 'high_opportunity', etc.)
             limit: Maximum results
-            
+
         Returns:
             List of high-value account records
         """
         pool = await self._get_pool()
-        
+
         conditions = ["1=1"]
         params = []
         param_idx = 1
@@ -624,7 +624,7 @@ class Unified360Service:
         async with pool.acquire() as conn:
             rows = await conn.fetch(
                 f"""
-                SELECT 
+                SELECT
                     kbo_number,
                     kbo_company_name,
                     nace_code,
@@ -650,12 +650,12 @@ class Unified360Service:
 
     async def get_identity_link_quality(self) -> list[dict[str, Any]]:
         """Get identity link quality metrics for all sources.
-        
+
         Returns:
             List of quality metrics per source system
         """
         pool = await self._get_pool()
-        
+
         async with pool.acquire() as conn:
             rows = await conn.fetch("SELECT * FROM identity_link_quality")
 
@@ -668,29 +668,29 @@ class Unified360Service:
         limit: int = 20
     ) -> list[dict[str, Any]]:
         """Search across all company data sources.
-        
+
         Searches KBO, Teamleader, Exact Online, and Autotask for matching companies,
         even if they haven't been identity-linked yet.
-        
+
         Args:
             query: Search query string
             search_fields: Fields to search (default: company names)
             limit: Maximum results
-            
+
         Returns:
             List of matching companies with source info
         """
         pool = await self._get_pool()
-        
+
         search_pattern = f"%{query}%"
-        
+
         async with pool.acquire() as conn:
             # Search ALL sources: unified view + direct CRM/Exact tables
             rows = await conn.fetch(
                 """
                 WITH unified_matches AS (
                     -- Search already-linked companies
-                    SELECT 
+                    SELECT
                         company_uid,
                         kbo_number,
                         kbo_company_name as company_name,
@@ -705,14 +705,14 @@ class Unified360Service:
                         identity_link_status,
                         last_updated_at,
                         'linked' as match_source,
-                        CASE 
+                        CASE
                             WHEN kbo_company_name ILIKE $2 THEN 1
                             WHEN tl_company_name ILIKE $2 THEN 2
                             WHEN exact_company_name ILIKE $2 THEN 3
                             ELSE 4
                         END as match_priority
                     FROM unified_company_360
-                    WHERE 
+                    WHERE
                         kbo_company_name ILIKE $1
                         OR tl_company_name ILIKE $1
                         OR exact_company_name ILIKE $1
@@ -721,7 +721,7 @@ class Unified360Service:
                 ),
                 crm_matches AS (
                     -- Search Teamleader companies not yet linked
-                    SELECT 
+                    SELECT
                         NULL as company_uid,
                         NULL as kbo_number,
                         cc.company_name as company_name,
@@ -740,13 +740,13 @@ class Unified360Service:
                     FROM crm_companies cc
                     WHERE cc.company_name ILIKE $1
                         AND NOT EXISTS (
-                            SELECT 1 FROM unified_matches um 
+                            SELECT 1 FROM unified_matches um
                             WHERE um.tl_company_id = cc.id::text
                         )
                 ),
                 exact_matches AS (
-                    -- Search Exact customers not yet linked  
-                    SELECT 
+                    -- Search Exact customers not yet linked
+                    SELECT
                         NULL as company_uid,
                         NULL as kbo_number,
                         ec.company_name as company_name,
@@ -765,7 +765,7 @@ class Unified360Service:
                     FROM exact_customers ec
                     WHERE ec.company_name ILIKE $1
                         AND NOT EXISTS (
-                            SELECT 1 FROM unified_matches um 
+                            SELECT 1 FROM unified_matches um
                             WHERE um.exact_customer_id = ec.id::text
                         )
                 ),

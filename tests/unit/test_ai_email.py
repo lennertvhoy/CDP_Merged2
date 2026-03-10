@@ -1,3 +1,4 @@
+import json
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -125,7 +126,10 @@ async def test_send_bulk_emails_empty(mock_resend):
 @pytest.mark.asyncio
 async def test_push_segment_to_resend(mock_tracardi, mock_resend):
     res = await push_segment_to_resend.coroutine("seg1")
-    assert "Pushed 2/3 contacts" in res
+    result = json.loads(res)
+    assert result["status"] == "ok"
+    assert result["segment_id"] == "seg1"
+    assert result["counts"]["added_to_resend"] == 2
     assert mock_resend.create_audience.call_count == 1
     assert mock_resend.add_contact_to_audience.call_count == 2
 
@@ -134,7 +138,9 @@ async def test_push_segment_to_resend(mock_tracardi, mock_resend):
 async def test_push_segment_to_resend_empty_segment(mock_tracardi, mock_resend):
     mock_tracardi.search_profiles.return_value = {"result": []}
     res = await push_segment_to_resend.coroutine("seg_empty")
-    assert "contains no profiles" in res
+    result = json.loads(res)
+    assert result["status"] == "error"
+    assert "empty" in result["error"].lower()
 
 
 @pytest.mark.asyncio
@@ -152,14 +158,18 @@ async def test_push_segment_to_resend_http_error_on_add(mock_tracardi, mock_rese
         "err", request=MagicMock(), response=mock_resp
     )
     res = await push_segment_to_resend.coroutine("seg1")
-    assert "Pushed 0/3 contacts" in res
+    result = json.loads(res)
+    assert result["status"] == "ok"
+    assert result["counts"]["added_to_resend"] == 0
 
 
 @pytest.mark.asyncio
 async def test_push_segment_to_resend_req_error_on_add(mock_tracardi, mock_resend):
     mock_resend.add_contact_to_audience.side_effect = RequestError("err", request=MagicMock())
     res = await push_segment_to_resend.coroutine("seg1")
-    assert "Pushed 0/3 contacts" in res
+    result = json.loads(res)
+    assert result["status"] == "ok"
+    assert result["counts"]["added_to_resend"] == 0
 
 
 @pytest.mark.asyncio

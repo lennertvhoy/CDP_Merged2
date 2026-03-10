@@ -414,7 +414,7 @@ class AutotaskMockData:
 
 class AutotaskClient:
     """Production-ready Autotask PSA API client.
-    
+
     In DEMO_MODE (default), returns hyperrealistic mock data without API calls.
     Set AUTOTASK_DEMO_MODE=false and provide credentials for live API access.
     """
@@ -428,13 +428,13 @@ class AutotaskClient:
     ) -> None:
         load_autotask_env_file()
         self._demo_mode = DEMO_MODE
-        
+
         # Only load credentials if not in demo mode
         if not self._demo_mode:
             self.credentials = credentials or AutotaskCredentials.from_env()
         else:
             self.credentials = credentials  # May be None in demo mode
-            
+
         self.rate_limiter = rate_limiter or RateLimiter()
         self.max_retries = max_retries
         self.backoff_base = backoff_base
@@ -449,9 +449,9 @@ class AutotaskClient:
             if self._demo_mode:
                 # No real client needed in demo mode
                 return httpx.Client()
-            
+
             base_url = AUTOTASK_ZONES.get(
-                self.credentials.zone, 
+                self.credentials.zone,
                 AUTOTASK_ZONES["eu"]
             )
             headers = {
@@ -519,7 +519,7 @@ class AutotaskClient:
                         **{k: v for k, v in data.items() if k != "companyName"},
                     }
                 }
-        
+
         elif "Tickets" in endpoint:
             if method == "GET":
                 tickets = self._mock_data.get_tickets()
@@ -539,7 +539,7 @@ class AutotaskClient:
                         **{k: v for k, v in data.items() if k != "title"},
                     }
                 }
-        
+
         elif "Contracts" in endpoint:
             if method == "GET":
                 contracts = self._mock_data.get_contracts()
@@ -557,14 +557,13 @@ class AutotaskClient:
     def get_companies(self) -> Generator[AutotaskCompany, None, None]:
         """Fetch all companies with automatic pagination."""
         if self._demo_mode:
-            for company in self._mock_data.get_companies():
-                yield company
+            yield from self._mock_data.get_companies()
             return
 
         page = 1
         while True:
             response = self._make_request(
-                "GET", 
+                "GET",
                 f"/Companies?page={page}&pageSize=500"
             )
             for item in response.get("items", []):
@@ -586,7 +585,7 @@ class AutotaskClient:
                     territory_id=item.get("territoryID"),
                     tax_id=item.get("taxID"),
                 )
-            
+
             if not response.get("pageDetails", {}).get("nextPageUrl"):
                 break
             page += 1
@@ -621,7 +620,7 @@ class AutotaskClient:
                     sub_issue_type=item.get("subIssueType"),
                     assigned_resource_id=item.get("assignedResourceID"),
                 )
-            
+
             if not response.get("pageDetails", {}).get("nextPageUrl"):
                 break
             page += 1
@@ -650,7 +649,7 @@ class AutotaskClient:
                     status=item.get("status", "Active"),
                     contract_value=item.get("contractValue", 0.0),
                 )
-            
+
             if not response.get("pageDetails", {}).get("nextPageUrl"):
                 break
             page += 1

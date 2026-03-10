@@ -3,8 +3,6 @@
 import re
 from unittest.mock import patch
 
-import pytest
-
 from src.services.web_search_policy import (
     WebSearchPolicy,
     WebSearchPolicyEnforcer,
@@ -21,7 +19,7 @@ class TestWebSearchPolicyEnforcer:
             with patch.object(WebSearchPolicyEnforcer, '_parse_patterns', return_value=[]):
                 enforcer = WebSearchPolicyEnforcer()
                 enforcer.policy = WebSearchPolicy.DISABLED
-                
+
                 result = enforcer.validate_query("python tutorial")
                 assert result.allowed is False
                 assert "disabled" in result.reason.lower()
@@ -31,7 +29,7 @@ class TestWebSearchPolicyEnforcer:
         enforcer = WebSearchPolicyEnforcer()
         enforcer.policy = WebSearchPolicy.RESTRICTED
         enforcer.blocked_patterns = [re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}")]
-        
+
         result = enforcer.validate_query("Contact john.doe@company.com for help")
         assert result.allowed is False
         assert result.blocked_patterns is not None
@@ -42,7 +40,7 @@ class TestWebSearchPolicyEnforcer:
         enforcer = WebSearchPolicyEnforcer()
         enforcer.policy = WebSearchPolicy.RESTRICTED
         enforcer.blocked_patterns = [re.compile(r"\b\d{10}\b")]
-        
+
         result = enforcer.validate_query("Call 0123456789 for support")
         assert result.allowed is False
         assert result.blocked_patterns is not None
@@ -53,7 +51,7 @@ class TestWebSearchPolicyEnforcer:
         enforcer = WebSearchPolicyEnforcer()
         enforcer.policy = WebSearchPolicy.RESTRICTED
         enforcer.blocked_patterns = []
-        
+
         result = enforcer.validate_query("python programming tutorial")
         assert result.allowed is True
 
@@ -62,7 +60,7 @@ class TestWebSearchPolicyEnforcer:
         enforcer = WebSearchPolicyEnforcer()
         enforcer.policy = WebSearchPolicy.RESTRICTED
         enforcer.allowed_domains = ["microsoft.com", "github.com"]
-        
+
         assert enforcer.validate_result_domain("https://docs.microsoft.com/python") is True
         assert enforcer.validate_result_domain("https://github.com/user/repo") is True
 
@@ -71,7 +69,7 @@ class TestWebSearchPolicyEnforcer:
         enforcer = WebSearchPolicyEnforcer()
         enforcer.policy = WebSearchPolicy.RESTRICTED
         enforcer.allowed_domains = ["microsoft.com"]
-        
+
         assert enforcer.validate_result_domain("https://suspicious-site.com") is False
         assert enforcer.validate_result_domain("https://phishing-example.com") is False
 
@@ -80,7 +78,7 @@ class TestWebSearchPolicyEnforcer:
         enforcer = WebSearchPolicyEnforcer()
         enforcer.policy = WebSearchPolicy.RESTRICTED
         enforcer.allowed_domains = ["microsoft.com"]
-        
+
         assert enforcer.validate_result_domain("https://www.microsoft.com") is True
         assert enforcer.validate_result_domain("https://subdomain.microsoft.com") is True
 
@@ -101,7 +99,7 @@ class TestWebSearchPolicyEnforcer:
         enforcer = WebSearchPolicyEnforcer()
         enforcer.policy = WebSearchPolicy.RESTRICTED
         enforcer.allowed_domains = ["microsoft.com", "github.com"]
-        
+
         summary = enforcer.get_policy_summary()
         assert summary["policy"] == "restricted"
         assert summary["enabled"] is True
@@ -112,7 +110,7 @@ class TestWebSearchPolicyEnforcer:
         enforcer = WebSearchPolicyEnforcer()
         domains = enforcer._parse_domains(None)
         assert domains == []
-        
+
         domains = enforcer._parse_domains("")
         assert domains == []
 
@@ -137,6 +135,6 @@ class TestValidateWebSearchQuery:
     def test_convenience_function(self, mock_enforcer):
         """Test that convenience function delegates to enforcer."""
         mock_enforcer.validate_query.return_value.allowed = True
-        
-        result = validate_web_search_query("test query", user_id="user123")
+
+        validate_web_search_query("test query", user_id="user123")
         mock_enforcer.validate_query.assert_called_once_with("test query", "user123")

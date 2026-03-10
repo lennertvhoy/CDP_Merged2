@@ -37,11 +37,11 @@ from src.core.logger import get_logger
 from src.retrieval.azure_retriever import AzureSearchRetriever
 from src.search_engine.factory import QueryFactory
 from src.search_engine.schema import ProfileSearchParams
+from src.services.canonical_segments import CanonicalSegmentService
 from src.services.postgresql_search import (
     CompanySearchFilters,
     get_search_service,
 )
-from src.services.canonical_segments import CanonicalSegmentService
 from src.services.tracardi import TracardiClient
 
 logger = get_logger(__name__)

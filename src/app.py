@@ -126,10 +126,10 @@ def _validate_azure_ad_domain(email: str) -> bool:
     """Validate that the Azure AD user belongs to an allowed domain."""
     if not settings.AZURE_AD_ALLOWED_DOMAINS:
         return True  # No domain restriction configured
-    
+
     allowed_domains = [d.strip().lower() for d in settings.AZURE_AD_ALLOWED_DOMAINS.split(",")]
     email_domain = email.split("@")[-1].lower() if "@" in email else ""
-    
+
     if email_domain not in allowed_domains:
         logger.warning(
             "azure_ad_domain_rejected",
@@ -171,7 +171,7 @@ async def oauth_user_callback(
         or raw_user_data.get("userPrincipalName")
         or default_user.identifier
     )
-    
+
     # Azure AD domain validation
     if provider_id == "azure-ad" and not _validate_azure_ad_domain(email):
         logger.warning(
@@ -185,12 +185,12 @@ async def oauth_user_callback(
     metadata = dict(default_user.metadata or {})
     metadata["provider"] = provider_id
     metadata["email"] = email
-    
+
     # Capture additional Azure AD claims if present
     if provider_id == "azure-ad":
         metadata["tenant_id"] = raw_user_data.get("tid") or settings.AZURE_AD_TENANT_ID
         metadata["oid"] = raw_user_data.get("oid")  # Object ID
-        
+
     return User(
         identifier=default_user.identifier,
         display_name=_oauth_display_name(raw_user_data, default_user),

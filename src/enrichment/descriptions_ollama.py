@@ -8,7 +8,7 @@ Usage:
     # Use Ollama instead of Azure OpenAI
     export DESCRIPTION_ENRICHER=ollama
     export OLLAMA_MODEL=llama3.1:8b  # or llama3.2:3b, mistral, etc.
-    
+
     # Then run enrichment as normal
     python scripts/enrich_companies_batch.py --enrichers description
 """
@@ -23,7 +23,7 @@ from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponen
 
 from src.core.cache import AsyncCache
 from src.core.logger import get_logger
-from src.enrichment.descriptions import NACE_SECTOR_MAP, _nace_label
+from src.enrichment.descriptions import _nace_label
 
 logger = get_logger(__name__)
 
@@ -63,9 +63,10 @@ class OllamaDescriptionEnricher:
         model: str | None = None,
         cache: AsyncCache | None = None,
     ):
-        from src.core.cache import MultiTierCache, RedisCache, SQLiteCache
-        from src.config import settings
         from pathlib import Path
+
+        from src.config import settings
+        from src.core.cache import MultiTierCache, RedisCache, SQLiteCache
 
         # Build multi-tier cache when Redis is configured and no explicit cache provided.
         if cache is None:

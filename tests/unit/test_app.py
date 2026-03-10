@@ -413,7 +413,7 @@ async def test_oauth_callback_normalizes_display_name_and_provider(monkeypatch):
     assert resolved_user is not None
     assert resolved_user.identifier == "jane@example.com"
     assert resolved_user.display_name == "Jane Doe"
-    assert resolved_user.metadata == {"image": "avatar", "provider": "google"}
+    assert resolved_user.metadata == {"email": "jane@example.com", "image": "avatar", "provider": "google"}
 
 
 @pytest.mark.asyncio

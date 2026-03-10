@@ -227,7 +227,7 @@ class ExactClient:
             is_token_refresh=False,
         )
         data = response.json()
-        
+
         # Extract division from the first user's current division
         items = data.get("d", {}).get("results", [])
         if items:
@@ -243,7 +243,7 @@ class ExactClient:
                     division_id=self._division_id,
                 )
                 return
-        
+
         raise RuntimeError("Could not auto-discover Exact division ID")
 
     def _get_api_base_url(self) -> str:
@@ -256,7 +256,7 @@ class ExactClient:
     def refresh_access_token(self) -> str:
         """Exchange the stored refresh token for a fresh access token."""
         import time
-        
+
         token_url = EXACT_TOKEN_URL_TEMPLATE.format(base_url=self.credentials.base_url)
         response = httpx.post(
             token_url,
@@ -269,7 +269,7 @@ class ExactClient:
             },
             timeout=self.timeout,
         )
-        
+
         # Handle "token not expired" - wait and retry once
         if response.status_code == 400 and "not expired" in response.text:
             # The existing token is still valid, but we don't have it.
@@ -286,20 +286,20 @@ class ExactClient:
                 },
                 timeout=self.timeout,
             )
-            
+
         response.raise_for_status()
         payload = response.json()
 
         access_token = payload.get("access_token")
         refresh_token = payload.get("refresh_token")
         expires_in = payload.get("expires_in", 600)
-        
+
         if not access_token or not refresh_token:
             raise RuntimeError("Exact token response did not include both token fields")
 
         self.access_token = access_token
         self._token_expires_at = time.time() + expires_in - 60  # Refresh 60s before expiry
-        
+
         self.credentials = ExactCredentials(
             client_id=self.credentials.client_id,
             client_secret=self.credentials.client_secret,
@@ -314,7 +314,7 @@ class ExactClient:
 
     def _headers(self) -> dict[str, str]:
         import time
-        
+
         # Refresh token if expired or not present
         if not self.access_token or time.time() >= self._token_expires_at:
             self.refresh_access_token()
@@ -411,7 +411,7 @@ class ExactClient:
     ) -> dict[str, Any]:
         """Call an Exact Online GET endpoint and return parsed JSON."""
         base_url = self._get_api_base_url()
-        
+
         # Build OData query parameters
         params: list[str] = []
         if select:
@@ -423,7 +423,7 @@ class ExactClient:
         if skip > 0:
             params.append(f"$skip={skip}")
         params.append(f"$top={top}")
-        
+
         query_string = "&".join(params)
         url = f"{base_url}/{endpoint}?{query_string}"
 
@@ -457,7 +457,7 @@ class ExactClient:
             # Exact returns data in "d" -> "results"
             data = response.get("d", {})
             records = data.get("results", [])
-            
+
             if not records:
                 break
 

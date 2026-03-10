@@ -28,7 +28,7 @@ logger = get_logger(__name__)
 def _serialize_for_json(obj: Any) -> Any:
     """Serialize objects for JSON output."""
     from datetime import date, datetime
-    
+
     if isinstance(obj, Decimal):
         return float(obj)
     if isinstance(obj, (datetime, date)):
@@ -375,7 +375,7 @@ async def get_industry_summary(
         if not summaries:
             return json.dumps({
                 "status": "ok",
-                "message": f"No industry data found for the specified criteria",
+                "message": "No industry data found for the specified criteria",
                 "filters": {
                     "industry_category": industry_category,
                     "nace_prefix": prefix,

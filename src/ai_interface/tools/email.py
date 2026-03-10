@@ -25,7 +25,7 @@ async def _load_segment_contacts(
     limit: int = 1000,
 ) -> tuple[list[dict], int, str, dict]:
     """Load contact-capable segment rows from PostgreSQL first, then Tracardi.
-    
+
     Returns:
         Tuple of (profiles, total_count, backend, diagnostics)
     """
@@ -38,7 +38,7 @@ async def _load_segment_contacts(
         "profiles_with_email": 0,
         "errors": [],
     }
-    
+
     # Try PostgreSQL first
     try:
         canonical_service = CanonicalSegmentService()
@@ -61,7 +61,7 @@ async def _load_segment_contacts(
         query = f'segments="{segment_id}"'
         search_res = await tracardi.search_profiles(query, limit=limit)
         diagnostics["tracardi_checked"] = True
-        
+
         if not search_res:
             diagnostics["errors"].append("Tracardi: No response or segment not found")
             raise RuntimeError(
@@ -69,25 +69,25 @@ async def _load_segment_contacts(
                 f"PostgreSQL count: {diagnostics['postgresql_count']}, "
                 f"Tracardi: no response"
             )
-        
+
         profiles = search_res.get("result", []) if search_res else []
         tracardi_count = len(profiles)
         diagnostics["tracardi_count"] = tracardi_count
-        
+
         # Count profiles with emails
         for p in profiles:
             if _extract_segment_email(p):
                 diagnostics["profiles_with_email"] += 1
-        
+
         if tracardi_count == 0:
             raise RuntimeError(
                 f"Segment '{segment_id}' exists but is empty in both sources. "
                 f"PostgreSQL: {diagnostics['postgresql_count']}, "
                 f"Tracardi: 0 profiles"
             )
-        
+
         return profiles, tracardi_count, "tracardi", diagnostics
-        
+
     except RuntimeError:
         raise
     except Exception as exc:
@@ -129,7 +129,7 @@ async def push_to_flexmail(segment_id: str) -> str:
     flexmail = FlexmailClient()
     logger.info("flexmail_push_start", segment=segment_id)
     try:
-        profiles_to_push, total_count, backend = await _load_segment_contacts(segment_id)
+        profiles_to_push, total_count, backend, _diagnostics = await _load_segment_contacts(segment_id)
     except RuntimeError:
         return f"Failed to retrieve segment '{segment_id}' for Flexmail push."
 
@@ -368,11 +368,11 @@ async def push_segment_to_resend(segment_id: str, audience_name: str | None = No
             added=added_count,
             backend=backend,
         )
-        
+
         # Calculate skipped count
         skipped_count = len(profiles_to_push) - added_count
         no_email_count = len(profiles_to_push) - diagnostics.get("profiles_with_email", 0)
-        
+
         result = {
             "status": "ok",
             "segment_id": segment_id,
@@ -388,17 +388,17 @@ async def push_segment_to_resend(segment_id: str, audience_name: str | None = No
             },
             "diagnostics": diagnostics,
         }
-        
+
         if total_count > len(profiles_to_push):
             result["note"] = f"Loaded {len(profiles_to_push)} of {total_count} total members in this tool call."
-        
+
         if skipped_count > 0:
             result["suggestions"] = [
                 f"{skipped_count} profiles were skipped - likely due to missing/invalid emails",
                 "Verify segment members have valid email addresses",
                 "Check Tracardi profile data completeness"
             ]
-        
+
         return json.dumps(result, ensure_ascii=False, indent=2)
     except Exception as exc:
         logger.error("resend_push_error", segment=segment_id, error=str(exc))

@@ -23,7 +23,7 @@ ARTIFACT_ROOT = Path("output") / "agent_artifacts"
 
 def _get_base_url() -> str:
     """Get the base URL for download links.
-    
+
     For local deployment, uses CHAINLIT_URL or falls back to localhost:8000.
     For Azure deployment, this can be extended to use the deployed URL.
     """
@@ -31,7 +31,7 @@ def _get_base_url() -> str:
     base_url = os.getenv("CHAINLIT_URL", "").rstrip("/")
     if base_url:
         return base_url
-    
+
     # Default to localhost for local development
     port = os.getenv("CHAINLIT_PORT", "8000")
     return f"http://localhost:{port}"
@@ -127,10 +127,10 @@ def _artifact_path(title: str, output_format: str) -> Path:
 
 def _build_download_url(filename: str) -> str:
     """Build the download URL for an artifact file.
-    
+
     Args:
         filename: The artifact filename (not full path)
-    
+
     Returns:
         Full URL to download the artifact via the /download/artifacts endpoint
     """
