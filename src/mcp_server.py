@@ -26,6 +26,7 @@ import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from decimal import Decimal
+from typing import cast
 
 # Add src to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -33,6 +34,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Resource, TextContent, Tool
+from pydantic import AnyUrl
 
 # Import CDP services
 from core.database_url import resolve_database_url
@@ -105,39 +107,39 @@ Parameters support:
             "properties": {
                 "keywords": {
                     "type": "string",
-                    "description": "Search keywords for company names/descriptions"
+                    "description": "Search keywords for company names/descriptions",
                 },
                 "city": {
                     "type": "string",
-                    "description": "Filter by city name (e.g., 'Brussels', 'Gent', 'Antwerpen')"
+                    "description": "Filter by city name (e.g., 'Brussels', 'Gent', 'Antwerpen')",
                 },
                 "nace_code": {
                     "type": "string",
-                    "description": "NACE industry code (e.g., '56101' for restaurants)"
+                    "description": "NACE industry code (e.g., '56101' for restaurants)",
                 },
                 "status": {
                     "type": "string",
-                    "description": "Company status filter. 'AC' = active only, omit = all statuses"
+                    "description": "Company status filter. 'AC' = active only, omit = all statuses",
                 },
                 "min_start_date": {
                     "type": "string",
-                    "description": "Minimum founding date (ISO format: YYYY-MM-DD)"
+                    "description": "Minimum founding date (ISO format: YYYY-MM-DD)",
                 },
                 "limit": {
                     "type": "integer",
                     "description": "Maximum results to return (default 100, max 1000)",
                     "default": 100,
                     "minimum": 1,
-                    "maximum": 1000
+                    "maximum": 1000,
                 },
                 "offset": {
                     "type": "integer",
                     "description": "Pagination offset",
                     "default": 0,
-                    "minimum": 0
-                }
-            }
-        }
+                    "minimum": 0,
+                },
+            },
+        },
     ),
     Tool(
         name="aggregate_companies",
@@ -161,26 +163,20 @@ Supports grouping by:
                 "group_by": {
                     "type": "string",
                     "description": "Field to group by",
-                    "enum": ["nace_code", "industry", "city", "legal_form", "status"]
+                    "enum": ["nace_code", "industry", "city", "legal_form", "status"],
                 },
-                "city": {
-                    "type": "string",
-                    "description": "Optional city filter"
-                },
-                "keywords": {
-                    "type": "string",
-                    "description": "Optional keyword filter"
-                },
+                "city": {"type": "string", "description": "Optional city filter"},
+                "keywords": {"type": "string", "description": "Optional keyword filter"},
                 "limit": {
                     "type": "integer",
                     "description": "Maximum groups to return",
                     "default": 10,
                     "minimum": 1,
-                    "maximum": 100
-                }
+                    "maximum": 100,
+                },
             },
-            "required": ["group_by"]
-        }
+            "required": ["group_by"],
+        },
     ),
     Tool(
         name="get_company_360_profile",
@@ -198,14 +194,14 @@ Use for: "Give me a 360° view of company KBO 0123.456.789"
             "properties": {
                 "kbo_number": {
                     "type": "string",
-                    "description": "KBO number (format: 0123.456.789 or 0123456789)"
+                    "description": "KBO number (format: 0123.456.789 or 0123456789)",
                 },
                 "company_name": {
                     "type": "string",
-                    "description": "Company name (alternative to KBO number)"
-                }
-            }
-        }
+                    "description": "Company name (alternative to KBO number)",
+                },
+            },
+        },
     ),
     Tool(
         name="get_industry_summary",
@@ -223,14 +219,14 @@ Returns: Total pipeline value, revenue, company count, deal metrics
             "properties": {
                 "industry": {
                     "type": "string",
-                    "description": "Industry name or NACE code (e.g., 'software', '56101')"
+                    "description": "Industry name or NACE code (e.g., 'software', '56101')",
                 },
                 "city": {
                     "type": "string",
-                    "description": "Optional city filter (e.g., 'Brussels')"
-                }
-            }
-        }
+                    "description": "Optional city filter (e.g., 'Brussels')",
+                },
+            },
+        },
     ),
     Tool(
         name="get_geographic_revenue_distribution",
@@ -251,10 +247,10 @@ Returns: Revenue totals by city, company counts, deal values
                     "description": "Maximum cities to return",
                     "default": 20,
                     "minimum": 1,
-                    "maximum": 100
+                    "maximum": 100,
                 }
-            }
-        }
+            },
+        },
     ),
     Tool(
         name="get_identity_link_quality",
@@ -267,10 +263,7 @@ Use this tool for:
 
 Returns: Match rates by source system, coverage statistics
 """,
-        inputSchema={
-            "type": "object",
-            "properties": {}
-        }
+        inputSchema={"type": "object", "properties": {}},
     ),
     Tool(
         name="find_high_value_accounts",
@@ -286,23 +279,20 @@ Returns: Companies with risk/opportunity flags, financial metrics
         inputSchema={
             "type": "object",
             "properties": {
-                "min_revenue": {
-                    "type": "number",
-                    "description": "Minimum annual revenue filter"
-                },
+                "min_revenue": {"type": "number", "description": "Minimum annual revenue filter"},
                 "has_overdue_invoices": {
                     "type": "boolean",
-                    "description": "Filter for companies with overdue invoices"
+                    "description": "Filter for companies with overdue invoices",
                 },
                 "limit": {
                     "type": "integer",
                     "description": "Maximum results",
                     "default": 50,
                     "minimum": 1,
-                    "maximum": 200
-                }
-            }
-        }
+                    "maximum": 200,
+                },
+            },
+        },
     ),
 ]
 
@@ -310,6 +300,7 @@ Returns: Companies with risk/opportunity flags, financial metrics
 # ============================================================================
 # TOOL HANDLERS
 # ============================================================================
+
 
 @app.list_tools()
 async def list_tools() -> list[Tool]:
@@ -338,7 +329,10 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             )
             # Convert to dict for JSON serialization
             result_dict = {
-                "profiles": [p.model_dump() if hasattr(p, "model_dump") else p for p in result.get("profiles", [])],
+                "profiles": [
+                    p.model_dump() if hasattr(p, "model_dump") else p
+                    for p in result.get("profiles", [])
+                ],
                 "total_count": result.get("total_count"),
                 "offset": result.get("offset"),
                 "limit": result.get("limit"),
@@ -368,10 +362,18 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                 )
                 profiles = search_result.get("profiles", [])
                 if profiles:
-                    kbo = profiles[0].kbo_number if hasattr(profiles[0], "kbo_number") else profiles[0].get("kbo_number")
+                    kbo = (
+                        profiles[0].kbo_number
+                        if hasattr(profiles[0], "kbo_number")
+                        else profiles[0].get("kbo_number")
+                    )
                     if kbo:
                         result = await query_360_service.get_company_360_profile(kbo_number=kbo)
-                        result_dict = result.model_dump() if result and hasattr(result, "model_dump") else result
+                        result_dict = (
+                            result.model_dump()
+                            if result and hasattr(result, "model_dump")
+                            else result
+                        )
                     else:
                         result_dict = {"error": "Company found but no KBO number available"}
                 else:
@@ -407,16 +409,20 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                 nace_prefix=nace_prefix,
                 city=arguments.get("city"),
             )
-            result_dict = [r.model_dump() if hasattr(r, "model_dump") else r for r in result]
-            return [TextContent(type="text", text=json.dumps(result_dict, indent=2, default=str))]
+            result_payload = [r.model_dump() if hasattr(r, "model_dump") else r for r in result]
+            return [
+                TextContent(type="text", text=json.dumps(result_payload, indent=2, default=str))
+            ]
 
         elif name == "get_geographic_revenue_distribution":
             result = await query_360_service.get_geographic_distribution(
                 min_companies=1,
                 limit=arguments.get("limit", 20),
             )
-            result_dict = [r.model_dump() if hasattr(r, "model_dump") else r for r in result]
-            return [TextContent(type="text", text=json.dumps(result_dict, indent=2, default=str))]
+            result_payload = [r.model_dump() if hasattr(r, "model_dump") else r for r in result]
+            return [
+                TextContent(type="text", text=json.dumps(result_payload, indent=2, default=str))
+            ]
 
         elif name == "get_identity_link_quality":
             # Query the identity_link_quality view directly
@@ -457,6 +463,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
 
     except Exception as e:
         import traceback
+
         error_msg = f"Error: {str(e)}\n{traceback.format_exc()}"
         return [TextContent(type="text", text=error_msg)]
 
@@ -467,13 +474,13 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
 
 RESOURCES = [
     Resource(
-        uri="cdp://schema/companies",
+        uri=cast(AnyUrl, "cdp://schema/companies"),
         name="Company Database Schema",
         description="Schema information for the companies table",
         mimeType="application/json",
     ),
     Resource(
-        uri="cdp://stats/summary",
+        uri=cast(AnyUrl, "cdp://stats/summary"),
         name="Database Summary Statistics",
         description="High-level statistics about the CDP database",
         mimeType="application/json",
@@ -500,15 +507,27 @@ async def read_resource(uri: str) -> str:
             "description": "Core company data from KBO (Belgian business registry)",
             "columns": [
                 {"name": "id", "type": "UUID", "description": "Primary key"},
-                {"name": "kbo_number", "type": "TEXT", "description": "Belgian business registry number"},
+                {
+                    "name": "kbo_number",
+                    "type": "TEXT",
+                    "description": "Belgian business registry number",
+                },
                 {"name": "company_name", "type": "TEXT", "description": "Official company name"},
-                {"name": "status", "type": "TEXT", "description": "AC=Active, other values for inactive"},
-                {"name": "industry_nace_code", "type": "TEXT", "description": "Industry classification"},
+                {
+                    "name": "status",
+                    "type": "TEXT",
+                    "description": "AC=Active, other values for inactive",
+                },
+                {
+                    "name": "industry_nace_code",
+                    "type": "TEXT",
+                    "description": "Industry classification",
+                },
                 {"name": "city", "type": "TEXT", "description": "City name"},
                 {"name": "website_url", "type": "TEXT", "description": "Company website"},
                 {"name": "created_at", "type": "TIMESTAMP", "description": "Record creation time"},
                 {"name": "updated_at", "type": "TIMESTAMP", "description": "Last update time"},
-            ]
+            ],
         }
         return json.dumps(schema, indent=2)
 
@@ -532,7 +551,7 @@ async def read_resource(uri: str) -> str:
                 "coverage": {
                     "website_pct": round(with_website / total * 100, 2) if total else 0,
                     "geo_pct": round(with_geo / total * 100, 2) if total else 0,
-                }
+                },
             }
             return json.dumps(stats, indent=2)
         except Exception as e:
@@ -546,6 +565,7 @@ async def read_resource(uri: str) -> str:
 # MAIN ENTRY POINT
 # ============================================================================
 
+
 async def main():
     """Run the MCP server."""
     parser = argparse.ArgumentParser(description="CDP MCP Server")
@@ -553,7 +573,7 @@ async def main():
         "--transport",
         choices=["stdio", "sse"],
         default="stdio",
-        help="Transport mode (stdio for Claude Desktop, sse for HTTP)"
+        help="Transport mode (stdio for Claude Desktop, sse for HTTP)",
     )
     parser.add_argument("--port", type=int, default=8001, help="Port for SSE transport")
     args = parser.parse_args()
@@ -561,11 +581,7 @@ async def main():
     if args.transport == "stdio":
         # Stdio transport for Claude Desktop
         async with stdio_server() as (read_stream, write_stream):
-            await app.run(
-                read_stream,
-                write_stream,
-                app.create_initialization_options()
-            )
+            await app.run(read_stream, write_stream, app.create_initialization_options())
     else:
         # SSE transport for HTTP clients
         from mcp.server.sse import SseServerTransport
@@ -576,7 +592,9 @@ async def main():
         sse = SseServerTransport("/messages/")
 
         async def handle_sse(request):
-            async with sse.connect_session(request.scope, request.receive, request.send) as streams:
+            async with sse.connect_session(
+                request.scope, request.receive, request.send
+            ) as streams:
                 await app.run(streams[0], streams[1], app.create_initialization_options())
 
         async def handle_health(request):
@@ -588,10 +606,11 @@ async def main():
                 Route("/health", handle_health),
                 Route("/sse", handle_sse),
                 Mount("/messages/", app=sse.handle_post_message),
-            ]
+            ],
         )
 
         import uvicorn
+
         config = uvicorn.Config(
             starlette_app,
             host=DEFAULT_SSE_HOST,

@@ -45,11 +45,15 @@ async def test_export_segment_to_csv_prefers_canonical_segment_rows(tmp_path):
     }
 
     with (
-        patch("src.ai_interface.tools.export.CanonicalSegmentService", return_value=canonical_service),
+        patch(
+            "src.ai_interface.tools.export.CanonicalSegmentService", return_value=canonical_service
+        ),
         patch("src.ai_interface.tools.export.TracardiClient") as tracardi_cls,
         patch("tempfile.gettempdir", return_value=str(tmp_path)),
     ):
-        result = json.loads(await export_segment_to_csv.ainvoke({"segment_id": "Brussels Software"}))
+        result = json.loads(
+            await export_segment_to_csv.ainvoke({"segment_id": "Brussels Software"})
+        )
 
     assert result["status"] == "ok"
     assert result["backend"] == "postgresql"
@@ -87,11 +91,15 @@ async def test_export_segment_to_csv_aborts_when_canonical_rows_drift(tmp_path):
     }
 
     with (
-        patch("src.ai_interface.tools.export.CanonicalSegmentService", return_value=canonical_service),
+        patch(
+            "src.ai_interface.tools.export.CanonicalSegmentService", return_value=canonical_service
+        ),
         patch("src.ai_interface.tools.export.TracardiClient") as tracardi_cls,
         patch("tempfile.gettempdir", return_value=str(tmp_path)),
     ):
-        result = json.loads(await export_segment_to_csv.ainvoke({"segment_id": "IT services - Brussels"}))
+        result = json.loads(
+            await export_segment_to_csv.ainvoke({"segment_id": "IT services - Brussels"})
+        )
 
     assert result["status"] == "error"
     assert result["backend"] == "postgresql"
@@ -120,7 +128,9 @@ async def test_push_segment_to_resend_prefers_canonical_segment_rows():
     resend.create_audience.return_value = {"id": "aud-1"}
 
     with (
-        patch("src.ai_interface.tools.email.CanonicalSegmentService", return_value=canonical_service),
+        patch(
+            "src.ai_interface.tools.email.CanonicalSegmentService", return_value=canonical_service
+        ),
         patch("src.ai_interface.tools.email.TracardiClient") as tracardi_cls,
         patch("src.ai_interface.tools.email.ResendClient", Mock(return_value=resend)),
     ):

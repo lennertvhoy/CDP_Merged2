@@ -362,6 +362,7 @@ async def search_profiles(
         keywords=search_keyword_for_tql,
         enterprise_number=enterprise_number,
         nace_codes=nace_codes,
+        nace_code=None,
         juridical_codes=juridical_codes,
         juridical_keyword=juridical_keyword,
         city=city,
@@ -766,6 +767,7 @@ async def create_segment(
             keywords=None if resolved_nace_codes else keywords,
             enterprise_number=None,
             nace_codes=resolved_nace_codes or None,
+            nace_code=None,
             juridical_codes=juridical_codes,
             juridical_keyword=None,
             city=city,
@@ -774,6 +776,7 @@ async def create_segment(
             min_start_date=min_start_date,
             has_phone=has_phone,
             has_email=has_email,
+            email_domain=email_domain,
         )
         queries = QueryFactory.generate_all(params)
         condition = queries["tql"]

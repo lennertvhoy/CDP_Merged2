@@ -20,6 +20,7 @@ logger = get_logger(__name__)
 
 class WebSearchPolicy(Enum):
     """Web search policy modes."""
+
     DISABLED = "disabled"
     RESTRICTED = "restricted"  # Admin-controlled allowlist
     OPT_IN = "opt-in"  # User must explicitly enable per-query
@@ -29,6 +30,7 @@ class WebSearchPolicy(Enum):
 @dataclass
 class WebSearchValidation:
     """Result of validating a web search query."""
+
     allowed: bool
     reason: str | None = None
     blocked_patterns: list[str] | None = None
@@ -83,8 +85,7 @@ class WebSearchPolicyEnforcer:
         # Check if disabled
         if self.policy == WebSearchPolicy.DISABLED:
             return WebSearchValidation(
-                allowed=False,
-                reason="Web search is disabled by administrator"
+                allowed=False, reason="Web search is disabled by administrator"
             )
 
         # Check for blocked PII patterns
@@ -98,17 +99,14 @@ class WebSearchPolicyEnforcer:
             return WebSearchValidation(
                 allowed=False,
                 reason="Query contains potentially sensitive information (PII)",
-                blocked_patterns=blocked_matches
+                blocked_patterns=blocked_matches,
             )
 
         # For restricted mode, we don't validate domains here
         # (domains are validated against results, not queries)
         if self.policy == WebSearchPolicy.RESTRICTED:
             self._audit_log("ALLOWED_RESTRICTED", query, user_id)
-            return WebSearchValidation(
-                allowed=True,
-                allowed_domains=self.allowed_domains
-            )
+            return WebSearchValidation(allowed=True, allowed_domains=self.allowed_domains)
 
         self._audit_log("ALLOWED", query, user_id)
         return WebSearchValidation(allowed=True)
@@ -131,6 +129,7 @@ class WebSearchPolicyEnforcer:
 
         try:
             from urllib.parse import urlparse
+
             parsed = urlparse(url)
             domain = parsed.netloc.lower()
 
@@ -171,7 +170,9 @@ class WebSearchPolicyEnforcer:
             "policy": self.policy.value,
             "enabled": self.is_enabled(),
             "allowed_domains_count": len(self.allowed_domains),
-            "allowed_domains": self.allowed_domains[:5] if self.allowed_domains else [],  # Limit output
+            "allowed_domains": self.allowed_domains[:5]
+            if self.allowed_domains
+            else [],  # Limit output
             "blocked_patterns_count": len(self.blocked_patterns),
             "audit_logging": self.audit_log,
         }

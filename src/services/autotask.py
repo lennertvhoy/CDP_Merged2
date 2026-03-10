@@ -154,7 +154,9 @@ class AutotaskCompany:
             "territoryID": self.territory_id,
             "taxID": self.tax_id,
             "createDate": self.create_date.isoformat() if self.create_date else None,
-            "lastModifiedDate": self.last_modified_date.isoformat() if self.last_modified_date else None,
+            "lastModifiedDate": self.last_modified_date.isoformat()
+            if self.last_modified_date
+            else None,
         }
 
 
@@ -194,7 +196,9 @@ class AutotaskTicket:
             "subIssueType": self.sub_issue_type,
             "assignedResourceID": self.assigned_resource_id,
             "createDate": self.create_date.isoformat() if self.create_date else None,
-            "lastModifiedDate": self.last_modified_date.isoformat() if self.last_modified_date else None,
+            "lastModifiedDate": self.last_modified_date.isoformat()
+            if self.last_modified_date
+            else None,
             "dueDate": self.due_date.isoformat() if self.due_date else None,
             "completedDate": self.completed_date.isoformat() if self.completed_date else None,
         }
@@ -428,6 +432,7 @@ class AutotaskClient:
     ) -> None:
         load_autotask_env_file()
         self._demo_mode = DEMO_MODE
+        self.credentials: AutotaskCredentials | None
 
         # Only load credentials if not in demo mode
         if not self._demo_mode:
@@ -450,14 +455,15 @@ class AutotaskClient:
                 # No real client needed in demo mode
                 return httpx.Client()
 
-            base_url = AUTOTASK_ZONES.get(
-                self.credentials.zone,
-                AUTOTASK_ZONES["eu"]
-            )
+            credentials = self.credentials
+            if credentials is None:
+                raise RuntimeError("Autotask credentials are required when demo mode is disabled")
+
+            base_url = AUTOTASK_ZONES.get(credentials.zone, AUTOTASK_ZONES["eu"])
             headers = {
-                "ApiIntegrationCode": self.credentials.integration_code,
-                "UserName": self.credentials.username,
-                "Secret": self.credentials.password,
+                "ApiIntegrationCode": credentials.integration_code,
+                "UserName": credentials.username,
+                "Secret": credentials.password,
                 "Content-Type": "application/json",
             }
             self._client = httpx.Client(
@@ -474,7 +480,7 @@ class AutotaskClient:
 
         self.rate_limiter.acquire()
         client = self._get_client()
-        url = f"{client.base_url.rstrip('/')}/{endpoint.lstrip('/')}"
+        url = f"{str(client.base_url).rstrip('/')}/{endpoint.lstrip('/')}"
 
         for attempt in range(self.max_retries):
             try:
@@ -483,13 +489,13 @@ class AutotaskClient:
                 return response.json()
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 429:  # Rate limited
-                    wait_time = self.backoff_base * (2 ** attempt)
+                    wait_time = self.backoff_base * (2**attempt)
                     time.sleep(wait_time)
                     continue
                 raise
             except httpx.RequestError:
                 if attempt < self.max_retries - 1:
-                    wait_time = self.backoff_base * (2 ** attempt)
+                    wait_time = self.backoff_base * (2**attempt)
                     time.sleep(wait_time)
                     continue
                 raise
@@ -507,7 +513,7 @@ class AutotaskClient:
                     "pageDetails": {
                         "count": len(companies),
                         "nextPageUrl": None,
-                    }
+                    },
                 }
             elif method == "POST":
                 # Create new company
@@ -528,7 +534,7 @@ class AutotaskClient:
                     "pageDetails": {
                         "count": len(tickets),
                         "nextPageUrl": None,
-                    }
+                    },
                 }
             elif method == "POST":
                 data = kwargs.get("json", {})
@@ -548,7 +554,7 @@ class AutotaskClient:
                     "pageDetails": {
                         "count": len(contracts),
                         "nextPageUrl": None,
-                    }
+                    },
                 }
 
         # Default empty response
@@ -562,10 +568,7 @@ class AutotaskClient:
 
         page = 1
         while True:
-            response = self._make_request(
-                "GET",
-                f"/Companies?page={page}&pageSize=500"
-            )
+            response = self._make_request("GET", f"/Companies?page={page}&pageSize=500")
             for item in response.get("items", []):
                 yield AutotaskCompany(
                     id=str(item.get("id")),
@@ -602,8 +605,7 @@ class AutotaskClient:
         page = 1
         while True:
             response = self._make_request(
-                "GET",
-                f"/Tickets?page={page}&pageSize=500{filter_param}"
+                "GET", f"/Tickets?page={page}&pageSize=500{filter_param}"
             )
             for item in response.get("items", []):
                 yield AutotaskTicket(
@@ -625,7 +627,9 @@ class AutotaskClient:
                 break
             page += 1
 
-    def get_contracts(self, company_id: str | None = None) -> Generator[AutotaskContract, None, None]:
+    def get_contracts(
+        self, company_id: str | None = None
+    ) -> Generator[AutotaskContract, None, None]:
         """Fetch contracts, optionally filtered by company."""
         if self._demo_mode:
             for contract in self._mock_data.get_contracts():
@@ -637,8 +641,7 @@ class AutotaskClient:
         page = 1
         while True:
             response = self._make_request(
-                "GET",
-                f"/Contracts?page={page}&pageSize=500{filter_param}"
+                "GET", f"/Contracts?page={page}&pageSize=500{filter_param}"
             )
             for item in response.get("items", []):
                 yield AutotaskContract(
@@ -656,30 +659,22 @@ class AutotaskClient:
 
     def create_company(self, company: AutotaskCompany) -> AutotaskCompany:
         """Create a new company in Autotask."""
-        response = self._make_request(
-            "POST",
-            "/Companies",
-            json=company.to_dict()
-        )
+        response = self._make_request("POST", "/Companies", json=company.to_dict())
         item = response.get("item", {})
         return AutotaskCompany(
             id=str(item.get("id")),
             name=item.get("companyName", ""),
-            **{k: v for k, v in item.items() if k not in ("id", "companyName")}
+            **{k: v for k, v in item.items() if k not in ("id", "companyName")},
         )
 
     def create_ticket(self, ticket: AutotaskTicket) -> AutotaskTicket:
         """Create a new ticket in Autotask."""
-        response = self._make_request(
-            "POST",
-            "/Tickets",
-            json=ticket.to_dict()
-        )
+        response = self._make_request("POST", "/Tickets", json=ticket.to_dict())
         item = response.get("item", {})
         return AutotaskTicket(
             id=str(item.get("id")),
             title=item.get("title", ""),
-            **{k: v for k, v in item.items() if k not in ("id", "title")}
+            **{k: v for k, v in item.items() if k not in ("id", "title")},
         )
 
     def close(self) -> None:

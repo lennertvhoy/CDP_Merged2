@@ -11,6 +11,7 @@ import chainlit as cl
 import httpx
 from chainlit.oauth_providers import get_configured_oauth_providers
 from chainlit.server import app as chainlit_server_app
+from chainlit.types import ThreadDict
 from chainlit.user import User
 from fastapi import HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
@@ -95,7 +96,9 @@ async def password_auth_user_callback(username: str, password: str) -> User | No
         return None
 
     if not expected_password or password != expected_password:
-        logger.warning("dev_password_auth_rejected", reason="invalid_password", identifier=identifier)
+        logger.warning(
+            "dev_password_auth_rejected", reason="invalid_password", identifier=identifier
+        )
         return None
 
     return User(
@@ -275,7 +278,9 @@ async def _initialize_chat_session(
     resolved_thread_id = thread_id or _current_thread_id() or session_id or str(uuid.uuid4())
     cl.user_session.set("thread_id", resolved_thread_id)
 
-    resolved_chat_profile = chat_profile or cl.user_session.get("chat_profile") or DEFAULT_CHAT_PROFILE
+    resolved_chat_profile = (
+        chat_profile or cl.user_session.get("chat_profile") or DEFAULT_CHAT_PROFILE
+    )
     cl.user_session.set("chat_profile", resolved_chat_profile)
 
     profile_id = await _resolve_profile_id(resolved_thread_id, profile_id_hint)
@@ -293,7 +298,7 @@ async def _send_welcome_message(chat_profile: str) -> None:
     ).send()
 
 
-def _thread_metadata(thread: dict[str, object]) -> dict[str, object]:
+def _thread_metadata(thread: ThreadDict) -> dict[str, object]:
     metadata = thread.get("metadata") if isinstance(thread, dict) else {}
     return metadata if isinstance(metadata, dict) else {}
 
@@ -520,7 +525,7 @@ async def start():
 
 
 @cl.on_chat_resume
-async def resume_chat(thread: dict[str, object]):
+async def resume_chat(thread: ThreadDict) -> None:
     """Rebind workflow/checkpointer state when Chainlit reopens an existing thread."""
     session_id = _safe_user_session_get("id")
     metadata = _thread_metadata(thread)
@@ -718,6 +723,7 @@ async def on_push_to_resend(action):
 
 
 # ─── Artifact Download Endpoint ─────────────────────────────────────────────
+
 
 @chainlit_server_app.get("/download/artifacts/{filename}")
 async def download_artifact(filename: str):

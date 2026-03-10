@@ -622,7 +622,9 @@ class TestResendWebhook:
 
         with (
             patch("scripts.webhook_gateway.send_to_eventhub") as send_to_eventhub,
-            patch("scripts.webhook_gateway.forward_to_tracardi", new=AsyncMock()) as forward_to_tracardi,
+            patch(
+                "scripts.webhook_gateway.forward_to_tracardi", new=AsyncMock()
+            ) as forward_to_tracardi,
         ):
             response = client.post(
                 "/webhook/resend", content=body, headers={"X-Resend-Signature": svix_header}

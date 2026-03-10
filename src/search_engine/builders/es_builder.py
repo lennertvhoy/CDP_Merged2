@@ -98,7 +98,9 @@ class ESBuilder(QueryBuilder):
 
         normalized_email_domain = self._normalize_email_domain(params.email_domain)
         if normalized_email_domain:
-            must_clauses.append({"wildcard": {"traits.email.keyword": f"*@{normalized_email_domain}"}})
+            must_clauses.append(
+                {"wildcard": {"traits.email.keyword": f"*@{normalized_email_domain}"}}
+            )
 
         if params.has_phone:
             must_clauses.append({"exists": {"field": "traits.phone"}})

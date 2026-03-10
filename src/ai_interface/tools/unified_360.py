@@ -42,7 +42,10 @@ def _serialize_for_json(obj: Any) -> Any:
 
 def _get_database_url() -> str:
     """Get database URL from settings."""
-    return settings.DATABASE_URL or settings.POSTGRES_CONNECTION_STRING
+    database_url = settings.DATABASE_URL or settings.POSTGRES_CONNECTION_STRING
+    if not database_url:
+        raise ValueError("DATABASE_URL or POSTGRES_CONNECTION_STRING must be configured")
+    return database_url
 
 
 @tool
@@ -119,17 +122,20 @@ async def query_unified_360(
     try:
         if query_type == "company_profile":
             if not kbo_number:
-                return json.dumps({
-                    "status": "error",
-                    "error": "kbo_number is required for company_profile query type"
-                }, ensure_ascii=False)
+                return json.dumps(
+                    {
+                        "status": "error",
+                        "error": "kbo_number is required for company_profile query type",
+                    },
+                    ensure_ascii=False,
+                )
 
             profile = await service.get_company_360_profile(kbo_number=kbo_number)
             if not profile:
-                return json.dumps({
-                    "status": "error",
-                    "error": f"No company found with KBO number {kbo_number}"
-                }, ensure_ascii=False)
+                return json.dumps(
+                    {"status": "error", "error": f"No company found with KBO number {kbo_number}"},
+                    ensure_ascii=False,
+                )
 
             result = {
                 "status": "ok",
@@ -154,15 +160,21 @@ async def query_unified_360(
                     "customer_type": profile.tl_customer_type,
                     "email": profile.tl_email,
                     "phone": profile.tl_phone,
-                } if profile.tl_company_id else None,
+                }
+                if profile.tl_company_id
+                else None,
                 "exact": {
                     "customer_id": profile.exact_customer_id,
                     "company_name": profile.exact_company_name,
                     "status": profile.exact_status,
-                    "credit_line": float(profile.exact_credit_line) if profile.exact_credit_line else None,
+                    "credit_line": float(profile.exact_credit_line)
+                    if profile.exact_credit_line
+                    else None,
                     "payment_terms": profile.exact_payment_terms,
                     "account_manager": profile.exact_account_manager,
-                } if profile.exact_customer_id else None,
+                }
+                if profile.exact_customer_id
+                else None,
                 "autotask": {
                     "company_id": profile.autotask_company_id,
                     "company_name": profile.autotask_company_name,
@@ -171,14 +183,26 @@ async def query_unified_360(
                     "website": profile.autotask_website,
                     "total_tickets": profile.autotask_total_tickets,
                     "open_tickets": profile.autotask_open_tickets,
-                    "last_ticket_at": profile.autotask_last_ticket_at.isoformat() if profile.autotask_last_ticket_at else None,
+                    "last_ticket_at": profile.autotask_last_ticket_at.isoformat()
+                    if profile.autotask_last_ticket_at
+                    else None,
                     "total_contracts": profile.autotask_total_contracts,
                     "active_contracts": profile.autotask_active_contracts,
-                    "total_contract_value": float(profile.autotask_total_contract_value) if profile.autotask_total_contract_value else 0,
-                    "last_contract_start": profile.autotask_last_contract_start.isoformat() if profile.autotask_last_contract_start else None,
-                } if profile.autotask_company_id else None,
-                "pipeline": _serialize_for_json(profile.pipeline.__dict__) if profile.pipeline else None,
-                "financials": _serialize_for_json(profile.financials.__dict__) if profile.financials else None,
+                    "total_contract_value": float(profile.autotask_total_contract_value)
+                    if profile.autotask_total_contract_value
+                    else 0,
+                    "last_contract_start": profile.autotask_last_contract_start.isoformat()
+                    if profile.autotask_last_contract_start
+                    else None,
+                }
+                if profile.autotask_company_id
+                else None,
+                "pipeline": _serialize_for_json(profile.pipeline.__dict__)
+                if profile.pipeline
+                else None,
+                "financials": _serialize_for_json(profile.financials.__dict__)
+                if profile.financials
+                else None,
                 "identity_link_status": profile.identity_link_status,
                 "total_source_count": profile.total_source_count,
                 "data_sources": {
@@ -186,7 +210,7 @@ async def query_unified_360(
                     "teamleader": profile.has_teamleader,
                     "exact": profile.has_exact,
                     "autotask": profile.has_autotask,
-                }
+                },
             }
             return json.dumps(result, ensure_ascii=False, indent=2)
 
@@ -197,79 +221,103 @@ async def query_unified_360(
                 nace_codes=[nace_code] if nace_code else None,
                 nace_prefix=nace_prefix,
                 city=city,
-                min_pipeline_value=Decimal(str(min_pipeline_value)) if min_pipeline_value else None,
+                min_pipeline_value=Decimal(str(min_pipeline_value))
+                if min_pipeline_value
+                else None,
                 min_revenue_ytd=Decimal(str(min_revenue_ytd)) if min_revenue_ytd else None,
-                limit=limit
+                limit=limit,
             )
 
-            return json.dumps({
-                "status": "ok",
-                "query_type": query_type,
-                "filters_applied": {
-                    "city": city,
-                    "nace_code": nace_code,
-                    "nace_prefix": nace_prefix,
-                    "min_pipeline_value": min_pipeline_value,
-                    "min_revenue_ytd": min_revenue_ytd,
+            return json.dumps(
+                {
+                    "status": "ok",
+                    "query_type": query_type,
+                    "filters_applied": {
+                        "city": city,
+                        "nace_code": nace_code,
+                        "nace_prefix": nace_prefix,
+                        "min_pipeline_value": min_pipeline_value,
+                        "min_revenue_ytd": min_revenue_ytd,
+                    },
+                    "result_count": len(companies),
+                    "companies": _serialize_for_json(companies),
                 },
-                "result_count": len(companies),
-                "companies": _serialize_for_json(companies),
-            }, ensure_ascii=False, indent=2)
+                ensure_ascii=False,
+                indent=2,
+            )
 
         elif query_type == "activity_timeline":
             if not kbo_number:
-                return json.dumps({
-                    "status": "error",
-                    "error": "kbo_number is required for activity_timeline query type"
-                }, ensure_ascii=False)
-
-            activities = await service.get_company_activity_timeline(kbo_number=kbo_number, limit=limit)
-
-            return json.dumps({
-                "status": "ok",
-                "query_type": query_type,
-                "kbo_number": kbo_number,
-                "activity_count": len(activities),
-                "activities": [
+                return json.dumps(
                     {
-                        "source_system": a.source_system,
-                        "activity_type": a.activity_type,
-                        "description": a.activity_description,
-                        "date": a.activity_date.isoformat() if a.activity_date else None,
-                    }
-                    for a in activities
-                ],
-            }, ensure_ascii=False, indent=2)
+                        "status": "error",
+                        "error": "kbo_number is required for activity_timeline query type",
+                    },
+                    ensure_ascii=False,
+                )
+
+            activities = await service.get_company_activity_timeline(
+                kbo_number=kbo_number, limit=limit
+            )
+
+            return json.dumps(
+                {
+                    "status": "ok",
+                    "query_type": query_type,
+                    "kbo_number": kbo_number,
+                    "activity_count": len(activities),
+                    "activities": [
+                        {
+                            "source_system": a.source_system,
+                            "activity_type": a.activity_type,
+                            "description": a.activity_description,
+                            "date": a.activity_date.isoformat() if a.activity_date else None,
+                        }
+                        for a in activities
+                    ],
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
 
         elif query_type == "search_by_name":
             if not company_name:
-                return json.dumps({
-                    "status": "error",
-                    "error": "company_name is required for search_by_name query type"
-                }, ensure_ascii=False)
+                return json.dumps(
+                    {
+                        "status": "error",
+                        "error": "company_name is required for search_by_name query type",
+                    },
+                    ensure_ascii=False,
+                )
 
             companies = await service.search_companies_unified(query=company_name, limit=limit)
 
-            return json.dumps({
-                "status": "ok",
-                "query_type": query_type,
-                "search_term": company_name,
-                "result_count": len(companies),
-                "companies": _serialize_for_json(companies),
-            }, ensure_ascii=False, indent=2)
+            return json.dumps(
+                {
+                    "status": "ok",
+                    "query_type": query_type,
+                    "search_term": company_name,
+                    "result_count": len(companies),
+                    "companies": _serialize_for_json(companies),
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
 
         else:
-            return json.dumps({
-                "status": "error",
-                "error": f"Unknown query_type: {query_type}. Valid types: company_profile, pipeline_summary, activity_timeline, search_by_name"
-            }, ensure_ascii=False)
+            return json.dumps(
+                {
+                    "status": "error",
+                    "error": f"Unknown query_type: {query_type}. Valid types: company_profile, pipeline_summary, activity_timeline, search_by_name",
+                },
+                ensure_ascii=False,
+            )
 
     except Exception as exc:
         logger.error("query_unified_360_failed", error=str(exc), query_type=query_type)
-        return json.dumps({
-            "status": "error",
-            "error": f"Query failed: {str(exc)}"
-        }, ensure_ascii=False)
+        return json.dumps(
+            {"status": "error", "error": f"Query failed: {str(exc)}"}, ensure_ascii=False
+        )
 
     finally:
         await service.close()
@@ -367,54 +415,66 @@ async def get_industry_summary(
             prefix = category_map.get(industry_category.lower())
 
         summaries = await service.get_industry_pipeline_summary(
-            nace_prefix=prefix,
-            city=city,
-            limit=limit
+            nace_prefix=prefix, city=city, limit=limit
         )
 
         if not summaries:
-            return json.dumps({
+            return json.dumps(
+                {
+                    "status": "ok",
+                    "message": "No industry data found for the specified criteria",
+                    "filters": {
+                        "industry_category": industry_category,
+                        "nace_prefix": prefix,
+                        "city": city,
+                    },
+                    "summaries": [],
+                },
+                ensure_ascii=False,
+            )
+
+        return json.dumps(
+            {
                 "status": "ok",
-                "message": "No industry data found for the specified criteria",
-                "filters": {
+                "filters_applied": {
                     "industry_category": industry_category,
                     "nace_prefix": prefix,
                     "city": city,
                 },
-                "summaries": [],
-            }, ensure_ascii=False)
-
-        return json.dumps({
-            "status": "ok",
-            "filters_applied": {
-                "industry_category": industry_category,
-                "nace_prefix": prefix,
-                "city": city,
+                "summary_count": len(summaries),
+                "summaries": [
+                    {
+                        "industry_category": s.industry_category,
+                        "nace_code": s.nace_code,
+                        "nace_description": s.nace_description,
+                        "city": s.city,
+                        "company_count": s.company_count,
+                        "total_pipeline_value": float(s.total_pipeline_value)
+                        if s.total_pipeline_value
+                        else 0,
+                        "total_won_value_ytd": float(s.total_won_value_ytd)
+                        if s.total_won_value_ytd
+                        else 0,
+                        "total_revenue_ytd": float(s.total_revenue_ytd)
+                        if s.total_revenue_ytd
+                        else 0,
+                        "total_outstanding": float(s.total_outstanding)
+                        if s.total_outstanding
+                        else 0,
+                        "total_overdue": float(s.total_overdue) if s.total_overdue else 0,
+                    }
+                    for s in summaries
+                ],
             },
-            "summary_count": len(summaries),
-            "summaries": [
-                {
-                    "industry_category": s.industry_category,
-                    "nace_code": s.nace_code,
-                    "nace_description": s.nace_description,
-                    "city": s.city,
-                    "company_count": s.company_count,
-                    "total_pipeline_value": float(s.total_pipeline_value) if s.total_pipeline_value else 0,
-                    "total_won_value_ytd": float(s.total_won_value_ytd) if s.total_won_value_ytd else 0,
-                    "total_revenue_ytd": float(s.total_revenue_ytd) if s.total_revenue_ytd else 0,
-                    "total_outstanding": float(s.total_outstanding) if s.total_outstanding else 0,
-                    "total_overdue": float(s.total_overdue) if s.total_overdue else 0,
-                }
-                for s in summaries
-            ],
-        }, ensure_ascii=False, indent=2)
+            ensure_ascii=False,
+            indent=2,
+        )
 
     except Exception as exc:
         logger.error("get_industry_summary_failed", error=str(exc))
-        return json.dumps({
-            "status": "error",
-            "error": f"Query failed: {str(exc)}"
-        }, ensure_ascii=False)
+        return json.dumps(
+            {"status": "error", "error": f"Query failed: {str(exc)}"}, ensure_ascii=False
+        )
 
     finally:
         await service.close()
@@ -497,51 +557,57 @@ async def find_high_value_accounts(
         accounts = await service.get_high_value_accounts(
             min_exposure=Decimal(str(min_exposure)) if min_exposure else None,
             account_priority=account_priority,
-            limit=limit
+            limit=limit,
         )
 
         # Filter by city if specified
         if city:
-            accounts = [a for a in accounts if a.get('kbo_city', '').lower() == city.lower()]
+            accounts = [a for a in accounts if a.get("kbo_city", "").lower() == city.lower()]
 
         # Filter for overdue if specified
         if has_overdue:
-            accounts = [a for a in accounts if (a.get('exact_overdue') or 0) > 0]
+            accounts = [a for a in accounts if (a.get("exact_overdue") or 0) > 0]
 
         if not accounts:
-            return json.dumps({
+            return json.dumps(
+                {
+                    "status": "ok",
+                    "message": "No high-value accounts found matching the criteria",
+                    "filters_applied": {
+                        "min_exposure": min_exposure,
+                        "account_priority": account_priority,
+                        "city": city,
+                        "has_overdue": has_overdue,
+                    },
+                    "accounts": [],
+                },
+                ensure_ascii=False,
+            )
+
+        return json.dumps(
+            {
                 "status": "ok",
-                "message": "No high-value accounts found matching the criteria",
                 "filters_applied": {
                     "min_exposure": min_exposure,
                     "account_priority": account_priority,
                     "city": city,
                     "has_overdue": has_overdue,
                 },
-                "accounts": [],
-            }, ensure_ascii=False)
-
-        return json.dumps({
-            "status": "ok",
-            "filters_applied": {
-                "min_exposure": min_exposure,
-                "account_priority": account_priority,
-                "city": city,
-                "has_overdue": has_overdue,
+                "result_count": len(accounts),
+                "total_pipeline_value": sum(a.get("tl_pipeline_value", 0) or 0 for a in accounts),
+                "total_outstanding": sum(a.get("exact_outstanding", 0) or 0 for a in accounts),
+                "total_overdue": sum(a.get("exact_overdue", 0) or 0 for a in accounts),
+                "accounts": _serialize_for_json(accounts),
             },
-            "result_count": len(accounts),
-            "total_pipeline_value": sum(a.get('tl_pipeline_value', 0) or 0 for a in accounts),
-            "total_outstanding": sum(a.get('exact_outstanding', 0) or 0 for a in accounts),
-            "total_overdue": sum(a.get('exact_overdue', 0) or 0 for a in accounts),
-            "accounts": _serialize_for_json(accounts),
-        }, ensure_ascii=False, indent=2)
+            ensure_ascii=False,
+            indent=2,
+        )
 
     except Exception as exc:
         logger.error("find_high_value_accounts_failed", error=str(exc))
-        return json.dumps({
-            "status": "error",
-            "error": f"Query failed: {str(exc)}"
-        }, ensure_ascii=False)
+        return json.dumps(
+            {"status": "error", "error": f"Query failed: {str(exc)}"}, ensure_ascii=False
+        )
 
     finally:
         await service.close()
@@ -606,48 +672,53 @@ async def get_geographic_revenue_distribution(
 
     try:
         distribution = await service.get_geographic_distribution(
-            min_companies=min_companies,
-            limit=limit
+            min_companies=min_companies, limit=limit
         )
 
         if not distribution:
-            return json.dumps({
-                "status": "ok",
-                "message": "No geographic distribution data available",
-                "distribution": [],
-            }, ensure_ascii=False)
-
-        return json.dumps({
-            "status": "ok",
-            "filters_applied": {
-                "min_companies": min_companies,
-            },
-            "city_count": len(distribution),
-            "total_companies": sum(d.total_companies for d in distribution),
-            "total_pipeline": sum(float(d.total_pipeline or 0) for d in distribution),
-            "total_revenue_ytd": sum(float(d.total_revenue_ytd or 0) for d in distribution),
-            "distribution": [
+            return json.dumps(
                 {
-                    "city": d.city,
-                    "province": d.province,
-                    "total_companies": d.total_companies,
-                    "companies_with_crm": d.companies_with_crm,
-                    "companies_with_financials": d.companies_with_financials,
-                    "total_pipeline": float(d.total_pipeline or 0),
-                    "total_revenue_ytd": float(d.total_revenue_ytd or 0),
-                    "total_outstanding": float(d.total_outstanding or 0),
-                    "market_penetration_pct": d.market_penetration_pct,
-                }
-                for d in distribution
-            ],
-        }, ensure_ascii=False, indent=2)
+                    "status": "ok",
+                    "message": "No geographic distribution data available",
+                    "distribution": [],
+                },
+                ensure_ascii=False,
+            )
+
+        return json.dumps(
+            {
+                "status": "ok",
+                "filters_applied": {
+                    "min_companies": min_companies,
+                },
+                "city_count": len(distribution),
+                "total_companies": sum(d.total_companies for d in distribution),
+                "total_pipeline": sum(float(d.total_pipeline or 0) for d in distribution),
+                "total_revenue_ytd": sum(float(d.total_revenue_ytd or 0) for d in distribution),
+                "distribution": [
+                    {
+                        "city": d.city,
+                        "province": d.province,
+                        "total_companies": d.total_companies,
+                        "companies_with_crm": d.companies_with_crm,
+                        "companies_with_financials": d.companies_with_financials,
+                        "total_pipeline": float(d.total_pipeline or 0),
+                        "total_revenue_ytd": float(d.total_revenue_ytd or 0),
+                        "total_outstanding": float(d.total_outstanding or 0),
+                        "market_penetration_pct": d.market_penetration_pct,
+                    }
+                    for d in distribution
+                ],
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
 
     except Exception as exc:
         logger.error("get_geographic_revenue_distribution_failed", error=str(exc))
-        return json.dumps({
-            "status": "error",
-            "error": f"Query failed: {str(exc)}"
-        }, ensure_ascii=False)
+        return json.dumps(
+            {"status": "error", "error": f"Query failed: {str(exc)}"}, ensure_ascii=False
+        )
 
     finally:
         await service.close()
@@ -700,22 +771,30 @@ async def get_identity_link_quality() -> str:
         quality = await service.get_identity_link_quality()
         quality_serialized = _serialize_for_json(quality)
 
-        return json.dumps({
-            "status": "ok",
-            "source_count": len(quality_serialized),
-            "quality_metrics": quality_serialized,
-            "summary": {
-                "teamleader": next((q for q in quality_serialized if q.get('source_system') == 'teamleader'), None),
-                "exact": next((q for q in quality_serialized if q.get('source_system') == 'exact'), None),
-            }
-        }, ensure_ascii=False, indent=2)
+        return json.dumps(
+            {
+                "status": "ok",
+                "source_count": len(quality_serialized),
+                "quality_metrics": quality_serialized,
+                "summary": {
+                    "teamleader": next(
+                        (q for q in quality_serialized if q.get("source_system") == "teamleader"),
+                        None,
+                    ),
+                    "exact": next(
+                        (q for q in quality_serialized if q.get("source_system") == "exact"), None
+                    ),
+                },
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
 
     except Exception as exc:
         logger.error("get_identity_link_quality_failed", error=str(exc))
-        return json.dumps({
-            "status": "error",
-            "error": f"Query failed: {str(exc)}"
-        }, ensure_ascii=False)
+        return json.dumps(
+            {"status": "error", "error": f"Query failed: {str(exc)}"}, ensure_ascii=False
+        )
 
     finally:
         await service.close()

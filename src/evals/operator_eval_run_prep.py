@@ -195,14 +195,10 @@ def select_eval_cases(
             case for case in selected_cases if case["category"] in requested_categories
         ]
     if requested_case_ids:
-        selected_cases = [
-            case for case in selected_cases if case["case_id"] in requested_case_ids
-        ]
+        selected_cases = [case for case in selected_cases if case["case_id"] in requested_case_ids]
 
     if not selected_cases:
-        raise OperatorEvalRunPrepError(
-            "No operator eval cases matched the requested filters."
-        )
+        raise OperatorEvalRunPrepError("No operator eval cases matched the requested filters.")
 
     return selected_cases
 

@@ -56,7 +56,9 @@ async def test_update_thread_merges_metadata_and_truncates_name(monkeypatch):
     async def fake_execute_query(query: str, params: dict[str, Any] | None = None):
         queries.append((query, params))
         if "SELECT metadata" in query:
-            return [{"metadata": {"chat_profile": "marketing_manager", "keep": "yes", "drop": "x"}}]
+            return [
+                {"metadata": {"chat_profile": "marketing_manager", "keep": "yes", "drop": "x"}}
+            ]
         return []
 
     monkeypatch.setattr(layer, "execute_query", fake_execute_query)

@@ -35,7 +35,9 @@ class Settings(BaseSettings):
     OPENAI_BASE_URL: str | None = Field(default=None, description="Base URL for OpenAI API")
 
     # Moonshot AI (Kimi) Settings
-    MOONSHOT_API_KEY: str | None = Field(default=None, description="API Key for Moonshot AI (Kimi)")
+    MOONSHOT_API_KEY: str | None = Field(
+        default=None, description="API Key for Moonshot AI (Kimi)"
+    )
     MOONSHOT_BASE_URL: str = Field(
         default="https://api.moonshot.cn/v1", description="Base URL for Moonshot AI API"
     )

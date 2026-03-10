@@ -14,6 +14,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, Tool
 from langchain_core.runnables import RunnableConfig
 from langchain_ollama import ChatOllama
 from langchain_openai import AzureChatOpenAI, ChatOpenAI
+from pydantic import SecretStr
 
 # ToolExecutor removed in LangGraph 1.x - using direct tool invocation instead
 from src.ai_interface.tools import (
@@ -447,11 +448,10 @@ async def agent_node(state: AgentState) -> dict:
         # Moonshot AI (Kimi) - OpenAI-compatible API
         if not settings.MOONSHOT_API_KEY:
             raise ValueError(
-                "Moonshot AI API key not configured. "
-                "Set MOONSHOT_API_KEY in your environment."
+                "Moonshot AI API key not configured. Set MOONSHOT_API_KEY in your environment."
             )
         model = ChatOpenAI(
-            api_key=settings.MOONSHOT_API_KEY,
+            api_key=SecretStr(settings.MOONSHOT_API_KEY),
             base_url=settings.MOONSHOT_BASE_URL,
             model=settings.LLM_MODEL,
             temperature=0,

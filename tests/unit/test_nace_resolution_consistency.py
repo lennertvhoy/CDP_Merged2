@@ -4,7 +4,6 @@ These tests verify that industry keyword resolution produces consistent,
 predictable NACE code sets to prevent planner/tool argument mismatches.
 """
 
-
 from src.ai_interface.tools.nace_resolver import _get_nace_codes_from_keyword
 
 
