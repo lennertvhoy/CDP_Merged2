@@ -72,11 +72,11 @@ class WebSearchPolicyEnforcer:
     def validate_query(self, query: str, user_id: str | None = None) -> WebSearchValidation:
         """
         Validate a web search query against policy.
-        
+
         Args:
             query: The search query to validate
             user_id: Optional user identifier for audit logging
-            
+
         Returns:
             WebSearchValidation with allow/deny decision
         """
@@ -116,16 +116,16 @@ class WebSearchPolicyEnforcer:
     def validate_result_domain(self, url: str) -> bool:
         """
         Check if a search result domain is allowed.
-        
+
         Args:
             url: The result URL to check
-            
+
         Returns:
             True if domain is allowed
         """
         if self.policy != WebSearchPolicy.RESTRICTED:
             return True
-            
+
         if not self.allowed_domains:
             return True  # No restrictions configured
 
@@ -133,19 +133,19 @@ class WebSearchPolicyEnforcer:
             from urllib.parse import urlparse
             parsed = urlparse(url)
             domain = parsed.netloc.lower()
-            
+
             # Remove www. prefix for comparison
             if domain.startswith("www."):
                 domain = domain[4:]
-                
+
             # Check if domain matches any allowed domain
             for allowed in self.allowed_domains:
                 if domain == allowed or domain.endswith(f".{allowed}"):
                     return True
-                    
+
             logger.debug("domain_blocked", url=url, domain=domain)
             return False
-            
+
         except Exception as e:
             logger.warning("domain_validation_error", url=url, error=str(e))
             return False
@@ -154,7 +154,7 @@ class WebSearchPolicyEnforcer:
         """Log web search activity for audit purposes."""
         if not self.audit_log:
             return
-            
+
         log_entry = {
             "action": action,
             "query_preview": query[:100] + "..." if len(query) > 100 else query,
@@ -162,7 +162,7 @@ class WebSearchPolicyEnforcer:
             "policy": self.policy.value,
         }
         log_entry.update(kwargs)
-        
+
         logger.info("web_search_audit", **log_entry)
 
     def get_policy_summary(self) -> dict[str, Any]:
@@ -184,11 +184,11 @@ web_search_enforcer = WebSearchPolicyEnforcer()
 def validate_web_search_query(query: str, user_id: str | None = None) -> WebSearchValidation:
     """
     Convenience function to validate a web search query.
-    
+
     Args:
         query: The search query to validate
         user_id: Optional user identifier for audit logging
-        
+
     Returns:
         WebSearchValidation with allow/deny decision
     """

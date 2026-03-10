@@ -112,6 +112,10 @@ class TQLBuilder(QueryBuilder):
         conditions = []
         resolved_nace_codes = self._resolved_nace_codes(params)
 
+        # Status filter - only add if explicitly provided
+        if params.status:
+            conditions.append(f'traits.status="{params.status}"')
+
         # 1. Exact Matches - TQL uses = (single equals) for equality
         if params.city:
             variants = self._get_city_variants(params.city)
@@ -121,9 +125,6 @@ class TQLBuilder(QueryBuilder):
 
         if params.zip_code:
             conditions.append(f'traits.zip="{params.zip_code}"')
-
-        if params.status:
-            conditions.append(f'traits.status="{params.status}"')
 
         # 2. ID Logic (Format Fix) - TQL uses = (single equals)
         if params.enterprise_number:

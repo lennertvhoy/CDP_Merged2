@@ -7,17 +7,18 @@ from __future__ import annotations
 
 import csv
 import json
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import httpx
 from langchain_core.tools import tool
 
 from src.core.logger import get_logger
-from src.services.resend import ResendClient
 from src.services.canonical_segments import CanonicalSegmentService
 from src.services.postgresql_search import PostgreSQLSearchService
+from src.services.resend import ResendClient
 from src.services.tracardi import TracardiClient
 
 logger = get_logger(__name__)
@@ -92,7 +93,7 @@ async def _load_segment_rows(
     limit: int,
 ) -> tuple[list[dict], int, str, dict]:
     """Load segment rows from PostgreSQL first, then fall back to Tracardi.
-    
+
     Returns:
         Tuple of (rows, total_count, backend, diagnostics)
     """
@@ -106,7 +107,7 @@ async def _load_segment_rows(
         "tracardi_count": 0,
         "errors": [],
     }
-    
+
     # Try PostgreSQL first (canonical source)
     try:
         canonical_service = CanonicalSegmentService()
@@ -131,17 +132,17 @@ async def _load_segment_rows(
         query = f'segments="{segment_id}"'
         result = await client.search_profiles(query, limit=limit)
         diagnostics["tracardi_checked"] = True
-        
+
         if result is None:
             diagnostics["errors"].append("Tracardi returned None - segment may not exist")
             raise RuntimeError(
                 f"Segment '{segment_id}' not found in PostgreSQL or Tracardi. "
                 f"Diagnostics: {diagnostics}"
             )
-        
+
         tracardi_count = int(result.get("total", 0) or 0)
         diagnostics["tracardi_count"] = tracardi_count
-        
+
         if tracardi_count == 0:
             # Both sources empty - provide helpful explanation
             pg_status = f"PostgreSQL: {diagnostics['postgresql_count']} members" if diagnostics["postgresql_checked"] else "PostgreSQL: not checked"
@@ -150,9 +151,9 @@ async def _load_segment_rows(
                 f"{pg_status}, Tracardi: 0 profiles. "
                 f"The segment may need to be rebuilt or the search criteria may be too restrictive."
             )
-        
+
         return result.get("result", []) or [], tracardi_count, "tracardi", diagnostics
-        
+
     except RuntimeError:
         raise
     except Exception as exc:
@@ -301,7 +302,7 @@ async def export_segment_to_csv(
         logger.error("csv_export_failed", segment=segment_id, error=error_msg)
         return json.dumps(
             {
-                "status": "error", 
+                "status": "error",
                 "error": error_msg,
                 "segment_id": segment_id,
                 "suggestions": [

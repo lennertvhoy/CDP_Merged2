@@ -10,7 +10,6 @@ no LLM or network I/O is involved.
 
 from __future__ import annotations
 
-import pytest
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from src.graph.nodes import (
@@ -19,7 +18,6 @@ from src.graph.nodes import (
     _extract_last_user_query,
     _validate_tool_call,
 )
-
 
 # ---------------------------------------------------------------------------
 # _extract_last_user_query

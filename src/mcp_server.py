@@ -18,14 +18,13 @@ Environment:
     Or: DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, DB_PORT
 """
 
+import argparse
+import asyncio
+import json
 import os
 import sys
-import json
-import asyncio
-import argparse
-from typing import Any
-from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from decimal import Decimal
 
 # Add src to path for imports
@@ -33,13 +32,12 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
-from mcp.types import TextContent, Tool, Resource
+from mcp.types import Resource, TextContent, Tool
 
 # Import CDP services
 from core.database_url import resolve_database_url
 from services.postgresql_search import PostgreSQLSearchService
 from services.unified_360_queries import Unified360Service
-
 
 # Server metadata
 SERVER_NAME = "cdp-postgresql-query-server"
@@ -58,7 +56,7 @@ async def app_lifespan(server: Server) -> AsyncIterator[dict]:
     """Manage application lifecycle."""
     # Setup environment
     _setup_environment()
-    
+
     # Initialize services
     search_service = PostgreSQLSearchService()
     query_360_service = Unified360Service()
@@ -386,7 +384,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             # Map industry name to NACE prefix if needed
             industry = arguments.get("industry", "")
             nace_prefix = None
-            
+
             # Handle common industry names
             industry_map = {
                 "software": "62",
@@ -396,7 +394,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                 "construction": "41",
                 "retail": "47",
             }
-            
+
             if industry.lower() in industry_map:
                 nace_prefix = industry_map[industry.lower()]
             elif industry.isdigit():
@@ -404,7 +402,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             else:
                 # Try as NACE code directly
                 nace_prefix = industry[:2] if len(industry) >= 2 else industry
-            
+
             result = await query_360_service.get_industry_pipeline_summary(
                 nace_prefix=nace_prefix,
                 city=arguments.get("city"),
@@ -425,7 +423,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             pool = search_service._client.pool
             async with pool.acquire() as conn:
                 rows = await conn.fetch("""
-                    SELECT 
+                    SELECT
                         source_system,
                         total_records,
                         matched_to_kbo,
@@ -442,11 +440,11 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             min_exposure = None
             if arguments.get("min_revenue"):
                 min_exposure = Decimal(str(arguments["min_revenue"]))
-            
+
             account_priority = None
             if arguments.get("has_overdue_invoices"):
                 account_priority = "high_risk"
-                
+
             result = await query_360_service.get_high_value_accounts(
                 min_exposure=min_exposure,
                 account_priority=account_priority,
@@ -572,8 +570,8 @@ async def main():
         # SSE transport for HTTP clients
         from mcp.server.sse import SseServerTransport
         from starlette.applications import Starlette
-        from starlette.routing import Route, Mount
         from starlette.responses import JSONResponse
+        from starlette.routing import Mount, Route
 
         sse = SseServerTransport("/messages/")
 

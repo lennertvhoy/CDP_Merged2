@@ -367,11 +367,11 @@ class TeamleaderClient:
         data: dict[str, Any],
     ) -> dict[str, Any]:
         """Create a new record via Teamleader API.
-        
+
         Args:
             endpoint: API endpoint (e.g., "companies.add", "contacts.add", "deals.add")
             data: Record data to create
-            
+
         Returns:
             Created record with ID
         """
@@ -384,10 +384,10 @@ class TeamleaderClient:
 
     def add_company(self, data: dict[str, Any]) -> dict[str, Any]:
         """Create a new company in Teamleader.
-        
+
         Args:
             data: Company data with name, address, etc.
-            
+
         Returns:
             Created company record
         """
@@ -395,10 +395,10 @@ class TeamleaderClient:
 
     def add_contact(self, data: dict[str, Any]) -> dict[str, Any]:
         """Create a new contact in Teamleader.
-        
+
         Args:
             data: Contact data with first_name, last_name, email, etc.
-            
+
         Returns:
             Created contact record
         """
@@ -406,10 +406,10 @@ class TeamleaderClient:
 
     def add_deal(self, data: dict[str, Any]) -> dict[str, Any]:
         """Create a new deal in Teamleader.
-        
+
         Args:
             data: Deal data with title, estimated_value, company_id, etc.
-            
+
         Returns:
             Created deal record
         """
@@ -417,7 +417,7 @@ class TeamleaderClient:
 
     async def initialize(self) -> None:
         """Initialize the client by refreshing access token.
-        
+
         This is a convenience method for async initialization.
         """
         self.refresh_access_token()

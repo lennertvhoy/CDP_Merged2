@@ -8,8 +8,11 @@ from datetime import UTC, datetime
 from typing import Any
 
 from src.core.logger import get_logger
-from src.services.postgresql_search import COUNT_QUERY_TIMEOUT_SECONDS, CompanySearchFilters
-from src.services.postgresql_search import get_search_service
+from src.services.postgresql_search import (
+    COUNT_QUERY_TIMEOUT_SECONDS,
+    CompanySearchFilters,
+    get_search_service,
+)
 from src.services.runtime_support_schema import ensure_runtime_support_schema
 
 logger = get_logger(__name__)

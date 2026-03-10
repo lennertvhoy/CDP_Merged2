@@ -4,7 +4,6 @@ These tests verify that industry keyword resolution produces consistent,
 predictable NACE code sets to prevent planner/tool argument mismatches.
 """
 
-import pytest
 
 from src.ai_interface.tools.nace_resolver import _get_nace_codes_from_keyword
 
@@ -37,7 +36,7 @@ class TestNaceResolutionConsistency:
 
         # All should resolve to the same verified 4-code set
         expected = {"62100", "62200", "62900", "63100"}
-        for keyword, codes in zip(it_keywords, all_sets):
+        for keyword, codes in zip(it_keywords, all_sets, strict=False):
             assert set(codes) == expected, f"Keyword '{keyword}' resolved to different codes"
 
     def test_current_it_codes_cover_programming_consultancy_and_info_services(self):

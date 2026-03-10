@@ -4,7 +4,6 @@ import csv
 import json
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EVAL_BANK_PATH = REPO_ROOT / "docs" / "evals" / "operator_eval_cases.v1.json"
 SCORECARD_TEMPLATE_PATH = REPO_ROOT / "docs" / "evals" / "operator_eval_scorecard_template.csv"
