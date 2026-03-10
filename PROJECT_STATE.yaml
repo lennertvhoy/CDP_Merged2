@@ -3,21 +3,24 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-09T17:31:00+01:00
+  updated_at: 2026-03-09T23:38:42+01:00
   updated_by: agent
-  repo_head:
-    value: 9cbc5cf
+  verified_head_before_docs_commit:
+    value: 946ccf4
     status: observed
-    checked_at: 2026-03-09T17:04:00+01:00
+    checked_at: 2026-03-09T23:38:42+01:00
     evidence:
-      - git log --oneline --decorate -n 5 -> 9cbc5cf (HEAD -> main) docs(roadmap): prioritize enrichment and ollama descriptions
+      - git log --oneline --decorate -n 1 -> 946ccf4 (HEAD -> main) docs(runtime): refresh event processor scoring route
+    note: |
+      For doc-only verification refreshes, this records the HEAD observed
+      before the follow-on docs/process commit was created. Use `git log`
+      or the session handoff for the final post-commit HEAD.
   branch:
     value: main
     status: observed
-    checked_at: 2026-03-09T17:04:00+01:00
+    checked_at: 2026-03-09T23:38:42+01:00
     evidence:
-      - git status --short -> (clean)
-      - git log --oneline --decorate -n 5 -> 9cbc5cf (HEAD -> main) docs(roadmap): prioritize enrichment and ollama descriptions
+      - git log --oneline --decorate -n 1 -> 946ccf4 (HEAD -> main) docs(runtime): refresh event processor scoring route
   live_docs:
     status: observed
     checked_at: 2026-03-06T13:49:38+01:00
@@ -53,15 +56,74 @@ current_state:
       status: observed
       checked_at: 2026-03-06T13:49:38+01:00
       summary: Current live state now lives only in PROJECT_STATE.yaml, STATUS.md, and NEXT_ACTIONS.md. History belongs in WORKLOG.md and roadmap material belongs in BACKLOG.md.
+    script_workflow_docs:
+      status: observed
+      checked_at: 2026-03-09T23:08:00+01:00
+      summary: |
+        The maintained script workflow now points to repo-root Poetry usage.
+        `scripts/README.md` tells operators to install dependencies with
+        `poetry install` and run Python entry points via
+        `poetry run python scripts/...`. The stale `scripts/requirements.txt`
+        file was removed because no live repo path consumed it, and the old
+        KBO cleanup completion summary is explicitly quarantined as historical.
+      evidence:
+        - file: scripts/README.md
+          finding: README now documents repo-root Poetry install and execution commands
+        - command: test ! -f scripts/requirements.txt && echo missing
+          result: missing
+        - file: docs/KBO_CLEANUP_COMPLETION_SUMMARY.md
+          finding: file is explicitly labeled QUARANTINED and points readers at historical legacy artifacts
+    website_discovery_patch_artifact:
+      status: observed
+      checked_at: 2026-03-09T23:14:09+01:00
+      summary: |
+        The tracked `src/enrichment/website_discovery.py.patch` file was
+        deleted as stale repo debris. It was a zero-byte artifact from the
+        initial repo import, no runtime code or maintained operator workflow
+        referenced it, and it was the only tracked `.patch` file in the repo.
+      evidence:
+        - command: ls -l src/enrichment/website_discovery.py.patch
+          result: zero-byte tracked file before deletion
+        - command: git log --oneline --decorate -- src/enrichment/website_discovery.py.patch
+          result: only initial commit 4518742 referenced the file
+        - command: rg --files -g '*.patch'
+          result: src/enrichment/website_discovery.py.patch was the only tracked patch file before deletion
+        - command: rg -n "website_discovery\\.py\\.patch" PROJECT_STATE.yaml STATUS.md NEXT_ACTIONS.md BACKLOG.md WORKLOG.md
+          result: references existed only in repo-hygiene docs, not in runtime code or operator workflows
+    operator_eval_run_prep_harness:
+      status: observed
+      checked_at: 2026-03-09T23:38:42+01:00
+      summary: |
+        Operator evals now have a repo-owned run-prep harness instead of only
+        static docs. `scripts/prepare_operator_eval_run.py` wraps
+        `src/evals/operator_eval_run_prep.py` to turn
+        `docs/evals/operator_eval_cases.v1.json` into a timestamped
+        `manifest.json`, `cases.json`, `scorecard.csv`, and `prompts.md`
+        bundle under `output/operator_eval_runs/<run_id>/`. This closes the
+        semi-manual prep gap for per-revision scorecards; live chatbot
+        execution and automated grading are still pending.
+      evidence:
+        - file: src/evals/operator_eval_run_prep.py
+          finding: run-prep module filters the eval bank, creates per-run artifacts, and prefills scorecard rows
+        - file: scripts/prepare_operator_eval_run.py
+          finding: CLI prepares timestamped operator-eval bundles with optional category and case-id filters
+        - command: poetry run pytest tests/unit/test_operator_eval_assets.py tests/unit/test_operator_eval_run_prep.py -q
+          result: 5 passed
+        - command: poetry run python scripts/prepare_operator_eval_run.py --output-dir /tmp/operator_eval_runs_smoke --case-id copy_troubleshooting_clipboarditem_not_defined --app-revision 946ccf4 --model-provider openai --model-name gpt-5 --reviewer agent
+          result: emitted manifest/cases/scorecard/prompt pack under /tmp/operator_eval_runs_smoke/operator-eval-20260309t223725z
   operating_mode:
     status: reported
-    decided_at: 2026-03-07T17:12:00+01:00
-    mode: local_only_cost_control
-    summary: User direction on 2026-03-07 paused Azure deployment work to save costs. Default execution and verification are now local-only until the user explicitly reopens cloud work.
+    decided_at: 2026-03-09T17:43:00+01:00
+    mode: local_only_permanent
+    summary: |
+      User directive on 2026-03-09 disabled Azure deployment entirely to focus on local-only deployment.
+      CI/CD workflows for Azure have been disabled (preserved but not triggering). Default execution is
+      local docker-compose with local PostgreSQL and local Tracardi.
     implications:
       - prefer_local_runtime_and_local_postgresql
-      - treat_azure_deployment_as_paused_not_default
-      - keep_historical_azure_state_but_do_not_drive_next_actions_from_it
+      - azure_deployment_disabled_not_paused
+      - keep_historical_azure_state_as_reference_only
+      - no_azure_ci_cd_triggers_active
   architecture:
     status: observed
     decided_at: 2026-03-03
@@ -91,14 +153,17 @@ current_state:
   cloud_reentry_plan:
     status: reported
     decided_at: 2026-03-09
-    summary: The next cloud re-entry should be limited to Microsoft Entra ID work-account authentication and Azure OpenAI for privacy/compliance. Keep PostgreSQL, Tracardi, and the rest of the runtime local for now, and do not put the project online before Entra auth exists.
+    summary: |
+      REVISED 2026-03-09: Azure infrastructure deployment (Container Apps, VMs) is now disabled.
+      The only Azure components that may be used are Azure OpenAI for LLM inference and Entra ID
+      for authentication when colleague-facing features are implemented. All compute infrastructure
+      (PostgreSQL, Tracardi, chatbot) runs locally via docker-compose.
     constraints:
-      - no_public_exposure_before_entra_auth
-      - microsoft_work_account_login_per_user
-      - prefer_azure_openai_for_public_facing_mode
-      - keep_remaining_runtime_local_during_this_phase
-      - azure_usage_limit_reported_reached_until_2026_03_14
-      - longer_term_target_is_server_farm_deployment
+      - no_azure_container_apps_deployment
+      - no_azure_vm_deployment_for_tracardi_or_postgres
+      - azure_openai_may_be_used_for_llm_inference_only
+      - entra_auth_for_colleague_facing_mode_when_implemented
+      - all_compute_infrastructure_local_only
   chat_experience_plan:
     status: reported
     decided_at: 2026-03-09
@@ -109,6 +174,35 @@ current_state:
       - no_shared_chatbot_surface_for_colleagues
       - chatgpt_like_interface_direction
       - explicit_web_search_policy_before_enablement
+  chat_history_persistence_foundation:
+    status: observed
+    verified_at: 2026-03-09T21:47:19+01:00
+    summary: Local colleague-facing chat continuity is now browser-verified under the dev-only auth path. Chainlit users, threads, steps, elements, and feedback persist through app-managed PostgreSQL tables, workflow checkpoints bind to Chainlit's actual thread_id, repo-owned translations match the current Chainlit frontend keys again, sparse thread upserts no longer violate `app_chat_threads` JSONB constraints, and reopened threads now restore a live composer through `@cl.on_chat_resume`.
+    limits:
+      - no_verified_entra_login_yet
+      - current_chainlit_history_and_title_ux_is_still_basic_for_colleague_rollout
+      - web_search_policy_is_implemented_but_still_disabled_by_default
+      - any_existing_local_env_still_using_the_old_short_chainlit_auth_secret_should_be_rotated_before_auth_testing
+      - low_severity_chainlit_set_chat_profiles_runtime_warning_still_appears_during_session_restore
+    evidence:
+      - file: src/services/chainlit_data_layer.py
+        finding: custom Chainlit BaseDataLayer persists app_chat_users/app_chat_threads/app_chat_steps/app_chat_elements/app_chat_feedback instead of relying on Chainlit's default schema
+      - file: src/app.py
+        finding: app startup now resolves the repo-managed PostgreSQL data layer, prefers Chainlit context.session.thread_id over the websocket session id for workflow state, exposes an optional dev-only password auth callback for authenticated local verification, and rebinds reopened threads through `@cl.on_chat_resume`
+      - file: src/config.py
+        finding: local Chainlit auth can now be enabled explicitly with CHAINLIT_DEV_AUTH_ENABLED plus a shared CHAINLIT_DEV_AUTH_PASSWORD
+      - file: .chainlit/translations/en-US.json
+        finding: repo-owned translation overrides now match the installed Chainlit frontend keys again, fixing blank login labels and raw history/search translation keys in the browser
+      - file: src/services/runtime_support_schema.py
+        finding: startup bootstrap now creates the app_chat_* persistence tables alongside existing runtime support tables
+      - file: start_chatbot.sh
+        finding: repo-owned CHAINLIT_AUTH_SECRET default now uses a 32+ character placeholder so auth-enabled local runs do not inherit the old short-key warning by default
+      - command: CHAINLIT_DEV_AUTH_ENABLED=true CHAINLIT_DEV_AUTH_PASSWORD=... CHAINLIT_AUTH_SECRET=... DATABASE_URL=... poetry run python -m uvicorn src.app:chainlit_server_app --host 127.0.0.1 --port 8010
+        result: temporary local auth-enabled app launched cleanly on 127.0.0.1:8010
+      - command: authenticated localhost verification against /auth/config, /login, /user, /project/threads, and /project/thread/{thread_id}
+        result: passwordAuth=true, two authenticated users saw isolated thread lists from app_chat_threads, owner thread fetches returned 200, and cross-user thread access returned 401; temporary verifier rows were cleaned up after the check
+      - command: browser-driven localhost verification on 127.0.0.1:8010 with system Chrome
+        result: login labels rendered, history/search labels rendered, direct `/thread/{thread_id}` reopen kept the same URL, the reopened thread exposed `#chat-input`, and a follow-up message stayed on the same thread while `/project/thread/{thread_id}` returned persisted steps
   deployment:
     status: reported
     verified_at: 2026-03-06T20:09:00+01:00
@@ -116,14 +210,19 @@ current_state:
     deployed_application_sha: 877f0e9
     container_app_revision: ca-cdpmerged-fast--stg-877f0e9
     container_image: ghcr.io/lennertvhoy/cdp_merged:sha-877f0e9<SECRET_KEY>
-    active_path: paused_by_user_for_cost_control
+    active_path: disabled_by_user_directive_2026_03_09
     scale:
       min_replicas: 0
       max_replicas: 5
     readiness_endpoint:
       url: https://ca-cdpmerged-fast.wonderfulisland-74a59b9d.westeurope.azurecontainerapps.io/project/readinessz
-      result: 2026-03-06 17:03Z GitHub Actions smoke job 66060849591 succeeded for the a4344ae staging deploy; in this session Playwright also opened the revision FQDN and the live UI served responses on the deployed revision.
-    note: Last verified Azure deployment context remains recorded for reference, but the user paused Azure deployment work on 2026-03-07 to save costs. Do not treat this deployment block as the active verification target until cloud work is explicitly resumed.
+      result: HISTORICAL - Last verified 2026-03-06. Azure deployment workflows disabled 2026-03-09.
+    note: |
+      AZURE DEPLOYMENT DISABLED as of 2026-03-09 per user directive to focus on local-only deployment.
+      - GitHub Actions workflows for Azure deployment (cd.yml, infra-terraform.yml, infra-tracardi.yml, cost-monitor.yml) have been disabled
+      - Terraform configurations in infra/ are preserved for reference but not actively deployed
+      - Local deployment path via docker-compose is now the primary execution mode
+      - Historical Azure deployment context retained for documentation purposes only
   observability:
     status: observed
     verified_at: 2026-03-06T15:33:21+01:00
@@ -563,18 +662,29 @@ current_state:
     note: Same-day local verification confirmed the default compose-managed stack now boots PostgreSQL, Tracardi, and the chatbot locally with healthy `/healthz` and `/readinessz` probes. Full-dataset counts, aggregation, email-domain filtering, single-NACE-code aliasing, local artifact generation, and the updated quick demo smoke all passed locally. Tool exposure now includes create_data_artifact, get_data_coverage_stats, export_segment_to_csv, and email_segment_export for the local operator/runtime path, and canonical PostgreSQL segment creation/stats/export now work locally after the missing support tables were bootstrapped. Azure deployment follow-up is intentionally deferred while the user keeps the project in local-only cost-control mode.
   enrichment:
     status: observed
-    verified_at: 2026-03-09T17:31:00+01:00
+    verified_at: 2026-03-09T23:20:04+01:00
     health_check_summary: |
-      Same-session PostgreSQL + process recheck on 2026-03-09 showed:
-      - Canonical coverage now reads total=1940603, website_url=64900,
-        geo_latitude=52978, ai_description=913, cbe_enriched=1252019
+      Same-session PostgreSQL + log/process recheck on 2026-03-09 showed:
+      - Canonical coverage now reads total=1940603, website_url=70922,
+        geo_latitude=63979, ai_description=31033, cbe_enriched=1252019
       - CBE completed successfully on 2026-03-08 15:07 CET
-      - Geocoding supervisor is still present, but the next 10000-row batch launched
-        after the 14:42 CET completion has produced no fresh log output; stall risk observed
-      - Website discovery is still active; the latest completed chunk finished at
-        2026-03-09 17:24 CET with 62 discoveries and the next batch child was observed live
+      - Geocoding is still active and the observability fix remains verified
+        live. The tail still showed fresh geocoded rows through 23:19:17 CET,
+        the direct PostgreSQL recheck showed rows updating through
+        2026-03-09 22:19:15 UTC, and no fresh nullable-trait `strip()`
+        failures appeared after the already-known 21:27:39 CET lines.
+      - Website discovery is still active; the latest completed chunks finished
+        at 23:10:35 CET (+57), 23:13:42 CET (+64), 23:16:24 CET (+53), and
+        23:19:39 CET (+56). The cursor advanced to
+        1483b6a4-e256-45ba-89f1-785cb79e497b and a fresh follow-on batch is
+        already running.
       - AI-description enrichment was restarted at 2026-03-09 17:26 CET with Ollama;
-        ai_description count rose from 706 to 913 within the first few minutes
+        the latest completed 1000-row chunks finished at 22:55:59 CET (+622),
+        23:02:55 CET (+645), 23:09:47 CET (+660), and 23:16:27 CET (+648),
+        which pushed ai_description from 706 before restart to 31033. Recent
+        completed chunks are still holding roughly 2.4-2.6 rows/s, so no
+        tuning change is justified yet; the next 1000-row batch is already
+        active from cursor 064ec0ac-100d-4d70-9461-b7722608b68b.
       Root cause for the earlier supervisor failure (stale .openclaw path + missing
       .env.local sourcing) remains fixed by commit 3eb9ec1.
     canonical_target:
@@ -585,18 +695,25 @@ current_state:
       total_companies: 1940603
       industry_nace_code: 1252022
       legal_form: 1176853
-      website_url: 64900
-      geo_latitude: 52978
-      ai_description: 913
+      website_url: 70922
+      geo_latitude: 63979
+      ai_description: 31033
       cbe_enriched: 1252019
       sync_status_pending: 0
       sync_status_enriched: 1940603
-      updated_last_hour: 5506
-      updated_last_10_minutes: 1815
+      updated_last_hour: 14003
+      updated_last_5_minutes: 1635
+      updated_last_10_minutes: 2805
       note: |
-        2026-03-09 17:31 CET direct PostgreSQL recheck. These field-level counts are
+        2026-03-09 23:19 CET direct PostgreSQL recheck. These field-level counts are
         the authoritative enrichment progress signal; sync_status remains misleading.
-    count_scope_note: The 2026-03-09 17:31 CET direct PostgreSQL recheck supersedes the earlier exact coverage snapshot for current-state reporting: total=1940603, website_url=64900, geo_latitude=52978, ai_description=913, cbe_enriched=1252019, updated_last_hour=5506, updated_last_10_minutes=1815. Earlier 2026-03-06 and 2026-03-08 count lines remain historical evidence only.
+    count_scope_note: |
+      The 2026-03-09 23:19 CET direct PostgreSQL recheck supersedes the earlier
+      exact coverage snapshot for current-state reporting: total=1940603,
+      website_url=70922, geo_latitude=63979, ai_description=31033,
+      cbe_enriched=1252019, updated_last_hour=14003,
+      updated_last_10_minutes=2805. Earlier 2026-03-06 and 2026-03-08 count
+      lines remain historical evidence only.
     runner_state:
       cbe:
         status: completed
@@ -613,29 +730,63 @@ current_state:
         deferred_no_usable_nace_rows: 688581
         note: Latest supervisor log shows successful completion rather than an active run.
       geocoding:
-        status: stall_risk_observed
+        status: running_with_verified_live_streaming
         mode: repo_supervised_cursor_runner
         restarted_at: 2026-03-08T14:05:29+01:00
         supervisor_pid: 1308025
-        current_cursor: 0fb9ee37-0134-484d-be5b-0f17c9faf300
-        cursor_updated_at: 2026-03-09T13:42:50.014537+00:00
-        current_batch_pid: 2679323
+        chunked_pid: 2961612
+        current_cursor: 1366466e-b3d5-4d7f-8cfd-ab91e7c9b503
+        cursor_updated_at: 2026-03-09T20:39:54.699757+00:00
+        current_batch_pid: 3236076
+        latest_observed_geo_write_at: 2026-03-09T19:43:31.500998+00:00
         recent_chunk_enrichments:
-          - 7979
+          - 6230
         explicit_429_lines_in_new_log: 0
-        note: Latest completed chunk ended at 2026-03-09 14:42:49 CET with 7979 enrichments, 2021 skipped, and 0 failed. The next batch process stayed alive but produced no fresh log output through the 17:25 CET recheck, so this runner should be treated as stalled until revalidated or restarted.
+        note: |
+          The pre-patch batch worker PID 2679323 was first asked to stop
+          gracefully, then force-stopped at 18:25 CET when it failed to unwind
+          within the current 500-row batch. The existing bash supervisor then
+          relaunched the observability-fixed chunked parent PID 2961612 at
+          18:25:28 CET and the batch child PID 2961622 at 18:25:29 CET without
+          creating a second supervisor. The live log now shows streamed child output plus
+          Batch 1/20 through Batch 4/20 checkpoints at 18:25:32, 18:25:34,
+          18:25:36, and 18:25:38 CET, proving that commit 8e8901c is active in
+          the live geocoding path. Batch 5/20 completed at 18:35:48 CET, Batch
+          6/20 completed at 18:48:21 CET, Batch 7/20 completed at 19:00:22 CET,
+          Batch 8/20 completed at 19:12:51 CET, Batch 9/20 completed at
+          19:24:59 CET, Batch 10/20 completed at 19:37:02 CET, and Batch
+          11/20 completed at 19:49:11 CET, and Batch 12/20 completed at
+          20:01:21 CET, Batch 13/20 completed at 20:13:44 CET, Batch
+          14/20 completed at 20:26:10 CET, Batch 15/20 completed at
+          20:38:26 CET, and the pre-fix child finished Batch 20/20 at
+          21:39:54 CET with 6,230 enrichments for that chunk. The cursor then
+          advanced to 1366466e-b3d5-4d7f-8cfd-ab91e7c9b503 and the follow-on
+          batch child PID 3236076 launched immediately at 21:39:54 CET, which
+          is after commit 5bf2595 (18:33:29 CET). Post-launch log checks show
+          Batch 1/20 through Batch 5/20 completing at 21:52:17, 22:04:45,
+          22:17:05, 22:29:13, and 22:41:25 CET with fresh geocoded rows still
+          streaming through 22:55:21 CET and no new nullable-trait `strip()`
+          failures in the post-launch window. The guard fix is now verified
+          live; keep geocoding on routine background monitoring unless that
+          error signature or throughput materially regresses.
       website_discovery:
         status: running
         mode: repo_supervised_cursor_runner
         restarted_at: 2026-03-08T14:05:30+01:00
         supervisor_pid: 1308060
-        current_cursor: 110ecde7-2da5-40b8-a3ad-6211e95526af
-        cursor_updated_at: 2026-03-09T16:28:26.992867+00:00
-        current_batch_pid: 2842536
-        latest_verified_website_url_count: 64900
-        latest_observed_website_discoveries: 62
+        current_cursor: 1483b6a4-e256-45ba-89f1-785cb79e497b
+        cursor_updated_at: 2026-03-09T22:19:39.916813+00:00
+        current_batch_pid: 3337387
+        latest_verified_website_url_count: 70922
+        latest_observed_website_discoveries: 56
         current_cursor_file: logs/enrichment/website_discovery_cursor.json
-        note: Latest completed chunk ended at 2026-03-09 17:24:10 CET with 62 discoveries and zero failed rows; a fresh child batch was observed active immediately after that completion.
+        note: |
+          Latest completed chunks ended at 2026-03-09 23:10:35 CET with 57
+          discoveries, 23:13:42 CET with 64 discoveries, 23:16:24 CET with 53
+          discoveries, and 23:19:39 CET with 56 discoveries, all with zero
+          failed rows. The cursor advanced again at 23:19:39 CET to
+          1483b6a4-e256-45ba-89f1-785cb79e497b. Batch pid 3337387 is the worker
+          observed for the currently active follow-on chunk.
     ai_description_enrichers:
       azure_openai:
         status: available_not_preferred_for_current_phase
@@ -678,23 +829,32 @@ current_state:
           status: working_in_production
     ai_description_runtime:
       status: observed
-      checked_at: 2026-03-09T17:31:00+01:00
+      checked_at: 2026-03-09T23:20:04+01:00
       active_runner: true
       runner_name: description_ollama
       supervisor_pid: 2844752
       chunked_pid: 2844758
-      current_batch_pid: 2844792
+      current_batch_pid: 3334304
       preferred_provider: ollama
       observed_count_before_restart: 706
-      observed_count_after_restart: 913
-      recent_updates_last_5_minutes: 207
-      pending_with_nace: 1251109
+      observed_count_after_restart: 31033
+      recent_updates_last_5_minutes: 6058
+      pending_with_nace: 1220784
       evidence:
-        - pgrep -af "description_ollama|enrich_companies_chunked.py --enrichers description|enrich_companies_batch.py --enrichers description|ollama serve" showed the Ollama service plus active description supervisor, chunked runner, and batch worker
+        - ps -eo pid,ppid,lstart,etime,cmd | rg 'enrich_companies_batch.py --enrichers (geocoding|website|description)' -> current description batch worker pid 3334304 started at 23:16:27 CET from cursor 064ec0ac-100d-4d70-9461-b7722608b68b
         - setsid env ENRICHERS=description RUN_NAME=description_ollama CHUNK_SIZE=1000 BATCH_SIZE=20 bash scripts/run_enrichment_persistent.sh
-        - psql "$DATABASE_URL" direct count recheck -> ai_description rose from 706 before launch to 913 after launch, with 207 description rows updated in the last 5 minutes
+        - rg -n "Batch 50/50 complete|ENRICHMENT COMPLETE|Last company ID|Starting with description enricher: ollama" logs/enrichment/description_ollama_20260309_172601.log | tail -n 40 -> latest completed chunks finished at 22:55:59 CET (+622), 23:02:55 CET (+645), 23:09:47 CET (+660), and 23:16:27 CET (+648)
+        - direct PostgreSQL count recheck at 23:19 CET -> ai_description rose from 706 before launch to 31033, while companies.updated_at still moved through 23:19:15 CET
+        - focused description PostgreSQL recheck at 23:21 CET -> ai_description_generated_at last 5m=6058 and pending_description_with_nace=1220784
         - user instruction on 2026-03-09 set AI descriptions to Ollama for the active priority phase
-      note: The first supervised chunk was still in progress at this snapshot, so the cursor/log file had not yet emitted a completed-chunk summary.
+      note: |
+        The supervised Ollama run has now completed twenty-nine 1000-row
+        chunks, with the latest ones finishing at 22:55:59 CET (+622),
+        23:02:55 CET (+645), 23:09:47 CET (+660), and 23:16:27 CET (+648).
+        Recent completed chunks are still holding roughly 2.4-2.6 rows/s, so
+        the current CHUNK_SIZE=1000 / BATCH_SIZE=20 settings remain justified
+        for now, and the next batch is already active from cursor
+        064ec0ac-100d-4d70-9461-b7722608b68b.
     truth_notes:
       - sync_status_does_not_equal_field_complete_enrichment
       - canonical_sql_counts_override_stale_dashboard_or_loop_narratives
@@ -1124,25 +1284,45 @@ active_problems:
     owner: agent
     next_action: Regression test added in tests/unit/test_nace_resolution_consistency.py; search_profiles docstring updated with NACE resolution note.
   event_processor_scoring_model_runtime_drift:
-    status: observed
+    status: resolved
     severity: medium
     discovered_at: 2026-03-09
-    summary: The checked-in `scripts/cdp_event_processor.py` defines `GET /api/scoring-model`, but the long-running local daemon on `127.0.0.1:5001` is stale and currently returns `404` for that route.
+    resolved_at: 2026-03-09
+    summary: The stale local event-processor daemon on `127.0.0.1:5001` was refreshed from the current checked-in code, and `GET /api/scoring-model` now returns the live deterministic scoring model.
     evidence:
-      - command: curl -fsS http://127.0.0.1:5001/
-      - result: root endpoint listed `POST /webhook/resend`, `GET /api/next-best-action/{kbo_number}`, `GET /api/engagement/leads`, and `GET /health`, but not `GET /api/scoring-model`
-      - command: curl -fsS http://127.0.0.1:5001/api/scoring-model
-      - result: HTTP 404 from the currently running local daemon
       - file: scripts/cdp_event_processor.py
         finding: checked-in app defines `@app.get("/api/scoring-model")` and the root endpoint advertises it
-      - command: poetry run python -c 'from scripts.cdp_event_processor import get_scoring_model; import json; print(json.dumps(get_scoring_model(), indent=2, sort_keys=True))'
-      - result: deterministic scoring model returned successfully from checked-in code (`version=2026-03-08`)
+      - command: curl -fsS -i http://127.0.0.1:5001/api/scoring-model
+      - result: HTTP 404 from the stale local daemon before refresh
+      - command: bash -lc 'setsid .venv/bin/python scripts/cdp_event_processor.py > logs/event_processor.log 2>&1 < /dev/null & echo $!'
+      - result: refreshed daemon launched successfully as background PID 3344307
+      - command: curl -fsS http://127.0.0.1:5001/health
+      - result: status=ok, database=ok, signature_verification=true after refresh
+      - command: curl -fsS http://127.0.0.1:5001/api/scoring-model
+      - result: returned live deterministic scoring model JSON (`version=2026-03-08`)
+      - command: curl -fsS http://127.0.0.1:5001/
+      - result: root endpoint now lists `GET /api/scoring-model` alongside the existing webhook, NBA, leads, and health routes
     affects:
       - local_event_processor_runtime_verification
       - illustrated_guide_event_processor_evidence
       - system_spec_event_processor_contract
     owner: agent
-    next_action: Restart the local event-processor daemon from the current checked-in code before claiming `/api/scoring-model` as live-runtime evidence in the next guide export.
+    next_action: Keep using the refreshed live route in the next guide/spec export; if the local daemon is restarted again, use the detached repo-venv launch that stayed up in this session.
+  chainlit_set_chat_profiles_runtime_warning:
+    status: observed
+    severity: low
+    discovered_at: 2026-03-09
+    summary: "Chainlit emits a `RuntimeWarning: coroutine 'set_chat_profiles' was never awaited` from `chainlit/session.py` during authenticated browser session restore when chat profiles are enabled. Browser resume still works, but the warning adds noise to local logs."
+    evidence:
+      - command: authenticated localhost browser walkthrough against http://127.0.0.1:8010/login and /thread/{thread_id}
+      - result: "resume flow succeeded, composer was restored, and the server log emitted `/home/ff/Documents/CDP_Merged/.venv/lib/python3.12/site-packages/chainlit/session.py:306: RuntimeWarning: coroutine 'set_chat_profiles' was never awaited`"
+      - file: .venv/lib/python3.12/site-packages/chainlit/session.py
+        finding: session profile restore currently calls `asyncio.get_event_loop().run_until_complete(...)` around `global_config.code.set_chat_profiles(...)`
+    affects:
+      - local_chainlit_browser_logs
+      - authenticated_history_verification_noise
+    owner: unknown
+    next_action: Leave documented for now; only add a repo-side workaround if the warning starts affecting UX, test stability, or teammate rollout confidence.
   local_support_schema_missing_for_canonical_segments:
     status: resolved
     severity: high
@@ -1284,29 +1464,49 @@ active_problems:
     discovered_at: 2026-03-06
     summary: The canonical companies table shows every row as sync_status enriched while website, geocoding, and AI-description coverage remain sparse.
     evidence:
-      - 2026-03-09 17:31 CET canonical counts still show sync_status_pending=0 and sync_status_enriched=1940603 while website_url=64900, geo_latitude=52978, and ai_description=913.
+      - 2026-03-09 18:12 CET canonical counts still show sync_status_pending=0 and sync_status_enriched=1940603 while website_url=65597, geo_latitude=54177, and ai_description=3949.
     affects:
       - enrichment_monitoring
       - progress_reporting
       - operator_confidence
     owner: agent
     next_action: Keep progress reporting anchored to canonical field counts instead of sync_status alone.
-  geocoding_runner_stall_risk_2026_03_09:
+  geocoding_runner_visibility_gap_2026_03_09:
     status: observed
-    severity: high
+    severity: medium
     discovered_at: 2026-03-09
-    summary: The repo-managed geocoding supervisor completed a 10000-row chunk at 2026-03-09 14:42 CET, but the next batch child has remained alive without any fresh log output through the 17:25 CET recheck.
+    resolved_at: 2026-03-09
+    summary: The repo-managed geocoding visibility gap was resolved by force-stopping the pre-patch batch worker at 18:25 CET and letting the existing bash supervisor relaunch the patched chunked/batch path from commit 8e8901c. The live geocoding log now streams child output again and shows Batch n/m checkpoint lines mid-chunk.
     evidence:
-      - pgrep -af "run_enrichment|enrich_companies|website|geocod|cbe|supervisor|ollama" showed active geocoding supervisor and batch processes after the 14:42 CET chunk completion.
-      - ps -p 1308025,1308031,2679323 -o pid,ppid,etime,%cpu,%mem,stat,cmd -> current geocoding batch pid 2679323 present for 02:42:23 in state Dl at the time of the recheck.
-      - tail -n 60 logs/enrichment/geocoding_parallel_20260308_140529.log -> latest completed chunk ended at 2026-03-09 14:42:49 CET with 7979 enrichments, 2021 skipped, 0 failed.
-      - stat -c '%y %n' logs/enrichment/geocoding_parallel_20260308_140529.log logs/enrichment/geocoding_parallel_cursor.json -> both files last updated at approximately 2026-03-09 14:42:50 CET.
+      - kill -KILL 2679323 -> force-stopped the pre-patch geocoding batch worker after a failed graceful-stop attempt
+      - tail -n 20 logs/enrichment/geocoding_parallel_supervisor.log -> 2026-03-09 18:25:19 CET exit code 247 followed by "Restarting in 10 seconds..."
+      - ps -o pid,ppid,lstart,etime,stat,cmd -p 1308025,2961612,2961622 -> bash supervisor persisted, patched chunked parent started at 18:25:28 CET, patched batch child started at 18:25:29 CET
+      - rg -n "Batch [0-9]+/[0-9]+ complete|successes cbe=|Running chunk:|Resuming from cursor file" logs/enrichment/geocoding_parallel_20260308_140529.log -> Batch 1/20 through Batch 4/20 checkpoints present at 18:25:32-18:25:38 CET
+      - 2026-03-09 18:30 CET direct PostgreSQL count recheck -> geo_latitude=54566, updated_last_hour=12365, updated_last_10_minutes=3707, geo_rows_updated_last_10m=291, geo_max_updated_at=2026-03-09 17:27:00.72879
     affects:
       - enrichment_completeness
       - geocoding_runner_confidence
       - progress_reporting
     owner: agent
-    next_action: Recheck the stuck batch from the current cursor, then restart or reduce the geocoding chunk size if the process is still stalled.
+    next_action: Keep monitoring the live geocoding checkpoints and only revisit chunk-size tuning if operators still lack enough mid-run visibility.
+  geocoding_nullable_address_traits_2026_03_09:
+    status: observed
+    severity: low
+    discovered_at: 2026-03-09
+    resolved_at: 2026-03-09
+    summary: Some geocoding rows emitted `'NoneType' object has no attribute 'strip'` because nullable zipcode/country traits were passed through to `GeocodingEnricher._build_address()` without normalization. The repo now guards nullable address traits before calling `.strip()`, and the first post-fix batch child started at 21:39:54 CET from cursor `1366466e-b3d5-4d7f-8cfd-ab91e7c9b503`; by the 22:55 CET recheck, that post-fix window had completed Batches 1/20 through 5/20 without any fresh nullable-trait `strip()` failures, so the live-path verification gap is closed.
+    evidence:
+      - "git show -s --format='%h %ci %s' 5bf2595 -> 5bf2595 2026-03-09 18:33:29 +0100 fix(enrichment): verify geocoding relaunch"
+      - "ps -o pid,ppid,lstart,etime,cmd -p 2961612,3236076 -> chunked parent PID 2961612 stayed active and the first post-fix batch child PID 3236076 started at 2026-03-09 21:39:54 CET"
+      - "awk 'flag{print} /Running chunk: start_after_id=1366466e-b3d5-4d7f-8cfd-ab91e7c9b503, limit=10000/{flag=1}' logs/enrichment/geocoding_parallel_20260308_140529.log | rg \"Running chunk: start_after_id=1366466e-b3d5-4d7f-8cfd-ab91e7c9b503|Batch [1-5]/20 complete|NoneType\" -> Batches 1/20 through 5/20 completed at 21:52:17-22:41:25 CET and no post-launch NoneType lines appeared"
+      - "tail -n 20 logs/enrichment/geocoding_parallel_20260308_140529.log -> fresh Geocoded:/No geocoding results lines continued through 22:55:21 CET without new nullable-trait failures"
+      - src/enrichment/geocoding.py -> _build_address now normalizes street/zipcode/city/country via `(traits.get(...) or '').strip()`
+      - poetry run pytest tests/unit/test_phase3.py -q -> 15 passed after adding a nullable-zipcode/country regression test
+    affects:
+      - geocoding_runner_confidence
+      - data_pipeline_resilience
+    owner: agent
+    next_action: Keep geocoding on routine background monitoring and only reopen this issue if fresh `NoneType`/`strip()` failures recur in later chunks.
   postgresql_search_min_start_date_ignored:
     status: observed
     severity: medium
@@ -1362,10 +1562,10 @@ active_problems:
     status: observed
     severity: high
     discovered_at: 2026-03-06
-    summary: Website coverage is still low overall, but the 2026-03-09 PostgreSQL recheck now shows canonical website_url at 64900 and the repo-managed website supervisor is still completing 250-row chunks. The remaining issue is low overall coverage, not immediate runner viability.
+    summary: Website coverage is still low overall, but the 2026-03-09 PostgreSQL recheck now shows canonical website_url at 70922 and the repo-managed website supervisor is still completing 250-row chunks. The remaining issue is low overall coverage, not immediate runner viability.
     evidence:
-      - 2026-03-09 17:31 CET PostgreSQL recheck recorded website_url=64900 (~3.35% of 1.94M companies).
-      - 2026-03-09 17:24 CET website log tail showed a completed 250-row chunk with 62 discoveries and 0 failed rows.
+      - 2026-03-09 23:19 CET PostgreSQL recheck recorded website_url=70922 (~3.65% of 1.94M companies).
+      - 2026-03-09 23:19 CET website log tail showed completed 250-row chunks with 57 discoveries at 23:10:35 CET, 64 discoveries at 23:13:42 CET, 53 discoveries at 23:16:24 CET, and 56 discoveries at 23:19:39 CET, all with 0 failed rows.
       - 2026-03-06 13:59 CET PostgreSQL recheck still recorded website_url=35922 while geo_latitude rose to 4142.
       - 2026-03-06 10:35 CET log showed website discovery processed 1000, discovered 78 websites (7.8% success rate).
       - Estimated ~1.3M companies need scanning to approach saturation at current selector criteria.
@@ -1497,6 +1697,27 @@ active_problems:
       - local_development_security
     owner: agent
     next_action: Keep the broader security sweep focused on unsafe real secrets and stale operational claims rather than the now-resolved enrich_monitor fallback.
+  entra_client_secret_exposed_in_tracked_docs:
+    status: resolved
+    severity: critical
+    discovered_at: 2026-03-09
+    resolved_at: 2026-03-09
+    summary: Repo-tracked docs briefly included a live Microsoft Entra client secret. The tracked files were sanitized, the credential was rotated on 2026-03-09, the local active value was replaced immediately, and tracked Entra secret examples are now checked by doc lint in CI.
+    evidence:
+      - 2026-03-09 repo audit found a concrete AZURE_AD_CLIENT_SECRET value in NEXT_ACTIONS.md and docs/MICROSOFT_ENTRA_SETUP.md.
+      - 2026-03-09 22:35 CET az account show -> tenant ce408fd5-2526-4cbb-bbe6-f0c2e188b89d / user l.vanhoyweghen@it1.be
+      - 2026-03-09 22:36 CET az ad app credential list --id d13725b8-ce4e-4103-9518-2d66bcce5beb -> single credential keyId e658e308-ed91-4f60-ae90-883359438ed5 start 2026-03-09T21:09:35Z end 2027-03-09T00:00:00Z
+      - 2026-03-09 22:38 CET az ad app credential reset --id d13725b8-ce4e-4103-9518-2d66bcce5beb --display-name CDP-Chatbot-Prod -> replacement secret generated and written only to untracked .env.local
+      - 2026-03-09 22:39 CET az ad app credential list --id d13725b8-ce4e-4103-9518-2d66bcce5beb -> single credential keyId 193346f1-d892-4c8a-b792-92d342575564 start 2026-03-09T21:38:52Z end 2027-03-09T21:38:52Z
+      - rg -n "^AZURE_AD_CLIENT_SECRET=" .env.local | sed 's/=.*$/=<redacted>/' -> local env updated with replacement secret only
+      - stat -c '%a %n' .env.local -> 600 .env.local
+      - python3 scripts/doc_lint.py -> OK after Entra placeholder checks were added
+    affects:
+      - entra_auth_configuration
+      - secret_management
+      - documentation_safety
+    owner: agent
+    next_action: None - compromised credential retired; keep future secret material out of tracked docs and move production storage to a vault-backed source before rollout.
   illustrated_guide_screenshot_mismatches:
     status: observed
     severity: medium
@@ -1608,7 +1829,7 @@ active_problems:
     owner: agent
     next_action:
       - Latest local guide export is `docs/illustrated_guide/ILLUSTRATED_GUIDE.pdf`, with the cover-page, CSV-proof, and wording cleanup verified locally
-      - Next guide cleanup step is a focused v3.3 credibility pass: tighten the Autotask maturity wording, refresh the local event-processor daemon before claiming `/api/scoring-model` as live-runtime evidence, improve the API/code-page styling plus PDF text-layer/export quality, and then add a short business-case conformity/acceptance-criteria appendix without changing the verified content claims
+      - Next guide cleanup step is a focused v3.3 credibility pass: tighten the Autotask maturity wording, improve the API/code-page styling plus PDF text-layer/export quality, and then add a short business-case conformity/acceptance-criteria appendix without changing the verified content claims
   local_compose_projection_tables_missing:
     status: resolved
     severity: medium

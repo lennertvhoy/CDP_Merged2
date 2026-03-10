@@ -65,6 +65,9 @@ jobs:
     needs: changes
     if: needs.changes.outputs.docs_only == 'true'
     steps:
+      - uses: actions/checkout@v4
+      - name: Run doc lint
+        run: python3 scripts/doc_lint.py
       - name: Skip expensive CI for docs-only change set
         run: echo "Docs-only change set detected; skipping lint, tests, dependency audit, and migration gates."
 
@@ -75,6 +78,9 @@ jobs:
     if: needs.changes.outputs.docs_only != 'true'
     steps:
       - uses: actions/checkout@v4
+
+      - name: Run doc lint
+        run: python3 scripts/doc_lint.py
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5

@@ -1,10 +1,14 @@
 name: Cost Optimization Monitor
 
+# AZURE COST MONITORING DISABLED - Local-only mode as of 2026-03-09
+# Workflow preserved for future Azure cost optimization but schedule disabled.
+# To re-enable, uncomment the schedule below.
+
 on:
-  schedule:
-    # Run weekly on Sundays at 00:00 UTC
-    - cron: '0 0 * * 0'
-  workflow_dispatch:  # Allow manual trigger
+  # schedule:
+  #   # Run weekly on Sundays at 00:00 UTC
+  #   - cron: '0 0 * * 0'
+  workflow_dispatch:  # Allow manual trigger only
 
 jobs:
   analyze-costs:

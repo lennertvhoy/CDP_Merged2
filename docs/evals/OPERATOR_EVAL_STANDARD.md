@@ -102,8 +102,10 @@ For now:
 - the canonical reusable prompts live in `docs/evals/operator_eval_cases.v1.json`
 - the reusable manual scoring sheet lives in `docs/evals/operator_eval_scorecard_template.csv`
 - the validation guard lives in `tests/unit/test_operator_eval_assets.py`
+- the run-prep harness lives in `src/evals/operator_eval_run_prep.py`
+- the CLI entry point lives in `scripts/prepare_operator_eval_run.py`
 
 Later:
 
-- wire these cases into an automated or semi-automated local eval harness
-- store run artifacts and scorecards per model/app revision
+- execute these prepared cases against the live chatbot and collect baseline scorecards
+- add automated grading and store scored run artifacts per model/app revision

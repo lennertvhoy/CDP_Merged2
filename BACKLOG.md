@@ -1,8 +1,9 @@
-# CDP_Merged Backlog - AZURE INFRASTRUCTURE
+# CDP_Merged Backlog
 
-**Platform:** AZURE (VMs, Container Apps, OpenAI)  
+**Platform:** Azure target architecture with local-only execution mode
+**Azure Scope:** Next cloud re-entry should be limited to Entra ID auth + Azure OpenAI
 **Architecture:** Source systems PII truth + PostgreSQL intelligence truth + Tracardi activation runtime + AI chatbot  
-**Last Updated:** 2026-03-09 (v3.3 guide polish remains open; enrichment counts were rechecked from PostgreSQL, `description_ollama` was restarted locally, and the current geocoding batch now needs a stall check before any broader optimization claims)
+**Last Updated:** 2026-03-09 (repo audit backlog pass added security, hygiene, and legacy-surface follow-up alongside the current local-first roadmap)
 **Purpose:** Medium-term roadmap from the current repo state to a credible demo first and production readiness later
 
 ## How To Use This File
@@ -37,7 +38,7 @@ Current constraints that shape this roadmap:
 - when Azure work resumes, limit the first scoped re-entry to `Entra auth + Azure OpenAI`; keep PostgreSQL, Tracardi, and the rest of the runtime local
 - colleague-facing rollout should use Microsoft work accounts with per-user chat history/workspace, not a shared chatbot surface
 - the current Chainlit surface is a baseline only; the colleague-facing product should feel closer to ChatGPT and may include web search once privacy/policy boundaries are defined
-- longer-term deployment target is the user's server farm, not a return to full Azure app hosting
+- longer-term deployment target is the user's datacenter via Kubernetes (k3s/RKE2), not a return to full Azure app hosting
 - the user must do the final verification and wants at least one stable week before sign-off
 
 Near-term planning rule:
@@ -189,8 +190,8 @@ poetry run python scripts/test_poc_activation.py --mock
 | Priority | Item | Status | What still needs to happen |
 |----------|------|--------|-----------------------------|
 | High | Define a thin read-only MCP contract | Pending | Standardize `search`, `count`, `company_360`, and normalized source-adapter tools across real/mock backends |
-| High | Add reproducible agent evals / trace grading | Partial | `docs/evals/` now contains a starter bank, scorecard template, and validation test; still need executable runs against the chatbot plus per-run artifacts |
-| High | Standardize self-contained eval prompt format | Partial | A canonical template plus `operator_eval_cases.v1.json` now exist under `docs/evals/`; full historical scenario migration and runtime execution still need to happen |
+| High | Add reproducible agent evals / trace grading | Partial | `docs/evals/` now contains a starter bank, scorecard template, validation test, and a repo-owned run-prep harness (`scripts/prepare_operator_eval_run.py` + `src/evals/operator_eval_run_prep.py`); still need live-chatbot execution and scored baseline artifacts |
+| High | Standardize self-contained eval prompt format | Partial | A canonical template plus `operator_eval_cases.v1.json` now exist under `docs/evals/`, and the run-prep harness can bundle them per revision; full historical scenario migration and live execution still need to happen |
 | Medium | Add GenAI observability conventions | Pending | Standardize traces for model calls, tool calls, latency, failures, and token/cost tracking |
 | Medium | Create a small internal agent skill library | Pending | Standardize demo prep, mock-authoring, and doc-hygiene workflows for future agent sessions |
 | Medium | Keep new agentic work Responses-compatible | Pending | Avoid new deprecated Assistants-style patterns and define an incremental migration posture |
@@ -205,7 +206,7 @@ poetry run python scripts/test_poc_activation.py --mock
 - Eval prompts should be self-contained by default so each test still works if the previous conversation turns are wiped.
 - The eval bank should include the visible product-failure cases from the screenshots, especially the `ClipboardItem is not defined` copy failure and export flows that return an internal path instead of a real download.
 - Future scoring should separate `intent`, `autonomy`, `trust`, `actionability`, and `UX/product polish` so strong analysis does not hide weak operator experience.
-- The first concrete assets now exist in `docs/evals/`, but they still need to be wired into an executable local harness.
+- The first concrete assets now exist in `docs/evals/`, and a run-prep harness now emits per-run bundles, but live-chatbot execution and scoring still need to be wired in.
 
 ### Milestone 0B: Privacy-Critical Hybrid Azure Re-Entry
 
@@ -213,10 +214,10 @@ poetry run python scripts/test_poc_activation.py --mock
 
 | Priority | Item | Status | What still needs to happen |
 |----------|------|--------|-----------------------------|
-| Critical | Put Microsoft Entra ID work-account auth in front of any public deployment | Blocked until `2026-03-14` | Scope the minimal Azure identity work: app registration, allowed-tenant/user policy, login/logout flow, callback configuration, and colleague-specific sign-in through Microsoft work accounts |
+| Critical | Put Microsoft Entra ID work-account auth in front of any public deployment | Partial | App registration, callback/config wiring, and local feature-flag support are implemented. Remaining work is client-secret rotation, tenant/domain policy confirmation, and end-to-end sign-in verification after the reported `2026-03-14` quota reset |
 | Critical | Use Azure OpenAI for the public-facing chatbot path | Blocked until `2026-03-14` | Re-enable the Azure OpenAI provider path, verify config/env handling, and document when public mode must use Azure OpenAI rather than a non-Azure provider |
 | High | Keep the rest of the platform local during this phase | Pending | Do not reopen full Azure hosting for PostgreSQL, Tracardi, or the compose stack just to satisfy auth/LLM compliance requirements |
-| High | Define the eventual server-farm deployment target | Pending | Design the non-Azure hosting path for the app/runtime so the compliance-sensitive Azure dependencies stay limited to identity and model access where justified |
+| High | Define the internal server-farm deployment target | Pending | Design the eventual on-prem/runtime target for the user's internal server farm; evaluate Kubernetes among the candidate deployment models while keeping Azure dependencies limited to Entra ID and OpenAI |
 | High | Document the hybrid privacy/compliance posture clearly | Pending | Explain why `Entra auth + Azure OpenAI + local data/runtime` is the interim architecture and what still remains local vs cloud-managed |
 
 **Exit criteria:**
@@ -225,16 +226,62 @@ poetry run python scripts/test_poc_activation.py --mock
 - PostgreSQL, Tracardi, and the remaining runtime stay local until the server-farm deployment path is ready
 - The hybrid boundary is documented clearly enough that future sessions do not accidentally reopen full Azure hosting
 
-### Milestone 0C: Multi-User Chatbot Experience
+### Milestone 0C: Internal Server-Farm Deployment Target
+
+**Why this matters:** The ultimate deployment target is the user's internal server farm, not Azure Container Apps. Kubernetes may be the right orchestration layer, but that is still an option to evaluate rather than a locked implementation decision.
+
+**Deployment Path:**
+| Phase | Environment | Stack | Purpose |
+|-------|-------------|-------|---------|
+| Current | Local laptop | docker-compose | Rapid development |
+| Staging | Local k3s/k3d or equivalent | Candidate server-farm stack | Production-like testing |
+| Target | Internal server farm | Orchestrator TBD | Production deployment |
+
+| Priority | Item | Status | What still needs to happen |
+|----------|------|--------|-----------------------------|
+| High | Decide the server-farm orchestration model | Pending | Compare k3s/RKE2, simpler container/VM deployment, and other realistic options for the user's internal server farm before hardcoding a new platform layer |
+| High | Create deployment manifests for core services | Pending | If Kubernetes wins, prepare Deployments/Services/ConfigMaps/Secrets for PostgreSQL, Tracardi, Elasticsearch, chatbot API, and Chainlit UI; otherwise define the equivalent deployment assets for the chosen stack |
+| High | Design persistent volume strategy | Pending | Storage classes, PV claims for PostgreSQL data, Elasticsearch indices, uploaded files |
+| High | Configure ingress and TLS | Pending | NGINX/Traefik ingress, cert-manager for internal TLS termination |
+| High | Create environment templating structure | Pending | If Kubernetes wins, use Helm or equivalent templating for dev/staging/prod; otherwise define the environment-management pattern that matches the selected stack |
+| High | Implement health checks and probes | Pending | Liveness, readiness, startup probes for all services |
+| High | Configure scaling and resource limits | Pending | Define CPU/memory limits and scaling behavior for the chosen server-farm deployment model |
+| Medium | Set up a reference architecture for the chosen platform | Pending | If Kubernetes wins, document node sizing, etcd backup, and control plane HA; otherwise document the equivalent operational topology |
+| Medium | Implement deployment automation | Pending | Use GitOps if Kubernetes wins, otherwise codify the equivalent repeatable deployment flow |
+| Medium | Add observability stack | Pending | Prometheus/Grafana/Loki/Jaeger or the equivalent stack that fits the chosen deployment model |
+| Medium | Design disaster recovery | Pending | Backup strategies, cluster restore procedures |
+| Low | Consider service mesh (Istio/Linkerd) | Watchlist | Evaluate only if Kubernetes becomes the chosen deployment model and mTLS/traffic management are actually needed |
+
+**Migration Strategy:**
+1. **Keep docker-compose for rapid local dev** - It's faster for debugging
+2. **Evaluate the server-farm runtime shape first** - Do not lock Kubernetes before the tradeoff is explicit
+3. **Prototype the chosen path locally** - If Kubernetes wins, use k3s/k3d before any datacenter deployment
+4. **Codify environment-specific configuration** - Helm or the equivalent for the chosen stack
+5. **Maintain the local path** until the server-farm target is validated
+
+**Azure Boundary Preservation:**
+- Entra ID remains the authentication provider (no change)
+- Azure OpenAI remains the LLM provider for public-facing mode (no change)
+- All application runtime eventually moves out of Azure hosting into the user's internal server farm
+- PostgreSQL, Tracardi, and Elasticsearch stay local until the chosen server-farm deployment model is proven
+
+**Exit criteria:**
+- The eventual server-farm deployment model is explicitly chosen and documented
+- The full stack is deployable in that model from repo-managed artifacts
+- Persistent data survives restarts/failover in the chosen environment
+- Health checks and rollout behavior work correctly
+- Documentation exists for the operators who will run it
+
+### Milestone 0D: Multi-User Chatbot Experience
 
 **Why this matters:** A colleague-facing rollout is not just an auth problem. Each user should have a private chatbot workspace with stored conversations, and the interface should feel closer to ChatGPT than to a default Chainlit shell.
 
 | Priority | Item | Status | What still needs to happen |
 |----------|------|--------|-----------------------------|
-| Critical | Add user-scoped chat persistence and conversation ownership | Pending | Persist per-user threads, titles, timestamps, and access control so each colleague sees only their own chats |
-| High | Modernize the Chainlit surface toward ChatGPT-like UX | Pending | Improve conversation history, layout density, interaction affordances, and general product polish before broader colleague rollout |
+| Critical | Add user-scoped chat persistence and conversation ownership | Partial | Repo-owned `app_chat_*` persistence, per-user thread isolation, browser resume, and first-message titles are verified locally under dev auth. Remaining work is Microsoft Entra-backed verification and any final colleague-facing polish |
+| High | Modernize the Chainlit surface toward ChatGPT-like UX | Partial | History continuity and title generation are working; remaining work is tighter sidebar/list affordances, layout polish, and reducing default Chainlit rough edges before broader rollout |
 | High | Decide which colleague-facing options belong in the UI | Pending | Define what should be exposed directly to users, such as export actions, search modes, or tool/web-search toggles |
-| High | Add web search as a deliberate capability with privacy/compliance guardrails | Pending | Decide when web search is available, how source attribution works, and how external-query risks are controlled for sensitive use cases |
+| High | Add web search as a deliberate capability with privacy/compliance guardrails | Partial | Policy enforcement exists in `src/services/web_search_policy.py`, but UX exposure, source attribution, and the final enablement mode are still unresolved |
 
 **Exit criteria:**
 - Authenticated users get isolated conversation history and a private workspace
@@ -315,14 +362,14 @@ poetry run python scripts/test_poc_activation.py --mock
 
 | Priority | Item | Status | What still needs to happen |
 |----------|------|--------|-----------------------------|
-| Critical | Finish phased enrichment on the 1.94M-company dataset | Top priority | CBE is complete; keep website discovery and `description_ollama` moving, and resolve the fresh geocoding stall risk before claiming that phase is healthy |
-| Critical | Re-verify actual enriched counts from PostgreSQL after each phase | Partial | 2026-03-09 direct counts now show `website_url=64,900`, `geo_latitude=52,978`, `ai_description=913`, and `cbe_enriched=1,252,019`; keep repeating this after each material runner change |
-| Critical | Move the continuous enrichment loop from ad hoc runtime state to a repo-managed, restartable workflow | Partial | CBE, website discovery, and AI descriptions are now repo-managed and restartable; geocoding is also repo-managed, but the current 10,000-row batch showed a fresh stall risk |
+| Critical | Finish phased enrichment on the 1.94M-company dataset | Top priority | CBE is complete; keep website discovery and `description_ollama` moving, and close the geocoding visibility gap before claiming that phase is operationally healthy |
+| Critical | Re-verify actual enriched counts from PostgreSQL after each phase | Partial | 2026-03-09 direct counts now show `website_url=65,349`, `geo_latitude=53,779`, `ai_description=2,866`, and `cbe_enriched=1,252,019`; keep repeating this after each material runner change |
+| Critical | Move the continuous enrichment loop from ad hoc runtime state to a repo-managed, restartable workflow | Partial | CBE, website discovery, and AI descriptions are now repo-managed and restartable; geocoding is also repo-managed, but its current 10,000-row batch still has weak live visibility because the cursor/log only advance on chunk completion |
 | High | Add per-phase cost controls and active-company prioritization | Pending | Avoid burning API budget on low-value records first |
 | High | Add a separate/API-backed path for NACE-less CBE residuals | Pending | The main local-only selector now excludes `688,581` rows lacking both `industry_nace_code` and `enrichment_data.all_nace_codes`; decide whether to backfill them from a richer source/API or keep them explicitly deferred |
 | High | Classify enriched fields by trust, freshness, and production usability | Pending | Distinguish KBO import data from enrichment-derived facts |
 | High | Add dashboards and alerts for enrichment lag, failures, and throughput | Pending | Make long-running enrichment operationally visible |
-| High | Standardize AI-description enrichment on Ollama | Partial | `DESCRIPTION_ENRICHER=ollama` is already the default local runtime path and the `description_ollama` supervisor was relaunched on 2026-03-09; next work is throughput tuning and better runtime visibility, not provider selection |
+| High | Standardize AI-description enrichment on Ollama | Partial | `DESCRIPTION_ENRICHER=ollama` is already the default local runtime path and the `description_ollama` supervisor relaunched on 2026-03-09 has already completed three chunks; next work is sustained-throughput tuning and better runtime visibility, not provider selection |
 
 **Exit criteria:**
 - Verified coverage targets recorded in `PROJECT_STATE.yaml`
@@ -338,10 +385,10 @@ poetry run python scripts/test_poc_activation.py --mock
 | Priority | Item | Status | What still needs to happen |
 |----------|------|--------|-----------------------------|
 | Critical | Decide whether `src/models/` is the authoritative runtime model layer or only a design scaffold | Partial | Avoid leaving an unused ORM layer that drifts from the real asyncpg-based runtime |
-| Critical | Declare direct model-layer dependencies in project-managed dependency files if the ORM layer is kept | Pending | `pyproject.toml` does not currently declare `sqlalchemy` directly |
+| Critical | Move SQLAlchemy to the correct dependency boundary if the model layer is kept | Pending | `sqlalchemy` now exists only in dev dependencies even though `src/models/` and `src/repository/` live in the runtime tree; either promote it to runtime dependencies or archive the layer |
 | Critical | Reconcile model definitions with deployed schema and migrations | Pending | Projection tables exist; full 360 schema and migration strategy still need to be aligned |
 | High | Add repository/DAO or service-layer integration for common model operations | Pending | Models are largely isolated from the rest of the runtime today |
-| High | Add model-level and integration tests | Pending | No dedicated `src/models/` test coverage was found in the repo audit |
+| High | Re-enable and expand model/repository tests if the layer survives | Pending | `tests/unit/repository/` exists, but pytest currently excludes it via `norecursedirs`; either wire it back into the suite or retire the unused repository path |
 | High | Extend the model beyond KBO/public-company foundations into sales, contracts, invoices, subscriptions, tickets, and support domains | Pending | Required for a real IT1 Group 360 view |
 | Medium | Add hierarchy and cross-division relationship logic | Pending | Needed for account-level intelligence and rollups |
 
@@ -387,7 +434,7 @@ poetry run python scripts/test_poc_activation.py --mock
 | High | Add interpretation-first response patterns for operator workflows | Pending | Make the bot explain what low contact coverage, cross-source mismatches, or uncertain data mean operationally instead of only listing fields |
 | High | Add explicit validation and uncertainty blocks to 360/stats outputs | Pending | Standardize sections such as `Te valideren`, `Top onzekerheden`, and `Next best action` so account summaries do more than dump source data |
 | High | Add end-to-end UX regression coverage for copy and export flows | Partial | Starter self-contained cases now exist in `docs/evals/operator_eval_cases.v1.json`; still need executable runtime coverage against the live chatbot |
-| High | Rewrite legacy scenario tests into a self-contained operator eval suite | Partial | `docs/evals/` now defines the prompt standard, v1 starter bank, scorecard template, and validation test; full scenario migration and automated execution still remain |
+| High | Rewrite legacy scenario tests into a self-contained operator eval suite | Partial | `docs/evals/` now defines the prompt standard, v1 starter bank, scorecard template, validation test, and run-prep harness; full scenario migration and live execution still remain |
 
 **Exit criteria:**
 - The chatbot is deterministic for counts, search, and analytics
@@ -511,6 +558,7 @@ With 50+ connected records:
 | Priority | Item | Status | What still needs to happen |
 |----------|------|--------|-----------------------------|
 | Critical | Remove inline secrets from repo-tracked code and scripts | Partial | `scripts/enrich_monitor.py` was already fixed before this session; the 2026-03-08 re-audit removed the remaining active local DSN fallbacks from `src/mcp_server.py`, `scripts/start_mcp_server.sh`, and `scripts/reconcile_teamleader_identities.py`. Continue the broader sweep for unsafe real secrets and production credential paths. |
+| Critical | Rotate the exposed Microsoft Entra client secret and keep replacements out of tracked docs | Pending | A real `AZURE_AD_CLIENT_SECRET` was written into tracked docs on 2026-03-09; sanitize examples immediately, rotate the credential, and keep future values only in untracked env files or a vault |
 | Critical | Sweep live scripts for unsafe credential fallbacks | Pending | Example: admin-style defaults still appear in operational code paths such as `src/ingestion/kbo_ingest.py` |
 | High | Align all operational tooling on env/Key Vault/secret refs instead of local inline values | Pending | Prevent machine-local behavior from masquerading as repo-safe configuration |
 | High | Audit current docs and scripts for stale operational claims and unsafe examples | Pending | Current ADR/history still referenced a nonexistent sync job before this audit |
@@ -521,6 +569,26 @@ With 50+ connected records:
 **Exit criteria:**
 - No repo-tracked operational script depends on inline real secrets
 - Secret resolution and credential fallbacks are explicit, safe, and documented
+
+---
+
+### Milestone 6A: Repo Hygiene, Legacy Surface, And Documentation Shape
+
+**Why this matters:** The repo audit found several low-glamour but high-leverage cleanup items that will keep future sessions faster, safer, and less confusing.
+
+| Priority | Item | Status | What still needs to happen |
+|----------|------|--------|-----------------------------|
+| High | Keep Python cache artifacts out of git | Complete | A 2026-03-09 git-tracked recheck found `git ls-files '*.pyc' -> 0` and no `__pycache__` matches; the earlier `find` count referred to local untracked cache files, and `.gitignore` already blocks these paths |
+| High | Reconcile legacy script docs with the actual Poetry-based workflow | Complete | Completed 2026-03-09: `scripts/README.md` now points to the repo-root Poetry flow, the stale `scripts/requirements.txt` file was removed, and the historical KBO cleanup completion summary was quarantined so it no longer reads like a current operator guide |
+| High | Decide whether to keep or delete `src/enrichment/website_discovery.py.patch` | Complete | Completed 2026-03-09: the tracked file was a zero-byte initial-import artifact with no live non-doc references, so it was deleted |
+| Medium | Break up oversized entry points that are accumulating unrelated responsibilities | Pending | `src/app.py`, `src/mcp_server.py`, `src/services/writeback.py`, and `scripts/cdp_event_processor.py` are each several hundred lines and should be split along clearer seams when adjacent work touches them |
+| Medium | Reduce current-doc sprawl in `docs/` and make durable references easier to find | Pending | The audit counted `217` files under `docs/`, including `54` top-level docs plus multiple guide PDFs and screenshot trees; keep archiving history, but tighten the durable reference surface that active contributors actually need |
+
+**Exit criteria:**
+- Tracked cache artifacts are gone and stay gone
+- Script setup guidance matches the real dependency manager and runtime
+- Leftover patch or merge debris is either justified or removed
+- The active documentation surface is easier to navigate than the archival one
 
 ---
 
@@ -550,8 +618,9 @@ These items were important enough to shape the roadmap directly:
 2. During this audit, `docs/ARCHITECTURE_DECISION_RECORD.md` had to be corrected because it still claimed a `scripts/sync_tracardi_to_postgres.py` job existed.
 3. The earlier `scripts/enrich_monitor.py` secret-handling claim was stale; the real residual 2026-03-08 DSN fallbacks in MCP and reconciliation helpers were removed, but the broader credential audit still remains.
 4. `NEXT_ACTIONS.md` contains conflicting enrichment-progress numbers and needs re-verification from PostgreSQL before another exact percentage claim is trusted.
-5. `src/models/` exists, but the repo audit found no direct `sqlalchemy` declaration in `pyproject.toml` and no dedicated tests using the new models.
-
+5. `src/models/` and `src/repository/` exist, but the layer is still runtime-disconnected: SQLAlchemy only lives in dev dependencies, and pytest excludes the repository tests.
+6. A real Microsoft Entra client secret was written into tracked docs; sanitizing the files is necessary but not sufficient because the credential still needs rotation.
+7. The earlier `find` audit counted `197` local Python bytecode/cache files under `src/`, `tests/`, and `scripts/`, but a 2026-03-09 git-tracked recheck found `0` tracked `.pyc` or `__pycache__` matches.
 ---
 
 ## Notes For Future Agents

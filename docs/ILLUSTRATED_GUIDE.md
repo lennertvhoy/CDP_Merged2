@@ -294,7 +294,7 @@ poetry run python -c 'from scripts.cdp_event_processor import get_scoring_model;
 }
 ```
 
-**Runtime Note:** The checked-in code defines `GET /api/scoring-model`, but the long-running local daemon on port `5001` returned `404` during the 2026-03-09 verification pass. Treat the model above as code-verified until that daemon is refreshed.
+**Runtime Note:** Re-verified live on 2026-03-09 after refreshing the local daemon on port `5001`: `GET /api/scoring-model` now returns the deterministic model shown above from the running service.
 
 **Example Calculation (B.B.S. Entreprise):**
 

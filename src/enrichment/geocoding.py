@@ -260,10 +260,10 @@ class GeocodingEnricher(BaseEnricher):
         """Build address string from profile traits (handles Belgian formats)."""
         traits = profile.get("traits", {})
 
-        street = traits.get("street", "").strip()
-        zipcode = traits.get("zipcode", "").strip()
-        city = traits.get("city", "").strip()
-        country = traits.get("country", "Belgium").strip() or "Belgium"
+        street = (traits.get("street") or "").strip()
+        zipcode = (traits.get("zipcode") or "").strip()
+        city = (traits.get("city") or "").strip()
+        country = (traits.get("country") or "Belgium").strip() or "Belgium"
 
         if not street or not city:
             return None

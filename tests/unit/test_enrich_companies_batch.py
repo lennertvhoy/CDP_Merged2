@@ -1,4 +1,5 @@
 import asyncio
+import io
 import json
 import sys
 from types import SimpleNamespace
@@ -68,11 +69,19 @@ def test_process_company_reuses_shared_geocoding_enricher(monkeypatch):
 def test_run_chunk_passes_start_after_id(monkeypatch):
     captured: dict[str, list[str]] = {}
 
-    def fake_run(cmd, capture_output, text, env):
-        captured["cmd"] = cmd
-        return SimpleNamespace(returncode=0, stdout="", stderr="")
+    class FakeProcess:
+        def __init__(self):
+            self.stdout = io.StringIO("")
+            self.returncode = 0
 
-    monkeypatch.setattr(enrich_companies_chunked.subprocess, "run", fake_run)
+        def wait(self):
+            return self.returncode
+
+    def fake_popen(cmd, stdout, stderr, text, bufsize, env):
+        captured["cmd"] = cmd
+        return FakeProcess()
+
+    monkeypatch.setattr(enrich_companies_chunked.subprocess, "Popen", fake_popen)
 
     enrich_companies_chunked.run_chunk(limit=1000, start_after_id="cursor-123")
 
@@ -83,11 +92,19 @@ def test_run_chunk_passes_start_after_id(monkeypatch):
 def test_run_chunk_passes_enrichers_and_batch_size(monkeypatch):
     captured: dict[str, list[str]] = {}
 
-    def fake_run(cmd, capture_output, text, env):
-        captured["cmd"] = cmd
-        return SimpleNamespace(returncode=0, stdout="", stderr="")
+    class FakeProcess:
+        def __init__(self):
+            self.stdout = io.StringIO("")
+            self.returncode = 0
 
-    monkeypatch.setattr(enrich_companies_chunked.subprocess, "run", fake_run)
+        def wait(self):
+            return self.returncode
+
+    def fake_popen(cmd, stdout, stderr, text, bufsize, env):
+        captured["cmd"] = cmd
+        return FakeProcess()
+
+    monkeypatch.setattr(enrich_companies_chunked.subprocess, "Popen", fake_popen)
 
     enrich_companies_chunked.run_chunk(
         limit=1000,
@@ -102,11 +119,19 @@ def test_run_chunk_passes_enrichers_and_batch_size(monkeypatch):
 def test_run_chunk_preserves_environment(monkeypatch):
     captured: dict[str, object] = {}
 
-    def fake_run(cmd, capture_output, text, env):
-        captured["env"] = env
-        return SimpleNamespace(returncode=0, stdout="", stderr="")
+    class FakeProcess:
+        def __init__(self):
+            self.stdout = io.StringIO("")
+            self.returncode = 0
 
-    monkeypatch.setattr(enrich_companies_chunked.subprocess, "run", fake_run)
+        def wait(self):
+            return self.returncode
+
+    def fake_popen(cmd, stdout, stderr, text, bufsize, env):
+        captured["env"] = env
+        return FakeProcess()
+
+    monkeypatch.setattr(enrich_companies_chunked.subprocess, "Popen", fake_popen)
     monkeypatch.setenv("TEST_RUN_CHUNK_ENV", "present")
     monkeypatch.setenv("PYTHONPATH", "/tmp/original-pythonpath")
 
@@ -117,6 +142,33 @@ def test_run_chunk_preserves_environment(monkeypatch):
     assert env["TEST_RUN_CHUNK_ENV"] == "present"
     assert env["PYTHONPATH"].startswith(str(enrich_companies_chunked.Path.cwd()))
     assert env["PYTHONPATH"].endswith("/tmp/original-pythonpath")
+    assert env["PYTHONUNBUFFERED"] == "1"
+
+
+def test_run_chunk_streams_child_output(monkeypatch, capsys):
+    captured: dict[str, list[str]] = {}
+
+    class FakeProcess:
+        def __init__(self):
+            self.stdout = io.StringIO("line 1\nTotal processed: 10\n")
+            self.returncode = 0
+
+        def wait(self):
+            return self.returncode
+
+    def fake_popen(cmd, stdout, stderr, text, bufsize, env):
+        captured["cmd"] = cmd
+        return FakeProcess()
+
+    monkeypatch.setattr(enrich_companies_chunked.subprocess, "Popen", fake_popen)
+
+    result = enrich_companies_chunked.run_chunk(limit=10, enrichers="geocoding")
+    output = capsys.readouterr().out
+
+    assert captured["cmd"][1] == "-u"
+    assert "line 1" in output
+    assert "Total processed: 10" in output
+    assert result["stdout"] == "line 1\nTotal processed: 10\n"
 
 
 def test_parse_stats_extracts_last_company_id():

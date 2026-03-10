@@ -17,7 +17,7 @@ set -a
 set +a
 
 export PYTHONPATH="${REPO_ROOT}${PYTHONPATH:+:$PYTHONPATH}"
-: "${CHAINLIT_AUTH_SECRET:=dev-local-secret}"
+: "${CHAINLIT_AUTH_SECRET:=dev-local-secret-change-me-32chars-min}"
 : "${CHAINLIT_HOST:=0.0.0.0}"
 : "${CHAINLIT_PORT:=8000}"
 : "${DATABASE_URL:=postgresql://cdpadmin:cdpadmin123@localhost:5432/cdp?sslmode=disable}"

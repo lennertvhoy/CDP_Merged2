@@ -3,7 +3,6 @@ Chainlit UI for CDP_Merged.
 Merges CDPT's working workflow with CDP's transparent assistant patterns.
 """
 
-import os
 import uuid
 from pathlib import Path
 
@@ -18,8 +17,10 @@ from fastapi.responses import FileResponse, JSONResponse
 from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
+from src.ai_interface.tools.artifact import ARTIFACT_ROOT
 from src.config import settings
 from src.core.constants import MAX_QUERY_LENGTH
+from src.core.database_url import database_config_source, resolve_database_url
 from src.core.exceptions import TracardiError
 from src.core.logger import bind_trace_id, clear_trace_id, configure_logging, get_logger
 from src.core.metrics import ERRORS_TOTAL, QUERY_REQUESTS_TOTAL
@@ -27,7 +28,6 @@ from src.graph.workflow import compile_workflow
 from src.services.postgresql_search import get_search_service
 from src.services.runtime_support_schema import ensure_runtime_support_schema
 from src.services.tracardi import TracardiClient
-from src.ai_interface.tools.artifact import ARTIFACT_ROOT
 from src.ui.actions import build_action_reply, build_welcome_actions
 from src.ui.components import build_chat_profiles, build_starters
 from src.ui.formatters import DEFAULT_CHAT_PROFILE, build_status_cards, build_welcome_markdown
@@ -44,13 +44,29 @@ PROBE_ENDPOINT_PATHS = {
     "/project/readinessz",
 }
 
-
-def _disabled_chainlit_data_layer():
-    """Prevent Chainlit from auto-binding DATABASE_URL to its own persistence schema."""
-    return None
+THREAD_TITLE_MAX_LENGTH = 60  # Shorter limit for sidebar readability
 
 
-cl.data_layer(_disabled_chainlit_data_layer)
+def _build_chainlit_data_layer(
+    *,
+    database_url: str | None = None,
+    data_layer_cls=None,
+):
+    """Use repo-managed chat tables instead of Chainlit's default schema."""
+    if not _database_config_source():
+        return None
+
+    resolved_database_url = database_url or resolve_database_url(REPO_ROOT)
+    layer_cls = data_layer_cls
+    if layer_cls is None:
+        from src.services.chainlit_data_layer import PostgreSQLChainlitDataLayer
+
+        layer_cls = PostgreSQLChainlitDataLayer
+
+    return layer_cls(database_url=resolved_database_url)
+
+
+cl.data_layer(_build_chainlit_data_layer)
 
 
 def _oauth_display_name(raw_user_data: dict[str, str], default_user: User) -> str | None:
@@ -62,6 +78,66 @@ def _oauth_display_name(raw_user_data: dict[str, str], default_user: User) -> st
         or raw_user_data.get("preferred_username")
         or default_user.display_name
     )
+
+
+def _normalize_dev_auth_identifier(username: str) -> str | None:
+    identifier = username.strip()
+    return identifier or None
+
+
+async def password_auth_user_callback(username: str, password: str) -> User | None:
+    """Allow local-only password auth for authenticated history verification."""
+    identifier = _normalize_dev_auth_identifier(username)
+    expected_password = settings.CHAINLIT_DEV_AUTH_PASSWORD
+
+    if not identifier:
+        logger.warning("dev_password_auth_rejected", reason="missing_username")
+        return None
+
+    if not expected_password or password != expected_password:
+        logger.warning("dev_password_auth_rejected", reason="invalid_password", identifier=identifier)
+        return None
+
+    return User(
+        identifier=identifier,
+        display_name=identifier,
+        metadata={"provider": "dev-password"},
+    )
+
+
+def _register_password_auth_callback() -> bool:
+    """Register dev-only password auth only when explicitly enabled."""
+    if not settings.CHAINLIT_DEV_AUTH_ENABLED:
+        return False
+
+    if not settings.CHAINLIT_DEV_AUTH_PASSWORD:
+        logger.warning("dev_password_auth_disabled", reason="missing_password")
+        return False
+
+    cl.password_auth_callback(password_auth_user_callback)
+    logger.info("dev_password_auth_registered")
+    return True
+
+
+PASSWORD_AUTH_ENABLED = _register_password_auth_callback()
+
+
+def _validate_azure_ad_domain(email: str) -> bool:
+    """Validate that the Azure AD user belongs to an allowed domain."""
+    if not settings.AZURE_AD_ALLOWED_DOMAINS:
+        return True  # No domain restriction configured
+    
+    allowed_domains = [d.strip().lower() for d in settings.AZURE_AD_ALLOWED_DOMAINS.split(",")]
+    email_domain = email.split("@")[-1].lower() if "@" in email else ""
+    
+    if email_domain not in allowed_domains:
+        logger.warning(
+            "azure_ad_domain_rejected",
+            email_domain=email_domain,
+            allowed_domains=allowed_domains,
+        )
+        return False
+    return True
 
 
 async def oauth_user_callback(
@@ -88,8 +164,33 @@ async def oauth_user_callback(
         logger.warning("oauth_callback_rejected", reason="missing_user_identifier")
         return None
 
+    # Extract email for domain validation (Azure AD specific)
+    email = (
+        raw_user_data.get("mail")
+        or raw_user_data.get("email")
+        or raw_user_data.get("userPrincipalName")
+        or default_user.identifier
+    )
+    
+    # Azure AD domain validation
+    if provider_id == "azure-ad" and not _validate_azure_ad_domain(email):
+        logger.warning(
+            "azure_ad_auth_rejected",
+            reason="domain_not_allowed",
+            identifier=default_user.identifier,
+            email=email,
+        )
+        return None
+
     metadata = dict(default_user.metadata or {})
     metadata["provider"] = provider_id
+    metadata["email"] = email
+    
+    # Capture additional Azure AD claims if present
+    if provider_id == "azure-ad":
+        metadata["tenant_id"] = raw_user_data.get("tid") or settings.AZURE_AD_TENANT_ID
+        metadata["oid"] = raw_user_data.get("oid")  # Object ID
+        
     return User(
         identifier=default_user.identifier,
         display_name=_oauth_display_name(raw_user_data, default_user),
@@ -124,6 +225,135 @@ def _safe_user_session_get(key: str, default=None):
         return default
 
 
+def _current_thread_id() -> str | None:
+    """Prefer Chainlit's persistent thread id over the websocket session id."""
+    try:
+        from chainlit.context import context as chainlit_context
+
+        session = getattr(chainlit_context, "session", None)
+        thread_id = getattr(session, "thread_id", None)
+        if thread_id:
+            return str(thread_id)
+    except Exception:
+        pass
+
+    return _safe_user_session_get("thread_id") or _safe_user_session_get("id")
+
+
+async def _resolve_profile_id(thread_id: str, profile_id_hint: str | None = None) -> str | None:
+    """Keep session bootstrap resilient when Tracardi is unavailable."""
+    try:
+        tracardi = TracardiClient()
+        profile = await tracardi.get_or_create_profile(session_id=thread_id)
+        return profile.get("id") if profile else profile_id_hint
+    except (TracardiError, httpx.HTTPStatusError, httpx.RequestError) as exc:
+        logger.warning("tracardi_profile_bootstrap_failed", error=str(exc))
+        return profile_id_hint
+
+
+async def _initialize_chat_session(
+    *,
+    thread_id: str | None = None,
+    chat_profile: str | None = None,
+    profile_id_hint: str | None = None,
+) -> tuple[str, str, str | None]:
+    """Prepare the workflow/checkpointer state for both new and resumed chats."""
+    trace_id = str(uuid.uuid4())
+    bind_trace_id(trace_id)
+    cl.user_session.set("trace_id", trace_id)
+
+    checkpointer_path = Path("./data/checkpoints/checkpoints.db")
+    checkpointer_path.parent.mkdir(parents=True, exist_ok=True)
+
+    conn = await aiosqlite.connect(checkpointer_path)
+    checkpointer = AsyncSqliteSaver(conn)
+    workflow = compile_workflow(checkpointer=checkpointer)
+    cl.user_session.set("workflow", workflow)
+    cl.user_session.set("checkpointer_conn", conn)
+
+    session_id = _safe_user_session_get("id")
+    resolved_thread_id = thread_id or _current_thread_id() or session_id or str(uuid.uuid4())
+    cl.user_session.set("thread_id", resolved_thread_id)
+
+    resolved_chat_profile = chat_profile or cl.user_session.get("chat_profile") or DEFAULT_CHAT_PROFILE
+    cl.user_session.set("chat_profile", resolved_chat_profile)
+
+    profile_id = await _resolve_profile_id(resolved_thread_id, profile_id_hint)
+    cl.user_session.set("profile_id", profile_id)
+
+    return resolved_thread_id, resolved_chat_profile, profile_id
+
+
+async def _send_welcome_message(chat_profile: str) -> None:
+    status_cards = build_status_cards(REPO_ROOT)
+    welcome = build_welcome_markdown(chat_profile, status_cards)
+    await cl.Message(
+        content=welcome,
+        actions=build_welcome_actions(chat_profile),
+    ).send()
+
+
+def _thread_metadata(thread: dict[str, object]) -> dict[str, object]:
+    metadata = thread.get("metadata") if isinstance(thread, dict) else {}
+    return metadata if isinstance(metadata, dict) else {}
+
+
+def _generate_thread_title(first_message: str) -> str:
+    """Generate a readable thread title from the first user message.
+
+    Extracts the first line, truncates to THREAD_TITLE_MAX_LENGTH,
+    and adds ellipsis if truncated. Falls back to 'New conversation' for empty input.
+    """
+    if not first_message or not first_message.strip():
+        return "New conversation"
+
+    # Take first line only (remove newlines)
+    first_line = first_message.strip().split("\n")[0].strip()
+
+    # Truncate with ellipsis if too long
+    if len(first_line) > THREAD_TITLE_MAX_LENGTH:
+        return first_line[: THREAD_TITLE_MAX_LENGTH - 3].rstrip() + "..."
+
+    return first_line if first_line else "New conversation"
+
+
+async def _update_thread_title_from_message(thread_id: str, message_content: str) -> None:
+    """Update thread title from first message if not already set."""
+    from src.services.chainlit_data_layer import PostgreSQLChainlitDataLayer
+
+    # Get the data layer from Chainlit's context - defensively handle missing attributes
+    try:
+        data_layer = getattr(cl, "data", None)
+        if data_layer is None:
+            return
+        layer = getattr(data_layer, "_data_layer", None)
+        if not isinstance(layer, PostgreSQLChainlitDataLayer):
+            return
+    except Exception:
+        return
+
+    try:
+        # Check if thread already has a custom name
+        thread = await layer.get_thread(thread_id)
+        existing_name = thread.get("name") if thread else None
+
+        # Only update if the name is empty, None, or looks auto-generated (UUID-like)
+        needs_title = False
+        if not existing_name:
+            needs_title = True
+        elif len(existing_name) == 36 and "-" in existing_name:
+            # Looks like a UUID (default Chainlit thread ID)
+            needs_title = True
+
+        if needs_title:
+            title = _generate_thread_title(message_content)
+            await layer.update_thread(thread_id=thread_id, name=title)
+            logger.debug("thread_title_set", thread_id=thread_id, title=title)
+    except Exception as exc:
+        # Don't fail the chat if title update fails
+        logger.warning("thread_title_update_failed", thread_id=thread_id, error=str(exc))
+
+
 @chainlit_server_app.middleware("http")
 async def probe_endpoint_middleware(request: Request, call_next):
     """Serve probe endpoints before Chainlit's catch-all HTML route."""
@@ -144,14 +374,7 @@ async def healthz():
 
 def _database_config_source() -> str | None:
     """Report which runtime source will provide PostgreSQL connectivity."""
-    if os.getenv("DATABASE_URL"):
-        return "env:DATABASE_URL"
-
-    env_database_path = REPO_ROOT / ".env.database"
-    if env_database_path.exists():
-        return "file:.env.database"
-
-    return None
+    return database_config_source(REPO_ROOT)
 
 
 @chainlit_server_app.get("/project/readinessz")
@@ -282,52 +505,38 @@ async def set_starters(_current_user=None, _language=None):
 @cl.on_chat_start
 async def start():
     """Initialize the chat session."""
-    # Generate a trace ID for this session
-    trace_id = str(uuid.uuid4())
-    bind_trace_id(trace_id)
-    cl.user_session.set("trace_id", trace_id)
-
-    # Initialize workflow with persistent SQLite checkpointer
-    # This ensures state (like last_search_tql) persists across separate
-    # graph invocations, fixing the segment creation bug.
-    checkpointer_path = Path("./data/checkpoints/checkpoints.db")
-    checkpointer_path.parent.mkdir(parents=True, exist_ok=True)
-
-    conn = await aiosqlite.connect(checkpointer_path)
-    checkpointer = AsyncSqliteSaver(conn)
-    workflow = compile_workflow(checkpointer=checkpointer)
-    cl.user_session.set("workflow", workflow)
-    cl.user_session.set("checkpointer_conn", conn)
-
-    # Set up thread ID for conversation tracking
-    thread_id = cl.user_session.get("id")
-    cl.user_session.set("thread_id", thread_id)
-    chat_profile = cl.user_session.get("chat_profile") or DEFAULT_CHAT_PROFILE
-    cl.user_session.set("chat_profile", chat_profile)
-
-    # Initialize Tracardi profile, but keep chat startup resilient if unavailable.
-    profile_id = None
-    try:
-        tracardi = TracardiClient()
-        profile = await tracardi.get_or_create_profile(session_id=thread_id)
-        profile_id = profile.get("id") if profile else None
-    except (TracardiError, httpx.HTTPStatusError, httpx.RequestError) as exc:
-        logger.warning("tracardi_profile_bootstrap_failed", error=str(exc))
-    cl.user_session.set("profile_id", profile_id)
+    session_id = _safe_user_session_get("id")
+    thread_id, chat_profile, profile_id = await _initialize_chat_session()
 
     logger.info(
         "session_started",
+        session_id=session_id,
         thread_id=thread_id,
         profile_id=profile_id,
         chat_profile=chat_profile,
     )
 
-    status_cards = build_status_cards(REPO_ROOT)
-    welcome = build_welcome_markdown(chat_profile, status_cards)
-    await cl.Message(
-        content=welcome,
-        actions=build_welcome_actions(chat_profile),
-    ).send()
+    await _send_welcome_message(chat_profile)
+
+
+@cl.on_chat_resume
+async def resume_chat(thread: dict[str, object]):
+    """Rebind workflow/checkpointer state when Chainlit reopens an existing thread."""
+    session_id = _safe_user_session_get("id")
+    metadata = _thread_metadata(thread)
+    thread_id, chat_profile, profile_id = await _initialize_chat_session(
+        thread_id=str(thread.get("id") or _current_thread_id() or session_id or ""),
+        chat_profile=str(metadata.get("chat_profile") or "") or None,
+        profile_id_hint=str(metadata.get("profile_id") or "") or None,
+    )
+
+    logger.info(
+        "session_resumed",
+        session_id=session_id,
+        thread_id=thread_id,
+        profile_id=profile_id,
+        chat_profile=chat_profile,
+    )
 
 
 @cl.on_chat_end
@@ -345,6 +554,10 @@ async def main(message: cl.Message):
     workflow = cl.user_session.get("workflow")
     thread_id = cl.user_session.get("thread_id")
     profile_id = cl.user_session.get("profile_id")
+
+    # Set thread title from first message if needed
+    if thread_id:
+        await _update_thread_title_from_message(thread_id, message.content)
 
     # ─── Session state validation ────────────────────────────────────────────
     if not workflow:
@@ -509,17 +722,17 @@ async def on_push_to_resend(action):
 @chainlit_server_app.get("/download/artifacts/{filename}")
 async def download_artifact(filename: str):
     """Serve artifact files (CSV, JSON, Markdown) with path traversal protection.
-    
+
     This endpoint allows users to download files created by the create_data_artifact tool.
     Path traversal attacks are prevented by validating the resolved path stays within
     the artifact root directory.
-    
+
     Args:
         filename: Name of the artifact file to download (e.g., "report_20260307_181718.csv")
-    
+
     Returns:
         FileResponse: The artifact file with appropriate content-type header
-    
+
     Raises:
         HTTPException: 400 for invalid filenames, 403 for path traversal attempts,
                       404 if file doesn't exist
@@ -527,26 +740,26 @@ async def download_artifact(filename: str):
     # Reject path traversal attempts in the filename itself
     if ".." in filename or "/" in filename or "\\" in filename:
         raise HTTPException(status_code=400, detail="Invalid filename")
-    
+
     # Resolve the full path and ensure it's within ARTIFACT_ROOT
     try:
         file_path = (ARTIFACT_ROOT / filename).resolve()
         root_path = ARTIFACT_ROOT.resolve()
-        
+
         # Security check: file must be within ARTIFACT_ROOT
         if not str(file_path).startswith(str(root_path)):
             raise HTTPException(status_code=403, detail="Access denied")
     except (OSError, ValueError) as exc:
-        raise HTTPException(status_code=400, detail=f"Invalid path: {exc}")
-    
+        raise HTTPException(status_code=400, detail=f"Invalid path: {exc}") from exc
+
     # Check file exists
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
-    
+
     # Check it's actually a file (not a directory)
     if not file_path.is_file():
         raise HTTPException(status_code=400, detail="Not a file")
-    
+
     # Determine content type based on extension
     suffix = file_path.suffix.lower()
     media_types = {
@@ -556,7 +769,7 @@ async def download_artifact(filename: str):
         ".txt": "text/plain",
     }
     media_type = media_types.get(suffix, "application/octet-stream")
-    
+
     return FileResponse(
         path=file_path,
         media_type=media_type,

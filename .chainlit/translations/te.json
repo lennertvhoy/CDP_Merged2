@@ -1,231 +1,255 @@
 {
-    "components": {
-        "atoms": {
-            "buttons": {
-                "userButton": {
-                    "menu": {
-                        "settings": "\u0c38\u0c46\u0c1f\u0c4d\u0c1f\u0c3f\u0c02\u0c17\u0c4d \u0c32\u0c41",
-                        "settingsKey": "S",
-                        "APIKeys": "API Keys",
-                        "logout": "Logout"
-                    }
-                }
-            }
-        },
-        "molecules": {
-            "newChatButton": {
-                "newChat": "\u0c15\u0c4a\u0c24\u0c4d\u0c24 \u0c1a\u0c3e\u0c1f\u0c4d"
-            },
-            "tasklist": {
-                "TaskList": {
-                    "title": "\ud83d\uddd2\ufe0f \u0c1f\u0c3e\u0c38\u0c4d\u0c15\u0c4d \u0c32\u0c3f\u0c38\u0c4d\u0c1f\u0c4d",
-                    "loading": "\u0c32\u0c4b\u0c21\u0c3f\u0c02\u0c17\u0c4d...",
-                    "error": "\u0c12\u0c15 \u0c26\u0c4b\u0c37\u0c02 \u0c38\u0c02\u0c2d\u0c35\u0c3f\u0c02\u0c1a\u0c3f\u0c02\u0c26\u0c3f"
-                }
-            },
-            "attachments": {
-                "cancelUpload": "\u0c05\u0c2a\u0c4d \u0c32\u0c4b\u0c21\u0c4d \u0c30\u0c26\u0c4d\u0c26\u0c41 \u0c1a\u0c47\u0c2f\u0c02\u0c21\u0c3f",
-                "removeAttachment": "\u0c05\u0c1f\u0c3e\u0c1a\u0c4d \u0c2e\u0c46\u0c02\u0c1f\u0c4d \u0c24\u0c4a\u0c32\u0c17\u0c3f\u0c02\u0c1a\u0c41"
-            },
-            "newChatDialog": {
-                "createNewChat": "\u0c15\u0c4a\u0c24\u0c4d\u0c24 \u0c1a\u0c3e\u0c1f\u0c4d \u0c38\u0c43\u0c37\u0c4d\u0c1f\u0c3f\u0c02\u0c1a\u0c3e\u0c32\u0c3e?",
-                "clearChat": "\u0c07\u0c26\u0c3f \u0c2a\u0c4d\u0c30\u0c38\u0c4d\u0c24\u0c41\u0c24 \u0c38\u0c02\u0c26\u0c47\u0c36\u0c3e\u0c32\u0c28\u0c41 \u0c15\u0c4d\u0c32\u0c3f\u0c2f\u0c30\u0c4d \u0c1a\u0c47\u0c38\u0c4d\u0c24\u0c41\u0c02\u0c26\u0c3f \u0c2e\u0c30\u0c3f\u0c2f\u0c41 \u0c15\u0c4a\u0c24\u0c4d\u0c24 \u0c1a\u0c3e\u0c1f\u0c4d\u0c28\u0c41 \u0c2a\u0c4d\u0c30\u0c3e\u0c30\u0c02\u0c2d\u0c3f\u0c38\u0c4d\u0c24\u0c41\u0c02\u0c26\u0c3f.",
-                "cancel": "\u0c30\u0c26\u0c4d\u0c26\u0c41",
-                "confirm": "\u0c27\u0c4d\u0c30\u0c41\u0c35\u0c2a\u0c30\u0c1a\u0c41"
-            },
-            "settingsModal": {
-                "settings": "\u0c38\u0c46\u0c1f\u0c4d\u0c1f\u0c3f\u0c02\u0c17\u0c4d \u0c32\u0c41",
-                "expandMessages": "\u0c38\u0c02\u0c26\u0c47\u0c36\u0c3e\u0c32\u0c28\u0c41 \u0c35\u0c3f\u0c38\u0c4d\u0c24\u0c30\u0c3f\u0c02\u0c1a\u0c02\u0c21\u0c3f",
-                "hideChainOfThought": "\u0c06\u0c32\u0c4b\u0c1a\u0c28\u0c3e \u0c17\u0c4a\u0c32\u0c41\u0c38\u0c41\u0c28\u0c41 \u0c26\u0c3e\u0c1a\u0c02\u0c21\u0c3f",
-                "darkMode": "\u0c21\u0c3e\u0c30\u0c4d\u0c15\u0c4d \u0c2e\u0c4b\u0c21\u0c4d"
-            },
-            "detailsButton": {
-                "using": "\u0c09\u0c2a\u0c2f\u0c4b\u0c17\u0c3f\u0c02\u0c1a\u0c21\u0c02",
-                "running": "\u0c30\u0c28\u0c4d\u0c28\u0c3f\u0c02\u0c17\u0c4d",
-                "took_one": "{{count}} \u0c05\u0c21\u0c41\u0c17\u0c41 \u0c35\u0c47\u0c38\u0c3f\u0c02\u0c26\u0c3f",
-                "took_other": "{{count}} \u0c05\u0c21\u0c41\u0c17\u0c41\u0c32\u0c41 \u0c35\u0c47\u0c38\u0c3f\u0c02\u0c26\u0c3f"
-            },
-            "auth": {
-                "authLogin": {
-                    "title": "\u0c2f\u0c3e\u0c2a\u0c4d \u0c2f\u0c3e\u0c15\u0c4d\u0c38\u0c46\u0c38\u0c4d \u0c1a\u0c47\u0c38\u0c41\u0c15\u0c4b\u0c35\u0c21\u0c3e\u0c28\u0c3f\u0c15\u0c3f \u0c32\u0c3e\u0c17\u0c3f\u0c28\u0c4d \u0c05\u0c35\u0c4d\u0c35\u0c02\u0c21\u0c3f.",
-                    "form": {
-                        "email": "\u0c07\u0c2e\u0c46\u0c2f\u0c3f\u0c32\u0c4d \u0c1a\u0c3f\u0c30\u0c41\u0c28\u0c3e\u0c2e\u0c3e",
-                        "password": "\u0c2a\u0c3e\u0c38\u0c4d \u0c35\u0c30\u0c4d\u0c21\u0c4d",
-                        "noAccount": "\u0c2e\u0c40\u0c15\u0c41 \u0c05\u0c15\u0c4c\u0c02\u0c1f\u0c4d \u0c32\u0c47\u0c26\u0c3e?",
-                        "alreadyHaveAccount": "\u0c07\u0c2a\u0c4d\u0c2a\u0c1f\u0c3f\u0c15\u0c47 \u0c16\u0c3e\u0c24\u0c3e \u0c09\u0c02\u0c26\u0c3e?",
-                        "signup": "\u0c38\u0c46\u0c56\u0c28\u0c4d \u0c05\u0c2a\u0c4d",
-                        "signin": "\u0c38\u0c46\u0c56\u0c28\u0c4d \u0c07\u0c28\u0c4d",
-                        "or": "\u0c32\u0c47\u0c26\u0c3e",
-                        "continue": "\u0c15\u0c4a\u0c28\u0c38\u0c3e\u0c17\u0c41",
-                        "forgotPassword": "\u0c2a\u0c3e\u0c38\u0c4d \u0c35\u0c30\u0c4d\u0c21\u0c4d \u0c2e\u0c30\u0c4d\u0c1a\u0c3f\u0c2a\u0c4b\u0c2f\u0c3e\u0c30\u0c3e?",
-                        "passwordMustContain": "\u0c2e\u0c40 \u0c2a\u0c3e\u0c38\u0c4d \u0c35\u0c30\u0c4d\u0c21\u0c4d \u0c32\u0c4b \u0c07\u0c35\u0c3f \u0c09\u0c02\u0c21\u0c3e\u0c32\u0c3f:",
-                        "emailRequired": "\u0c07\u0c2e\u0c46\u0c2f\u0c3f\u0c32\u0c4d \u0c05\u0c28\u0c47\u0c26\u0c3f \u0c05\u0c35\u0c38\u0c30\u0c2e\u0c48\u0c28 \u0c2b\u0c40\u0c32\u0c4d\u0c21\u0c4d",
-                        "passwordRequired": "\u0c2a\u0c3e\u0c38\u0c4d \u0c35\u0c30\u0c4d\u0c21\u0c4d \u0c05\u0c28\u0c47\u0c26\u0c3f \u0c05\u0c35\u0c38\u0c30\u0c2e\u0c48\u0c28 \u0c2b\u0c40\u0c32\u0c4d\u0c21\u0c4d"
-                    },
-                    "error": {
-                        "default": "\u0c38\u0c48\u0c28\u0c4d \u0c07\u0c28\u0c4d \u0c1a\u0c47\u0c2f\u0c21\u0c02 \u0c38\u0c3e\u0c27\u0c4d\u0c2f\u0c02 \u0c15\u0c3e\u0c26\u0c41.",
-                        "signin": "\u0c35\u0c47\u0c30\u0c4a\u0c15 \u0c16\u0c3e\u0c24\u0c3e\u0c24\u0c4b \u0c38\u0c48\u0c28\u0c4d \u0c07\u0c28\u0c4d \u0c1a\u0c47\u0c2f\u0c21\u0c3e\u0c28\u0c3f\u0c15\u0c3f \u0c2a\u0c4d\u0c30\u0c2f\u0c24\u0c4d\u0c28\u0c3f\u0c02\u0c1a\u0c02\u0c21\u0c3f.",
-                        "oauthsignin": "\u0c35\u0c47\u0c30\u0c4a\u0c15 \u0c16\u0c3e\u0c24\u0c3e\u0c24\u0c4b \u0c38\u0c48\u0c28\u0c4d \u0c07\u0c28\u0c4d \u0c1a\u0c47\u0c2f\u0c21\u0c3e\u0c28\u0c3f\u0c15\u0c3f \u0c2a\u0c4d\u0c30\u0c2f\u0c24\u0c4d\u0c28\u0c3f\u0c02\u0c1a\u0c02\u0c21\u0c3f.",
-                        "redirect_uri_mismatch": "\u0c30\u0c40\u0c21\u0c48\u0c30\u0c46\u0c15\u0c4d\u0c1f\u0c4d URI \u0c13\u0c2f\u0c42\u0c24\u0c4d \u0c2f\u0c3e\u0c2a\u0c4d \u0c15\u0c3e\u0c28\u0c4d\u0c2b\u0c3f\u0c17\u0c30\u0c47\u0c37\u0c28\u0c4d \u0c15\u0c41 \u0c38\u0c30\u0c3f\u0c2a\u0c4b\u0c32\u0c21\u0c02 \u0c32\u0c47\u0c26\u0c41.",
-                        "oauthcallbackerror": "\u0c35\u0c47\u0c30\u0c4a\u0c15 \u0c16\u0c3e\u0c24\u0c3e\u0c24\u0c4b \u0c38\u0c48\u0c28\u0c4d \u0c07\u0c28\u0c4d \u0c1a\u0c47\u0c2f\u0c21\u0c3e\u0c28\u0c3f\u0c15\u0c3f \u0c2a\u0c4d\u0c30\u0c2f\u0c24\u0c4d\u0c28\u0c3f\u0c02\u0c1a\u0c02\u0c21\u0c3f.",
-                        "oauthcreateaccount": "\u0c35\u0c47\u0c30\u0c4a\u0c15 \u0c16\u0c3e\u0c24\u0c3e\u0c24\u0c4b \u0c38\u0c48\u0c28\u0c4d \u0c07\u0c28\u0c4d \u0c1a\u0c47\u0c2f\u0c21\u0c3e\u0c28\u0c3f\u0c15\u0c3f \u0c2a\u0c4d\u0c30\u0c2f\u0c24\u0c4d\u0c28\u0c3f\u0c02\u0c1a\u0c02\u0c21\u0c3f.",
-                        "emailcreateaccount": "\u0c35\u0c47\u0c30\u0c4a\u0c15 \u0c16\u0c3e\u0c24\u0c3e\u0c24\u0c4b \u0c38\u0c48\u0c28\u0c4d \u0c07\u0c28\u0c4d \u0c1a\u0c47\u0c2f\u0c21\u0c3e\u0c28\u0c3f\u0c15\u0c3f \u0c2a\u0c4d\u0c30\u0c2f\u0c24\u0c4d\u0c28\u0c3f\u0c02\u0c1a\u0c02\u0c21\u0c3f.",
-                        "callback": "\u0c35\u0c47\u0c30\u0c4a\u0c15 \u0c16\u0c3e\u0c24\u0c3e\u0c24\u0c4b \u0c38\u0c48\u0c28\u0c4d \u0c07\u0c28\u0c4d \u0c1a\u0c47\u0c2f\u0c21\u0c3e\u0c28\u0c3f\u0c15\u0c3f \u0c2a\u0c4d\u0c30\u0c2f\u0c24\u0c4d\u0c28\u0c3f\u0c02\u0c1a\u0c02\u0c21\u0c3f.",
-                        "oauthaccountnotlinked": "\u0c2e\u0c40 \u0c17\u0c41\u0c30\u0c4d\u0c24\u0c3f\u0c02\u0c2a\u0c41\u0c28\u0c41 \u0c27\u0c43\u0c35\u0c40\u0c15\u0c30\u0c3f\u0c02\u0c1a\u0c21\u0c3e\u0c28\u0c3f\u0c15\u0c3f, \u0c2e\u0c40\u0c30\u0c41 \u0c2e\u0c4a\u0c26\u0c1f \u0c09\u0c2a\u0c2f\u0c4b\u0c17\u0c3f\u0c02\u0c1a\u0c3f\u0c28 \u0c05\u0c26\u0c47 \u0c16\u0c3e\u0c24\u0c3e\u0c24\u0c4b \u0c38\u0c48\u0c28\u0c4d \u0c07\u0c28\u0c4d \u0c1a\u0c47\u0c2f\u0c02\u0c21\u0c3f.",
-                        "emailsignin": "\u0c07-\u0c2e\u0c46\u0c2f\u0c3f\u0c32\u0c4d \u0c2a\u0c02\u0c2a\u0c21\u0c02 \u0c38\u0c3e\u0c27\u0c4d\u0c2f\u0c02 \u0c15\u0c3e\u0c26\u0c41.",
-                        "emailverify": "\u0c26\u0c2f\u0c1a\u0c47\u0c38\u0c3f \u0c2e\u0c40 \u0c07\u0c2e\u0c46\u0c2f\u0c3f\u0c32\u0c4d \u0c28\u0c3f \u0c27\u0c43\u0c35\u0c40\u0c15\u0c30\u0c3f\u0c02\u0c1a\u0c02\u0c21\u0c3f, \u0c15\u0c4a\u0c24\u0c4d\u0c24 \u0c07\u0c2e\u0c46\u0c2f\u0c3f\u0c32\u0c4d \u0c2a\u0c02\u0c2a\u0c2c\u0c21\u0c3f\u0c02\u0c26\u0c3f.",
-                        "credentialssignin": "\u0c38\u0c48\u0c28\u0c4d \u0c07\u0c28\u0c4d \u0c35\u0c3f\u0c2b\u0c32\u0c2e\u0c48\u0c02\u0c26\u0c3f. \u0c2e\u0c40\u0c30\u0c41 \u0c05\u0c02\u0c26\u0c3f\u0c02\u0c1a\u0c3f\u0c28 \u0c35\u0c3f\u0c35\u0c30\u0c3e\u0c32\u0c41 \u0c38\u0c30\u0c3f\u0c17\u0c4d\u0c17\u0c3e \u0c09\u0c28\u0c4d\u0c28\u0c3e\u0c2f\u0c4b \u0c32\u0c47\u0c26\u0c4b \u0c1a\u0c46\u0c15\u0c4d \u0c1a\u0c47\u0c38\u0c41\u0c15\u0c4b\u0c02\u0c21\u0c3f.",
-                        "sessionrequired": "\u0c08 \u0c2a\u0c47\u0c1c\u0c40\u0c28\u0c3f \u0c2f\u0c3e\u0c15\u0c4d\u0c38\u0c46\u0c38\u0c4d \u0c1a\u0c47\u0c2f\u0c21\u0c02 \u0c15\u0c4a\u0c30\u0c15\u0c41 \u0c26\u0c2f\u0c1a\u0c47\u0c38\u0c3f \u0c38\u0c48\u0c28\u0c4d \u0c07\u0c28\u0c4d \u0c1a\u0c47\u0c2f\u0c02\u0c21\u0c3f."
-                    }
-                },
-                "authVerifyEmail": {
-                    "almostThere": "\u0c2e\u0c40\u0c30\u0c41 \u0c26\u0c3e\u0c26\u0c3e\u0c2a\u0c41 \u0c05\u0c15\u0c4d\u0c15\u0c21\u0c47 \u0c09\u0c28\u0c4d\u0c28\u0c3e\u0c30\u0c41! \u0c2e\u0c47\u0c2e\u0c41 \u0c26\u0c40\u0c28\u0c3f\u0c15\u0c3f \u0c12\u0c15 \u0c07\u0c2e\u0c46\u0c2f\u0c3f\u0c32\u0c4d \u0c2a\u0c02\u0c2a\u0c3e\u0c2e\u0c41 ",
-                    "verifyEmailLink": "\u0c2e\u0c40 \u0c38\u0c48\u0c28\u0c4d \u0c05\u0c2a\u0c4d \u0c2a\u0c42\u0c30\u0c4d\u0c24\u0c3f \u0c1a\u0c47\u0c2f\u0c21\u0c3e\u0c28\u0c3f\u0c15\u0c3f \u0c26\u0c2f\u0c1a\u0c47\u0c38\u0c3f \u0c06 \u0c07\u0c2e\u0c46\u0c2f\u0c3f\u0c32\u0c4d \u0c32\u0c4b\u0c28\u0c3f \u0c32\u0c3f\u0c02\u0c15\u0c4d \u0c2a\u0c48 \u0c15\u0c4d\u0c32\u0c3f\u0c15\u0c4d \u0c1a\u0c47\u0c2f\u0c02\u0c21\u0c3f.",
-                    "didNotReceive": "\u0c07\u0c2e\u0c46\u0c2f\u0c3f\u0c32\u0c4d \u0c28\u0c3f \u0c15\u0c28\u0c41\u0c17\u0c4a\u0c28\u0c32\u0c47\u0c15\u0c2a\u0c4b\u0c2f\u0c3e\u0c30\u0c3e?",
-                    "resendEmail": "\u0c07\u0c2e\u0c46\u0c2f\u0c3f\u0c32\u0c4d \u0c28\u0c3f \u0c24\u0c3f\u0c30\u0c3f\u0c17\u0c3f \u0c2a\u0c02\u0c2a\u0c02\u0c21\u0c3f",
-                    "goBack": "\u0c35\u0c46\u0c28\u0c15\u0c4d\u0c15\u0c3f \u0c35\u0c46\u0c33\u0c4d\u0c33\u0c41",
-                    "emailSent": "\u0c07\u0c2e\u0c46\u0c2f\u0c3f\u0c32\u0c4d \u0c35\u0c3f\u0c1c\u0c2f\u0c35\u0c02\u0c24\u0c02\u0c17\u0c3e \u0c2a\u0c02\u0c2a\u0c2c\u0c21\u0c3f\u0c02\u0c26\u0c3f.",
-                    "verifyEmail": "\u0c2e\u0c40 \u0c07\u0c2e\u0c46\u0c2f\u0c3f\u0c32\u0c4d \u0c1a\u0c3f\u0c30\u0c41\u0c28\u0c3e\u0c2e\u0c3e\u0c28\u0c41 \u0c27\u0c43\u0c35\u0c40\u0c15\u0c30\u0c3f\u0c02\u0c1a\u0c02\u0c21\u0c3f"
-                },
-                "providerButton": {
-                    "continue": "{{provider}} \u0c24\u0c4b \u0c15\u0c4a\u0c28\u0c38\u0c3e\u0c17\u0c3f\u0c02\u0c1a\u0c02\u0c21\u0c3f",
-                    "signup": "{{provider}} \u0c24\u0c4b \u0c38\u0c48\u0c28\u0c4d \u0c05\u0c2a\u0c4d \u0c1a\u0c47\u0c2f\u0c02\u0c21\u0c3f"
-                },
-                "authResetPassword": {
-                    "newPasswordRequired": "\u0c15\u0c4a\u0c24\u0c4d\u0c24 \u0c2a\u0c3e\u0c38\u0c4d \u0c35\u0c30\u0c4d\u0c21\u0c4d \u0c05\u0c28\u0c47\u0c26\u0c3f \u0c05\u0c35\u0c38\u0c30\u0c2e\u0c48\u0c28 \u0c2b\u0c40\u0c32\u0c4d\u0c21\u0c4d",
-                    "passwordsMustMatch": "\u0c2a\u0c3e\u0c38\u0c4d \u0c35\u0c30\u0c4d\u0c21\u0c4d \u0c32\u0c41 \u0c24\u0c2a\u0c4d\u0c2a\u0c28\u0c3f\u0c38\u0c30\u0c3f\u0c17\u0c3e \u0c38\u0c30\u0c3f\u0c2a\u0c4b\u0c32\u0c3e\u0c32\u0c3f",
-                    "confirmPasswordRequired": "\u0c2a\u0c3e\u0c38\u0c4d \u0c35\u0c30\u0c4d\u0c21\u0c4d \u0c05\u0c28\u0c47\u0c26\u0c3f \u0c05\u0c35\u0c38\u0c30\u0c2e\u0c48\u0c28 \u0c2b\u0c40\u0c32\u0c4d\u0c21\u0c4d \u0c05\u0c28\u0c3f \u0c27\u0c43\u0c35\u0c40\u0c15\u0c30\u0c3f\u0c02\u0c1a\u0c02\u0c21\u0c3f",
-                    "newPassword": "\u0c15\u0c4a\u0c24\u0c4d\u0c24 \u0c2a\u0c3e\u0c38\u0c4d \u0c35\u0c30\u0c4d\u0c21\u0c4d",
-                    "confirmPassword": "\u0c2a\u0c3e\u0c38\u0c4d \u0c35\u0c30\u0c4d\u0c21\u0c4d \u0c28\u0c41 \u0c27\u0c43\u0c35\u0c40\u0c15\u0c30\u0c3f\u0c02\u0c1a\u0c02\u0c21\u0c3f",
-                    "resetPassword": "\u0c30\u0c40\u0c38\u0c46\u0c1f\u0c4d \u0c2a\u0c3e\u0c38\u0c4d \u0c35\u0c30\u0c4d\u0c21\u0c4d"
-                },
-                "authForgotPassword": {
-                    "email": "\u0c07\u0c2e\u0c46\u0c2f\u0c3f\u0c32\u0c4d \u0c1a\u0c3f\u0c30\u0c41\u0c28\u0c3e\u0c2e\u0c3e",
-                    "emailRequired": "\u0c07\u0c2e\u0c46\u0c2f\u0c3f\u0c32\u0c4d \u0c05\u0c28\u0c47\u0c26\u0c3f \u0c05\u0c35\u0c38\u0c30\u0c2e\u0c48\u0c28 \u0c2b\u0c40\u0c32\u0c4d\u0c21\u0c4d",
-                    "emailSent": "\u0c2e\u0c40 \u0c2a\u0c3e\u0c38\u0c4d \u0c35\u0c30\u0c4d\u0c21\u0c4d \u0c30\u0c40\u0c38\u0c46\u0c1f\u0c4d \u0c1a\u0c47\u0c2f\u0c21\u0c3e\u0c28\u0c3f\u0c15\u0c3f \u0c38\u0c42\u0c1a\u0c28\u0c32 \u0c15\u0c4a\u0c30\u0c15\u0c41 \u0c26\u0c2f\u0c1a\u0c47\u0c38\u0c3f {{email}} \u0c07\u0c2e\u0c46\u0c2f\u0c3f\u0c32\u0c4d \u0c1a\u0c3f\u0c30\u0c41\u0c28\u0c3e\u0c2e\u0c3e\u0c28\u0c41 \u0c24\u0c28\u0c3f\u0c16\u0c40 \u0c1a\u0c47\u0c2f\u0c02\u0c21\u0c3f.",
-                    "enterEmail": "\u0c2e\u0c40 \u0c07\u0c2e\u0c46\u0c2f\u0c3f\u0c32\u0c4d \u0c1a\u0c3f\u0c30\u0c41\u0c28\u0c3e\u0c2e\u0c3e\u0c28\u0c41 \u0c28\u0c2e\u0c4b\u0c26\u0c41 \u0c1a\u0c47\u0c2f\u0c02\u0c21\u0c3f \u0c2e\u0c30\u0c3f\u0c2f\u0c41 \u0c2e\u0c40 \u0c2a\u0c3e\u0c38\u0c4d \u0c35\u0c30\u0c4d\u0c21\u0c4d \u0c28\u0c41 \u0c30\u0c40\u0c38\u0c46\u0c1f\u0c4d \u0c1a\u0c47\u0c2f\u0c21\u0c3e\u0c28\u0c3f\u0c15\u0c3f \u0c2e\u0c47\u0c2e\u0c41 \u0c2e\u0c40\u0c15\u0c41 \u0c38\u0c42\u0c1a\u0c28\u0c32\u0c41 \u0c2a\u0c02\u0c2a\u0c41\u0c24\u0c3e\u0c2e\u0c41.",
-                    "resendEmail": "\u0c07\u0c2e\u0c46\u0c2f\u0c3f\u0c32\u0c4d \u0c28\u0c3f \u0c24\u0c3f\u0c30\u0c3f\u0c17\u0c3f \u0c2a\u0c02\u0c2a\u0c02\u0c21\u0c3f",
-                    "continue": "\u0c15\u0c4a\u0c28\u0c38\u0c3e\u0c17\u0c41",
-                    "goBack": "\u0c35\u0c46\u0c28\u0c15\u0c4d\u0c15\u0c3f \u0c35\u0c46\u0c33\u0c4d\u0c33\u0c41"
-                }
-            }
-        },
-        "organisms": {
-            "chat": {
-                "history": {
-                    "index": {
-                        "showHistory": "\u0c1a\u0c30\u0c3f\u0c24\u0c4d\u0c30\u0c28\u0c41 \u0c1a\u0c42\u0c2a\u0c3f\u0c02\u0c1a\u0c41",
-                        "lastInputs": "\u0c1a\u0c3f\u0c35\u0c30\u0c3f \u0c07\u0c28\u0c4d \u0c2a\u0c41\u0c1f\u0c4d \u0c32\u0c41",
-                        "noInputs": "\u0c05\u0c02\u0c24 \u0c16\u0c3e\u0c33\u0c40\u0c17\u0c3e...",
-                        "loading": "\u0c32\u0c4b\u0c21\u0c3f\u0c02\u0c17\u0c4d..."
-                    }
-                },
-                "inputBox": {
-                    "input": {
-                        "placeholder": "\u0c2e\u0c40 \u0c38\u0c02\u0c26\u0c47\u0c36\u0c3e\u0c28\u0c4d\u0c28\u0c3f \u0c07\u0c15\u0c4d\u0c15\u0c21 \u0c1f\u0c48\u0c2a\u0c4d \u0c1a\u0c47\u0c2f\u0c02\u0c21\u0c3f..."
-                    },
-                    "speechButton": {
-                        "start": "\u0c30\u0c3f\u0c15\u0c3e\u0c30\u0c4d\u0c21\u0c3f\u0c02\u0c17\u0c4d \u0c2a\u0c4d\u0c30\u0c3e\u0c30\u0c02\u0c2d\u0c3f\u0c02\u0c1a\u0c02\u0c21\u0c3f",
-                        "stop": "\u0c30\u0c3f\u0c15\u0c3e\u0c30\u0c4d\u0c21\u0c3f\u0c02\u0c17\u0c4d \u0c06\u0c2a\u0c02\u0c21\u0c3f"
-                    },
-                    "SubmitButton": {
-                        "sendMessage": "\u0c38\u0c02\u0c26\u0c47\u0c36\u0c02 \u0c2a\u0c02\u0c2a\u0c41",
-                        "stopTask": "\u0c38\u0c4d\u0c1f\u0c3e\u0c2a\u0c4d \u0c1f\u0c3e\u0c38\u0c4d\u0c15\u0c4d"
-                    },
-                    "UploadButton": {
-                        "attachFiles": "\u0c2b\u0c48\u0c33\u0c4d\u0c32\u0c28\u0c41 \u0c1c\u0c4b\u0c21\u0c3f\u0c02\u0c1a\u0c41"
-                    },
-                    "waterMark": {
-                        "text": "\u0c26\u0c40\u0c28\u0c3f\u0c24\u0c4b \u0c28\u0c3f\u0c30\u0c4d\u0c2e\u0c3f\u0c02\u0c1a\u0c2c\u0c21\u0c3f\u0c02\u0c26\u0c3f"
-                    }
-                },
-                "Messages": {
-                    "index": {
-                        "running": "\u0c30\u0c28\u0c4d\u0c28\u0c3f\u0c02\u0c17\u0c4d",
-                        "executedSuccessfully": "\u0c35\u0c3f\u0c1c\u0c2f\u0c35\u0c02\u0c24\u0c02\u0c17\u0c3e \u0c05\u0c2e\u0c32\u0c41 \u0c1a\u0c47\u0c2f\u0c2c\u0c21\u0c3f\u0c02\u0c26\u0c3f",
-                        "failed": "\u0c35\u0c3f\u0c2b\u0c32\u0c2e\u0c48\u0c02\u0c26\u0c3f",
-                        "feedbackUpdated": "\u0c2b\u0c40\u0c21\u0c4d \u0c2c\u0c4d\u0c2f\u0c3e\u0c15\u0c4d \u0c05\u0c2a\u0c4d \u0c21\u0c47\u0c1f\u0c4d \u0c1a\u0c47\u0c2f\u0c2c\u0c21\u0c3f\u0c02\u0c26\u0c3f",
-                        "updating": "\u0c05\u0c2a\u0c4d \u0c21\u0c47\u0c1f\u0c4d \u0c1a\u0c47\u0c2f\u0c21\u0c02"
-                    }
-                },
-                "dropScreen": {
-                    "dropYourFilesHere": "\u0c2e\u0c40 \u0c2b\u0c48\u0c33\u0c4d\u0c32\u0c28\u0c41 \u0c07\u0c15\u0c4d\u0c15\u0c21 \u0c21\u0c4d\u0c30\u0c3e\u0c2a\u0c4d \u0c1a\u0c47\u0c2f\u0c02\u0c21\u0c3f"
-                },
-                "index": {
-                    "failedToUpload": "\u0c05\u0c2a\u0c4d \u0c32\u0c4b\u0c21\u0c4d \u0c1a\u0c47\u0c2f\u0c21\u0c02 \u0c35\u0c3f\u0c2b\u0c32\u0c2e\u0c48\u0c02\u0c26\u0c3f",
-                    "cancelledUploadOf": "\u0c30\u0c26\u0c4d\u0c26\u0c41 \u0c1a\u0c47\u0c38\u0c3f\u0c28 \u0c05\u0c2a\u0c4d \u0c32\u0c4b\u0c21\u0c4d",
-                    "couldNotReachServer": "\u0c38\u0c30\u0c4d\u0c35\u0c30\u0c4d \u0c15\u0c41 \u0c1a\u0c47\u0c30\u0c41\u0c15\u0c4b\u0c35\u0c21\u0c02 \u0c38\u0c3e\u0c27\u0c4d\u0c2f\u0c02 \u0c15\u0c3e\u0c32\u0c47\u0c26\u0c41",
-                    "continuingChat": "\u0c2e\u0c41\u0c28\u0c41\u0c2a\u0c1f\u0c3f \u0c1a\u0c3e\u0c1f\u0c4d \u0c28\u0c41 \u0c15\u0c4a\u0c28\u0c38\u0c3e\u0c17\u0c3f\u0c02\u0c1a\u0c21\u0c02"
-                },
-                "settings": {
-                    "settingsPanel": "\u0c38\u0c46\u0c1f\u0c4d\u0c1f\u0c3f\u0c02\u0c17\u0c4d\u0c38\u0c4d \u0c2a\u0c4d\u0c2f\u0c3e\u0c28\u0c46\u0c32\u0c4d",
-                    "reset": "\u0c30\u0c40\u0c38\u0c46\u0c1f\u0c4d",
-                    "cancel": "\u0c30\u0c26\u0c4d\u0c26\u0c41",
-                    "confirm": "\u0c27\u0c4d\u0c30\u0c41\u0c35\u0c2a\u0c30\u0c1a\u0c41"
-                }
-            },
-            "threadHistory": {
-                "sidebar": {
-                    "filters": {
-                        "FeedbackSelect": {
-                            "feedbackAll": "\u0c2b\u0c40\u0c21\u0c4d \u0c2c\u0c4d\u0c2f\u0c3e\u0c15\u0c4d: \u0c05\u0c28\u0c4d\u0c28\u0c40",
-                            "feedbackPositive": "\u0c2b\u0c40\u0c21\u0c4d \u0c2c\u0c4d\u0c2f\u0c3e\u0c15\u0c4d: \u0c2a\u0c3e\u0c1c\u0c3f\u0c1f\u0c3f\u0c35\u0c4d",
-                            "feedbackNegative": "\u0c2b\u0c40\u0c21\u0c4d \u0c2c\u0c4d\u0c2f\u0c3e\u0c15\u0c4d: \u0c28\u0c46\u0c17\u0c46\u0c1f\u0c3f\u0c35\u0c4d"
-                        },
-                        "SearchBar": {
-                            "search": "\u0c35\u0c46\u0c24\u0c41\u0c15\u0c41"
-                        }
-                    },
-                    "DeleteThreadButton": {
-                        "confirmMessage": "\u0c07\u0c26\u0c3f \u0c25\u0c4d\u0c30\u0c46\u0c21\u0c4d\u0c24\u0c4b \u0c2a\u0c3e\u0c1f\u0c41 \u0c26\u0c3e\u0c28\u0c3f \u0c38\u0c02\u0c26\u0c47\u0c36\u0c3e\u0c32\u0c41 \u0c2e\u0c30\u0c3f\u0c2f\u0c41 \u0c0e\u0c32\u0c3f\u0c2e\u0c46\u0c02\u0c1f\u0c4d\u0c32\u0c28\u0c41 \u0c24\u0c4a\u0c32\u0c17\u0c3f\u0c38\u0c4d\u0c24\u0c41\u0c02\u0c26\u0c3f.",
-                        "cancel": "\u0c30\u0c26\u0c4d\u0c26\u0c41",
-                        "confirm": "\u0c27\u0c4d\u0c30\u0c41\u0c35\u0c2a\u0c30\u0c1a\u0c41",
-                        "deletingChat": "\u0c1a\u0c3e\u0c1f\u0c4d \u0c28\u0c41 \u0c21\u0c3f\u0c32\u0c40\u0c1f\u0c4d \u0c1a\u0c47\u0c2f\u0c21\u0c02",
-                        "chatDeleted": "\u0c1a\u0c3e\u0c1f\u0c4d \u0c21\u0c3f\u0c32\u0c40\u0c1f\u0c4d \u0c1a\u0c47\u0c2f\u0c2c\u0c21\u0c3f\u0c02\u0c26\u0c3f"
-                    },
-                    "index": {
-                        "pastChats": "\u0c17\u0c24 \u0c1a\u0c3e\u0c1f\u0c4d \u0c32\u0c41"
-                    },
-                    "ThreadList": {
-                        "empty": "\u0c16\u0c3e\u0c33\u0c40...",
-                        "today": "\u0c08 \u0c30\u0c4b\u0c1c\u0c41",
-                        "yesterday": "\u0c28\u0c3f\u0c28\u0c4d\u0c28",
-                        "previous7days": "\u0c2e\u0c41\u0c28\u0c41\u0c2a\u0c1f\u0c3f 7 \u0c30\u0c4b\u0c1c\u0c41\u0c32\u0c41",
-                        "previous30days": "\u0c2e\u0c41\u0c28\u0c41\u0c2a\u0c1f\u0c3f 30 \u0c30\u0c4b\u0c1c\u0c41\u0c32\u0c41"
-                    },
-                    "TriggerButton": {
-                        "closeSidebar": "\u0c15\u0c4d\u0c32\u0c4b\u0c1c\u0c4d \u0c38\u0c48\u0c21\u0c4d \u0c2c\u0c3e\u0c30\u0c4d",
-                        "openSidebar": "\u0c13\u0c2a\u0c46\u0c28\u0c4d \u0c38\u0c48\u0c21\u0c4d \u0c2c\u0c3e\u0c30\u0c4d"
-                    }
-                },
-                "Thread": {
-                    "backToChat": "\u0c1a\u0c3e\u0c1f\u0c4d \u0c1a\u0c47\u0c2f\u0c21\u0c3e\u0c28\u0c3f\u0c15\u0c3f \u0c24\u0c3f\u0c30\u0c3f\u0c17\u0c3f \u0c35\u0c46\u0c33\u0c4d\u0c32\u0c02\u0c21\u0c3f",
-                    "chatCreatedOn": "\u0c08 \u0c1a\u0c3e\u0c1f\u0c4d \u0c26\u0c40\u0c28\u0c3f\u0c32\u0c4b \u0c38\u0c43\u0c37\u0c4d\u0c1f\u0c3f\u0c02\u0c1a\u0c2c\u0c21\u0c3f\u0c02\u0c26\u0c3f"
-                }
-            },
-            "header": {
-                "chat": "\u0c2e\u0c41\u0c1a\u0c4d\u0c1a\u0c1f\u0c3f\u0c02\u0c1a\u0c41",
-                "readme": "Readme"
-            }
-        }
+  "common": {
+    "actions": {
+      "cancel": "రద్దు చేయండి",
+      "confirm": "నిర్ధారించండి",
+      "continue": "కొనసాగించండి",
+      "goBack": "వెనక్కి వెళ్ళండి",
+      "reset": "రీసెట్ చేయండి",
+      "submit": "సమర్పించండి"
     },
-    "hooks": {
-        "useLLMProviders": {
-            "failedToFetchProviders": "\u0c2a\u0c4d\u0c30\u0c4a\u0c35\u0c48\u0c21\u0c30\u0c4d\u0c32\u0c28\u0c41 \u0c2a\u0c4a\u0c02\u0c26\u0c21\u0c02\u0c32\u0c4b \u0c35\u0c3f\u0c2b\u0c32\u0c2e\u0c48\u0c02\u0c26\u0c3f:"
-        }
-    },
-    "pages": {
-        "Design": {},
-        "Env": {
-            "savedSuccessfully": "\u0c35\u0c3f\u0c1c\u0c2f\u0c35\u0c02\u0c24\u0c02\u0c17\u0c3e \u0c38\u0c47\u0c35\u0c4d \u0c1a\u0c47\u0c2f\u0c2c\u0c21\u0c3f\u0c02\u0c26\u0c3f",
-            "requiredApiKeys": "\u0c05\u0c35\u0c38\u0c30\u0c2e\u0c48\u0c28 API \u0c15\u0c40\u0c32\u0c41",
-            "requiredApiKeysInfo": "\u0c08 \u0c2f\u0c3e\u0c2a\u0c4d \u0c09\u0c2a\u0c2f\u0c4b\u0c17\u0c3f\u0c02\u0c1a\u0c21\u0c3e\u0c28\u0c3f\u0c15\u0c3f, \u0c08 \u0c15\u0c4d\u0c30\u0c3f\u0c02\u0c26\u0c3f API \u0c15\u0c40\u0c32\u0c41 \u0c05\u0c35\u0c38\u0c30\u0c02 \u0c05\u0c35\u0c41\u0c24\u0c3e\u0c2f\u0c3f. \u0c15\u0c40\u0c32\u0c41 \u0c2e\u0c40 \u0c2a\u0c30\u0c3f\u0c15\u0c30\u0c02 \u0c2f\u0c4a\u0c15\u0c4d\u0c15 \u0c38\u0c4d\u0c25\u0c3e\u0c28\u0c3f\u0c15 \u0c38\u0c4d\u0c1f\u0c4b\u0c30\u0c47\u0c1c\u0c40\u0c32\u0c4b \u0c28\u0c3f\u0c32\u0c4d\u0c35 \u0c1a\u0c47\u0c2f\u0c2c\u0c21\u0c24\u0c3e\u0c2f\u0c3f."
-        },
-        "Page": {
-            "notPartOfProject": "\u0c2e\u0c40\u0c30\u0c41 \u0c08 \u0c2a\u0c4d\u0c30\u0c3e\u0c1c\u0c46\u0c15\u0c4d\u0c1f\u0c41\u0c32\u0c4b \u0c2d\u0c3e\u0c17\u0c02 \u0c15\u0c3e\u0c26\u0c41."
-        },
-        "ResumeButton": {
-            "resumeChat": "\u0c30\u0c46\u0c1c\u0c4d\u0c2f\u0c42\u0c2e\u0c4d \u0c1a\u0c3e\u0c1f\u0c4d"
-        }
+    "status": {
+      "loading": "లోడ్ అవుతోంది...",
+      "error": {
+        "default": "లోపం సంభవించింది",
+        "serverConnection": "సర్వర్‌ని చేరుకోలేకపోయాము"
+      }
     }
+  },
+  "auth": {
+    "login": {
+      "title": "యాప్‌ని ఉపయోగించడానికి లాగిన్ చేయండి",
+      "form": {
+        "email": {
+          "label": "ఇమెయిల్ చిరునామా",
+          "required": "ఇమెయిల్ తప్పనిసరి",
+          "placeholder": "me@example.com"
+        },
+        "password": {
+          "label": "పాస్‌వర్డ్",
+          "required": "పాస్‌వర్డ్ తప్పనిసరి"
+        },
+        "actions": {
+          "signin": "సైన్ ఇన్ చేయండి"
+        },
+        "alternativeText": {
+          "or": "లేదా"
+        }
+      },
+      "errors": {
+        "default": "సైన్ ఇన్ చేయలేకపోయాము",
+        "signin": "వేరే ఖాతాతో సైన్ ఇన్ చేయడానికి ప్రయత్నించండి",
+        "oauthSignin": "వేరే ఖాతాతో సైన్ ఇన్ చేయడానికి ప్రయత్నించండి",
+        "redirectUriMismatch": "రీడైరెక్ట్ URI oauth యాప్ కాన్ఫిగరేషన్‌తో సరిపోలడం లేదు",
+        "oauthCallback": "వేరే ఖాతాతో సైన్ ఇన్ చేయడానికి ప్రయత్నించండి",
+        "oauthCreateAccount": "వేరే ఖాతాతో సైన్ ఇన్ చేయడానికి ప్రయత్నించండి",
+        "emailCreateAccount": "వేరే ఖాతాతో సైన్ ఇన్ చేయడానికి ప్రయత్నించండి",
+        "callback": "వేరే ఖాతాతో సైన్ ఇన్ చేయడానికి ప్రయత్నించండి",
+        "oauthAccountNotLinked": "మీ గుర్తింపును నిర్ధారించడానికి, మీరు మొదట ఉపయోగించిన అదే ఖాతాతో సైన్ ఇన్ చేయండి",
+        "emailSignin": "ఇమెయిల్ పంపడం సాధ్యం కాలేదు",
+        "emailVerify": "దయచేసి మీ ఇమెయిల్‌ని ధృవీకరించండి, కొత్త ఇమెయిల్ పంపబడింది",
+        "credentialsSignin": "సైన్ ఇన్ విఫలమైంది. మీరు అందించిన వివరాలు సరైనవేనా అని తనిఖీ చేయండి",
+        "sessionRequired": "ఈ పేజీని యాక్సెస్ చేయడానికి దయచేసి సైన్ ఇన్ చేయండి"
+      }
+    },
+    "provider": {
+      "continue": "{{provider}}తో కొనసాగించండి"
+    }
+  },
+  "chat": {
+    "input": {
+      "placeholder": "మీ సందేశాన్ని ఇక్కడ టైప్ చేయండి...",
+      "actions": {
+        "send": "సందేశం పంపండి",
+        "stop": "పని ఆపండి",
+        "attachFiles": "ఫైల్స్ జోడించండి"
+      }
+    },
+    "speech": {
+      "start": "రికార్డింగ్ ప్రారంభించండి",
+      "stop": "రికార్డింగ్ ఆపండి",
+      "connecting": "అనుసంధానిస్తోంది"
+    },
+    "favorites": {
+      "use": "ఇష్టమైన సందేశాన్ని ఉపయోగించండి",
+      "headline": "ఇష్టమైన సందేశాలు"
+    },
+    "commands": {
+      "button": "పరికరాలు",
+      "changeTool": "పరికరాన్ని మార్చండి",
+      "availableTools": "లభ్యమైన పరికరాలు"
+    },
+    "fileUpload": {
+      "dragDrop": "ఫైల్స్‌ని ఇక్కడ డ్రాగ్ చేసి డ్రాప్ చేయండి",
+      "browse": "ఫైల్స్ బ్రౌజ్ చేయండి",
+      "sizeLimit": "పరిమితి:",
+      "errors": {
+        "failed": "అప్‌లోడ్ విఫలమైంది",
+        "cancelled": "అప్‌లోడ్ రద్దు చేయబడింది"
+      },
+      "actions": {
+        "cancelUpload": "రద్దు చేయండి",
+        "removeAttachment": "అనుబంధాన్ని తొలగించండి"
+      }
+    },
+    "messages": {
+      "status": {
+        "using": "ఉపయోగిస్తోంది",
+        "used": "ఉపయోగించబడింది"
+      },
+      "actions": {
+        "copy": {
+          "button": "క్లిప్‌బోర్డ్‌కి కాపీ చేయండి",
+          "success": "కాపీ చేయబడింది!"
+        }
+      },
+      "feedback": {
+        "positive": "సహాయకరం",
+        "negative": "సహాయకరం కాదు",
+        "edit": "అభిప్రాయాన్ని సవరించండి",
+        "dialog": {
+          "title": "వ్యాఖ్య జోడించండి",
+          "submit": "అభిప్రాయాన్ని సమర్పించండి",
+          "yourFeedback": "మీ అభిప్రాయం..."
+        },
+        "status": {
+          "updating": "నవీకరిస్తోంది",
+          "updated": "అభిప్రాయం నవీకరించబడింది"
+        }
+      }
+    },
+    "history": {
+      "title": "చివరి ఇన్‌పుట్‌లు",
+      "empty": "ఖాళీగా ఉంది...",
+      "show": "చరిత్రను చూపించు"
+    },
+    "settings": {
+      "title": "సెట్టింగ్‌ల ప్యానెల్",
+      "customize": "మీ చాట్ సెట్టింగ్‌లను ఇక్కడ అనుకూలీకరించండి"
+    },
+    "watermark": "LLMలు తప్పులు చేయవచ్చు. ముఖ్యమైన సమాచారాన్ని తనిఖీ చేయడాన్ని పరిగణించండి."
+  },
+  "threadHistory": {
+    "sidebar": {
+      "title": "గత చాట్‌లు",
+      "filters": {
+        "search": "వెతకండి",
+        "placeholder": "Search conversations..."
+      },
+      "timeframes": {
+        "today": "ఈరోజు",
+        "yesterday": "నిన్న",
+        "previous7days": "గత 7 రోజులు",
+        "previous30days": "గత 30 రోజులు"
+      },
+      "empty": "థ్రెడ్‌లు కనుగొనబడలేదు",
+      "actions": {
+        "close": "సైడ్‌బార్ మూసివేయండి",
+        "open": "సైడ్‌బార్ తెరవండి"
+      }
+    },
+    "thread": {
+      "untitled": "పేరు లేని సంభాషణ",
+      "menu": {
+          "rename": "పేరు మార్చండి",
+          "share": "షేర్ చేయండి",
+          "delete": "తొలగించండి"
+        },
+      "actions": {
+        "share": {
+          "title": "చాట్ లింక్‌ను షేర్ చేయండి",
+          "button": "షేర్ చేయండి",
+          "status": {
+            "copied": "లింక్ కాపీ చేయబడింది",
+            "created": "షేర్ లింక్ సృష్టించబడింది!",
+            "unshared": "ఈ థ్రెడ్‌కు షేరింగ్ ఆపివేయబడింది"
+          },
+          "error": {
+            "create": "షేర్ లింక్ సృష్టించడం విఫలమైంది",
+            "unshare": "థ్రెడ్ షేరింగ్ నిలిపివేయడం విఫలమైంది"
+          }
+        },
+        "delete": {
+          "title": "తొలగింపును నిర్ధారించండి",
+          "description": "ఇది థ్రెడ్‌తో పాటు దాని సందేశాలను మరియు అంశాలను తొలగిస్తుంది. ఈ చర్యను రద్దు చేయలేరు",
+          "success": "చాట్ తొలగించబడింది",
+          "inProgress": "చాట్‌ని తొలగిస్తోంది"
+        },
+        "rename": {
+          "title": "థ్రెడ్ పేరు మార్చండి",
+          "description": "ఈ థ్రెడ్ కోసం కొత్త పేరును నమోదు చేయండి",
+          "form": {
+            "name": {
+              "label": "పేరు",
+              "placeholder": "కొత్త పేరును నమోదు చేయండి"
+            }
+          },
+          "success": "థ్రెడ్ పేరు మార్చబడింది!",
+          "inProgress": "థ్రెడ్ పేరు మారుస్తోంది"
+        }
+      }
+    }
+  },
+  "navigation": {
+    "header": {
+      "chat": "చాట్",
+      "readme": "చదవండి",
+      "theme": {
+        "light": "Light Theme",
+        "dark": "Dark Theme",
+        "system": "Follow System"
+      }
+    },
+    "newChat": {
+      "button": "కొత్త చాట్",
+      "dialog": {
+        "title": "కొత్త చాట్ సృష్టించండి",
+        "description": "ఇది మీ ప్రస్తుత చాట్ చరిత్రను తుడిచివేస్తుంది. మీరు కొనసాగించాలనుకుంటున్నారా?",
+        "tooltip": "కొత్త చాట్"
+      }
+    },
+    "user": {
+      "menu": {
+        "settings": "సెట్టింగ్‌లు",
+        "settingsKey": "S",
+        "apiKeys": "API కీలు",
+        "logout": "లాగ్ అవుట్"
+      }
+    }
+  },
+  "apiKeys": {
+    "title": "అవసరమైన API కీలు",
+    "description": "ఈ యాప్‌ని ఉపయోగించడానికి, కింది API కీలు అవసరం. కీలు మీ పరికరం యొక్క స్థానిక నిల్వలో నిల్వ చేయబడతాయి.",
+    "success": {
+      "saved": "విజయవంతంగా సేవ్ చేయబడింది"
+    }
+  },
+  "alerts": {
+    "info": "Info",
+    "note": "Note",
+    "tip": "Tip",
+    "important": "Important",
+    "warning": "Warning",
+    "caution": "Caution",
+    "debug": "Debug",
+    "example": "Example",
+    "success": "Success",
+    "help": "Help",
+    "idea": "Idea",
+    "pending": "Pending",
+    "security": "Security",
+    "beta": "Beta",
+    "best-practice": "Best Practice"
+  },
+  "components": {
+    "MultiSelectInput": {
+      "placeholder": "ఎంచుకోండి..."
+    },
+    "DatePickerInput": {
+      "placeholder": {
+        "single": "తేదీని ఎంచుకోండి",
+        "range": "తేదీ పరిధిని ఎంచుకోండి"
+      }
+    }
+  }
 }

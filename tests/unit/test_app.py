@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import dataclass
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock
 
-import httpx
 import pytest
 from fastapi.responses import JSONResponse
 
@@ -311,11 +311,67 @@ async def test_profile_hooks_delegate_to_builders(app_context: AppContext, monke
     assert await app.set_starters() == ["sales_rep", *expected_starters]
 
 
-def test_app_disables_chainlit_database_url_data_layer(app_context: AppContext):
+def test_app_registers_chainlit_data_layer_factory(app_context: AppContext):
     factory = app_context.chainlit._data_layer_factory
 
     assert callable(factory)
-    assert factory() is None
+
+
+def test_build_chainlit_data_layer_returns_none_without_database_config(
+    app_context: AppContext, monkeypatch
+):
+    app = app_context.app
+    monkeypatch.setattr(app, "_database_config_source", lambda: None)
+
+    assert app._build_chainlit_data_layer() is None
+
+
+def test_build_chainlit_data_layer_uses_repo_owned_layer(app_context: AppContext, monkeypatch):
+    app = app_context.app
+
+    class FakeLayer:
+        def __init__(self, database_url: str) -> None:
+            self.database_url = database_url
+
+    monkeypatch.setattr(app, "_database_config_source", lambda: "env:DATABASE_URL")
+    monkeypatch.setattr(app, "resolve_database_url", lambda repo_root: "postgresql://runtime")
+
+    layer = app._build_chainlit_data_layer(data_layer_cls=FakeLayer)
+
+    assert isinstance(layer, FakeLayer)
+    assert layer.database_url == "postgresql://runtime"
+
+
+def test_password_auth_registration_requires_explicit_enablement(
+    app_context: AppContext, monkeypatch
+):
+    app = app_context.app
+    app_context.chainlit._password_auth_callback = None
+    monkeypatch.setattr(app.settings, "CHAINLIT_DEV_AUTH_ENABLED", False)
+    monkeypatch.setattr(app.settings, "CHAINLIT_DEV_AUTH_PASSWORD", "shared-secret")
+
+    assert app._register_password_auth_callback() is False
+    assert app_context.chainlit._password_auth_callback is None
+
+
+def test_password_auth_registration_requires_password(app_context: AppContext, monkeypatch):
+    app = app_context.app
+    app_context.chainlit._password_auth_callback = None
+    monkeypatch.setattr(app.settings, "CHAINLIT_DEV_AUTH_ENABLED", True)
+    monkeypatch.setattr(app.settings, "CHAINLIT_DEV_AUTH_PASSWORD", None)
+
+    assert app._register_password_auth_callback() is False
+    assert app_context.chainlit._password_auth_callback is None
+
+
+def test_password_auth_registration_registers_callback(app_context: AppContext, monkeypatch):
+    app = app_context.app
+    app_context.chainlit._password_auth_callback = None
+    monkeypatch.setattr(app.settings, "CHAINLIT_DEV_AUTH_ENABLED", True)
+    monkeypatch.setattr(app.settings, "CHAINLIT_DEV_AUTH_PASSWORD", "shared-secret")
+
+    assert app._register_password_auth_callback() is True
+    assert app_context.chainlit._password_auth_callback is app.password_auth_user_callback
 
 
 def test_app_skips_oauth_registration_without_configured_provider(monkeypatch):
@@ -361,6 +417,30 @@ async def test_oauth_callback_normalizes_display_name_and_provider(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_password_auth_callback_returns_local_user(app_context: AppContext, monkeypatch):
+    app = app_context.app
+    monkeypatch.setattr(app.settings, "CHAINLIT_DEV_AUTH_PASSWORD", "shared-secret")
+
+    resolved_user = await app.password_auth_user_callback(" alice@example.com ", "shared-secret")
+
+    assert resolved_user is not None
+    assert resolved_user.identifier == "alice@example.com"
+    assert resolved_user.display_name == "alice@example.com"
+    assert resolved_user.metadata == {"provider": "dev-password"}
+
+
+@pytest.mark.asyncio
+async def test_password_auth_callback_rejects_invalid_credentials(
+    app_context: AppContext, monkeypatch
+):
+    app = app_context.app
+    monkeypatch.setattr(app.settings, "CHAINLIT_DEV_AUTH_PASSWORD", "shared-secret")
+
+    assert await app.password_auth_user_callback("", "shared-secret") is None
+    assert await app.password_auth_user_callback("alice@example.com", "wrong-secret") is None
+
+
+@pytest.mark.asyncio
 async def test_set_starters_falls_back_without_chainlit_context(
     app_context: AppContext, monkeypatch
 ):
@@ -375,15 +455,28 @@ async def test_set_starters_falls_back_without_chainlit_context(
     assert await app.set_starters() == ["default"]
 
 
+def test_current_thread_id_prefers_chainlit_context_thread_id(
+    app_context: AppContext, monkeypatch
+):
+    app = app_context.app
+    fake_context = ModuleType("chainlit.context")
+    fake_context.context = SimpleNamespace(session=SimpleNamespace(thread_id="thread-resume-123"))
+    monkeypatch.setitem(sys.modules, "chainlit.context", fake_context)
+    app_context.chainlit.user_session.set("id", "session-123")
+
+    assert app._current_thread_id() == "thread-resume-123"
+
+
 @pytest.mark.asyncio
 async def test_start_initializes_session_and_sends_welcome(app_context: AppContext, monkeypatch):
     app = app_context.app
-    app_context.chainlit.user_session.set("id", "thread-123")
+    app_context.chainlit.user_session.set("id", "session-123")
     connection, workflow, state = _patch_start_dependencies(
         app_context,
         monkeypatch,
         profile={"id": "profile-123"},
     )
+    monkeypatch.setattr(app, "_current_thread_id", lambda: "thread-123")
 
     await app.start()
 
@@ -408,8 +501,9 @@ async def test_start_keeps_running_when_tracardi_bootstrap_fails(
     app_context: AppContext, monkeypatch
 ):
     app = app_context.app
-    app_context.chainlit.user_session.set("id", "thread-456")
+    app_context.chainlit.user_session.set("id", "session-456")
     connection, workflow, _ = _patch_start_dependencies(app_context, monkeypatch, profile=None)
+    monkeypatch.setattr(app, "_current_thread_id", lambda: "thread-456")
 
     class FakeTracardiClient:
         async def get_or_create_profile(self, session_id: str) -> dict[str, Any] | None:
@@ -426,6 +520,49 @@ async def test_start_keeps_running_when_tracardi_bootstrap_fails(
         "warning",
         "tracardi_profile_bootstrap_failed",
         {"error": "boom"},
+    ) in app_context.logger.events
+
+
+@pytest.mark.asyncio
+async def test_resume_chat_initializes_session_without_welcome(
+    app_context: AppContext, monkeypatch
+):
+    app = app_context.app
+    app_context.chainlit.user_session.set("id", "session-resume")
+    connection, workflow, state = _patch_start_dependencies(
+        app_context,
+        monkeypatch,
+        profile=None,
+    )
+
+    await app.resume_chat(
+        {
+            "id": "thread-resume-123",
+            "metadata": {
+                "chat_profile": "sales_rep",
+                "profile_id": "profile-hint-123",
+            },
+        }
+    )
+
+    assert app_context.trace_log["bound"] == ["trace-123"]
+    assert app_context.chainlit.user_session.get("trace_id") == "trace-123"
+    assert app_context.chainlit.user_session.get("workflow") is workflow
+    assert app_context.chainlit.user_session.get("checkpointer_conn") is connection
+    assert app_context.chainlit.user_session.get("thread_id") == "thread-resume-123"
+    assert app_context.chainlit.user_session.get("chat_profile") == "sales_rep"
+    assert app_context.chainlit.user_session.get("profile_id") == "profile-hint-123"
+    assert app_context.chainlit._messages == []
+    assert state["session_id"] == "thread-resume-123"
+    assert (
+        "info",
+        "session_resumed",
+        {
+            "session_id": "session-resume",
+            "thread_id": "thread-resume-123",
+            "profile_id": "profile-hint-123",
+            "chat_profile": "sales_rep",
+        },
     ) in app_context.logger.events
 
 
@@ -623,3 +760,157 @@ async def test_action_callbacks_swallow_unhandled_exceptions(app_context: AppCon
         "action_callback_unhandled",
         {"action": "ui_show_status", "error": "boom", "exc_info": True},
     ) in app_context.logger.events
+
+
+# ─── Thread Title Generation Tests ─────────────────────────────────────────
+
+
+def test_generate_thread_title_basic():
+    """Thread titles extracted from first message line."""
+    from src.app import _generate_thread_title
+
+    assert _generate_thread_title("Find software companies") == "Find software companies"
+    assert _generate_thread_title("Multi\nline\nmessage") == "Multi"
+    assert _generate_thread_title("") == "New conversation"
+    assert _generate_thread_title("   ") == "New conversation"
+
+
+def test_generate_thread_title_truncation():
+    """Long titles truncated with ellipsis."""
+    from src.app import THREAD_TITLE_MAX_LENGTH, _generate_thread_title
+
+    long_message = "a" * 100
+    result = _generate_thread_title(long_message)
+    assert result.endswith("...")
+    assert len(result) == THREAD_TITLE_MAX_LENGTH
+
+
+def test_generate_thread_title_edge_cases():
+    """Thread title generation handles edge cases."""
+    from src.app import _generate_thread_title
+
+    # Exactly at limit
+    exact = "x" * 60
+    assert _generate_thread_title(exact) == exact
+
+    # One over limit
+    over = "x" * 61
+    assert _generate_thread_title(over) == "x" * 57 + "..."
+
+    # Whitespace trimming
+    assert _generate_thread_title("  Hello world  ") == "Hello world"
+
+
+@pytest.mark.asyncio
+async def test_update_thread_title_from_message_skips_when_name_set(monkeypatch):
+    """Title update skipped if thread already has a custom name."""
+    from src.app import _update_thread_title_from_message
+    from src.services.chainlit_data_layer import PostgreSQLChainlitDataLayer
+
+    layer = PostgreSQLChainlitDataLayer("postgresql://runtime")
+
+    async def fake_get_thread(thread_id: str):
+        return {"id": thread_id, "name": "Already named thread"}
+
+    monkeypatch.setattr(layer, "get_thread", fake_get_thread)
+
+    update_calls = []
+
+    async def fake_update_thread(*, thread_id: str, name: str | None = None):
+        update_calls.append((thread_id, name))
+
+    monkeypatch.setattr(layer, "update_thread", fake_update_thread)
+
+    # Mock cl.data._data_layer
+    class MockData:
+        _data_layer = layer
+
+    monkeypatch.setattr("src.app.cl", type("MockCL", (), {"data": MockData()})())
+
+    await _update_thread_title_from_message("thread-123", "Some message")
+
+    # Should NOT update since name is already set
+    assert len(update_calls) == 0
+
+
+@pytest.mark.asyncio
+async def test_update_thread_title_from_message_updates_when_empty(monkeypatch):
+    """Title updated when thread has no name."""
+    from src.app import _update_thread_title_from_message
+    from src.services.chainlit_data_layer import PostgreSQLChainlitDataLayer
+
+    layer = PostgreSQLChainlitDataLayer("postgresql://runtime")
+
+    async def fake_get_thread(thread_id: str):
+        return {"id": thread_id, "name": None}
+
+    monkeypatch.setattr(layer, "get_thread", fake_get_thread)
+
+    update_calls = []
+
+    async def fake_update_thread(*, thread_id: str, name: str | None = None):
+        update_calls.append((thread_id, name))
+
+    monkeypatch.setattr(layer, "update_thread", fake_update_thread)
+
+    # Mock cl.data._data_layer
+    class MockData:
+        _data_layer = layer
+
+    monkeypatch.setattr("src.app.cl", type("MockCL", (), {"data": MockData()})())
+
+    await _update_thread_title_from_message("thread-123", "Find prospects in Belgium")
+
+    # Should update with generated title
+    assert len(update_calls) == 1
+    assert update_calls[0][0] == "thread-123"
+    assert update_calls[0][1] == "Find prospects in Belgium"
+
+
+@pytest.mark.asyncio
+async def test_update_thread_title_from_message_updates_for_uuid_name(monkeypatch):
+    """Title updated when thread name looks like a UUID (default)."""
+    from src.app import _update_thread_title_from_message
+    from src.services.chainlit_data_layer import PostgreSQLChainlitDataLayer
+
+    layer = PostgreSQLChainlitDataLayer("postgresql://runtime")
+
+    # UUID-like name (36 chars with hyphens)
+    async def fake_get_thread(thread_id: str):
+        return {"id": thread_id, "name": "550e8400-e29b-41d4-a716-446655440000"}
+
+    monkeypatch.setattr(layer, "get_thread", fake_get_thread)
+
+    update_calls = []
+
+    async def fake_update_thread(*, thread_id: str, name: str | None = None):
+        update_calls.append((thread_id, name))
+
+    monkeypatch.setattr(layer, "update_thread", fake_update_thread)
+
+    # Mock cl.data._data_layer
+    class MockData:
+        _data_layer = layer
+
+    monkeypatch.setattr("src.app.cl", type("MockCL", (), {"data": MockData()})())
+
+    await _update_thread_title_from_message("thread-123", "Create segment for Q1")
+
+    # Should update since name looks like UUID
+    assert len(update_calls) == 1
+    assert update_calls[0][1] == "Create segment for Q1"
+
+
+@pytest.mark.asyncio
+async def test_update_thread_title_gracefully_handles_missing_data_layer(monkeypatch):
+    """Title update fails gracefully when data layer unavailable."""
+    from src.app import _update_thread_title_from_message
+
+    # Mock cl.data without _data_layer attribute
+    class MockData:
+        pass
+
+    monkeypatch.setattr("src.app.cl", type("MockCL", (), {"data": MockData()})())
+
+    # Should not raise
+    await _update_thread_title_from_message("thread-123", "Some message")

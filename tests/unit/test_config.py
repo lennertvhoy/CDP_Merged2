@@ -78,3 +78,15 @@ def test_azure_auth_defaults_safe_for_rollout(monkeypatch):
     assert settings.AZURE_AUTH_ALLOW_KEY_FALLBACK is True
     assert settings.AZURE_AUTH_STRICT_MI_KV_ONLY is False
     assert settings.AZURE_KEY_VAULT_URL is None
+
+
+def test_chainlit_dev_auth_defaults_disabled(monkeypatch):
+    monkeypatch.setenv("TRACARDI_USERNAME", "admin")
+    monkeypatch.setenv("TRACARDI_PASSWORD", "admin")
+    monkeypatch.delenv("CHAINLIT_DEV_AUTH_ENABLED", raising=False)
+    monkeypatch.delenv("CHAINLIT_DEV_AUTH_PASSWORD", raising=False)
+
+    settings = Settings(_env_file=None)
+
+    assert settings.CHAINLIT_DEV_AUTH_ENABLED is False
+    assert settings.CHAINLIT_DEV_AUTH_PASSWORD is None
