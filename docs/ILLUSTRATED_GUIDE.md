@@ -249,7 +249,7 @@ curl "http://localhost:5001/api/engagement/leads?min_score=5"
 
 **Checked-in code verification (observed 2026-03-09):**
 ```bash
-poetry run python -c 'from scripts.cdp_event_processor import get_scoring_model; import json; print(json.dumps(get_scoring_model(), indent=2, sort_keys=True))'
+uv run python -c 'from scripts.cdp_event_processor import get_scoring_model; import json; print(json.dumps(get_scoring_model(), indent=2, sort_keys=True))'
 ```
 
 **Result:**

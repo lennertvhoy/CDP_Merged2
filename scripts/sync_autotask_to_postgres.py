@@ -5,14 +5,14 @@ creating identity links for unified 360° customer views.
 
 Usage:
     # Demo mode (default - uses mock data)
-    poetry run python scripts/sync_autotask_to_postgres.py
+    uv run python scripts/sync_autotask_to_postgres.py
 
     # Production sync (requires credentials in .env.autotask)
     export AUTOTASK_DEMO_MODE=false
-    poetry run python scripts/sync_autotask_to_postgres.py --full
+    uv run python scripts/sync_autotask_to_postgres.py --full
 
     # Incremental sync
-    poetry run python scripts/sync_autotask_to_postgres.py
+    uv run python scripts/sync_autotask_to_postgres.py
 """
 
 from __future__ import annotations

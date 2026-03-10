@@ -7,16 +7,16 @@ Supports incremental sync with cursor tracking and KBO company matching.
 
 Usage:
     # Full sync (all entities)
-    poetry run python scripts/sync_teamleader_to_postgres.py --full
+    uv run python scripts/sync_teamleader_to_postgres.py --full
     
     # Sync specific entities
-    poetry run python scripts/sync_teamleader_to_postgres.py --entities companies,contacts
+    uv run python scripts/sync_teamleader_to_postgres.py --entities companies,contacts
     
     # Incremental sync (uses last cursor)
-    poetry run python scripts/sync_teamleader_to_postgres.py
+    uv run python scripts/sync_teamleader_to_postgres.py
     
     # With custom database URL
-    DATABASE_URL=postgresql://... poetry run python scripts/sync_teamleader_to_postgres.py
+    DATABASE_URL=postgresql://... uv run python scripts/sync_teamleader_to_postgres.py
 
 Environment:
     Requires .env.teamleader with valid OAuth credentials

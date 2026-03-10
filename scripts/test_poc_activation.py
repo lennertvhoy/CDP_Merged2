@@ -11,13 +11,13 @@ Prerequisites:
 
 Usage:
     # Test with real Flexmail (requires credentials)
-    poetry run python scripts/test_poc_activation.py
+    uv run python scripts/test_poc_activation.py
     
     # Test with mock Flexmail
-    poetry run python scripts/test_poc_activation.py --mock
+    uv run python scripts/test_poc_activation.py --mock
     
     # Test only engagement writeback (Tracardi → PostgreSQL)
-    poetry run python scripts/test_poc_activation.py --engagement-only
+    uv run python scripts/test_poc_activation.py --engagement-only
 """
 
 from __future__ import annotations

@@ -3,7 +3,7 @@
 **Platform:** Azure target architecture with local-only execution mode
 **Azure Scope:** Next cloud re-entry should be limited to Entra ID auth + Azure OpenAI
 **Architecture:** Source systems PII truth + PostgreSQL intelligence truth + Tracardi activation runtime + AI chatbot  
-**Last Updated:** 2026-03-09 (repo audit backlog pass added security, hygiene, and legacy-surface follow-up alongside the current local-first roadmap)
+**Last Updated:** 2026-03-10 (uv migration implemented locally; remaining CI follow-up promoted back to the active queue)
 **Purpose:** Medium-term roadmap from the current repo state to a credible demo first and production readiness later
 
 ## How To Use This File
@@ -171,14 +171,14 @@ The user explicitly accepted the Resend swap on 2026-03-08, so Flexmail parity s
 **Usage:**
 ```bash
 # Run Resend POC test (RECOMMENDED - uses mock if no API key)
-poetry run python scripts/test_poc_resend_activation.py --mock
+uv run python scripts/test_poc_resend_activation.py --mock
 
 # Run with real Resend (requires RESEND_API_KEY)
 export RESEND_API_KEY="your-api-key"
-poetry run python scripts/test_poc_resend_activation.py
+uv run python scripts/test_poc_resend_activation.py
 
 # Run Flexmail POC test (alternative)
-poetry run python scripts/test_poc_activation.py --mock
+uv run python scripts/test_poc_activation.py --mock
 ```
 
 ---
@@ -579,7 +579,8 @@ With 50+ connected records:
 | Priority | Item | Status | What still needs to happen |
 |----------|------|--------|-----------------------------|
 | High | Keep Python cache artifacts out of git | Complete | A 2026-03-09 git-tracked recheck found `git ls-files '*.pyc' -> 0` and no `__pycache__` matches; the earlier `find` count referred to local untracked cache files, and `.gitignore` already blocks these paths |
-| High | Reconcile legacy script docs with the actual Poetry-based workflow | Complete | Completed 2026-03-09: `scripts/README.md` now points to the repo-root Poetry flow, the stale `scripts/requirements.txt` file was removed, and the historical KBO cleanup completion summary was quarantined so it no longer reads like a current operator guide |
+| High | Migrate the repo from Poetry to uv | Complete | Completed locally on 2026-03-10: `pyproject.toml` now uses PEP 621 plus `uv` dependency groups, `uv.lock` replaced `poetry.lock`, CI/Docker/Make/scripts switched to `uv`, and the tracked `requirements*.txt` files were removed. Remaining follow-up is code-level CI repair, now tracked in `NEXT_ACTIONS.md` |
+| High | Reconcile legacy script docs with the actual uv-based workflow | Complete | Completed 2026-03-10: `scripts/README.md`, active helper-script usage strings, and current operator docs now point to the repo-root `uv sync` / `uv run` flow instead of Poetry |
 | High | Decide whether to keep or delete `src/enrichment/website_discovery.py.patch` | Complete | Completed 2026-03-09: the tracked file was a zero-byte initial-import artifact with no live non-doc references, so it was deleted |
 | Medium | Break up oversized entry points that are accumulating unrelated responsibilities | Pending | `src/app.py`, `src/mcp_server.py`, `src/services/writeback.py`, and `scripts/cdp_event_processor.py` are each several hundred lines and should be split along clearer seams when adjacent work touches them |
 | Medium | Reduce current-doc sprawl in `docs/` and make durable references easier to find | Pending | The audit counted `217` files under `docs/`, including `54` top-level docs plus multiple guide PDFs and screenshot trees; keep archiving history, but tighten the durable reference surface that active contributors actually need |

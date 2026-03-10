@@ -180,7 +180,7 @@ async def main():
     
     if not it_profiles:
         print("❌ No IT companies found in Tracardi")
-        print("   Try running: poetry run python scripts/sync_kbo_to_tracardi.py")
+        print("   Try running: uv run python scripts/sync_kbo_to_tracardi.py")
         return 1
     
     # Show sample profiles

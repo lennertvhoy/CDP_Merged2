@@ -208,7 +208,7 @@ curl -X POST http://localhost:8686/profile/select \
 #### A. No Data in Elasticsearch
 ```bash
 # Re-run KBO data ingestion (from VM or local with VPN)
-poetry run python -c "
+uv run python -c "
 from src.ingestion.tracardi_loader import load_kbo_data
 import asyncio
 asyncio.run(load_kbo_data('path/to/kbo.csv'))

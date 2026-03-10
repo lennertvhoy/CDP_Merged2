@@ -6,7 +6,7 @@ This script helps configure the CDP Chatbot to use Microsoft work accounts
 for authentication. It validates the configuration and provides next steps.
 
 Usage:
-    poetry run python scripts/setup_azure_ad_auth.py
+    uv run python scripts/setup_azure_ad_auth.py
 
 Environment Variables Required:
     AZURE_AD_TENANT_ID: Your Azure AD tenant ID
@@ -106,7 +106,7 @@ def print_setup_instructions():
    - Or run: az ad app credential reset --id d13725b8-ce4e-4103-9518-2d66bcce5beb
 
 6. Start the application:
-   poetry run python -m uvicorn src.app:chainlit_server_app --host 0.0.0.0 --port 8000
+   uv run python -m uvicorn src.app:chainlit_server_app --host 0.0.0.0 --port 8000
 
 7. Test authentication:
    - Navigate to: http://localhost:8000
@@ -140,7 +140,7 @@ def main():
         
         if settings.CHAINLIT_ENABLE_AZURE_AD:
             print("\n🚀 To start the application with Azure AD auth:")
-            print("   poetry run python -m uvicorn src.app:chainlit_server_app --host 0.0.0.0 --port 8000")
+            print("   uv run python -m uvicorn src.app:chainlit_server_app --host 0.0.0.0 --port 8000")
     else:
         print("\n⚠️  Some required configuration is missing.")
         print_setup_instructions()

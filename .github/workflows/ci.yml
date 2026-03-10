@@ -87,30 +87,23 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
         with:
-          version: latest
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Cache Poetry virtualenv
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: ${{ runner.os }}-poetry-${{ hashFiles('pyproject.toml') }}
+          version: "0.10.4"
+          enable-cache: true
 
       - name: Install dependencies
-        run: poetry install --no-interaction
+        run: uv sync --locked
 
       - name: Run ruff linter
-        run: poetry run ruff check src/ tests/
+        run: uv run --frozen ruff check src/ tests/
 
       - name: Run ruff formatter check
-        run: poetry run ruff format --check src/ tests/
+        run: uv run --frozen ruff format --check src/ tests/
 
       - name: Run mypy type checker
-        run: poetry run mypy src/ --ignore-missing-imports
+        run: uv run --frozen mypy src/ --ignore-missing-imports
 
   test:
     name: Unit Tests
@@ -129,21 +122,14 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
         with:
-          version: latest
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Cache Poetry virtualenv
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: ${{ runner.os }}-py${{ matrix.python-version }}-poetry-${{ hashFiles('pyproject.toml') }}
+          version: "0.10.4"
+          enable-cache: true
 
       - name: Install dependencies
-        run: poetry install --no-interaction
+        run: uv sync --locked
 
       - name: Run unit tests with coverage
         env:
@@ -160,7 +146,7 @@ jobs:
           LOG_LEVEL: WARNING
           DATABASE_URL: postgresql://test:test@localhost:5432/test
         run: |
-          poetry run pytest tests/ \
+          uv run --frozen pytest tests/ \
             -m "not integration and not e2e" \
             --cov=src \
             --cov-report=xml \
@@ -173,7 +159,7 @@ jobs:
           file: ./coverage.xml
           flags: unittests
           name: codecov-${{ matrix.python-version }}
-        if: matrix.python-version == '3.11'
+        if: matrix.python-version == '3.12'
 
   security:
     name: Security Scan
@@ -185,16 +171,23 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python 3.11
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.10.4"
+          enable-cache: true
       - name: Install security tooling
         run: pip install bandit pip-audit
       - name: Run bandit security scan
         run: bandit -c .bandit.yml -r src/ -ll
+      - name: Export locked dependency set for audit
+        run: uv export --frozen --all-groups --no-emit-project --no-hashes --output-file requirements-audit.txt
       - name: Run dependency vulnerability audit
-        run: pip-audit -r requirements.txt -r requirements-dev.txt --progress-spinner off
+        run: pip-audit -r requirements-audit.txt --progress-spinner off
 
   secrets:
     name: Secret Detection
@@ -221,26 +214,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
         with:
-          version: latest
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Cache Poetry virtualenv
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: ${{ runner.os }}-migration-gates-poetry-${{ hashFiles('pyproject.toml') }}
+          version: "0.10.4"
+          enable-cache: true
 
       - name: Install dependencies
-        run: poetry install --no-interaction
+        run: uv sync --locked
 
       - name: Run migration feature-flag focused unit tests
         env:
@@ -258,7 +244,7 @@ jobs:
           DATABASE_URL: postgresql://test:test@localhost:5432/test
         run: |
           mkdir -p artifacts
-          poetry run pytest \
+          uv run --frozen pytest \
             tests/unit/test_config.py \
             tests/unit/test_nodes.py \
             tests/unit/test_tools.py \
@@ -285,26 +271,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
         with:
-          version: latest
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Cache Poetry virtualenv
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: ${{ runner.os }}-migration-int-gates-poetry-${{ hashFiles('pyproject.toml') }}
+          version: "0.10.4"
+          enable-cache: true
 
       - name: Install dependencies
-        run: poetry install --no-interaction
+        run: uv sync --locked
 
       - name: Run migration integration gate
         env:
@@ -323,7 +302,7 @@ jobs:
           DATABASE_URL: postgresql://test:test@localhost:5432/test
         run: |
           mkdir -p artifacts
-          poetry run pytest \
+          uv run --frozen pytest \
             tests/integration/test_multi_turn_user_stories.py \
             -m integration \
             --junitxml=artifacts/migration-flags-integration-junit.xml \

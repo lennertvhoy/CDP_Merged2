@@ -7,16 +7,16 @@ Verifies the accuracy and coverage of KBO matching between source systems
 
 Usage:
     # Run full verification
-    poetry run python scripts/verify_kbo_matching.py
+    uv run python scripts/verify_kbo_matching.py
     
     # Check specific source system
-    poetry run python scripts/verify_kbo_matching.py --source teamleader
+    uv run python scripts/verify_kbo_matching.py --source teamleader
     
     # Show sample matches and mismatches
-    poetry run python scripts/verify_kbo_matching.py --samples 10
+    uv run python scripts/verify_kbo_matching.py --samples 10
     
     # Export detailed report
-    poetry run python scripts/verify_kbo_matching.py --export report.json
+    uv run python scripts/verify_kbo_matching.py --export report.json
 
 Environment:
     Requires DATABASE_URL pointing to PostgreSQL

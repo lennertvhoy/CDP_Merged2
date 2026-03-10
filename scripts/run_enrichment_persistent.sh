@@ -35,8 +35,10 @@ cleanup() {
 }
 trap cleanup EXIT
 
-if command -v poetry >/dev/null 2>&1; then
-    PYTHON_CMD=(poetry run python)
+if [ -x "$WORKSPACE/.venv/bin/python" ]; then
+    PYTHON_CMD=("$WORKSPACE/.venv/bin/python")
+elif command -v uv >/dev/null 2>&1; then
+    PYTHON_CMD=(uv run python)
 else
     PYTHON_CMD=(python)
 fi

@@ -476,13 +476,13 @@ services:
 
 ```bash
 # Webhook gateway tests
-poetry run pytest tests/unit/test_webhook_gateway.py -vv
+uv run pytest tests/unit/test_webhook_gateway.py -vv
 
 # Event processor tests
-poetry run pytest tests/unit/test_cdp_event_processor.py -vv
+uv run pytest tests/unit/test_cdp_event_processor.py -vv
 
 # Combined (no hang observed)
-poetry run pytest tests/unit/test_webhook_gateway.py tests/unit/test_cdp_event_processor.py -vv
+uv run pytest tests/unit/test_webhook_gateway.py tests/unit/test_cdp_event_processor.py -vv
 ```
 
 ---

@@ -7,16 +7,16 @@ Supports incremental sync with cursor tracking and KBO/VAT company matching.
 
 Usage:
     # Full sync (all entities)
-    poetry run python scripts/sync_exact_to_postgres.py --full
+    uv run python scripts/sync_exact_to_postgres.py --full
     
     # Sync specific entities
-    poetry run python scripts/sync_exact_to_postgres.py --entities accounts,customers,invoices
+    uv run python scripts/sync_exact_to_postgres.py --entities accounts,customers,invoices
     
     # Incremental sync (uses last cursor)
-    poetry run python scripts/sync_exact_to_postgres.py
+    uv run python scripts/sync_exact_to_postgres.py
     
     # With custom database URL
-    DATABASE_URL=postgresql://... poetry run python scripts/sync_exact_to_postgres.py
+    DATABASE_URL=postgresql://... uv run python scripts/sync_exact_to_postgres.py
 
 Environment:
     Requires .env.exact with valid OAuth credentials

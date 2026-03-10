@@ -8,15 +8,15 @@ echo "===================="
 # 1. Check prerequisites
 command -v python3 >/dev/null 2>&1 || { echo "❌ Python 3 required"; exit 1; }
 command -v docker   >/dev/null 2>&1 || { echo "❌ Docker required"; exit 1; }
-command -v poetry   >/dev/null 2>&1 || {
-    echo "📦 Installing Poetry..."
-    curl -sSL https://install.python-poetry.org | python3 -
-    export PATH="$HOME/.local/bin:$PATH"
+command -v uv >/dev/null 2>&1 || {
+    echo "📦 Installing uv..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
 }
 
 # 2. Install Python dependencies
 echo "📦 Installing Python dependencies..."
-poetry install --no-interaction
+uv sync --locked
 
 # 3. Set up local override file
 if [ ! -f ".env.local" ]; then
@@ -27,7 +27,7 @@ fi
 
 # 4. Install pre-commit hooks
 echo "🔧 Installing pre-commit hooks..."
-poetry run pre-commit install
+uv run pre-commit install
 
 # 5. Start the full local stack
 echo "🐳 Starting local PostgreSQL, Tracardi, and chatbot..."

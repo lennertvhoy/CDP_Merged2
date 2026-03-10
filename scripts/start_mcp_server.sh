@@ -32,4 +32,12 @@ else
 fi
 
 # Run the server
-exec poetry run python src/mcp_server.py --transport "$TRANSPORT" --port "$PORT"
+if [ -x "$PROJECT_ROOT/.venv/bin/python" ]; then
+    PYTHON_CMD=("$PROJECT_ROOT/.venv/bin/python")
+elif command -v uv >/dev/null 2>&1; then
+    PYTHON_CMD=(uv run python)
+else
+    PYTHON_CMD=(python)
+fi
+
+exec "${PYTHON_CMD[@]}" src/mcp_server.py --transport "$TRANSPORT" --port "$PORT"
