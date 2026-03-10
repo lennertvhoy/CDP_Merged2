@@ -527,6 +527,10 @@ async def run_enrichment(
 
         logger.info(f"Found {len(rows)} companies to enrich")
 
+        total_rows = len(rows)
+        total_batches = (total_rows + batch_size - 1) // batch_size if total_rows else 0
+        progress_interval = batch_size if "geocoding" in enrichers else DEFAULT_CHECKPOINT_INTERVAL
+
         # Process in batches
         for i in range(0, len(rows), batch_size):
             if _shutdown_requested:
@@ -534,6 +538,7 @@ async def run_enrichment(
                 break
 
             batch = rows[i:i + batch_size]
+            batch_number = (i // batch_size) + 1
 
             # Process batch concurrently
             tasks = [
@@ -600,20 +605,24 @@ async def run_enrichment(
 
             stats.processed += len(batch)
 
-            # Progress logging
-            if stats.processed % DEFAULT_CHECKPOINT_INTERVAL == 0:
+            # Geocoding is rate-limited to one request at a time, so emit
+            # smaller batch-level checkpoints to make long chunks visibly active.
+            if stats.processed % progress_interval == 0 or stats.processed == total_rows:
                 logger.info(
-                    f"Progress: {stats.processed:,} processed | "
-                    f"Enriched: {stats.enriched:,} | "
-                    f"Skipped: {stats.skipped:,} | "
-                    f"Failed: {stats.failed:,} | "
-                    f"Rate: {stats.processed / stats.elapsed_seconds:.1f}/s"
+                    f"Batch {batch_number}/{total_batches} complete | "
+                    f"processed={stats.processed:,}/{total_rows:,} | "
+                    f"enriched={stats.enriched:,} | "
+                    f"skipped={stats.skipped:,} | "
+                    f"failed={stats.failed:,} | "
+                    f"errors={stats.errors} | "
+                    f"rate={stats.processed / stats.elapsed_seconds:.1f}/s"
                 )
                 logger.info(
-                    f"  CBE: {stats.cbe_success} | "
-                    f"Geo: {stats.geocoding_success} | "
-                    f"Web: {stats.website_success} | "
-                    f"Desc: {stats.description_success}"
+                    f"  successes cbe={stats.cbe_success} | "
+                    f"geo={stats.geocoding_success} | "
+                    f"web={stats.website_success} | "
+                    f"desc={stats.description_success} | "
+                    f"cursor={stats.last_company_id or 'n/a'}"
                 )
 
         # Final stats

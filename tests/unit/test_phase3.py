@@ -222,6 +222,21 @@ class TestGeocodingEnricher:
         assert "geo_latitude" not in result.get("traits", {})
         assert enricher.stats.failed == 1
 
+    def test_build_address_tolerates_nullable_zipcode_and_country(
+        self, enricher: GeocodingEnricher
+    ):
+        profile = {
+            "id": "p-nullable-address",
+            "traits": {
+                "street": "Examplestraat 1",
+                "city": "Antwerpen",
+                "zipcode": None,
+                "country": None,
+            },
+        }
+
+        assert enricher._build_address(profile) == "Examplestraat 1, Antwerpen, Belgium"
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # DeduplicationEnricher Tests

@@ -167,7 +167,7 @@ CREATE TABLE company_engagement (
 ### Engagement Scoring Model
 
 **Version:** 2026-03-08
-**Endpoint:** `GET /api/scoring-model` (defined in `scripts/cdp_event_processor.py`; refresh any older long-running local daemon before treating the route as live-runtime verified)
+**Endpoint:** `GET /api/scoring-model` (live-runtime verified on 2026-03-09 after refreshing the local daemon on `127.0.0.1:5001`)
 
 ```json
 {

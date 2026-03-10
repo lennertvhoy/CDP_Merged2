@@ -7,6 +7,7 @@ __pycache__/
 .env
 .env.*
 !.env.example
+!.env.local.example
 !.env.development
 !.env.test
 !.env.database.example
@@ -66,3 +67,4 @@ logs/*.pid
 .playwright-cli/page-*.yml
 output/ILLUSTRATED_GUIDE.*
 output/demo_screenshots/
+output/operator_eval_runs/

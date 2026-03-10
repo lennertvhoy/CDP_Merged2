@@ -1,15 +1,19 @@
 name: Infra Tracardi
 
+# AZURE TRACARDI INFRASTRUCTURE DEPLOYMENT DISABLED - Local-only mode as of 2026-03-09
+# Tracardi now runs locally via docker-compose. Terraform configs preserved for reference.
+# To re-enable Azure Tracardi deployment, uncomment the triggers below.
+
 on:
-  pull_request:
-    paths:
-      - "infra/tracardi/**"
-      - ".github/workflows/infra-tracardi.yml"
-  push:
-    branches: [main, develop]
-    paths:
-      - "infra/tracardi/**"
-      - ".github/workflows/infra-tracardi.yml"
+  # pull_request:
+  #   paths:
+  #     - "infra/tracardi/**"
+  #     - ".github/workflows/infra-tracardi.yml"
+  # push:
+  #   branches: [main, develop]
+  #   paths:
+  #     - "infra/tracardi/**"
+  #     - ".github/workflows/infra-tracardi.yml"
   workflow_dispatch:
 
 concurrency:

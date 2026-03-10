@@ -1,4 +1,6 @@
-# KBO Data Cleanup & Enrichment - Task Completion Summary
+# QUARANTINED - Historical KBO Data Cleanup & Enrichment Task Completion Summary
+
+> Historical note: this document reflects a 2026-02 deliverable snapshot, not the current repo layout. Legacy cleanup and enrichment scripts mentioned below now live under `scripts/archive/`, and the old `scripts/requirements.txt` file was removed on 2026-03-09 because the maintained dependency source is the root `pyproject.toml` used with Poetry.
 
 ## Overview
 

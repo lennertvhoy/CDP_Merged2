@@ -30,6 +30,7 @@ def run_chunk(
     """Run enrichment for a single chunk."""
     cmd = [
         sys.executable,
+        "-u",
         "scripts/enrich_companies_batch.py",
         "--enrichers",
         enrichers,
@@ -45,21 +46,34 @@ def run_chunk(
     cwd = str(Path.cwd())
     existing_pythonpath = env.get("PYTHONPATH")
     env["PYTHONPATH"] = f"{cwd}:{existing_pythonpath}" if existing_pythonpath else cwd
+    env["PYTHONUNBUFFERED"] = "1"
 
     print(f"\n{'=' * 60}")
     print(f"Running chunk: start_after_id={start_after_id or 'START'}, limit={limit}")
     print(f"{'=' * 60}")
 
-    result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+    stdout_lines: list[str] = []
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+        env=env,
+    )
 
-    print(result.stdout)
-    if result.stderr:
-        print("STDERR:", result.stderr)
+    assert process.stdout is not None
+    for line in process.stdout:
+        print(line, end="")
+        stdout_lines.append(line)
+
+    returncode = process.wait()
+    stdout = "".join(stdout_lines)
 
     return {
-        "returncode": result.returncode,
-        "stdout": result.stdout,
-        "stderr": result.stderr,
+        "returncode": returncode,
+        "stdout": stdout,
+        "stderr": "",
     }
 
 

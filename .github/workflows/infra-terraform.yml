@@ -1,15 +1,19 @@
 name: Infra Terraform
 
+# AZURE INFRASTRUCTURE DEPLOYMENT DISABLED - Local-only mode as of 2026-03-09
+# Terraform configurations are preserved for future reference but not actively deployed.
+# To re-enable, uncomment the triggers below.
+
 on:
-  pull_request:
-    paths:
-      - "infra/terraform/**"
-      - ".github/workflows/infra-terraform.yml"
-  push:
-    branches: [main, develop]
-    paths:
-      - "infra/terraform/**"
-      - ".github/workflows/infra-terraform.yml"
+  # pull_request:
+  #   paths:
+  #     - "infra/terraform/**"
+  #     - ".github/workflows/infra-terraform.yml"
+  # push:
+  #   branches: [main, develop]
+  #   paths:
+  #     - "infra/terraform/**"
+  #     - ".github/workflows/infra-terraform.yml"
   workflow_dispatch:
 
 concurrency:

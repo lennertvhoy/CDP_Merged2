@@ -92,6 +92,76 @@ CREATE INDEX IF NOT EXISTS idx_identity_links_tracardi
     WHERE tracardi_profile_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_identity_links_source
     ON source_identity_links(source_system, source_entity_type, source_record_id);
+
+CREATE TABLE IF NOT EXISTS app_chat_users (
+    user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    identifier VARCHAR(255) NOT NULL UNIQUE,
+    display_name VARCHAR(255),
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_app_chat_users_identifier
+    ON app_chat_users(identifier);
+
+CREATE TABLE IF NOT EXISTS app_chat_threads (
+    thread_id VARCHAR(255) PRIMARY KEY,
+    user_id UUID REFERENCES app_chat_users(user_id) ON DELETE SET NULL,
+    name VARCHAR(255),
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_app_chat_threads_user_updated
+    ON app_chat_threads(user_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_app_chat_threads_updated
+    ON app_chat_threads(updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS app_chat_steps (
+    step_id VARCHAR(255) PRIMARY KEY,
+    thread_id VARCHAR(255) REFERENCES app_chat_threads(thread_id) ON DELETE CASCADE,
+    parent_step_id VARCHAR(255) REFERENCES app_chat_steps(step_id) ON DELETE CASCADE,
+    step_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_app_chat_steps_thread_created
+    ON app_chat_steps(thread_id, created_at ASC);
+CREATE INDEX IF NOT EXISTS idx_app_chat_steps_parent
+    ON app_chat_steps(parent_step_id);
+
+CREATE TABLE IF NOT EXISTS app_chat_elements (
+    element_id VARCHAR(255) PRIMARY KEY,
+    thread_id VARCHAR(255) REFERENCES app_chat_threads(thread_id) ON DELETE CASCADE,
+    step_id VARCHAR(255) REFERENCES app_chat_steps(step_id) ON DELETE CASCADE,
+    element_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_app_chat_elements_thread_created
+    ON app_chat_elements(thread_id, created_at ASC);
+CREATE INDEX IF NOT EXISTS idx_app_chat_elements_step
+    ON app_chat_elements(step_id);
+
+CREATE TABLE IF NOT EXISTS app_chat_feedback (
+    feedback_id VARCHAR(255) PRIMARY KEY,
+    thread_id VARCHAR(255) REFERENCES app_chat_threads(thread_id) ON DELETE CASCADE,
+    step_id VARCHAR(255) REFERENCES app_chat_steps(step_id) ON DELETE CASCADE,
+    value SMALLINT NOT NULL CHECK (value IN (0, 1)),
+    comment TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_app_chat_feedback_thread
+    ON app_chat_feedback(thread_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_app_chat_feedback_step
+    ON app_chat_feedback(step_id);
 """
 
 _BOOTSTRAPPED_CONNECTIONS: set[str] = set()

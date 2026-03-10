@@ -11,6 +11,8 @@ PROJECT_STATE = ROOT / "PROJECT_STATE.yaml"
 STATUS = ROOT / "STATUS.md"
 NEXT_ACTIONS = ROOT / "NEXT_ACTIONS.md"
 ILLUSTRATED_GUIDE = ROOT / "docs" / "ILLUSTRATED_GUIDE.md"
+MICROSOFT_ENTRA_SETUP = ROOT / "docs" / "MICROSOFT_ENTRA_SETUP.md"
+ENV_EXAMPLE = ROOT / ".env.example"
 RETIRED_ROOT_SUMMARIES = [
     ROOT / "GEMINI.md",
     ROOT / "PROJECT_STATUS_SUMMARY.md",
@@ -18,6 +20,12 @@ RETIRED_ROOT_SUMMARIES = [
 RETIRED_ROOT_PLANNING_DOCS = [
     ROOT / "ACP_EXECUTION_PLAN.md",
     ROOT / "STRATEGIC_ROADMAP.md",
+]
+ENTRA_SECRET_TRACKED_FILES = [
+    STATUS,
+    NEXT_ACTIONS,
+    MICROSOFT_ENTRA_SETUP,
+    ENV_EXAMPLE,
 ]
 
 
@@ -161,6 +169,7 @@ def check_status_shape(errors: list[str]) -> None:
         "Current State",
         "Top Risks",
         "Immediate Focus",
+        "Microsoft Entra ID Authentication",
     ]
     if headings != expected:
         errors.append(
@@ -199,6 +208,49 @@ def check_illustrated_guide_asset_paths(errors: list[str]) -> None:
             )
 
 
+def is_placeholder_secret_value(value: str) -> bool:
+    normalized = value.strip().strip("`").strip()
+    if not normalized:
+        return True
+    if normalized.startswith("<") and normalized.endswith(">"):
+        return True
+
+    lowered = normalized.lower()
+    placeholder_markers = (
+        "redacted",
+        "secret-store",
+        "env.local",
+        "vault",
+        "placeholder",
+    )
+    return any(marker in lowered for marker in placeholder_markers)
+
+
+def check_entra_secret_placeholders(errors: list[str]) -> None:
+    env_pattern = re.compile(r"^AZURE_AD_CLIENT_SECRET=(.*)$", flags=re.MULTILINE)
+    table_pattern = re.compile(
+        r"^\|\s*Client Secret\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|$",
+        flags=re.MULTILINE,
+    )
+
+    for path in ENTRA_SECRET_TRACKED_FILES:
+        text = read_text(path)
+
+        for match in env_pattern.finditer(text):
+            value = match.group(1)
+            if not is_placeholder_secret_value(value):
+                errors.append(
+                    f"{path.name} must keep `AZURE_AD_CLIENT_SECRET` placeholder-only in tracked text."
+                )
+
+        for match in table_pattern.finditer(text):
+            value = match.group(1)
+            if not is_placeholder_secret_value(value):
+                errors.append(
+                    f"{path.name} must keep `Client Secret` table cells placeholder-only in tracked text."
+                )
+
+
 def main() -> int:
     errors: list[str] = []
     check_retired_summary_files(errors)
@@ -208,6 +260,7 @@ def main() -> int:
     check_status_shape(errors)
     check_next_actions_shape(errors)
     check_illustrated_guide_asset_paths(errors)
+    check_entra_secret_placeholders(errors)
     try:
         check_summary_count_alignment(errors)
     except LintFailure as exc:

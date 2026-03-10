@@ -122,3 +122,27 @@ custom_font = "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600
 
 [meta]
 generated_by = "1.3.2"
+
+# ==========================================
+# OAuth Authentication Configuration
+# Uncomment and configure when ready for Microsoft Entra ID
+# ==========================================
+# [auth.oauth.azure-ad]
+# client_id = "${AZURE_AD_CLIENT_ID}"
+# client_secret = "${AZURE_AD_CLIENT_SECRET}"
+# authorize_url = "https://login.microsoftonline.com/${AZURE_AD_TENANT_ID}/oauth2/v2.0/authorize"
+# token_url = "https://login.microsoftonline.com/${AZURE_AD_TENANT_ID}/oauth2/v2.0/token"
+# redirect_uri = "${AZURE_AD_REDIRECT_URI}"
+# scope = "openid profile email User.Read"
+# prompt = "consent"
+#
+# [auth.oauth.azure-ad.userinfo]
+# endpoint = "https://graph.microsoft.com/v1.0/me"
+# identifier = "userPrincipalName"
+# display_name = "displayName"
+# email = "mail"
+# profile_picture = ""
+#
+# [auth.oauth.azure-ad.validate]
+# email_verified = true
+# allowed_domains = ["company.com"]  # Restrict to specific domains

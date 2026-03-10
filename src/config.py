@@ -124,6 +124,62 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = Field(default="INFO", description="Logging level")
     DEBUG: bool = Field(default=False, description="Enable debug mode")
     CHAINLIT_PORT: int = Field(default=8000, description="Port for Chainlit UI")
+    CHAINLIT_DEV_AUTH_ENABLED: bool = Field(
+        default=False,
+        description="Enable local-only password auth for authenticated Chainlit verification before Entra rollout",
+    )
+    CHAINLIT_DEV_AUTH_PASSWORD: str | None = Field(
+        default=None,
+        description="Shared local-only password for Chainlit dev auth; any non-empty username may use it",
+    )
+
+    # ==========================================
+    # Microsoft Entra ID (Azure AD) OAuth
+    # ==========================================
+    CHAINLIT_ENABLE_AZURE_AD: bool = Field(
+        default=False,
+        description="Enable Microsoft Entra ID (Azure AD) OAuth for work account authentication",
+    )
+    AZURE_AD_TENANT_ID: str | None = Field(
+        default=None,
+        description="Azure AD Tenant ID for Microsoft work account authentication",
+    )
+    AZURE_AD_CLIENT_ID: str | None = Field(
+        default=None,
+        description="Azure AD Application (Client) ID for OAuth",
+    )
+    AZURE_AD_CLIENT_SECRET: str | None = Field(
+        default=None,
+        description="Azure AD Client Secret for OAuth",
+    )
+    AZURE_AD_REDIRECT_URI: str = Field(
+        default="http://localhost:8000/auth/oauth/azure-ad/callback",
+        description="OAuth redirect URI (must match Azure AD app registration)",
+    )
+    AZURE_AD_ALLOWED_DOMAINS: str | None = Field(
+        default=None,
+        description="Comma-separated list of allowed email domains for authentication (e.g., 'company.com,subsidiary.com')",
+    )
+
+    # ==========================================
+    # Web Search Policy & Controls
+    # ==========================================
+    WEB_SEARCH_POLICY: str = Field(
+        default="disabled",
+        description="Web search policy: disabled, restricted (admin-controlled), opt-in, default-on",
+    )
+    WEB_SEARCH_ALLOWED_DOMAINS: str | None = Field(
+        default=None,
+        description="Comma-separated list of allowed domains for web search (restricted mode)",
+    )
+    WEB_SEARCH_BLOCKED_PATTERNS: str | None = Field(
+        default=None,
+        description="Comma-separated regex patterns to block from web search queries (PII protection)",
+    )
+    WEB_SEARCH_AUDIT_LOG: bool = Field(
+        default=True,
+        description="Enable audit logging for web search queries",
+    )
 
     # Feature Flags (from CDP)
     ENABLE_QUERY_VALIDATION: bool = Field(

@@ -81,6 +81,7 @@ class FakeServerApp:
     def __init__(self) -> None:
         self.routes: list[tuple[str, Any]] = []
         self.middlewares: list[tuple[str, Any]] = []
+        self.events: list[tuple[str, Any]] = []
 
     def get(self, path: str):
         def decorator(func):
@@ -96,6 +97,13 @@ class FakeServerApp:
 
         return decorator
 
+    def on_event(self, event_name: str):
+        def decorator(func):
+            self.events.append((event_name, func))
+            return func
+
+        return decorator
+
 
 def _build_fake_chainlit_modules(
     configured_oauth_providers: list[str] | None = None,
@@ -106,6 +114,7 @@ def _build_fake_chainlit_modules(
     fake_chainlit._steps = []
     fake_chainlit._action_callbacks = {}
     fake_chainlit._data_layer_factory = None
+    fake_chainlit._password_auth_callback = None
     fake_chainlit._oauth_callback = None
     fake_chainlit._configured_oauth_providers = list(configured_oauth_providers or [])
 
@@ -130,6 +139,10 @@ def _build_fake_chainlit_modules(
         fake_chainlit._oauth_callback = func
         return func
 
+    def password_auth_callback(func):
+        fake_chainlit._password_auth_callback = func
+        return func
+
     def action_callback(name: str):
         def decorator(func):
             fake_chainlit._action_callbacks[name] = func
@@ -144,8 +157,10 @@ def _build_fake_chainlit_modules(
     fake_chainlit.Step = step_factory
     fake_chainlit.action_callback = action_callback
     fake_chainlit.data_layer = data_layer
+    fake_chainlit.password_auth_callback = password_auth_callback
     fake_chainlit.oauth_callback = oauth_callback
     fake_chainlit.on_chat_end = passthrough
+    fake_chainlit.on_chat_resume = passthrough
     fake_chainlit.on_chat_start = passthrough
     fake_chainlit.on_message = passthrough
     fake_chainlit.set_chat_profiles = passthrough

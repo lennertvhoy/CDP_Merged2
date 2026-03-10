@@ -3,8 +3,8 @@
 **Project:** Customer Data Platform (CDP) with AI Chatbot Interface  
 **Repository:** CDP_Merged  
 **Infrastructure:** AZURE (VMs, Container Apps, OpenAI)  
-**Last Updated:** 2026-03-07  
-**Version:** 5.0 (Condensed Live Docs)
+**Last Updated:** 2026-03-09
+**Version:** 5.1 (Condensed Live Docs)
 
 ---
 
@@ -149,6 +149,29 @@ Preferred pattern:
 5. Either continue to the next scoped increment or hand off.
 
 Avoid speculative large-scope work that has not yet been justified by repo patterns, priority, or direct evidence.
+
+---
+
+## Background Monitoring And Repetition Guard
+
+Long-running jobs such as enrichers, CI runs, sync loops, or batch processes must not consume the main workstream once their immediate state is understood.
+
+Rules:
+
+1. Verify the background process once to answer the decision-critical questions:
+   - is it alive
+   - is it making progress
+   - what exact event would change the next decision
+2. If the remaining blocker is time-based or depends on a future event that cannot be forced safely in the current task, demote that work to background monitoring.
+3. After the blocker is characterized, do **not** keep spending the session on repeated snapshot refreshes unless at least one of these is true:
+   - the new check can change a code or product decision now
+   - the specific trigger event has occurred
+   - the user explicitly asked for continued monitoring
+   - no other unblocked high-priority task exists
+4. Repeated doc-only refreshes with the same conclusion do **not** count as meaningful progress.
+5. When another unblocked backlog item exists, switch to it and leave a precise recheck trigger in `NEXT_ACTIONS.md`, `WORKLOG.md`, and the handoff instead of staying on passive monitoring.
+6. Use at most one short confirmatory recheck after a monitoring fix unless that recheck produces a materially different conclusion.
+7. A P0 item may stay the top priority, but passive monitoring of that P0 must not crowd out real implementation work on other unblocked items once the blocker is known.
 
 ---
 
@@ -913,6 +936,8 @@ For `docs/ILLUSTRATED_GUIDE.md` and any derived guide assets:
 | 2026-03-07 | Any file modified in a session must be committed before handoff, even if pre-existing dirty | Prevent ambiguous dirty state and ensure clean handoffs |
 | 2026-03-07 | Agents must clean the worktree before handoff; if pre-existing dirty paths block that, they must resolve or escalate instead of handing off a dirty tree | Prevent ambiguous ownership and stop repeated dirty-worktree handoffs |
 | 2026-03-08 | When browser access requires authentication to platforms (Teamleader, Exact, Resend, ngrok), prefer delegation to an AI agent with browser takeover capability over headless automation | Headless browsers cannot handle OAuth, 2FA, or active sessions; user delegation is more reliable and secure than requesting credentials |
+| 2026-03-09 | Azure infrastructure deployment (Container Apps, VMs, managed PostgreSQL) is disabled to focus on local-only deployment | User directive to prioritize local development and avoid Azure infrastructure costs; CI/CD workflows disabled but preserved for reference |
+| 2026-03-09 | Kubernetes is the target deployment architecture for datacenter | User confirmed ultimate deployment target is an on-prem/datacenter Kubernetes cluster (k3s/RKE2), not Azure Container Apps or docker-compose in production |
 
 ---
 
