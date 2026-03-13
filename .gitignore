@@ -68,3 +68,6 @@ logs/*.pid
 output/ILLUSTRATED_GUIDE.*
 output/demo_screenshots/
 output/operator_eval_runs/
+
+# Large artifacts directories
+restore_artifacts/
