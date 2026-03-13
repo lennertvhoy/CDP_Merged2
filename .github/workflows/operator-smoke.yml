@@ -2,7 +2,7 @@ name: Operator Smoke Tests
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, prove/ci-tooling-runtime-v2]
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
