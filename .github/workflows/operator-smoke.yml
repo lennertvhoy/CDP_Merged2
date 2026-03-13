@@ -1,0 +1,251 @@
+name: Operator Smoke Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: 'Smoke test scope'
+        required: true
+        default: 'local'
+        type: choice
+        options:
+          - local
+          - all
+      headed:
+        description: 'Show browser during tests (headed mode)'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: operator-smoke-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect Change Scope
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.classify.outputs.should_run }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Classify changed files
+        id: classify
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "should_run=true" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base_sha="${{ github.event.pull_request.base.sha }}"
+          else
+            base_sha="${{ github.event.before }}"
+          fi
+
+          if [ -z "${base_sha}" ] || [ "${base_sha}" = "0000000000000000000000000000000000000000" ]; then
+            base_sha="$(git rev-list --max-parents=0 HEAD)"
+          fi
+
+          mapfile -t changed_files < <(git diff --name-only "${base_sha}" "${GITHUB_SHA}")
+
+          should_run=false
+          for file in "${changed_files[@]}"; do
+            case "${file}" in
+              *.drawio|*.gif|*.jpeg|*.jpg|*.md|*.png|*.svg|*.webp|\
+              .python-path|\
+              .vscode/*|\
+              AGENTS.md|BACKLOG.md|GEMINI.md|HANDOVER_TEMPLATE.md|NEXT_ACTIONS.md|PROJECT_STATE.yaml|PROJECT_STATUS_SUMMARY.md|STATUS.md|WORKLOG.md|\
+              docs/*|logs/*|reports/*|environment.yml)
+                ;;
+              *)
+                should_run=true
+                break
+                ;;
+            esac
+          done
+
+          echo "should_run=${should_run}" >> "${GITHUB_OUTPUT}"
+
+  operator-smoke-local:
+    name: Operator Shell Smoke Tests (Local)
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.should_run == 'true'
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: cdpadmin
+          POSTGRES_PASSWORD: cdpadmin123
+          POSTGRES_DB: cdp
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      DATABASE_URL: postgresql://cdpadmin:cdpadmin123@localhost:5432/cdp?sslmode=disable
+      LLM_PROVIDER: mock
+      OPENAI_API_KEY: test-key-not-real
+      TRACARDI_API_URL: http://localhost:8686
+      TRACARDI_USERNAME: admin
+      TRACARDI_PASSWORD: admin
+      TRACARDI_SOURCE_ID: test-source
+      CHAINLIT_AUTH_SECRET: ci-test-secret-32chars-min-required
+      CHAINLIT_LOCAL_ACCOUNT_AUTH_ENABLED: "true"
+      OPERATOR_SMOKE_A_PASSWORD: smoke-test-password-a-32chars-min
+      OPERATOR_SMOKE_B_PASSWORD: smoke-test-password-b-32chars-min
+      OPERATOR_API_ORIGIN: http://127.0.0.1:8170
+      CHAT_RUNTIME_ORIGIN: http://127.0.0.1:8016
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.10.4"
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Install Playwright browsers
+        run: |
+          uv run --frozen playwright install chromium
+          uv run --frozen playwright install-deps chromium
+
+      - name: Setup database schema
+        run: |
+          uv run --frozen python -c "
+          import asyncio
+          import asyncpg
+          from pathlib import Path
+          
+          async def setup():
+              conn = await asyncpg.connect('${DATABASE_URL}')
+              
+              bootstrap_dir = Path('bootstrap/postgres/sql')
+              if bootstrap_dir.exists():
+                  sql_files = sorted(bootstrap_dir.glob('*.sql'))
+                  for sql_file in sql_files:
+                      print(f'Executing {sql_file.name}...')
+                      sql = sql_file.read_text()
+                      await conn.execute(sql)
+              
+              from src.services.runtime_support_schema import RUNTIME_SUPPORT_SCHEMA
+              await conn.execute(RUNTIME_SUPPORT_SCHEMA)
+              
+              await conn.close()
+          
+          asyncio.run(setup())
+          "
+
+      - name: Start Operator API (background)
+        run: |
+          uv run --frozen uvicorn src.operator_api:app \
+            --host 127.0.0.1 \
+            --port 8170 \
+            --log-level info \
+            > /tmp/operator-api.log 2>&1 &
+          echo "OPERATOR_API_PID=$!" >> $GITHUB_ENV
+          
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8170/api/operator/bootstrap > /dev/null 2>&1; then
+              echo "Operator API is ready"
+              break
+            fi
+            sleep 1
+          done
+
+      - name: Start Chat Runtime (background)
+        run: |
+          uv run --frozen uvicorn src.app:chainlit_server_app \
+            --host 127.0.0.1 \
+            --port 8016 \
+            --log-level info \
+            > /tmp/chat-runtime.log 2>&1 &
+          echo "CHAT_RUNTIME_PID=$!" >> $GITHUB_ENV
+          
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8016/healthz > /dev/null 2>&1; then
+              echo "Chat runtime is ready"
+              break
+            fi
+            sleep 1
+          done
+
+      - name: Start Operator Shell (background)
+        run: |
+          cd apps/operator-shell
+          npm install
+          npm run build 2>/dev/null || true
+          
+          env OPERATOR_API_ORIGIN=http://127.0.0.1:8170 \
+              CHAT_RUNTIME_ORIGIN=http://127.0.0.1:8016 \
+              npm run dev -- --hostname 127.0.0.1 --port 3000 \
+              > /tmp/operator-shell.log 2>&1 &
+          echo "OPERATOR_SHELL_PID=$!" >> $GITHUB_ENV
+          
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:3000 > /dev/null 2>&1; then
+              echo "Operator shell is ready"
+              break
+            fi
+            sleep 1
+          done
+
+      - name: Run Operator Smoke Tests
+        run: |
+          uv run --frozen python scripts/operator_smoke.py run --scope local --skip-reset
+        env:
+          OPERATOR_SMOKE_LOCAL_BASE_URL: http://127.0.0.1:3000
+
+      - name: Upload smoke test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: operator-smoke-results
+          path: |
+            output/operator_smoke/
+            /tmp/operator-api.log
+            /tmp/chat-runtime.log
+            /tmp/operator-shell.log
+          if-no-files-found: warn
+
+      - name: Cleanup background processes
+        if: always()
+        run: |
+          kill $OPERATOR_API_PID $CHAT_RUNTIME_PID $OPERATOR_SHELL_PID 2>/dev/null || true
+
+      - name: Summarize Results
+        if: always()
+        run: |
+          echo "## Operator Smoke Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f output/operator_smoke/latest.json ]; then
+            echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+            cat output/operator_smoke/latest.json >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No results file found." >> $GITHUB_STEP_SUMMARY
+          fi
