@@ -599,3 +599,45 @@ Continued from the uv-migration handoff, but first re-triaged the current head a
 **Follow-up:**
 1. Return the foreground queue to enrichment progress, colleague-facing auth rollout, and the remaining local product hardening work.
 2. Keep the uv path as the only supported dependency-manager flow; if future docs-only commits touch status docs, remember that docs-fast-path green is not a substitute for the last full green code SHA.
+
+## 2026-03-14 (Fix Operator Shell Static Files + Document Bazzite Host/Sandbox Boundary)
+
+### Task: Fix Next.js operator shell returning 404 for static files on port 3000
+
+**Type:** app_code
+**Status:** COMPLETE
+**Timestamp:** 2026-03-14 10:35 CET
+**Git Head:** `3dd0e07`
+
+**Summary:**
+The operator shell on port 3000 was serving HTML (200) but returning 404 for all static files (`/_next/static/chunks/*.js`), preventing the Next.js app from hydrating. Initial debugging from the sandbox incorrectly diagnosed this as a "ghost process" because sandbox commands (`ss`, `ps`) couldn't see the host-bound server.
+
+Root cause was discovered by running `flatpak-spawn --host` commands: a stale next-server process (PID 512925) was running with a working directory showing `(deleted)` in `/proc`, meaning the static files had been replaced after the server started. Killed the stale process and restarted with proper `HOSTNAME=127.0.0.1` binding.
+
+Also fixed Bazzite inotify limits to prevent `ENOSPC` errors (classic Next.js file watcher exhaustion):
+```bash
+flatpak-spawn --host bash -c '
+  printf "fs.inotify.max_user_watches=524288\n" | sudo tee /etc/sysctl.d/99-inotify.conf
+  sudo sysctl --system
+'
+```
+
+**Files Changed:**
+- `scripts/start_operator_shell.sh` - Reverted to port 3000, cleaned up workaround code
+- `AGENTS.md` - Added "Bazzite Host/Sandbox Boundary" section documenting:
+  - Commands that must use `flatpak-spawn --host` (ss, ps, systemctl, node, pkill, curl to localhost)
+  - Common misdiagnoses (ghost processes, ENOSPC=inotify not disk, 404s from deleted cwd)
+  - Required PATH and HOSTNAME environment variables for host-spawned shells
+
+**Verification:**
+```bash
+flatpak-spawn --host bash -c '
+  curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/          # 200 - Root
+  curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/_next/static/chunks/webpack-74be612cd6175950.js  # 200 - Static JS
+  curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/operator-api/bootstrap  # 200 - API
+'
+```
+
+**Key Learning:**
+On Bazzite, always use `flatpak-spawn --host` for anything involving ports, processes, systemd user services, ngrok, Node, npm, or Linuxbrew. Sandbox `ss`, `ps`, and `systemctl` output is misleading for host-bound services.
+
