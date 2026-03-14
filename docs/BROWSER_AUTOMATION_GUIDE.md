@@ -114,25 +114,43 @@ Expected: "✓ Connected to 'playwright'" with 22 tools listed.
 
 ## Usage Patterns
 
-### Pattern 1: Manual Login + Agent Continuation
+### Pattern 1: Manual Login + Agent Continuation (Recommended for Authenticated Sites)
 
-**For Teamleader, Exact, or any authenticated platform:**
+**Complete workflow for Teamleader, Exact, or any platform requiring login:**
 
-1. **Launch Edge with CDP:**
-   ```bash
-   chrome-for-mcp
-   ```
+#### Step 1: Launch Browser with CDP
+```bash
+chrome-for-mcp
+```
 
-2. **Log in manually:**
-   - Navigate to Teamleader or Exact in the browser
-   - Complete OAuth/2FA login
-   - Stay logged in
+#### Step 2: Log in Manually (You Do This)
+In the Edge browser window that opened:
+1. Navigate to your target site (e.g., `https://focus.teamleader.eu`)
+2. Complete the login flow (email/password, OAuth, 2FA)
+3. Navigate to the page you want automated
+4. **Leave the browser open** — this is now your logged-in session
 
-3. **Hand off to agent:**
-   ```bash
-   python scripts/mcp_cdp_helper.py navigate "https://focus.teamleader.eu/..."
-   python scripts/mcp_cdp_helper.py screenshot output/teamleader_dashboard.png
-   ```
+#### Step 3: Hand Off to Agent (Agent Does This)
+Once you're logged in and on the desired page:
+
+```bash
+# Verify current state
+python scripts/mcp_cdp_helper.py url
+python scripts/mcp_cdp_helper.py title
+
+# Capture current page
+python scripts/mcp_cdp_helper.py screenshot output/browser_automation/step1_logged_in.png
+
+# Navigate within the same session (cookies/auth preserved)
+python scripts/mcp_cdp_helper.py navigate "https://focus.teamleader.eu/your-target-page"
+
+# Capture results
+python scripts/mcp_cdp_helper.py snapshot
+python scripts/mcp_cdp_helper.py screenshot output/browser_automation/step2_result.png
+```
+
+#### Key Point
+The agent controls **the same browser window** you logged into. Cookies, session tokens, and authentication state are preserved. This is why CDP attach mode is superior to isolated browser automation for authenticated workflows.
 
 ### Pattern 2: Full Agent Control (No Auth Required)
 
@@ -150,23 +168,41 @@ python scripts/mcp_cdp_helper.py screenshot output/capture.png
 
 ## Python Helper Script
 
-`scripts/mcp_cdp_helper.py` provides simple commands:
+`scripts/mcp_cdp_helper.py` provides simple CLI commands for controlling the attached browser:
+
+| Command | Usage | Description |
+|---------|-------|-------------|
+| `test` | `python scripts/mcp_cdp_helper.py test` | Quick connectivity test |
+| `navigate` | `python scripts/mcp_cdp_helper.py navigate <url>` | Navigate to URL |
+| `title` | `python scripts/mcp_cdp_helper.py title` | Get current page title |
+| `url` | `python scripts/mcp_cdp_helper.py url` | Get current page URL |
+| `snapshot` | `python scripts/mcp_cdp_helper.py snapshot` | Capture accessibility snapshot |
+| `screenshot` | `python scripts/mcp_cdp_helper.py screenshot [filename]` | Take screenshot |
+
+### Examples
 
 ```bash
-# Test connection
+# Quick test
 python scripts/mcp_cdp_helper.py test
 
-# Navigate to URL
-python scripts/mcp_cdp_helper.py navigate <url>
-
-# Get page title
+# Navigate and capture
+python scripts/mcp_cdp_helper.py navigate http://localhost:3000
 python scripts/mcp_cdp_helper.py title
-
-# Capture accessibility snapshot
+python scripts/mcp_cdp_helper.py url
 python scripts/mcp_cdp_helper.py snapshot
+python scripts/mcp_cdp_helper.py screenshot output/browser_automation/my_capture.png
+```
 
-# Take screenshot
-python scripts/mcp_cdp_helper.py screenshot [filename]
+### Error Handling
+
+If the CDP browser is not running:
+```
+ERROR: CDP browser not responding on port 9223
+
+To fix:
+  1. Launch browser: chrome-for-mcp
+  2. Or manually: flatpak run com.microsoft.Edge --remote-debugging-port=9223
+  3. Verify: curl http://127.0.0.1:9223/json/version
 ```
 
 ---

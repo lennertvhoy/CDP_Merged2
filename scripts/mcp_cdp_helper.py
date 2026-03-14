@@ -12,6 +12,7 @@ Usage:
     python scripts/mcp_cdp_helper.py snapshot
     python scripts/mcp_cdp_helper.py screenshot output/test.png
     python scripts/mcp_cdp_helper.py title
+    python scripts/mcp_cdp_helper.py url
 """
 
 import subprocess
@@ -120,6 +121,20 @@ class MCPBrowserController:
                             return line.split("Page Title:")[1].strip()
         return "N/A"
         
+    def get_url(self) -> str:
+        """Get the current page URL from snapshot response."""
+        result = self.send("browser_snapshot", {})
+        if "result" in result:
+            content = result["result"].get("content", [])
+            for item in content:
+                if item.get("type") == "text":
+                    text = item.get("text", "")
+                    # Extract URL from snapshot text
+                    for line in text.split("\n"):
+                        if "Page URL:" in line:
+                            return line.split("Page URL:")[1].strip()
+        return "N/A"
+        
     def snapshot(self) -> str:
         """Get accessibility snapshot of the page."""
         result = self.send("browser_snapshot", {})
@@ -158,12 +173,32 @@ class MCPBrowserController:
                 self.proc.kill()
 
 
+def check_cdp_endpoint(endpoint: str = DEFAULT_CDP_ENDPOINT) -> bool:
+    """Check if CDP endpoint is responding."""
+    import urllib.request
+    try:
+        urllib.request.urlopen(endpoint, timeout=2)
+        return True
+    except:
+        return False
+
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__)
         sys.exit(1)
         
     command = sys.argv[1]
+    
+    # Pre-flight check: is CDP browser running?
+    if not check_cdp_endpoint():
+        print("ERROR: CDP browser not responding on port 9223", file=sys.stderr)
+        print("", file=sys.stderr)
+        print("To fix:", file=sys.stderr)
+        print("  1. Launch browser: chrome-for-mcp", file=sys.stderr)
+        print("  2. Or manually: flatpak run com.microsoft.Edge --remote-debugging-port=9223", file=sys.stderr)
+        print("  3. Verify: curl http://127.0.0.1:9223/json/version", file=sys.stderr)
+        sys.exit(1)
     
     controller = MCPBrowserController()
     
@@ -197,6 +232,10 @@ def main():
         elif command == "title":
             title = controller.get_title()
             print(f"Page title: {title}")
+            
+        elif command == "url":
+            url = controller.get_url()
+            print(f"Page URL: {url}")
             
         elif command == "screenshot":
             filename = sys.argv[2] if len(sys.argv) > 2 else "output/mcp_screenshot.png"
