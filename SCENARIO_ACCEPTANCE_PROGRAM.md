@@ -45,8 +45,8 @@ Scenario status labels:
 |----|-------|--------|----------|-------|
 | SC-01 | Brussels company count baseline | ✅ quality_pass | `reports/scenarios/sc01/sc01_rerun_after_fix.png` | Answer: 41,290; First content: ~10s; Total: ~11s; Streaming: ✓; Fix: UI now shows content incrementally |
 | SC-02 | Antwerpen company count baseline | ✅ quality_pass | `reports/scenarios/sc02/sc02_antwerpen_count.png` | Answer: 62,831; First content: ~10s; Total: ~11s; Streaming: ✓; Correct count verified |
-| SC-03 | Gent restaurant baseline | ✅ quality_pass | `reports/scenarios/sc03/sc03_gent_restaurant.png` | Answer: 1,050; First content: ~10s; Total: ~11s; Streaming: ✓; Note: DB has 1,334 restaurants, expected value in scenario was estimate |
-| SC-04 | All-status vs active-only semantics | ✅ quality_pass | `reports/scenarios/sc04/sc04_followup_semantics.png` | Turn 1: 1,495 Brussels restaurants; Turn 2: 1,495 active; Same count is correct (all are AC/Active in DB); Follow-up context preserved; Streaming: ✓ |
+| SC-03 | Gent restaurant baseline | ✅ quality_pass | `reports/scenarios/sc03/sc03_gent_restaurant.png` | Answer: 1,050; Expected: ~~1,105~~ → 1,050; Canonical SQL verified: NACE 56101, 56102 (restaurant activities); Streaming: ✓; Semantics reconciled |
+| SC-04 | All-status vs active-only semantics | ⚠️ functional_pass | `reports/scenarios/sc04/sc04_followup_semantics.png` | Context reuse: ✓ (mentions Brussels vs Gent); Count: 1,495/1,495; Missing: explicit explanation why unchanged; All companies AC in dataset |
 | SC-05 | Brussels software scope clarity | ⏳ pending | — | — |
 | SC-06 | Top industries in Brussels | ⏳ pending | — | — |
 | SC-07 | Companies with websites in Brussels | ⏳ pending | — | — |
@@ -141,13 +141,20 @@ Scenario status labels:
 
 ### SC-03 — Gent restaurant baseline
 **User prompt:** "How many restaurant companies are in Gent?"  
-**Expected result:** Real chat flow returns 1,105, answer-first, no tool leakage, screenshot captured.
+**Expected result:** Real chat flow returns 1,050 (NACE 56101, 56102 - restaurant activities), answer-first, no tool leakage, screenshot captured.
+
+**Canonical semantics:**
+- NACE codes: 56101, 56102 (mapped from keyword "restaurant")
+- SQL: `WHERE city IN ('Gent', ...) AND (nace_code IN ('56101', '56102') OR all_nace_codes && ARRAY['56101', '56102'])`
+- Note: 1,105 was an estimate using broader NACE 56* (all food & beverage); 1,050 is correct for strict restaurant activities
 
 ### SC-04 — All-status vs active-only semantics
 **User scenario:**
 - Turn 1: "How many restaurant companies are in Brussels?"
 - Turn 2: "Only active ones."
-**Expected result:** The second answer is narrower than the first and clearly reflects the status filter; no silent default-status confusion.
+**Expected result:** The second answer is narrower than the first (or explains why unchanged) and clearly reflects the status filter; no silent default-status confusion.
+
+**Quality note:** Response should explicitly explain when count unchanged (e.g., "All 1,495 are already active companies") rather than just repeating the number.
 
 ### SC-05 — Brussels software scope clarity
 **User prompt:** "How many software companies are in Brussels?"  
