@@ -1,0 +1,51 @@
+# CDP Operator API Service
+# Place at: ~/.config/systemd/user/cdp-operator-api.service
+#
+# This service runs the CDP Operator API on port 8170.
+# It is the canonical backend for the operator shell chat interface.
+
+[Unit]
+Description=CDP Operator API (FastAPI on port 8170)
+Documentation=file:///var/home/ff/Documents/CDP_Merged/README.md
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/home/ff/Documents/CDP_Merged
+Environment="HOME=/var/home/ff"
+Environment="USER=ff"
+Environment="PATH=/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/var/home/ff/Documents/CDP_Merged/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONPATH=/var/home/ff/Documents/CDP_Merged"
+
+# Load environment files
+EnvironmentFile=-/var/home/ff/Documents/CDP_Merged/.env.local
+EnvironmentFile=-/var/home/ff/Documents/CDP_Merged/.env.database
+
+# Health check before declaring service started
+ExecStartPre=/bin/bash -lc 'cd /var/home/ff/Documents/CDP_Merged && test -f .venv/bin/python || (echo "Virtual env not found"; exit 1)'
+ExecStartPre=/bin/bash -lc 'cd /var/home/ff/Documents/CDP_Merged && test -f src/operator_api.py || (echo "Operator API not found"; exit 1)'
+
+# Start the Operator API
+ExecStart=/bin/bash -lc 'cd /var/home/ff/Documents/CDP_Merged && source .env.local 2>/dev/null; export PYTHONPATH=/var/home/ff/Documents/CDP_Merged; exec .venv/bin/uvicorn src.operator_api:app --host 127.0.0.1 --port 8170 --proxy-headers'
+
+# Restart policy
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+# Graceful shutdown
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+# Resource limits
+LimitNOFILE=65536
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cdp-operator-api
+
+[Install]
+WantedBy=default.target
