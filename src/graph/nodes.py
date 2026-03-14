@@ -365,15 +365,25 @@ def _build_azure_chat_model_kwargs(
     token_provider: Any | None = None,
 ) -> dict[str, Any]:
     """Build a bounded Azure OpenAI config for the interactive chat path."""
+    deployment = settings.AZURE_OPENAI_DEPLOYMENT_NAME or settings.LLM_MODEL
+    is_gpt5 = deployment and deployment.lower().startswith("gpt-5")
+    
     kwargs: dict[str, Any] = {
         "azure_endpoint": settings.AZURE_OPENAI_ENDPOINT,
-        "azure_deployment": settings.AZURE_OPENAI_DEPLOYMENT_NAME or settings.LLM_MODEL,
+        "azure_deployment": deployment,
         "api_version": settings.AZURE_OPENAI_API_VERSION,
-        "temperature": 0,
         "timeout": settings.AZURE_OPENAI_TIMEOUT,
         "max_retries": settings.AZURE_OPENAI_MAX_RETRIES,
-        "max_tokens": settings.AZURE_OPENAI_MAX_TOKENS,
     }
+    
+    # GPT-5 compatibility: use max_completion_tokens instead of max_tokens
+    # GPT-5 only supports temperature=1 (default); omit for GPT-5
+    if is_gpt5:
+        kwargs["max_completion_tokens"] = settings.AZURE_OPENAI_MAX_TOKENS
+    else:
+        kwargs["max_tokens"] = settings.AZURE_OPENAI_MAX_TOKENS
+        kwargs["temperature"] = 0
+    
     if token_provider is not None:
         kwargs["azure_ad_token_provider"] = token_provider
     elif api_key is not None:

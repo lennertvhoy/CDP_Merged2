@@ -162,13 +162,19 @@ class AzureOpenAIProvider(BaseLLMProvider):
         max_tokens: int | None = None,
     ) -> str:
         """Generate text using Azure OpenAI."""
-        response = await self.client.chat.completions.create(
-            model=self.deployment_name,
-            messages=messages,  # type: ignore[arg-type]
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
+        # GPT-5 compatibility: use max_completion_tokens, omit temperature
+        kwargs: dict[str, Any] = {"model": self.deployment_name, "messages": messages}
+        if max_tokens is not None:
+            kwargs["max_completion_tokens"] = max_tokens
+        # GPT-5 only supports temperature=1 (default); omit for GPT-5
+        if not self._is_gpt5():
+            kwargs["temperature"] = temperature
+        response = await self.client.chat.completions.create(**kwargs)
         return response.choices[0].message.content or ""
+
+    def _is_gpt5(self) -> bool:
+        """Check if the deployment is using GPT-5 model."""
+        return self.deployment_name.lower().startswith("gpt-5")
 
     async def generate_structured(
         self,
@@ -179,13 +185,18 @@ class AzureOpenAIProvider(BaseLLMProvider):
     ) -> Any:
         """Generate structured output using Azure OpenAI."""
         try:
-            response = await self.client.beta.chat.completions.parse(
-                model=self.deployment_name,
-                messages=messages,  # type: ignore[arg-type]
-                response_format=response_model,
-                temperature=temperature,
-                max_tokens=max_tokens,
-            )
+            # GPT-5 compatibility: use max_completion_tokens, omit temperature
+            kwargs: dict[str, Any] = {
+                "model": self.deployment_name,
+                "messages": messages,
+                "response_format": response_model,
+            }
+            if max_tokens is not None:
+                kwargs["max_completion_tokens"] = max_tokens
+            # GPT-5 only supports temperature=1 (default); omit for GPT-5
+            if not self._is_gpt5():
+                kwargs["temperature"] = temperature
+            response = await self.client.beta.chat.completions.parse(**kwargs)
             return response.choices[0].message.parsed
         except (ImportError, AttributeError, ValueError) as e:
             logger.error(f"Azure OpenAI structured generation failed: {e}")

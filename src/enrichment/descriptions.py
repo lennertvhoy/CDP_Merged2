@@ -8,6 +8,7 @@ Costs ~€20-40 for 516K profiles (with caching/deduplication).
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 
 import httpx
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
@@ -221,7 +222,10 @@ Description:"""
             "api-key": self.api_key,
         }
 
-        payload = {
+        # GPT-5 compatibility: use max_completion_tokens instead of max_tokens
+        # GPT-5 only supports temperature=1 (default); omit for GPT-5
+        is_gpt5 = self.deployment and self.deployment.lower().startswith("gpt-5")
+        payload: dict[str, Any] = {
             "messages": [
                 {
                     "role": "system",
@@ -229,9 +233,12 @@ Description:"""
                 },
                 {"role": "user", "content": prompt},
             ],
-            "max_tokens": 150,
-            "temperature": 0.3,
         }
+        if is_gpt5:
+            payload["max_completion_tokens"] = 150
+        else:
+            payload["max_tokens"] = 150
+            payload["temperature"] = 0.3
 
         url = f"{self.endpoint}/openai/deployments/{self.deployment}/chat/completions?api-version={self.api_version}"
 
