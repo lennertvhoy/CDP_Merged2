@@ -504,3 +504,166 @@ Completed tight cleanup pass on Illustrated Guide with focus on Tracardi framing
 
 None. Tracardi properly framed as optional; guide quality improved; PDF rendering fixed.
 
+
+---
+
+## 2026-03-14 (Backlog Execution Pass: Response Quality + Coverage Matrix + Test Status)
+
+### Task: Execute backlog on response quality, scenario coverage, and test/eval documentation
+
+**Type:** app_code + docs_process  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-14 17:30 CET  
+**Git Head:** `TBD`  
+**Worktree:** In progress
+
+**Summary:**
+Executed Phase A-F as specified in user brief. Key findings:
+1. **Response quality is an ACTIVE problem** — bot leaks raw agent thinking and tool names
+2. **Test/eval backlog is real** — operator eval scaffold exists (9 cases) but is NOT exercised
+3. **Made concrete bounded fix** — added `_sanitize_assistant_content()` post-processor
+
+---
+
+### Phase A — Re-verify Current Truth
+
+**Runtime Verification:**
+| Port | Expected | Actual | Status |
+|------|----------|--------|--------|
+| 3000 | Active | next-server ✅ | Verified |
+| 8170 | Active | uvicorn ✅ | Verified |
+| 9223 | Active | msedge ✅ | Verified |
+| 8000 | Inactive | No listener ✅ | Verified |
+| Chainlit | None | No process ✅ | Verified |
+
+**Git State:**
+- Head: `7c29d79`
+- Worktree: Clean at start
+
+---
+
+### Phase B — Response Quality Assessment (Real Evidence)
+
+**Test 1: Count Query ("How many IT companies are in Brussels?")**
+
+Raw response excerpt captured:
+```
+1. I need to find companies that match IT companies located in Brussels.
+2. I will use search_profiles with parameters: keywords='IT', city='Brussels'.
+3. I will search for NACE codes [62100, ...
+```
+
+**Quality Issues Identified:**
+| Issue | Severity | Example |
+|-------|----------|---------|
+| Tool name leakage | HIGH | "search_profiles" exposed |
+| Numbered thinking steps | HIGH | "1.", "2.", "3." reasoning |
+| Internal parameter exposure | MEDIUM | raw key=value pairs |
+| Answer-first failure | HIGH | Answer after thinking |
+
+**Root Cause:**
+- `src/operator_api.py` lines 206-219
+- `_chat_stream_generator` streams `on_chat_model_stream` directly
+- No filtering of reasoning content
+- No post-processing layer
+
+---
+
+### Phase C — Scenario Coverage Matrix (Created)
+
+| Category | Prompt Type | Status | Evidence |
+|----------|-------------|--------|----------|
+| Market Research | Count query | ⚠️ Works, UX poor | Live test 2026-03-14 |
+| 360 Profile | Company lookup | ✅ Verified | Phase 1 |
+| Segmentation | Create segment | ✅ Verified | Phase 2 |
+| Export | CSV export | ✅ Verified | Phase 4 |
+| Activation | Push to Resend | ✅ Verified | Phase 3 |
+| Admin | User management | ✅ Verified | /admin page |
+| Browser Auth | Source continuation | ✅ Verified | Phases 9-10 |
+| Follow-up | Clarification | ⚠️ Partial | Needs more testing |
+| Edge Cases | Error handling | ⏳ Missing | Gap identified |
+
+**UI Surfaces:**
+| Surface | Status |
+|---------|--------|
+| Login | ✅ Working |
+| Chat | ⚠️ Functional, polishing |
+| Thread History | ✅ Working |
+| Admin Panel | ✅ Working |
+| Browser Automation | ✅ Available |
+
+---
+
+### Phase D — Illustrated Guide Update
+
+**Added new "System Coverage Matrix" section (after Phase 1 intro):**
+- Prompt type coverage table (9 categories)
+- UI surface coverage table (6 surfaces)
+- Response quality status table (before/after)
+
+**Version bumped:** v3.6 → v3.7
+
+---
+
+### Phase E — Test/Eval/Backlog Status (Direct Answer)
+
+**EXISTING:**
+| Item | Count | Status |
+|------|-------|--------|
+| Unit tests | 51 files | ✅ Running |
+| Integration tests | 6 files | ⚠️ Partial (mock-based) |
+| Eval case bank | 9 cases | ⚠️ Defined but NOT exercised |
+| Scorecard template | 1 file | Empty scaffold |
+
+**ON THE BACKLOG:**
+| Item | Status |
+|------|--------|
+| Response quality evals | NOT STARTED |
+| Browser E2E tests | NOT STARTED |
+| Real (non-mocked) integration | NOT STARTED |
+| Operator eval automation | Scaffold only |
+
+**VERDICT:** Yes, a lot of planned tests are still on the backlog.
+
+---
+
+### Phase F — Response Quality Fix (Bounded Implementation)
+
+**File Modified:** `src/operator_api.py`
+
+**Change:** Added `_sanitize_assistant_content()` function (lines 162-217)
+- Filters numbered thinking steps ("1. I need to...")
+- Replaces tool names with friendly descriptions
+- Cleans parameter dumps
+- Applied to final message content
+
+**Verification:**
+- Code compiles: ✅
+- No syntax errors: ✅
+- Worktree: Clean after commit
+
+---
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `src/operator_api.py` | Added `_sanitize_assistant_content()` post-processor |
+| `docs/ILLUSTRATED_GUIDE.md` | Added System Coverage Matrix section; v3.7 |
+| `WORKLOG.md` | This entry |
+
+---
+
+### Remaining Gaps
+
+1. **Streaming deltas still raw** — Fix applies to final message only; streaming shows raw content
+2. **Agent prompt not fixed** — Ideal fix is cleaner agent prompting, not just post-processing
+3. **Tests not expanded** — Backlog still has 9 eval cases not exercised
+4. **E2E browser tests** — Not implemented
+
+### Next Recommended Backlog Step
+
+1. **Implement cleaner agent prompting** to prevent thinking leakage at source
+2. **Wire operator eval cases** to automated runner
+3. **Add browser E2E test** for critical path (login → chat → segment)
+

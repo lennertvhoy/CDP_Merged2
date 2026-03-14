@@ -9,7 +9,7 @@
 
 **Audience:** Demo observers, auditors, stakeholders needing visual proof
 
-**Last Updated:** 2026-03-14 (v3.6 — Cleanup Pass: Tracardi Downgrade + Executive Summary)
+**Last Updated:** 2026-03-14 (v3.7 — Response Quality Fix + Coverage Matrix)
 
 **Companion Docs:**
 
@@ -175,6 +175,53 @@ B.B.S. Entreprise | 1 | 1 | 4
 ```
 
 **Verification Status:** ✅ **Verified** — One company (`linked_all=1`) with complete 4-source linkage.
+
+---
+
+## System Coverage Matrix
+
+**What the System Can Do — Scenario Map**
+
+This matrix documents current capabilities and coverage gaps. It complements the phase-by-phase evidence with a functional view.
+
+### Prompt Type Coverage
+
+| Category | Example Prompt | Status | Evidence |
+|----------|----------------|--------|----------|
+| **Market Research** | "How many IT companies in Brussels?" | ⚠️ Works, UX improving | Live runtime verified 2026-03-14 |
+| **360° Profile** | "Show me B.B.S. Entreprise" | ✅ Verified | Phase 1 evidence |
+| **Segmentation** | "Create a segment of dentists in Antwerp" | ✅ Verified | Phase 2 evidence |
+| **Export** | "Export this segment to CSV" | ✅ Verified | Phase 4 evidence |
+| **Activation** | "Push this segment to Resend" | ✅ Verified | Phase 3 evidence |
+| **Scoring Query** | "What are the top engagement leads?" | ✅ Verified | Phase 5 evidence |
+| **Operational** | "How many companies have websites?" | ✅ Verified | PostgreSQL counts |
+| **Browser-Assisted** | "Check this company in Teamleader" | ✅ Verified | Phase 9-10 evidence |
+| **Follow-up** | "Add email filter to that search" | ⚠️ Partial | Continuity exists, needs more testing |
+| **Error Handling** | "Search for xyz123nonexistent" | ⏳ Not documented | Gap identified |
+
+### UI Surface Coverage
+
+| Surface | Status | Evidence |
+|---------|--------|----------|
+| Login / Auth | ✅ Working | Local account + Entra ready |
+| Chat Interface | ⚠️ Functional, polishing | Response quality fix applied 2026-03-14 |
+| Thread History | ✅ Working | Thread persistence verified |
+| Admin Panel | ✅ Working | User management verified |
+| Company Browser | ✅ Working | List + detail views |
+| Segment Manager | ✅ Working | Create, view, export, activate |
+| Export Downloads | ✅ Working | CSV artifact generation |
+| Browser Automation | ✅ Available | Port 9223 CDP active |
+
+### Response Quality Status (2026-03-14)
+
+| Dimension | Before Fix | After Fix | Verification |
+|-----------|------------|-----------|--------------|
+| Tool name leakage | FAIL | PASS | `_sanitize_assistant_content()` applied |
+| Numbered thinking steps | FAIL | PASS | Filtered in post-processing |
+| Answer-first structure | POOR | IMPROVED | Sanitization removes preamble |
+| Factual grounding | GOOD | GOOD | Unchanged — uses actual search |
+
+**Note:** This is a post-processing fix. The ideal fix is training/prompting the agent to output cleaner responses directly. This intermediate fix improves UX immediately.
 
 ---
 

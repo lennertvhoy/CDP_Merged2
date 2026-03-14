@@ -159,6 +159,61 @@ def _format_sse_event(data: dict[str, Any]) -> str:
     return json.dumps(data, default=str) + "\n"
 
 
+def _sanitize_assistant_content(content: str) -> str:
+    """Post-process assistant content to remove internal thinking and tool leakage.
+    
+    Fixes response quality issues:
+    - Removes numbered thinking steps ("1. I need to...", "2. I will...")
+    - Hides tool names ("search_profiles", "create_segment", etc.)
+    - Removes raw parameter dumps
+    """
+    import re
+    
+    # Pattern 1: Remove numbered thinking lines ("1. I need to...", "2. I will...")
+    # These are agent reasoning steps that should not be visible
+    lines = content.split('\n')
+    filtered_lines = []
+    for line in lines:
+        # Skip lines that look like numbered thinking steps
+        if re.match(r'^\d+\.', line.strip()):
+            # Check if it's a thinking step (contains reasoning language)
+            thinking_patterns = [
+                'i need to', 'i will', 'i should', 'let me', 
+                'search_', 'create_', 'use ', 'with parameters',
+                "i'll", 'first,', 'next,', 'then,',
+            ]
+            line_lower = line.lower()
+            if any(p in line_lower for p in thinking_patterns):
+                continue  # Skip this line
+        filtered_lines.append(line)
+    
+    content = '\n'.join(filtered_lines)
+    
+    # Pattern 2: Replace tool function names with user-friendly descriptions
+    tool_replacements = {
+        'search_profiles': 'searching',
+        'create_segment': 'creating segment',
+        'export_segment': 'exporting',
+        'push_to_resend': 'sending to Resend',
+        'get_company_360': 'retrieving company profile',
+    }
+    for tool_name, friendly in tool_replacements.items():
+        content = content.replace(f"use {tool_name}", f"{friendly}")
+        content = content.replace(f"I will {tool_name}", f"I will be {friendly}")
+    
+    # Pattern 3: Clean up excessive parameter dumps
+    # Replace "parameters: keywords='X', city='Y'" with cleaner format
+    content = re.sub(r"with parameters:?", "using", content, flags=re.IGNORECASE)
+    
+    # Pattern 4: Remove parameter key=value noise but keep values
+    content = re.sub(r"\w+='([^']+)'", r"'\1'", content)
+    
+    # Pattern 5: Clean up multiple blank lines
+    content = re.sub(r'\n{3,}', '\n\n', content)
+    
+    return content.strip()
+
+
 async def _chat_stream_generator(
     request: ChatTurnRequest,
     user_context: dict[str, Any] | None,
@@ -221,7 +276,10 @@ async def _chat_stream_generator(
                 if name and name != "agent":
                     tool_calls.append(name)
         
-        # Yield final assistant message
+        # Sanitize the final content to remove internal thinking and tool leakage
+        sanitized_content = _sanitize_assistant_content(accumulated_content)
+        
+        # Yield final assistant message with cleaned content
         yield _format_sse_event({
             "type": "assistant_message",
             "thread_id": thread_id,
@@ -230,7 +288,7 @@ async def _chat_stream_generator(
             "message": {
                 "id": message_id,
                 "role": "assistant",
-                "content": accumulated_content,
+                "content": sanitized_content,
                 "created_at": datetime.now().isoformat(),
                 "status": "complete",
             },
