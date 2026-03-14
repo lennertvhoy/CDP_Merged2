@@ -18,6 +18,25 @@ metadata:
   branch:
     value: main
     status: observed
+
+# ============================================================================
+# CHAINLIT DEPRECATION NOTICE (2026-03-14)
+# ============================================================================
+# Chainlit has been completely removed from the active runtime.
+# All user-facing chat/UI flows now go through Operator Shell + Operator API.
+#
+# Deprecated:
+#   - Port 8000 / Chainlit service (STOPPED)
+#   - cdp-chatbot.service (DISABLED and ARCHIVED)
+#   - docker-compose agent service (REMOVED)
+#   - start_chatbot.sh (RENAMED to .DEPRECATED)
+#
+# Current Runtime:
+#   - Operator Shell: Port 3000 (https://kbocdpagent.ngrok.app)
+#   - Operator API: Port 8170
+#   - Chat endpoint: POST /api/operator/chat/stream
+# ============================================================================
+
     checked_at: 2026-03-09T23:38:42+01:00
     evidence:
       - git log --oneline --decorate -n 1 -> 946ccf4 (HEAD -> main) docs(runtime): refresh event processor scoring route

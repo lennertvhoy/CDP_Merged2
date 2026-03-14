@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# DEPRECATED: This script is no longer supported.
+# Chainlit has been removed from the active runtime.
+#
+# Date deprecated: 2026-03-14
+#
+# REPLACEMENT:
+# Use the Operator Shell + Operator API instead:
+#
+#   1. Start Operator API (port 8170):
+#      uvicorn src.operator_api:app --host 127.0.0.1 --port 8170
+#
+#   2. Start Operator Shell (port 3000):
+#      cd apps/operator-shell && npm run dev
+#
+# Or use systemd services:
+#   - systemctl --user start cdp-operator-shell.service
+#
+# Original script content preserved below for reference only:
+# ==============================================================================
+# #!/usr/bin/env bash
+# set -euo pipefail
+# REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# cd "$REPO_ROOT"
+# PYTHON_BIN="python3"
+# if [ -x ".venv/bin/python" ]; then
+#     PYTHON_BIN="$REPO_ROOT/.venv/bin/python"
+# fi
+# set -a
+# [ -f ".env" ] && source .env
+# [ -f ".env.local" ] && source .env.local
+# set +a
+# export PYTHONPATH="${REPO_ROOT}${PYTHONPATH:+:$PYTHONPATH}"
+# : "${CHAINLIT_AUTH_SECRET:=dev-local-secret-change-me-32chars-min}"
+# : "${CHAINLIT_HOST:=0.0.0.0}"
+# : "${CHAINLIT_PORT:=8000}"
+# : "${DATABASE_URL:=postgresql://cdpadmin:cdpadmin123@localhost:5432/cdp?sslmode=disable}"
+# exec "$PYTHON_BIN" -m uvicorn src.app:chainlit_server_app --host "$CHAINLIT_HOST" --port "$CHAINLIT_PORT"

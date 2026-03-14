@@ -8,6 +8,24 @@
 **Canonical Counts:** `total=1,940,603; website_url=70,922; geo_latitude=63,979; ai_description=31,033; cbe_enriched=1,252,019`
 
 ## Active
+
+## CHAINLIT DEPRECATION (2026-03-14)
+
+**COMPLETED:** Chainlit has been removed from the active runtime.
+
+- [x] Stop and disable cdp-chatbot.service
+- [x] Stop and remove docker container cdp_merged_agent  
+- [x] Archive cdp-chatbot.service to deprecated/
+- [x] Remove agent service from docker-compose.yml
+- [x] Deprecate start_chatbot.sh
+- [x] Update next.config.ts (remove port 8000 references)
+- [x] Update STATUS.md, PROJECT_STATE.yaml, NEXT_ACTIONS.md
+
+**Remaining Chainlit references (historical only):**
+- `src/app.py` - Chainlit code kept for reference (not executed)
+- `.chainlit/` - Config and translations kept for reference
+- `tests/unit/test_app.py` - Tests use Chainlit test harness
+
 Dependency-manager note: `uv` migration plus the follow-on GitHub CI repair are complete as of 2026-03-10 17:50 CET. Commit `7e6c432` is green on run `22913778035`; the first red uv push (`1978e31`) and the intermediate partial repair (`fb85742`) are now superseded history, not active queue items.
 
 ### P0: Architecture Hardening - Tracardi Optionalization

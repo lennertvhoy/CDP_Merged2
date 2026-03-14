@@ -3,6 +3,9 @@
 **Platform:** Azure target architecture with local-only execution mode
 **Current Execution Mode:** Local-only (`Azure deployment path paused to save costs`)
 **Last Updated:** 2026-03-14 10:44 CET
+
+**⚠️ CHAINLIT DEPRECATED (2026-03-14):** Chainlit has been removed from the active runtime. All chat/UI flows now go through Operator Shell (port 3000) + Operator API (port 8170). See "Chainlit Deprecation" section below.
+
 **Backlog Version:** v2 (compressed to 5 epics, NOW/Next/Later/Watchlist structure)
 **Purpose:** Human-readable current snapshot
 **Structured Source:** `PROJECT_STATE.yaml`
@@ -69,14 +72,55 @@
 - `observed` from 2026-03-06 15:33 CET resource audit: `rg-cdpmerged-fast` currently holds 20 resources and no broad waste; the strongest cleanup candidates are storage account `stcdpmergedprtnlp` and the orphan-like `Application Insights Smart Detection` action group.
 - `observed` in this doc-cleanup turn: the live doc set is now condensed to `AGENTS.md`, `STATUS.md`, `PROJECT_STATE.yaml`, `NEXT_ACTIONS.md`, `BACKLOG.md`, and `WORKLOG.md`.
 
+## Chainlit Deprecation (2026-03-14)
+
+**STATUS: CHAINLIT IS DEPRECATED AND REMOVED FROM ACTIVE RUNTIME**
+
+Chainlit has been completely removed from the supported runtime as of 2026-03-14.
+
+### What Changed
+- Chainlit service on port 8000: **STOPPED and DISABLED**
+- `cdp-chatbot.service`: **DISABLED** and **ARCHIVED** to `infra/ngrok-systemd/deprecated/`
+- Docker container `cdp_merged_agent`: **STOPPED and REMOVED**
+- `start_chatbot.sh`: **DEPRECATED** (renamed to `start_chatbot.sh.DEPRECATED`)
+- `docker-compose.yml`: Agent service **REMOVED**
+- `next.config.ts`: Port 8000 references **REMOVED**
+
+### New Architecture
+All user-facing chat/UI flows now go through:
+- **Operator Shell** (Next.js): Port 3000 → `https://kbocdpagent.ngrok.app`
+- **Operator API** (FastAPI): Port 8170
+- **Chat endpoint**: `POST /api/operator/chat/stream` (SSE streaming via LangGraph)
+
+### Migration
+To start the new chat stack:
+```bash
+# Terminal 1: Operator API
+uvicorn src.operator_api:app --host 127.0.0.1 --port 8170
+
+# Terminal 2: Operator Shell
+cd apps/operator-shell && npm run dev
+```
+
+Or use systemd:
+```bash
+systemctl --user start cdp-operator-shell.service
+```
+
+### Historical Context
+Chainlit code remains in `src/app.py` for reference but is no longer executed.
+The `.chainlit/` directory and Chainlit translations are kept for migration reference.
+Unit tests using Chainlit test harnesses remain in `tests/unit/test_app.py`.
+
+
 ## Current State
 
 - Architecture: source systems hold PII and operational master truth, PostgreSQL holds customer-intelligence and analytical truth, the operator shell (port 3000) is the primary control plane and public surface, Tracardi is now an optional activation adapter (demoted from core dependency), and the chatbot answers authoritative questions from PostgreSQL-backed tools.
 - Execution mode (`reported`, 2026-03-07 17:12 CET): Azure deployment work is paused by user direction to save costs. The active engineering path is local-only until the user explicitly reopens cloud work.
 - **Public operator shell URL (`observed` 2026-03-14):** `https://kbocdpagent.ngrok.app` - stable ngrok-branded domain (Hobbyist plan), systemd-managed with auto-restart and health monitoring.
-- Local development (`observed`, 2026-03-08 21:45 CET): the canonical working copy is `/home/ff/Documents/CDP_Merged`; the default local runtime is the compose-managed stack. `docker compose up -d --build` brings up PostgreSQL on `5432`, Tracardi on `8686/8787`, Wiremock on `8080`, and the chatbot on `8000`; all services healthy. Local PostgreSQL holds the **full 1,940,603 record** KBO dataset. `scripts/migrations/001_add_projection_tables.sql` was re-applied successfully on 2026-03-08 21:20 CET, so the compose database now includes the missing canonical writeback tables (`event_facts`, `profile_traits`, `ai_decisions`) required for local behavior-proof verification. **Tracardi current truth:** all 4 event sources remain enabled and `/track` accepts events, the 5 email workflow drafts have been repaired locally via `scripts/setup_tracardi_workflows.py`, but **production workflow execution requires Tracardi Premium** (CE limitation). The `/deploy/{path}` endpoint is licensed, and `production=true`/`running=true` rule updates do not persist in CE. The Illustrated Guide should document this limitation.
+- Local development (`observed`, 2026-03-08 21:45 CET): the canonical working copy is `/home/ff/Documents/CDP_Merged`; the default local runtime is the compose-managed stack. `docker compose up -d --build` brings up PostgreSQL on `5432`, Tracardi on `8686/8787`, Wiremock on `8080`, CHATBOT ON PORT 8000 REMOVED - now use Operator Shell (3000) + Operator API (8170); all services healthy. Local PostgreSQL holds the **full 1,940,603 record** KBO dataset. `scripts/migrations/001_add_projection_tables.sql` was re-applied successfully on 2026-03-08 21:20 CET, so the compose database now includes the missing canonical writeback tables (`event_facts`, `profile_traits`, `ai_decisions`) required for local behavior-proof verification. **Tracardi current truth:** all 4 event sources remain enabled and `/track` accepts events, the 5 email workflow drafts have been repaired locally via `scripts/setup_tracardi_workflows.py`, but **production workflow execution requires Tracardi Premium** (CE limitation). The `/deploy/{path}` endpoint is licensed, and `production=true`/`running=true` rule updates do not persist in CE. The Illustrated Guide should document this limitation.
 - Deployment path (`reported`, last Azure verification 2026-03-06 20:09 CET): the last known Azure Container App revision was `ca-cdpmerged-fast--stg-877f0e9`, but that deployment path is currently paused and should be treated as historical context, not as the active next step.
-- Colleague-facing chatbot product plan (`reported`, 2026-03-09): any future online mode should use Microsoft work-account login and isolated per-user conversation history rather than a shared session model. The current Chainlit surface is only a baseline and should move closer to a ChatGPT-like experience before broader colleague testing.
+- Colleague-facing chatbot product plan (`reported`, 2026-03-09): any future online mode should use Microsoft work-account login and isolated per-user conversation history rather than a shared session model. Chainlit is DEPRECATED - the operator shell is only a baseline and should move closer to a ChatGPT-like experience before broader colleague testing.
 - Chat history foundation (`observed`, 2026-03-09 22:10 CET): the local app now persists Chainlit users, threads, steps, elements, and feedback through repo-managed PostgreSQL tables, workflow checkpoint reuse is keyed by Chainlit's real `thread_id`, and a dev-only password-auth mode now enables authenticated local history checks before Entra rollout. The browser-driven localhost path is now working end-to-end: stale repo-owned Chainlit translations were resynced to current frontend keys, sparse thread upserts no longer fail on `app_chat_threads` JSONB defaults, reopened threads now restore a live composer through `@cl.on_chat_resume`, and thread titles auto-generate from first messages instead of UUIDs. The remaining gap is rollout readiness: **Microsoft Entra ID implementation is COMPLETE but DISABLED** (see `CHAINLIT_ENABLE_AZURE_AD` in `.env.local`), web-search policy is implemented as `restricted` mode but currently `disabled`, a low-severity Chainlit `set_chat_profiles` warning still appears in resume logs. Repo defaults/examples now use a 32+ character `CHAINLIT_AUTH_SECRET` placeholder, but any existing local `.env.local` still using the old short placeholder should be rotated before auth testing.
 - Chatbot quality (`observed` locally on 2026-03-07 17:38 CET): the strongest currently verified workflows are deterministic local market sizing, filtering, coverage diagnostics, analytics, `nace_code` alias search, `email_domain` filtering, multi-turn tool-handoff coverage, and local artifact/report generation against the full 1.94M-record PostgreSQL dataset. Live-production rechecks are intentionally deferred while the local-only cost-control mode is active.
 - Enrichment (`observed`, 2026-03-09 23:20 CET): the latest fresh PostgreSQL recheck now anchors the live counts at `website_url=70,922`, `geo_latitude=63,979`, `ai_description=31,033`, and `cbe_enriched=1,252,019` from `23:19 CET`. `CBE` is complete, `website discovery` is still advancing in the repo-supervised path, and `geocoding` is still writing rows with the observability fix verified live. The pre-patch geocoding batch worker was force-stopped at `18:25 CET`, the existing bash supervisor relaunched the observability-fixed chunked parent and a new batch child at `18:25:28-18:25:29 CET`, that pre-fix child finished `Batch 20/20` at `21:39:54 CET`, and the follow-on child launched immediately from cursor `1366466e-b3d5-4d7f-8cfd-ab91e7c9b503` after commit `5bf2595`. The live log then showed Batches `1/20` through `5/20` complete at `21:52:17`, `22:04:45`, `22:17:05`, `22:29:13`, and `22:41:25 CET`, while the latest short recheck still showed fresh geocoded rows through `23:19:17 CET` without new nullable-trait `strip()` failures after the already-known `21:27:39 CET` lines.
@@ -95,7 +139,7 @@
 - **Tracardi demoted to optional activation adapter (2026-03-14 decision)**: Tracardi CE workflow execution requires Premium license, so Tracardi is no longer a core dependency. First-party event processor + PostgreSQL writeback satisfy core demo/runtime needs. Tracardi remains available for future paid-feature activation path if justified.
 - **Admin panel / basic admin authorization: COMPLETE (`observed` 2026-03-14)** - Admin panel now live at `https://kbocdpagent.ngrok.app/admin`. Basic admin authorization (boolean `is_admin` flag) implemented. NOT full RBAC. Admin shield icon appears in sidebar for admins. Server-side API protection for admin endpoints. lennertvhoy@gmail.com is admin; brandstekelorum2@gmail.com is explicitly NOT admin.
 - All stale `.openclaw` path assumptions have been cleaned from active helper/setup scripts; they now use repo-relative imports or `resolve_kbo_zip_path()`.
-- The compose-managed chatbot requires a populated `.env.local` and exclusive use of port `8000`; any leftover host-side `uvicorn` process will block the default local stack until it is stopped.
+- The old Chainlit compose service is REMOVED. Operator API + Shell require a populated `.env.local` and exclusive use of port `8000`; any leftover host-side `uvicorn` process will block the default local stack until it is stopped.
 - `sync_status` is still misleading as an enrichment-completion signal because every row is marked enriched while field coverage remains sparse.
 - **PostgreSQL aggregation queries resolved** - Brussels (0.13s), Antwerpen (0.31s), and Gent (0.09s) all now perform well within limits; the timeout issue from 2026-03-06 is closed.
 - Local regression script (`scripts/regression_local_chatbot.py`) now verifies 7 host-side checks, including artifact generation, but real interactive multi-message runs with the live model still need broader local operator scenarios.

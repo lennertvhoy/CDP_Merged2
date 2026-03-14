@@ -1,16 +1,20 @@
 """Standalone operator-shell bridge API.
 
-This sidecar keeps the deprecated legacy Chainlit runtime backend intact while
-exposing a thin, repo-owned HTTP surface for the operator-shell frontend.
+This sidecar exposes a repo-owned HTTP surface for the operator-shell frontend,
+replacing the deprecated Chainlit runtime backend for chat streaming.
 """
 
 # ruff: noqa: E402
 
 from __future__ import annotations
 
+import aiosqlite
 import json
+from datetime import datetime
 import time
+import uuid
 from pathlib import Path
+from typing import Any, AsyncGenerator
 
 from src.core.runtime_env import bootstrap_runtime_environment
 
@@ -18,8 +22,12 @@ bootstrap_runtime_environment()
 
 from chainlit.auth import clear_auth_cookie, create_jwt, set_auth_cookie
 from fastapi import FastAPI, File, Form, HTTPException, Request, Response, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
+from langchain_core.messages import HumanMessage
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from pydantic import BaseModel, Field
+
+from src.graph.workflow import compile_workflow
 
 from src.services.local_account_auth import LocalAccountStore
 from src.services.operator_auth import (
@@ -110,6 +118,12 @@ class SegmentCreateRequest(BaseModel):
     email_domain: str | None = None
 
 
+class ChatTurnRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=10000)
+    thread_id: str | None = None
+    chat_profile: str | None = None
+
+
 @app.get("/")
 async def root() -> dict[str, str]:
     return {
@@ -127,6 +141,138 @@ async def healthz() -> dict:
 @app.get("/api/operator/health")
 async def operator_health() -> dict:
     return await build_operator_health()
+
+
+# ─── Chat Streaming ─────────────────────────────────────────────────────────
+
+# In-memory store for checkpointer connections (per-thread lifecycle)
+_checkpointer_pools: dict[str, AsyncSqliteSaver] = {}
+
+
+def _format_sse_event(data: dict[str, Any]) -> str:
+    """Format a dict as an SSE-style JSON line event."""
+    return json.dumps(data, default=str) + "\n"
+
+
+async def _chat_stream_generator(
+    request: ChatTurnRequest,
+    user_context: dict[str, Any] | None,
+) -> AsyncGenerator[str, None]:
+    """Generate streaming chat events for the operator shell frontend.
+    
+    Yields newline-delimited JSON events matching ChatStreamEvent type:
+    - thread: Initial thread metadata
+    - assistant_delta: Streaming text chunks
+    - assistant_message: Final complete message
+    - error: Error information
+    """
+    # Generate or use provided thread_id
+    thread_id = request.thread_id or str(uuid.uuid4())
+    chat_profile = request.chat_profile or "default"
+    
+    # Yield thread event first
+    yield _format_sse_event({
+        "type": "thread",
+        "thread_id": thread_id,
+        "chat_profile": chat_profile,
+        "profile_id": None,
+    })
+    
+    # Initialize checkpointer for this thread if not exists
+    checkpointer_path = Path("./data/checkpoints/checkpoints.db")
+    checkpointer_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    try:
+        conn = await aiosqlite.connect(checkpointer_path)
+        checkpointer = AsyncSqliteSaver(conn)
+        workflow = compile_workflow(checkpointer=checkpointer)
+        
+        inputs = {
+            "messages": [HumanMessage(content=request.message)],
+            "language": "",
+            "profile_id": None,
+        }
+        config = {"configurable": {"thread_id": thread_id}}
+        
+        tool_calls: list[str] = []
+        accumulated_content = ""
+        message_id = str(uuid.uuid4())
+        
+        async for event in workflow.astream_events(inputs, config=config, version="v2"):
+            kind = event.get("event", "")
+            name = event.get("name", "")
+            
+            if kind == "on_chat_model_stream":
+                chunk = event.get("data", {}).get("chunk", {})
+                if hasattr(chunk, "content") and isinstance(chunk.content, str):
+                    delta = chunk.content
+                    accumulated_content += delta
+                    yield _format_sse_event({
+                        "type": "assistant_delta",
+                        "thread_id": thread_id,
+                        "delta": delta,
+                    })
+            elif kind == "on_tool_start":
+                if name and name != "agent":
+                    tool_calls.append(name)
+        
+        # Yield final assistant message
+        yield _format_sse_event({
+            "type": "assistant_message",
+            "thread_id": thread_id,
+            "tool_calls": tool_calls,
+            "suggested_actions": [],  # Could be populated based on context
+            "message": {
+                "id": message_id,
+                "role": "assistant",
+                "content": accumulated_content,
+                "created_at": datetime.now().isoformat(),
+                "status": "complete",
+            },
+        })
+        
+    except Exception as exc:
+        yield _format_sse_event({
+            "type": "error",
+            "thread_id": thread_id,
+            "error": str(exc),
+        })
+    finally:
+        # Clean up connection
+        try:
+            await conn.close()
+        except Exception:
+            pass
+
+
+@app.post("/api/operator/chat/stream")
+async def operator_chat_stream(request: Request, payload: ChatTurnRequest) -> StreamingResponse:
+    """Stream chat responses using LangGraph workflow.
+    
+    Returns newline-delimited JSON events for real-time chat streaming.
+    Replaces the deprecated Chainlit WebSocket-based chat interface.
+    """
+    user_context = extract_request_user_context(request)
+    
+    if operator_auth_enabled() and user_context is None:
+        # Return an error stream for auth failures
+        async def auth_error_stream() -> AsyncGenerator[str, None]:
+            yield _format_sse_event({
+                "type": "error",
+                "thread_id": payload.thread_id or str(uuid.uuid4()),
+                "error": "Authentication required to start a chat",
+            })
+        
+        return StreamingResponse(
+            auth_error_stream(),
+            media_type="application/x-ndjson",
+            status_code=401,
+        )
+    
+    return StreamingResponse(
+        _chat_stream_generator(payload, user_context),
+        media_type="application/x-ndjson",
+    )
 
 
 @app.get("/api/operator/bootstrap")

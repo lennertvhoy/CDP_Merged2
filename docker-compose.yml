@@ -132,48 +132,18 @@ services:
     command: [ "--verbose", "--global-response-templating" ]
 
   # ==========================================
-  # AI Agent Application
+  # DEPRECATED: Chainlit/Agent service removed
   # ==========================================
-  agent:
-    build: .
-    container_name: cdp_merged_agent
-    restart: unless-stopped
-    ports:
-      - "${CHATBOT_HOST_PORT:-8000}:8000"
-    env_file:
-      - .env.local
-    environment:
-      - LLM_PROVIDER=openai
-      - DATABASE_URL=postgresql://cdpadmin:cdpadmin123@postgres:5432/cdp?sslmode=disable
-      - TRACARDI_API_URL=http://cdp_merged_tracardi_api:80
-      - ELASTICSEARCH_URL=http://cdp_merged_elasticsearch:9200
-      - CHAINLIT_HOST=0.0.0.0
-      - CHAINLIT_PORT=8000
-    depends_on:
-      postgres:
-        condition: service_healthy
-      tracardi-api:
-        condition: service_started
-      elasticsearch:
-        condition: service_healthy
-    volumes:
-      - ./data:/app/data
-      - ./output:/app/output
-      - ./logs:/app/logs
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "python",
-          "-c",
-          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=5)",
-        ]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 20s
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+  # The Chainlit-based chatbot service has been deprecated.
+  # All chat/UI functionality now goes through:
+  #   - Operator Shell (Next.js on port 3000)
+  #   - Operator API (FastAPI on port 8170)
+  #
+  # To start the new chat stack:
+  #   1. Start Operator API: uvicorn src.operator_api:app --host 127.0.0.1 --port 8170
+  #   2. Start Operator Shell: cd apps/operator-shell && npm run dev
+  #
+  # Date deprecated: 2026-03-14
 
 volumes:
   postgres_data:
