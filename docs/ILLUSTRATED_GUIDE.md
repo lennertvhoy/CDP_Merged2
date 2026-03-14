@@ -9,7 +9,7 @@
 
 **Audience:** Demo observers, auditors, stakeholders needing visual proof
 
-**Last Updated:** 2026-03-14
+**Last Updated:** 2026-03-14 (v3.3 — Authenticated Browser Continuation + Architecture Truth)
 
 **Companion Docs:**
 
@@ -17,6 +17,19 @@
 - Technical details: `docs/SYSTEM_SPEC.md`
 - Conformity matrix: `docs/BUSINESS_CONFORMITY_MATRIX.md`
 - Acceptance criteria: `docs/ACCEPTANCE_CRITERIA.md`
+- Browser automation: `docs/BROWSER_AUTOMATION_GUIDE.md`
+
+**Architecture Truth (Current):**
+
+| Component | Role | Status |
+|-----------|------|--------|
+| Operator Shell (Next.js, port 3000) | Primary UI / Control Plane | ✅ Active |
+| Operator API (FastAPI, port 8170) | Chat Backend / Tool Router | ✅ Active |
+| PostgreSQL | Analytical Truth / Customer Intelligence | ✅ Active |
+| Azure OpenAI GPT-4o-mini | LLM Provider | ✅ Active |
+| Edge with CDP (port 9223) | Browser Automation | ✅ Active |
+| Tracardi | Optional Activation Adapter | ⚠️ Non-critical |
+| Chainlit (port 8000) | Deprecated Historical Path | ❌ Removed |
 
 **This guide is designed to show:**
 
@@ -44,12 +57,19 @@
 | Privacy boundary status is documented | Tracardi profile view + divergence table | Phase 5 | Local runtime |
 | Cross-source revenue aggregation | 360° view with contract values | Phase 7 | Demo-backed |
 | Sync latency within operational window | Timestamped sync proof | Phase 8 | Verified |
+| Authenticated browser continuation | Real-session screenshots from Teamleader/Exact | Phase 9 | Live system + CDP automation |
+| Operator Shell is primary UI | Runtime verification (port 3000 active, 8000 inactive) | Architecture | Verified |
+| Azure OpenAI-only LLM posture | Configuration audit (Azure OpenAI retained, other Azure removed) | Architecture | Verified |
+| Authenticated browser continuation | Real-session screenshots from Teamleader/Exact | Phase 9 | Live system + CDP automation |
+| Operator Shell is primary UI | Runtime verification (port 3000 active, 8000 inactive) | Architecture | Verified |
+| Azure OpenAI-only LLM posture | Configuration audit (Azure OpenAI retained, other Azure removed) | Architecture | Verified |
 
 **Source Labels:**
 - **Live system:** Production SaaS (Resend, Teamleader, Exact Online)
 - **Local runtime:** Docker Compose stack on localhost
 - **Demo-backed:** Demo tenant data with production-ready linkage
 - **Local artifact:** Generated files with checksum verification
+- **CDP automation:** Browser sessions controlled via Chrome DevTools Protocol
 
 ### Count Semantics Dictionary
 
@@ -396,6 +416,8 @@ Use short evidence IDs in the matrix below so the PDF stays readable; the full f
 | SG-05 | Teamleader CRM snapshot | 2026-03-08 | Live Teamleader |
 | SG-06 | Exact Online dashboard snapshot | 2026-03-08 | Live Exact |
 | SG-07 | Opened CSV artifact preview | 2026-03-08 | Local artifact |
+| SG-08 | Teamleader authenticated continuation | 2026-03-14 | Live system + CDP automation |
+| SG-09 | Exact Online authenticated continuation | 2026-03-14 | Live system + CDP automation |
 
 **Filename Key:**
 - `SG-01` → `chatbot_360_bbs_four_source_final_2026-03-08.png`
@@ -405,6 +427,8 @@ Use short evidence IDs in the matrix below so the PDF stays readable; the full f
 - `SG-05` → `docs/illustrated_guide/demo_screenshots/teamleader_dashboard_2026-03-08.png`
 - `SG-06` → `docs/illustrated_guide/demo_screenshots/exact_dashboard_2026-03-08.png`
 - `SG-07` → `docs/illustrated_guide/demo_screenshots/csv_export_opened_spreadsheet_view_2026-03-08.png`
+- `SG-08` → `output/browser_automation/teamleader_authenticated.png`
+- `SG-09` → `output/browser_automation/exact_authenticated.png`
 
 **Label Note:** The guide intentionally mixes live SaaS screens, local runtime views, demo-backed integration evidence, and generated local artifacts. Each item is labeled by source rather than flattened into a single "live" claim.
 
@@ -506,8 +530,165 @@ AUTOTASK:   B.B.S. Entreprise | 1 Ticket | €15,000 Contract
 | Flexmail integration | Low | Explicitly deprioritized | Resend is verified alternative; Flexmail in backlog |
 | Event metadata privacy | Medium | Fixed 2026-03-14 | Event processor now hashes emails and sanitizes event_data | ✅ Resolved |
 | More linked companies | Medium | 1 fully linked; scripts available | Populate demo data for richer demos |
+| Browser form interaction | Low | Navigate/screenshot proven; click/fill not yet added | Add to helper if specific workflow requires |
+
+**Resolved in This Pass:**
+- ✅ Authenticated browser continuation (Teamleader + Exact)
+- ✅ Architecture truth documented (Operator Shell primary, Chainlit deprecated)
+- ✅ Azure posture clarified (Azure OpenAI only)
 
 **Note:** All critical GO/No-Go criteria are met. These gaps are optimization and scale items, not blockers.
+
+---
+
+## Phase 9: Authenticated Browser Continuation Evidence
+
+**Business Claim:** The CDP can continue automation workflows in real authenticated browser sessions for source systems requiring interactive login.
+
+**Pattern:** Manual Login + Agent Continuation
+
+1. **Agent prepares** login page via CDP
+2. **User authenticates** manually (handles 2FA/MFA)
+3. **Agent continues** from authenticated session
+
+### Teamleader Focus — Authenticated Session Proof
+
+**Evidence:** Real authenticated dashboard captured via CDP automation
+
+**What This Proves:**
+- CDP can navigate to authenticated Teamleader pages
+- Session remains valid across navigation
+- Real operational UI state is accessible for verification
+
+**Screenshot Evidence:**
+
+```
+File: output/browser_automation/teamleader_authenticated.png
+Size: 690KB
+Resolution: 1542x781
+Captured: 2026-03-14
+```
+
+**Visible Proof:**
+- Authenticated dashboard loaded (`Welkom, Lennert!`)
+- Left sidebar navigation accessible (Bedrijven, Contacten, Deals)
+- GROW trial package notification visible
+- Cookie consent dialog present (real session state)
+
+**Post-Login Navigation Test:**
+
+| Step | Command | Result |
+|------|---------|--------|
+| 1 | Navigate to dashboard | ✅ Authenticated view loaded |
+| 2 | Navigate to contacts page | ✅ Contacts interface accessible |
+| 3 | Session persistence check | ✅ Still authenticated after navigation |
+
+**Screenshot Chain:**
+- `teamleader_authenticated.png` — Dashboard in authenticated session
+- `teamleader_contacts.png` — Contacts page (post-login navigation)
+
+### Exact Online — Authenticated Session Proof
+
+**Evidence:** Real authenticated financial cockpit captured via CDP automation
+
+**What This Proves:**
+- CDP can access Exact Online financial dashboard
+- Sensitive financial data views are navigable
+- Session survives internal navigation (including error recovery)
+
+**Screenshot Evidence:**
+
+```
+File: output/browser_automation/exact_authenticated.png
+Size: 639KB
+Resolution: 1542x781
+Captured: 2026-03-14
+```
+
+**Visible Proof:**
+- Financial cockpit loaded (`1 - Voorbeeldadministratie Exact Online`)
+- Bank balance visible (€757,937.61)
+- Sales outstanding (€118,460.21)
+- Purchase outstanding (€51,504.57)
+- Charts and aging analysis rendered
+
+**Post-Login Navigation Test:**
+
+| Step | Command | Result |
+|------|---------|--------|
+| 1 | Navigate to MenuPortal | ✅ Financial cockpit loaded |
+| 2 | Navigate to CRMAccounts | ⚠️ Internal app error (Exact issue, not CDP) |
+| 3 | Navigate back to MenuPortal | ✅ Session persisted, dashboard reloaded |
+
+**Screenshot Chain:**
+- `exact_authenticated.png` — Financial cockpit (authenticated)
+- `exact_back_to_dashboard.png` — Return navigation proof
+
+### Browser Automation Architecture
+
+**Runtime Components:**
+
+| Component | Port | Role | Status |
+|-----------|------|------|--------|
+| Microsoft Edge with CDP | 9223 | Browser instance for automation | ✅ Active |
+| MCP CDP Helper | N/A | Python CLI wrapper | ✅ Scripts available |
+| CDP Endpoint | `http://127.0.0.1:9223` | Chrome DevTools Protocol | ✅ Responding |
+
+**Security Note:**
+- Screenshots show real authenticated sessions
+- PII and financial data are from actual source systems
+- Capability proven without exposing credentials
+- Pattern: Human authenticates, agent continues
+
+### Verification Commands
+
+```bash
+# List all browser tabs
+python scripts/mcp_cdp_helper.py tabs
+
+# Navigate to authenticated page
+python scripts/mcp_cdp_helper.py navigate "https://focus.teamleader.eu/dashboard.php"
+
+# Capture screenshot
+python scripts/mcp_cdp_helper.py screenshot output/teamleader_check.png
+
+# Get page title
+python scripts/mcp_cdp_helper.py title
+```
+
+**Status:** ✅ **Verified** — Authenticated continuation works for both Teamleader and Exact Online.
+
+---
+
+## Architecture Truth Summary
+
+### Current Runtime (Verified 2026-03-14)
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| Operator Shell on port 3000 | `ss -tlnp` shows next-server | ✅ Active |
+| Operator API on port 8170 | `ss -tlnp` shows uvicorn | ✅ Active |
+| Edge CDP on port 9223 | `ss -tlnp` shows msedge | ✅ Active |
+| No Chainlit on port 8000 | `ss -tlnp` no listener; `pgrep chainlit` empty | ✅ Confirmed |
+| Azure OpenAI only | `.env.local` audit: AZURE_OPENAI_API_KEY present, no other Azure services | ✅ Confirmed |
+
+### Deprecated / Removed
+
+| Component | Previous Role | Current Status |
+|-----------|---------------|----------------|
+| Chainlit | Chat UI (port 8000) | ❌ Deprecated — replaced by Operator Shell |
+| Azure Container Apps | Hosting | ❌ Removed — local-first deployment |
+| Azure VMs (Tracardi/ES) | Infrastructure | ❌ Retired — Tracardi now optional |
+
+### Truth Layers
+
+| Layer | System | Role |
+|-------|--------|------|
+| Source of Truth (PII) | Teamleader, Exact, Autotask | Operational master records |
+| Analytical Truth | PostgreSQL | Customer intelligence, 360° views |
+| Activation (Optional) | Tracardi | Event routing, workflow adapter |
+| Control Plane | Operator Shell + API | Primary operator interface |
+| LLM | Azure OpenAI GPT-4o-mini | Natural language understanding |
 
 ---
 

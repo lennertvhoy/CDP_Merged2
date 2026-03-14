@@ -3,7 +3,7 @@
 **Purpose:** Map implementation state to customer requirements from "Business Case Customer.txt"  
 **Audience:** Business stakeholders, auditors, project reviewers  
 **Last Updated:** 2026-03-14  
-**Version:** 1.0 (Aligned with backlog v2 and Illustrated Guide v3.3)
+**Version:** 1.1 (Aligned with Illustrated Guide v3.3 — Authenticated Browser Continuation + Architecture Truth)
 
 ---
 
@@ -157,7 +157,32 @@
 | Consent management | Per-source consent preservation | ✅ Verified | Consent state tracked per source system |
 | Right to deletion | Source systems remain authoritative | ✅ Verified | PII not duplicated in CDP core |
 | Audit logging | Webhook gateway logs + event logs | ✅ Verified | HMAC signature verification, 48 tests pass |
-| Data processing transparency | Source labels in documentation | ✅ Verified | All evidence labeled as Live/Demo/Local |
+| Data processing transparency | Source labels in documentation | ✅ Verified | All evidence labeled as Live/Demo/Local/Automation |
+
+---
+
+### 9. Browser Automation & Authenticated Continuation
+
+| Requirement | Implementation | Status | Evidence |
+|-------------|----------------|--------|----------|
+| CDP-based browser control | Edge with remote debugging (port 9223) | ✅ Verified | MCP CDP helper script operational |
+| Authenticated session continuation | Manual login + agent continuation pattern | ✅ Verified | Teamleader dashboard (SG-08) + Exact cockpit (SG-09) |
+| Source system UI access | Navigate and capture screenshots post-login | ✅ Verified | Screenshots captured from authenticated sessions |
+| Session persistence | Cross-page navigation maintains auth | ✅ Verified | Contacts page navigation in Teamleader; error recovery in Exact |
+
+**Security Pattern:**
+- Human handles initial authentication (2FA/MFA compatible)
+- Agent continues from authenticated session
+- No credentials stored in CDP
+- PII remains in source systems
+
+**Verification Artifacts:**
+| Artifact | Location | Date |
+|----------|----------|------|
+| Teamleader authenticated | `output/browser_automation/teamleader_authenticated.png` | 2026-03-14 |
+| Teamleader contacts page | `output/browser_automation/teamleader_contacts.png` | 2026-03-14 |
+| Exact authenticated | `output/browser_automation/exact_authenticated.png` | 2026-03-14 |
+| Exact return navigation | `output/browser_automation/exact_back_to_dashboard.png` | 2026-03-14 |
 
 ---
 
@@ -198,6 +223,36 @@ From the original POC specification:
 | Resend Audience screenshot | `docs/illustrated_guide/demo_screenshots/resend_audience_detail_populated_2026-03-08.png` | 2026-03-08 |
 | CSV Export artifact | `output/it_services_brussels_segment.csv` | 2026-03-08 |
 | Scoring model API output | `curl http://localhost:5001/api/scoring-model` | 2026-03-09 |
+
+---
+
+## Architecture Truth (Current)
+
+### Verified Runtime State (2026-03-14)
+
+| Component | Port | Expected | Actual | Status |
+|-----------|------|----------|--------|--------|
+| Operator Shell | 3000 | Active | next-server | ✅ Verified |
+| Operator API | 8170 | Active | uvicorn | ✅ Verified |
+| Edge CDP | 9223 | Active | msedge | ✅ Verified |
+| Chainlit | 8000 | Inactive | No listener | ✅ Verified |
+
+### Deprecated / Removed Components
+
+| Component | Previous Role | Current Status | Rationale |
+|-----------|---------------|----------------|-----------|
+| Chainlit | Chat UI (port 8000) | ❌ Deprecated | Replaced by Operator Shell |
+| Azure Container Apps | Hosting | ❌ Removed | Local-first deployment |
+| Azure VMs (Tracardi/ES) | Infrastructure | ❌ Retired | Tracardi now optional adapter |
+
+### Azure Posture
+
+| Service | Status | Notes |
+|---------|--------|-------|
+| Azure OpenAI | ✅ Retained | GPT-4o-mini for NL understanding |
+| Azure Container Apps | ❌ Removed | Cost control; local-first path |
+| Azure VMs | ❌ Removed | Infrastructure retired |
+| Other Azure services | ❌ Not used | Architecture audited 2026-03-14 |
 
 ---
 
