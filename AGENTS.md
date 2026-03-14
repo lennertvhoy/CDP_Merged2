@@ -4,7 +4,7 @@
 **Repository:** CDP_Merged  
 **Infrastructure:** AZURE (VMs, Container Apps, OpenAI)  
 **Last Updated:** 2026-03-14
-**Version:** 5.1 (Condensed Live Docs)
+**Version:** 5.2 (Illustrated Guide + Edge Session Rules)
 
 ---
 
@@ -1225,6 +1225,8 @@ For `docs/ILLUSTRATED_GUIDE.md` and any derived guide assets:
 | 2026-03-08 | When browser access requires authentication to platforms (Teamleader, Exact, Resend, ngrok), prefer delegation to an AI agent with browser takeover capability over headless automation | Headless browsers cannot handle OAuth, 2FA, or active sessions; user delegation is more reliable and secure than requesting credentials |
 | 2026-03-09 | Azure infrastructure deployment (Container Apps, VMs, managed PostgreSQL) is disabled to focus on local-only deployment | User directive to prioritize local development and avoid Azure infrastructure costs; CI/CD workflows disabled but preserved for reference |
 | 2026-03-09 | Kubernetes is the target deployment architecture for datacenter | User confirmed ultimate deployment target is an on-prem/datacenter Kubernetes cluster (k3s/RKE2), not Azure Container Apps or docker-compose in production |
+| 2026-03-14 | Illustrated Guide updates and PDF export are mandatory for every implementation session | Every session that changes code, tests, browser automation, UI, runtime, or user flow must update the Illustrated Guide, include evidence, and export to PDF; no session is complete without this |
+| 2026-03-14 | Already-running Edge session on 127.0.0.1:9223 is mandatory for browser work | The attached Edge session preserves authenticated state and is the canonical browser path; do not spawn fresh browsers for canonical flows |
 
 ---
 
@@ -1278,6 +1280,147 @@ Use dedicated current-state docs instead of growing `AGENTS.md` with task-specif
 - live source real/mock/hybrid posture -> `PROJECT_STATE.yaml`
 - medium-term capability gaps and non-implemented features -> `BACKLOG.md`
 - one-off verification procedures or operational recipes -> dedicated docs under `docs/` when they need to persist
+
+---
+
+## Illustrated Guide Compliance (Mandatory)
+
+**No session is complete unless the Illustrated Guide is updated and re-exported to PDF with the new evidence included.**
+
+This is a standing rule, not an optional extra.
+
+### Scope trigger
+
+For every session where you make a real change to:
+- code,
+- tests/evals,
+- browser automation,
+- UI behavior,
+- runtime behavior,
+- user flow coverage,
+
+you must also do all of the following before handoff:
+
+1. update `docs/ILLUSTRATED_GUIDE.md`
+2. add the new screenshot(s) or artifact reference(s) that prove the change
+3. describe the exact change that occurred
+4. describe what was verified directly in this session
+5. export the updated Illustrated Guide to PDF
+6. include the PDF file path in the report
+7. keep the worktree clean at the end
+
+### Illustrated Guide content requirements
+
+For each real implementation step completed in a session, update the guide with:
+
+- date/session section
+- short title of the change
+- problem before
+- change made
+- verification performed
+- result
+- remaining gap
+- screenshot(s) or artifact path(s)
+- category label:
+  - `ATTACHED_EDGE_CDP`
+  - `ISOLATED_PLAYWRIGHT`
+  - `API/backend`
+  - `UI/runtime`
+  - `eval/test`
+
+If a screenshot exists, the guide must reference it explicitly by file path.
+
+### Example section style
+
+```markdown
+### 2026-03-14 — Deterministic attached-Edge segments smoke
+- Problem before: first-tab selection was fragile and 2 attached-Edge assertions failed.
+- Change made: deterministic tab selection + corrected Segments smoke assertions.
+- Verified directly: 17/17 attached-Edge tests passed.
+- Artifacts:
+  - `reports/e2e_evidence/segments_smoke_deterministic.png`
+  - `reports/e2e_evidence/segments_smoke_latest.png`
+- Status: canonical ATTACHED_EDGE_CDP path improved.
+- Remaining gap: no chat-send smoke yet.
+```
+
+### PDF export requirements
+
+After updating `docs/ILLUSTRATED_GUIDE.md`, export it to PDF every time:
+
+- PDF must be regenerated from the latest guide content
+- PDF must be committed if the guide changed meaningfully in that session
+- Report must include:
+  - exact PDF path
+  - exact source markdown path
+  - confirmation that PDF reflects the latest screenshots/changes
+
+**Stable output path:** `reports/illustrated_guide/ILLUSTRATED_GUIDE_latest.pdf`
+
+Optional timestamped history (additionally): `reports/illustrated_guide/ILLUSTRATED_GUIDE_YYYY-MM-DD_HHMM.pdf`
+
+### Screenshot / evidence rule
+
+If you claim a UI, browser, or flow change:
+- capture at least one screenshot artifact
+- reference it in the guide
+- ensure the exported PDF reflects that new screenshot/evidence section
+
+No invisible evidence.
+
+### Handoff extension for Illustrated Guide
+
+A handoff is not complete unless all of the following are true:
+- `git status --short` is empty
+- intended changes are committed
+- `docs/ILLUSTRATED_GUIDE.md` is updated if the session changed system behavior or coverage
+- the Illustrated Guide PDF was exported from the current guide version
+- the report includes the exact PDF path
+
+### What is NOT acceptable
+
+- "Guide will be updated later"
+- "Screenshots exist but not yet documented"
+- "PDF export skipped this time"
+- "Docs-only update without evidence"
+- "Evidence captured but not included in guide"
+
+### Required report sections (append to every completion report)
+
+15. Exact Illustrated Guide update made
+16. Exact screenshots/artifacts added to the guide
+17. Exact PDF export path
+18. Exact export command(s) used
+19. Exact proof the PDF reflects the latest session change
+
+---
+
+## Canonical Browser Session (Mandatory)
+
+**Use the already-running attached Edge session on `127.0.0.1:9223` for browser work.**
+
+This is the canonical browser path for this project. Do not deviate without explicit instruction.
+
+### Why this session is mandatory
+
+- that Edge session is already logged into the required platforms
+- it preserves the real authenticated state
+- it is the canonical browser path for this project
+
+### Prohibited actions
+
+- Do not spawn a fresh browser for canonical flows
+- Do not replace the live logged-in session with isolated Chromium/Playwright unless you are explicitly working on a clearly labeled non-canonical isolated test
+
+### Before doing browser work
+
+Check the project guidance in:
+- `AGENTS.md`
+- project state / handoff / status files
+
+You are expected to find the needed architecture and workflow guidance there before making changes.
+
+Treat the already-running logged-in Edge session as **required project infrastructure**, not an optional convenience.
 
 ---
 
