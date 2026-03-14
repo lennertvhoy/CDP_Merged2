@@ -1,0 +1,5 @@
+{
+  "name": "CDP_Merged Operator Shell",
+  "description": "Local-first AI operator shell over Belgian company/customer data.",
+  "requestFramePermissions": []
+}

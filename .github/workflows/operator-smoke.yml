@@ -147,45 +147,7 @@ jobs:
           uv run --frozen playwright install-deps chromium
 
       - name: Setup database schema
-        run: |
-          uv run --frozen python -c "
-          import asyncio
-          import asyncpg
-          
-          async def setup():
-              conn = await asyncpg.connect('${DATABASE_URL}')
-              
-              # Create minimal tables for smoke tests
-              await conn.execute('''
-                  CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
-                  
-                  CREATE TABLE IF NOT EXISTS app_chat_users (
-                      user_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-                      identifier TEXT UNIQUE NOT NULL,
-                      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                  );
-                  
-                  CREATE TABLE IF NOT EXISTS app_chat_threads (
-                      thread_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-                      user_id UUID NOT NULL,
-                      title TEXT,
-                      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                  );
-                  
-                  CREATE TABLE IF NOT EXISTS app_auth_local_accounts (
-                      account_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-                      identifier TEXT UNIQUE NOT NULL,
-                      password_hash TEXT NOT NULL,
-                      is_active BOOLEAN DEFAULT TRUE,
-                      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                  );
-              ''')
-              
-              print('Database schema created successfully')
-              await conn.close()
-          
-          asyncio.run(setup())
-          "
+        run: uv run --frozen python scripts/setup_smoke_db.py
 
       - name: Start Operator API (background)
         run: |
