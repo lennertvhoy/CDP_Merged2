@@ -304,3 +304,83 @@ python scripts/mcp_cdp_helper.py wait-for "Results" 10
 ```
 
 **Status:** ✅ COMPLETE — Worktree clean at `9a688ba`
+
+---
+
+## 2026-03-14 (Phase 10: Stronger GUI Proof - Meaningful Navigation Workflow)
+
+### Task: Produce convincing GUI operation proof with visible result
+
+**Type:** docs_or_process_only  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-14 17:00 CET  
+**Git Head:** `79a5e10`  
+**Worktree:** Clean
+
+**Problem with Previous Phase 10:**
+The previous proof only showed:
+- Click into search box
+- Fill text "test"
+- Assert input value changed
+
+This was "basic DOM interaction" not "meaningful GUI operation." A reviewer could say:
+- "Maybe the input accepted text, but no real workflow happened"
+- "Maybe no results changed"
+- "Maybe the submit did nothing meaningful"
+
+**Stronger Proof Delivered:**
+
+| Aspect | Before (Weak) | After (Strong) |
+|--------|---------------|----------------|
+| **Workflow** | Search box fill | Page navigation |
+| **Visible change** | Input text only | Entire page content |
+| **Assertion** | Input value | URL + heading + sidebar + content |
+| **Screenshots** | Nearly identical | Clearly different pages |
+
+**Teamleader Navigation Workflow:**
+
+| Step | Action | Evidence |
+|------|--------|----------|
+| 1 | Navigate to Contacts | `contacts.php` loaded |
+| 2 | Click "Bedrijven" link | JavaScript click executed |
+| 3 | Wait for navigation | 4s network idle |
+| 4 | Verify state | URL, heading, sidebar, content all changed |
+
+**Visible State Changes Captured:**
+
+| Element | Before | After |
+|---------|--------|-------|
+| **URL** | `.../contacts.php` | `.../companies.php` ✅ |
+| **Page Heading** | "Contacten" | "Bedrijven" ✅ |
+| **Sidebar Active** | "Contacten" highlighted | "Bedrijven" highlighted ✅ |
+| **Content Type** | Individual contacts list | Companies list ✅ |
+| **Action Button** | "Contact toevoegen" | "Bedrijf toevoegen" ✅ |
+
+**Evidence Files:**
+
+| File | Size | Description |
+|------|------|-------------|
+| `output/artifacts/gui_workflow/gui_nav_before.png` | 114.7 KB | Contacts page (BEFORE) |
+| `output/artifacts/gui_workflow/gui_nav_after.png` | 136.6 KB | Companies page (AFTER) |
+| `docs/ILLUSTRATED_GUIDE_v3.5.html` | 72.5 KB | Rendered guide with new Phase 10 |
+
+**Doc Changes:**
+
+| File | Change |
+|------|--------|
+| `docs/ILLUSTRATED_GUIDE.md` | Phase 10 rewritten with navigation proof |
+| Evidence Overview | Updated to "GUI navigation with visible state change" |
+| Version | v3.4 → v3.5 |
+
+**Verification:**
+```bash
+# Visual proof - screenshots show different pages
+ls -la output/artifacts/gui_workflow/gui_nav_*.png
+
+# Guide updated
+git show --stat HEAD
+```
+
+**PDF Note:** PDF generation requires LaTeX (xelatex/pdflatex) not available in this environment. HTML version generated as `docs/ILLUSTRATED_GUIDE_v3.5.html` and `docs/ILLUSTRATED_GUIDE.html`.
+
+**Status:** ✅ COMPLETE — Worktree clean at `79a5e10`
