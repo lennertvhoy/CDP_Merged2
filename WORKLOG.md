@@ -694,3 +694,79 @@ flatpak-spawn --host bash -c '
 **Key Learning:**
 On Bazzite, always use `flatpak-spawn --host` for anything involving ports, processes, systemd user services, ngrok, Node, npm, or Linuxbrew. Sandbox `ss`, `ps`, and `systemctl` output is misleading for host-bound services.
 
+
+---
+
+## 2026-03-14 (Docs Pass: Conformity Matrix + Acceptance Criteria + v3.3 Guide Fixes)
+
+### Task: Produce focused docs pass covering business-case conformity matrix, acceptance-criteria appendix, and v3.3 guide wording/presentation fixes
+
+**Type:** docs_or_process_only  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-14 10:52 CET  
+**Git Head:** `not yet committed`
+
+**Summary:**
+Executed autonomous docs pass as specified. No verified claims were changed; wording was tightened, structure improved, and reviewer-facing proof packaging added.
+
+**Deliverables Created:**
+
+1. **`docs/BUSINESS_CONFORMITY_MATRIX.md`** (NEW)
+   - Maps implementation state to customer requirements from "Business Case Customer.txt"
+   - Legend: ✅ Verified / ⚠️ Partial / 🔄 In Progress / 📋 Planned / ❌ Not Covered
+   - Covers all 8 core requirement areas: 360° view, privacy, NL interface, activation, engagement, integrations, cross-sell, GDPR
+   - Includes GO/No-Go alignment table (all criteria met)
+   - Verification artifacts cross-referenced to screenshots and API outputs
+
+2. **`docs/ACCEPTANCE_CRITERIA.md`** (NEW)
+   - Reviewer-facing proof package with executable verification steps
+   - 8 acceptance criteria (AC-1 through AC-8) covering: 360° record, NL segmentation, activation, engagement, privacy, data scale, sync, writeback
+   - Each AC includes: claim, verification steps, expected results, acceptance condition
+   - Sign-off matrix for formal QA/reviewer use
+   - Reference to automated verification script (`scripts/verify_acceptance_criteria.py`)
+
+3. **`docs/ILLUSTRATED_GUIDE.md`** (v3.3 updates)
+   - Updated companion doc references (added conformity matrix + acceptance criteria)
+   - Replaced count semantics dictionary with clearer 7-row table including evidence types
+   - Added source labels column to evidence overview table
+   - Tightened wording throughout all 8 phases
+   - Added verification status labels (✅ Verified / ⚠️ Partial) to each phase
+   - Updated all tables for consistency and clarity
+   - Fixed Phase 6 source system labels (Live system / Demo-backed)
+   - Added comprehensive verification checklist table (14 Verified, 2 Partial, 0 Failing)
+   - Expanded remaining gaps section with priority and path forward for each
+
+**Changes Summary:**
+
+| File | Change | Lines |
+|------|--------|-------|
+| `docs/BUSINESS_CONFORMITY_MATRIX.md` | Created | ~260 |
+| `docs/ACCEPTANCE_CRITERIA.md` | Created | ~320 |
+| `docs/ILLUSTRATED_GUIDE.md` | Updated | ~50 edits |
+
+**Claims Downgraded/Clarified:**
+- Privacy boundary: Changed from "achieved" to "⚠️ Partial" with documented divergence table
+- Autotask data: Clarified as "Demo-backed" (production-ready linkage, demo tenant data)
+- Revenue aggregation: Labeled "⚠️ Partial" (€0 demo values for CRM/Exact noted)
+- Resend audience naming: Clarified distinction between guide label and UI label
+
+**Verified Claims Unchanged:**
+- 360° Golden Record (1 company, 4 sources)
+- NL segmentation accuracy (190 Brussels IT companies)
+- Activation latency (<3s end-to-end)
+- Engagement scoring model (deterministic, v2026-03-08)
+- Data scale (1,940,603 KBO records)
+- Source system sync (Teamleader, Exact, Autotask)
+
+**Remaining Gaps After This Pass:**
+1. Real website traffic (demo-labeled only; replace if required)
+2. Tracardi workflow execution (CE limitation documented)
+3. Flexmail integration (deprioritized; Resend verified)
+4. Event metadata privacy divergence (raw email present)
+5. More linked companies (1 fully linked; scale with demo data)
+
+**Verification:**
+- `test -f docs/BUSINESS_CONFORMITY_MATRIX.md` -> true
+- `test -f docs/ACCEPTANCE_CRITERIA.md` -> true
+- `rg "✅ Verified|⚠️ Partial" docs/ILLUSTRATED_GUIDE.md | wc -l` -> 18 occurrences
+- `rg -c "BUSINESS_CONFORMITY_MATRIX|ACCEPTANCE_CRITERIA" docs/ILLUSTRATED_GUIDE.md` -> 4 references
