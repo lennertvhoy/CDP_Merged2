@@ -14,6 +14,7 @@ from datetime import datetime
 import time
 import uuid
 import asyncio
+import logging
 from pathlib import Path
 from typing import Any, AsyncGenerator
 
@@ -29,6 +30,8 @@ from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from pydantic import BaseModel, Field
 
 from src.graph.workflow import compile_workflow
+
+logger = logging.getLogger(__name__)
 
 from src.services.local_account_auth import (
     LocalAccountStore,
@@ -426,7 +429,20 @@ async def _chat_stream_generator(
         # Sanitize the final content to remove internal thinking and tool leakage
         sanitized_content = _sanitize_assistant_content(accumulated_content)
         
-        # Yield final assistant message with cleaned content and detailed latency report
+        # Log latency report server-side only (not sent to client to avoid UX pollution)
+        latency_report = {
+            "total_ms": round(total_request_time * 1000, 2),
+            "to_first_token_ms": round(first_token_time * 1000, 2) if first_token_time else None,
+            "stream_processing_ms": round(total_stream_time * 1000, 2),
+            "stages_ms": {
+                k: round(v * 1000, 2) for k, v in stage_times.items()
+            },
+            "chunks_emitted": chunk_count,
+            "thinking_suppressed": suppressed_count,
+        }
+        logger.info(f"Chat turn latency report: {latency_report}")
+        
+        # Yield final assistant message with cleaned content
         yield _format_sse_event({
             "type": "assistant_message",
             "thread_id": thread_id,
@@ -438,16 +454,6 @@ async def _chat_stream_generator(
                 "content": sanitized_content,
                 "created_at": datetime.now().isoformat(),
                 "status": "complete",
-            },
-            "latency_report": {
-                "total_ms": round(total_request_time * 1000, 2),
-                "to_first_token_ms": round(first_token_time * 1000, 2) if first_token_time else None,
-                "stream_processing_ms": round(total_stream_time * 1000, 2),
-                "stages_ms": {
-                    k: round(v * 1000, 2) for k, v in stage_times.items()
-                },
-                "chunks_emitted": chunk_count,
-                "thinking_suppressed": suppressed_count,
             },
         })
         

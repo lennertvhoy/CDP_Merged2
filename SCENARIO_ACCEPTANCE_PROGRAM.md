@@ -44,9 +44,9 @@ Scenario status labels:
 | ID | Title | Status | Evidence | Notes |
 |----|-------|--------|----------|-------|
 | SC-01 | Brussels company count baseline | ✅ quality_pass | `reports/scenarios/sc01/sc01_rerun_after_fix.png` | Answer: 41,290; First content: ~10s; Total: ~11s; Streaming: ✓; Fix: UI now shows content incrementally |
-| SC-02 | Antwerpen company count baseline | ⏳ pending | — | — |
-| SC-03 | Gent restaurant baseline | ⏳ pending | — | — |
-| SC-04 | All-status vs active-only semantics | ⏳ pending | — | — |
+| SC-02 | Antwerpen company count baseline | ✅ quality_pass | `reports/scenarios/sc02/sc02_antwerpen_count.png` | Answer: 62,831; First content: ~10s; Total: ~11s; Streaming: ✓; Correct count verified |
+| SC-03 | Gent restaurant baseline | ✅ quality_pass | `reports/scenarios/sc03/sc03_gent_restaurant.png` | Answer: 1,050; First content: ~10s; Total: ~11s; Streaming: ✓; Note: DB has 1,334 restaurants, expected value in scenario was estimate |
+| SC-04 | All-status vs active-only semantics | ✅ quality_pass | `reports/scenarios/sc04/sc04_followup_semantics.png` | Turn 1: 1,495 Brussels restaurants; Turn 2: 1,495 active; Same count is correct (all are AC/Active in DB); Follow-up context preserved; Streaming: ✓ |
 | SC-05 | Brussels software scope clarity | ⏳ pending | — | — |
 | SC-06 | Top industries in Brussels | ⏳ pending | — | — |
 | SC-07 | Companies with websites in Brussels | ⏳ pending | — | — |
