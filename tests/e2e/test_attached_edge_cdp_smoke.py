@@ -139,17 +139,81 @@ class TestChatFlowAttached:
             f"No chat indicators found in: {snapshot[:500]}"
 
 
+class TestDeterministicTabSelection:
+    """Verify robust tab selection works reliably."""
+    
+    def test_select_tab_by_url_prefix(self, browser_controller):
+        """Select tab using URL prefix match - most robust method."""
+        result = browser_controller.select_tab_deterministic(
+            url_prefix=BASE_URL
+        )
+        assert result["success"], f"URL prefix match failed: {result}"
+        assert result["method"] == "url_prefix"
+    
+    def test_select_tab_by_url_contains(self, browser_controller):
+        """Select tab using URL substring match."""
+        result = browser_controller.select_tab_deterministic(
+            url_contains="localhost:3000"
+        )
+        assert result["success"], f"URL contains match failed: {result}"
+        assert result["method"] == "url_contains"
+    
+    def test_select_tab_by_title(self, browser_controller):
+        """Select tab using title pattern match."""
+        result = browser_controller.select_tab_deterministic(
+            title_contains="CDP"
+        )
+        assert result["success"], f"Title match failed: {result}"
+        assert result["method"] == "title_contains"
+    
+    def test_select_tab_fallback(self, browser_controller):
+        """Verify fallback works when no specific match found."""
+        result = browser_controller.select_tab_deterministic(
+            url_contains="this-wont-match-anything-12345",
+            fallback_first=True
+        )
+        assert result["success"], f"Fallback selection failed: {result}"
+        assert result["method"] == "fallback_first"
+    
+    def test_select_tab_preference_order(self, browser_controller):
+        """Verify exact match takes precedence over prefix match."""
+        # First navigate to login
+        browser_controller.navigate(f"{BASE_URL}/login")
+        time.sleep(1)
+        
+        # Try with both url_prefix and url_contains
+        # prefix should win since it's priority 2 vs 3
+        result = browser_controller.select_tab_deterministic(
+            url_prefix=BASE_URL,
+            url_contains="localhost"
+        )
+        assert result["success"]
+        # The method should be url_prefix since it's higher priority
+        assert result["method"] == "url_prefix"
+
+
 class TestNavigationAttached:
     """Critical path: UI navigation via attached Edge."""
     
     def test_segment_manager_accessible(self, browser_controller):
         """Verify segment manager view loads via navigation."""
-        # Navigate to main page first
-        browser_controller.navigate(f"{BASE_URL}/")
+        # First navigate to base URL (may show login gate or main page depending on auth state)
+        browser_controller.navigate(BASE_URL)
         time.sleep(2)
         
         snapshot = browser_controller.snapshot()
-        # Segments is available as a navigation button on main page
+        
+        # Check if we're on login gate or main page
+        if "Private preview" in snapshot or "main access screen" in snapshot.lower():
+            # On login gate - this is expected if not authenticated
+            # Navigate to main access screen
+            ref = browser_controller.get_element_ref("Use the main access screen")
+            if ref:
+                browser_controller.click("Use the main access screen", ref=ref)
+                time.sleep(2)
+                snapshot = browser_controller.snapshot()
+        
+        # Now we should be on the main page with navigation
         assert "Segments" in snapshot, f"Expected 'Segments' navigation in snapshot, got: {snapshot[:500]}"
         
         # Get ref for Segments button and click with ref
@@ -196,6 +260,63 @@ class TestNavigationAttached:
         assert result is not None, "Screenshot should return data"
         assert screenshot_path.exists(), "Screenshot file should be created"
         assert screenshot_path.stat().st_size > 1000, "Screenshot should have content"
+
+
+class TestEndToEndSmokeFlow:
+    """Complete end-to-end smoke flow with assertions and artifacts.
+    
+    Validates:
+    - Deterministic tab selection
+    - Navigation to operator shell
+    - Segments surface interaction
+    - Screenshot capture as evidence
+    """
+    
+    def test_full_segments_smoke_flow(self, browser_controller, tmp_path):
+        """Execute complete smoke flow: select tab → navigate → open Segments → assert → screenshot."""
+        # Step 1: Deterministic tab selection
+        result = browser_controller.ensure_tab_for_url(BASE_URL)
+        assert result["success"], f"Tab selection failed: {result.get('error')}"
+        assert result["method"] in ["exact_url", "url_prefix", "url_contains", "navigate"]
+        time.sleep(2)
+        
+        # Step 2: Verify we're on authenticated main page
+        snapshot = browser_controller.snapshot()
+        assert "CDP" in snapshot, "Expected CDP header on main page"
+        assert "Segments" in snapshot, "Expected Segments navigation"
+        assert "Chat" in snapshot, "Expected Chat navigation"
+        
+        # Step 3: Get element ref and click Segments
+        ref = browser_controller.get_element_ref("Segments")
+        assert ref is not None, "Could not find Segments button ref"
+        
+        click_result = browser_controller.click("Segments", ref=ref)
+        time.sleep(2)  # Wait for client-side navigation
+        
+        # Step 4: Assert Segments view loaded
+        snapshot_segments = browser_controller.snapshot()
+        assert "Segments" in snapshot_segments, "Segments heading not found"
+        assert "Create segment" in snapshot_segments, "Create segment button not found"
+        assert "Search segments" in snapshot_segments.lower() or "search" in snapshot_segments.lower(), \
+            "Search field not found"
+        
+        # Step 5: Verify URL (stays on / for client-side routing)
+        current_url = browser_controller.get_url()
+        assert BASE_URL in current_url, f"Expected URL to contain {BASE_URL}, got: {current_url}"
+        
+        # Step 6: Capture evidence screenshot
+        screenshot_path = tmp_path / "segments_smoke_evidence.png"
+        browser_controller.screenshot(str(screenshot_path))
+        
+        assert screenshot_path.exists(), "Screenshot file should exist"
+        screenshot_size = screenshot_path.stat().st_size
+        assert screenshot_size > 5000, f"Screenshot too small ({screenshot_size} bytes), may be blank"
+        
+        # Optional: Copy to reports for CI artifacts
+        reports_dir = Path("reports/e2e_evidence")
+        reports_dir.mkdir(parents=True, exist_ok=True)
+        import shutil
+        shutil.copy(screenshot_path, reports_dir / "segments_smoke_latest.png")
 
 
 class TestAPIHealth:

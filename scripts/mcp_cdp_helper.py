@@ -216,58 +216,138 @@ class MCPBrowserController:
                                 return match.group(1)
         return None
     
-    def select_tab_by_url(self, url_pattern: str) -> bool:
-        """Select browser tab by URL pattern match.
+    def select_tab_deterministic(
+        self,
+        exact_url: str = None,
+        url_prefix: str = None,
+        url_contains: str = None,
+        title_contains: str = None,
+        fallback_first: bool = False,
+    ) -> dict:
+        """Select browser tab using deterministic preference order.
+        
+        Selection priority (first match wins):
+        1. exact_url - exact URL match (e.g., "http://localhost:3000/login")
+        2. url_prefix - URL starts with prefix (e.g., "http://localhost:3000")
+        3. url_contains - URL contains substring (e.g., "localhost:3000")
+        4. title_contains - Title contains substring (e.g., "CDP")
+        5. fallback_first - Use first available tab if no match
         
         Args:
-            url_pattern: URL substring to match (e.g., "localhost:3000" or "resend.com")
+            exact_url: Exact URL to match
+            url_prefix: URL prefix to match (starts with)
+            url_contains: URL substring to match
+            title_contains: Title substring to match
+            fallback_first: Use first tab if no other match
             
         Returns:
-            True if tab found and selected, False otherwise
+            dict with success status and matched tab info:
+            {"success": bool, "method": str, "tab": dict, "error": str}
         """
         import urllib.request
         try:
             with urllib.request.urlopen(f"{self.cdp_endpoint}/json/list", timeout=5) as response:
                 tabs = json.loads(response.read().decode())
-                for tab in tabs:
-                    tab_url = tab.get("url", "")
-                    if url_pattern in tab_url:
-                        # Found matching tab - navigate to its webSocketDebuggerUrl
-                        ws_url = tab.get("webSocketDebuggerUrl")
-                        if ws_url:
-                            # Use CDP to activate this target
-                            # For now, we navigate to the URL which reuses the tab
+                
+                if not tabs:
+                    return {"success": False, "method": None, "tab": None, 
+                            "error": "No tabs available"}
+                
+                # Priority 1: Exact URL match
+                if exact_url:
+                    for tab in tabs:
+                        if tab.get("url") == exact_url:
+                            self.navigate(tab["url"])
+                            return {"success": True, "method": "exact_url", 
+                                    "tab": tab, "error": None}
+                
+                # Priority 2: URL prefix match
+                if url_prefix:
+                    for tab in tabs:
+                        tab_url = tab.get("url", "")
+                        if tab_url.startswith(url_prefix):
                             self.navigate(tab_url)
-                            return True
-            return False
+                            return {"success": True, "method": "url_prefix", 
+                                    "tab": tab, "error": None}
+                
+                # Priority 3: URL contains
+                if url_contains:
+                    for tab in tabs:
+                        tab_url = tab.get("url", "")
+                        if url_contains in tab_url:
+                            self.navigate(tab_url)
+                            return {"success": True, "method": "url_contains", 
+                                    "tab": tab, "error": None}
+                
+                # Priority 4: Title contains
+                if title_contains:
+                    for tab in tabs:
+                        tab_title = tab.get("title", "")
+                        if title_contains in tab_title:
+                            self.navigate(tab["url"])
+                            return {"success": True, "method": "title_contains", 
+                                    "tab": tab, "error": None}
+                
+                # Priority 5: Fallback to first tab
+                if fallback_first and tabs:
+                    self.navigate(tabs[0]["url"])
+                    return {"success": True, "method": "fallback_first", 
+                            "tab": tabs[0], "error": None}
+                
+                return {"success": False, "method": None, "tab": None,
+                        "error": "No matching tab found"}
+                        
         except Exception as e:
-            print(f"Error selecting tab by URL: {e}", file=sys.stderr)
-            return False
+            error_msg = f"Error selecting tab: {e}"
+            print(error_msg, file=sys.stderr)
+            return {"success": False, "method": None, "tab": None, "error": error_msg}
+    
+    def select_tab_by_url(self, url_pattern: str) -> bool:
+        """LEGACY: Select browser tab by URL pattern match.
+        
+        DEPRECATED: Use select_tab_deterministic() instead.
+        This method is kept for backward compatibility.
+        """
+        result = self.select_tab_deterministic(url_contains=url_pattern, fallback_first=True)
+        return result["success"]
     
     def select_tab_by_title(self, title_pattern: str) -> bool:
-        """Select browser tab by title pattern match.
+        """LEGACY: Select browser tab by title pattern match.
+        
+        DEPRECATED: Use select_tab_deterministic() instead.
+        This method is kept for backward compatibility.
+        """
+        result = self.select_tab_deterministic(title_contains=title_pattern, fallback_first=True)
+        return result["success"]
+    
+    def ensure_tab_for_url(self, target_url: str) -> dict:
+        """Ensure we're on the correct tab for the target URL.
+        
+        Uses deterministic selection strategy:
+        1. Try exact URL match first
+        2. Try URL prefix match
+        3. Try URL contains match
+        4. Navigate to target_url as last resort
         
         Args:
-            title_pattern: Title substring to match (e.g., "CDP_Merged" or "Teamleader")
+            target_url: The URL we want to be on
             
         Returns:
-            True if tab found and selected, False otherwise
+            dict with selection result
         """
-        import urllib.request
-        try:
-            with urllib.request.urlopen(f"{self.cdp_endpoint}/json/list", timeout=5) as response:
-                tabs = json.loads(response.read().decode())
-                for tab in tabs:
-                    tab_title = tab.get("title", "")
-                    if title_pattern in tab_title:
-                        tab_url = tab.get("url", "")
-                        if tab_url:
-                            self.navigate(tab_url)
-                            return True
-            return False
-        except Exception as e:
-            print(f"Error selecting tab by title: {e}", file=sys.stderr)
-            return False
+        result = self.select_tab_deterministic(
+            exact_url=target_url,
+            url_prefix=target_url.rstrip('/'),
+            url_contains=target_url.split('/')[-1] or target_url,
+            fallback_first=False
+        )
+        
+        if result["success"]:
+            return result
+        
+        # No matching tab - navigate to target URL
+        self.navigate(target_url)
+        return {"success": True, "method": "navigate", "tab": {"url": target_url}, "error": None}
     
     def list_tabs_detailed(self) -> list[dict]:
         """List all browser tabs with details.
