@@ -9,7 +9,7 @@
 
 **Audience:** Demo observers, auditors, stakeholders needing visual proof
 
-**Last Updated:** 2026-03-14 (v4.11 — SC-08/09/10 Complete, Tracker Reconciled)
+**Last Updated:** 2026-03-14 (v4.12 — SC-11/12/13 Follow-up Continuity Complete)
 
 **Companion Docs:**
 
@@ -612,6 +612,12 @@ Use short evidence IDs in the matrix below so the PDF stays readable; the full f
 | **SG-17** | **SC-08 — Brussels companies with email (4,239)** | **2026-03-14** | **Local chatbot** |
 | **SG-18** | **SC-09 — Antwerp software companies (3,062)** | **2026-03-14** | **Local chatbot** |
 | **SG-19** | **SC-10 — Legal form aggregation (Top 5)** | **2026-03-14** | **Local chatbot** |
+| **SG-20** | **SC-11 Turn 1 — Find companies in Brussels (41,290)** | **2026-03-14** | **Local chatbot** |
+| **SG-21** | **SC-11 Turn 2 — Only active ones (context reuse)** | **2026-03-14** | **Local chatbot** |
+| **SG-22** | **SC-12 Turn 1 — Find software companies (78,470)** | **2026-03-14** | **Local chatbot** |
+| **SG-23** | **SC-12 Turn 2 — Only Antwerp (3,062, context reuse)** | **2026-03-14** | **Local chatbot** |
+| **SG-24** | **SC-13 Turn 1 — Find software companies in Antwerp (3,062)** | **2026-03-14** | **Local chatbot** |
+| **SG-25** | **SC-13 Turn 2 — Show first 20 (bounded preview)** | **2026-03-14** | **Local chatbot** |
 
 **Filename Key:**
 - `SG-01` → `chatbot_360_bbs_four_source_final_2026-03-08.png`
@@ -633,6 +639,12 @@ Use short evidence IDs in the matrix below so the PDF stays readable; the full f
 - **`SG-17`** → **`reports/scenarios/sc08/sc08_brussels_email.png`**
 - **`SG-18`** → **`reports/scenarios/sc09/sc09_antwerp_software.png`**
 - **`SG-19`** → **`reports/scenarios/sc10/sc10_legal_forms.png`**
+- **`SG-20`** → **`reports/scenarios/sc11/sc11_turn1_brussels.png`**
+- **`SG-21`** → **`reports/scenarios/sc11/sc11_turn2_active.png`**
+- **`SG-22`** → **`reports/scenarios/sc12/sc12_turn1_software.png`**
+- **`SG-23`** → **`reports/scenarios/sc12/sc12_turn2_antwerp.png`**
+- **`SG-24`** → **`reports/scenarios/sc13/sc13_turn1_antwerp_software.png`**
+- **`SG-25`** → **`reports/scenarios/sc13/sc13_turn2_first20.png`**
 
 **Label Note:** The guide intentionally mixes live SaaS screens, local runtime views, demo-backed integration evidence, and generated local artifacts. Each item is labeled by source rather than flattened into a single "live" claim.
 
@@ -2276,6 +2288,149 @@ All Foundation scenarios (SC-01 to SC-10) now complete:
 | SC-08 | ✅ quality_pass |
 | SC-09 | ✅ quality_pass |
 | SC-10 | ✅ quality_pass |
+
+---
+
+## Phase 23 — Compound Slice: SC-11/12/13 Follow-up Continuity (2026-03-14)
+
+**Version:** v4.12  
+**Focus:** Follow-up continuity scenarios with context reuse verification
+
+### 23.1 Track A — SC-11 Follow-up Narrowing by Status
+
+**Scenario:**
+- Turn 1: "Find companies in Brussels."
+- Turn 2: "Only active ones."
+
+**Turn 1 Result:**
+- Answer: "I found 41,290 companies in Brussels."
+- Evidence: `reports/scenarios/sc11/sc11_turn1_brussels.png`
+
+**Turn 2 Result:**
+- Answer: "I found 41,290 active companies in Brussels. The count did not change because all 41,290 matching companies already have active status."
+- Context reuse: ✓ (explicitly references Brussels context)
+- Status filter applied: ✓
+- Explanation of unchanged count: ✓
+- Evidence: `reports/scenarios/sc11/sc11_turn2_active.png`
+
+**Quality Metrics:**
+| Metric | Turn 1 | Turn 2 |
+|--------|--------|--------|
+| First content | ~12s | ~15s |
+| Streaming | ✓ | ✓ |
+| Answer-first | ✓ | ✓ |
+
+**Status:** ✅ quality_pass
+
+---
+
+### 23.2 Track B — SC-12 Follow-up Narrowing by City
+
+**Scenario:**
+- Turn 1: "Find software companies."
+- Turn 2: "Only the ones in Antwerp."
+
+**Turn 1 Result:**
+- Answer: "I found 78,470 software companies in Belgium."
+- Real list behavior: ✓ (10 examples with names, cities, KBO numbers)
+- Evidence: `reports/scenarios/sc12/sc12_turn1_software.png`
+
+**Turn 2 Result:**
+- Answer: "I found 3,062 software companies in Antwerpen."
+- Context reuse: ✓ (narrows from Belgium-wide to Antwerp)
+- Count change: 78,470 → 3,062 (correct narrowing)
+- Cross-scenario consistency: ✓ (matches SC-09: 3,062)
+- Real list behavior: ✓ (6 examples from Antwerp)
+- Evidence: `reports/scenarios/sc12/sc12_turn2_antwerp.png`
+
+**Quality Metrics:**
+| Metric | Turn 1 | Turn 2 |
+|--------|--------|--------|
+| First content | ~15s | ~15s |
+| Streaming | ✓ | ✓ |
+| Answer-first | ✓ | ✓ |
+
+**Status:** ✅ quality_pass
+
+---
+
+### 23.3 Track C — SC-13 Follow-up Result Limiting
+
+**Scenario:**
+- Turn 1: "Find software companies in Antwerp."
+- Turn 2: "Show me the first 20."
+
+**Turn 1 Result:**
+- Answer: "I found 3,062 software companies in Antwerp."
+- 8 examples shown with contact info annotations
+- Evidence: `reports/scenarios/sc13/sc13_turn1_antwerp_software.png`
+
+**Turn 2 Result:**
+- Answer: "Here are the first 20 software companies in Antwerp:"
+- Bounded preview: ✓ (exactly 20 companies listed)
+- Real list behavior: ✓ (not just prose)
+- Entries include: Company name, KBO number, contact availability
+- Context reuse: ✓ (explicitly references "software companies in Antwerp")
+- Addresses SC-09 softness: ✓ (demonstrates real searchable system)
+- Evidence: `reports/scenarios/sc13/sc13_turn2_first20.png`
+
+**Sample entries:**
+| # | Company | KBO | Contact |
+|---|---------|-----|---------|
+| 1 | Keen & Wise | 0674498210 | — |
+| 2 | 0404 | 0544881761 | — |
+| 9 | 2Forward | 0744483017 | email + phone |
+| 11 | 365 Services | 1007288877 | email |
+| 16 | 3Point | 0803144360 | phone |
+
+**Quality Metrics:**
+| Metric | Turn 1 | Turn 2 |
+|--------|--------|--------|
+| First content | ~15s | ~15s |
+| Streaming | ✓ | ✓ |
+| Answer-first | ✓ | ✓ |
+| Bounded list | — | ✓ (exactly 20) |
+
+**Status:** ✅ quality_pass
+
+---
+
+### 23.4 Summary: Follow-up Continuity Verification
+
+| Scenario | Context Reuse | Narrowing/Limiting | Explanation | Status |
+|----------|---------------|-------------------|-------------|--------|
+| SC-11 | ✓ (Brussels context) | Status filter | ✓ (explained unchanged count) | quality_pass |
+| SC-12 | ✓ (software companies) | City filter (Belgium→Antwerp) | ✓ (implicit via count change) | quality_pass |
+| SC-13 | ✓ (Antwerp software) | Result limit (20) | ✓ (bounded list shown) | quality_pass |
+
+**Key Achievement:** SC-13 demonstrates real searchable system behavior with bounded previews, addressing the softness noted in SC-09.
+
+---
+
+### 23.5 Updated Scenario Tracker Status
+
+**Follow-up Continuity (SC-11 to SC-18):**
+| ID | Status |
+|----|--------|
+| SC-11 | ✅ quality_pass |
+| SC-12 | ✅ quality_pass |
+| SC-13 | ✅ quality_pass |
+| SC-14 | ⏳ pending |
+| SC-15 | ⏳ pending |
+| SC-16 | ⏳ pending |
+| SC-17 | ⏳ pending |
+| SC-18 | ⏳ pending |
+
+**Overall Program Progress:**
+| Category | Complete | Pending |
+|----------|----------|---------|
+| Foundation (SC-01 to SC-10) | 10 | 0 |
+| Follow-up (SC-11 to SC-18) | 3 | 5 |
+| Segments/Exports (SC-19 to SC-28) | 0 | 10 |
+| 360/Analytics (SC-29 to SC-38) | 0 | 10 |
+| Admin/Auth (SC-39 to SC-45) | 4 | 3 |
+| Intent/Robustness (SC-46 to SC-50) | 0 | 5 |
+| **Total** | **17 (34%)** | **33 (66%)** |
 
 ---
 
