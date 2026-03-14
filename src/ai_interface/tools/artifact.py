@@ -24,17 +24,18 @@ ARTIFACT_ROOT = Path("output") / "agent_artifacts"
 def _get_base_url() -> str:
     """Get the base URL for download links.
 
-    For local deployment, uses CHAINLIT_URL or falls back to localhost:8000.
-    For Azure deployment, this can be extended to use the deployed URL.
+    Uses OPERATOR_SHELL_URL (port 3000) for the operator shell frontend,
+    which proxies /downloads/ to the operator API.
+    Falls back to localhost:3000 for local development.
     """
     # Check for explicitly configured base URL
-    base_url = os.getenv("CHAINLIT_URL", "").rstrip("/")
+    base_url = os.getenv("OPERATOR_SHELL_URL", "").rstrip("/")
     if base_url:
         return base_url
 
-    # Default to localhost for local development
-    port = os.getenv("CHAINLIT_PORT", "8000")
-    return f"http://localhost:{port}"
+    # Default to operator shell port for local development
+    # The shell proxies /downloads/ to the operator API
+    return "http://localhost:3000"
 
 
 SEARCH_RESULT_FIELDS = [

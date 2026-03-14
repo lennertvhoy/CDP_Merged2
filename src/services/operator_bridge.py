@@ -10,6 +10,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
+from src.ai_interface.tools.artifact import ARTIFACT_ROOT
 from src.ai_interface.tools.export import export_segment_to_csv
 from src.core.logger import get_logger
 from src.services.canonical_segments import CanonicalSegmentService
@@ -20,7 +21,8 @@ from src.services.unified_360_queries import Unified360Service
 
 logger = get_logger(__name__)
 
-EXPORT_ROOT = Path(tempfile.gettempdir()) / "cdp_exports"
+# Use the same artifact root as the artifact tool for consistency
+EXPORT_ROOT = ARTIFACT_ROOT
 DEFAULT_THREAD_LIMIT = 25
 DEFAULT_COMPANY_LIMIT = 25
 DEFAULT_SEGMENT_LIMIT = 25
@@ -761,7 +763,16 @@ async def export_segment(segment_ref: str) -> dict[str, Any]:
 
 
 def resolve_export_file(filename: str) -> Path:
-    file_path = (EXPORT_ROOT / filename).resolve()
-    if not str(file_path).startswith(str(EXPORT_ROOT.resolve())):
+    # Support both segment exports and agent artifact downloads
+    # Try artifact root first (output/agent_artifacts), fall back to legacy export path
+    for root in [ARTIFACT_ROOT, Path(tempfile.gettempdir()) / "cdp_exports"]:
+        file_path = (root / filename).resolve()
+        if not str(file_path).startswith(str(root.resolve())):
+            raise ValueError("access_denied")
+        if file_path.exists():
+            return file_path
+    # Return artifact root path as default (will trigger 404 if not exists)
+    file_path = (ARTIFACT_ROOT / filename).resolve()
+    if not str(file_path).startswith(str(ARTIFACT_ROOT.resolve())):
         raise ValueError("access_denied")
     return file_path

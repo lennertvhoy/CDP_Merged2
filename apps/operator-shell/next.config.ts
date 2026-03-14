@@ -19,6 +19,10 @@ const nextConfig: NextConfig = {
         source: "/chat-api/:path*",
         destination: `${operatorApiOrigin}/api/operator/:path*`,
       },
+      {
+        source: "/downloads/:filename",
+        destination: `${operatorApiOrigin}/api/operator/downloads/:filename`,
+      },
     ];
   },
 };
