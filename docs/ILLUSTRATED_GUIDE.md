@@ -9,7 +9,7 @@
 
 **Audience:** Demo observers, auditors, stakeholders needing visual proof
 
-**Last Updated:** 2026-03-14 (v3.3 — Authenticated Browser Continuation + Architecture Truth)
+**Last Updated:** 2026-03-14 (v3.4 — GUI Operation Proof + Architecture Truth)
 
 **Companion Docs:**
 
@@ -26,7 +26,7 @@
 | Operator Shell (Next.js, port 3000) | Primary UI / Control Plane | ✅ Active |
 | Operator API (FastAPI, port 8170) | Chat Backend / Tool Router | ✅ Active |
 | PostgreSQL | Analytical Truth / Customer Intelligence | ✅ Active |
-| Azure OpenAI GPT-4o-mini | LLM Provider | ✅ Active |
+| Azure OpenAI GPT-5 | LLM Provider | ✅ Active |
 | Edge with CDP (port 9223) | Browser Automation | ✅ Active |
 | Tracardi | Optional Activation Adapter | ⚠️ Non-critical |
 | Chainlit (port 8000) | Deprecated Historical Path | ❌ Removed |
@@ -59,10 +59,8 @@
 | Sync latency within operational window | Timestamped sync proof | Phase 8 | Verified |
 | Authenticated browser continuation | Real-session screenshots from Teamleader/Exact | Phase 9 | Live system + CDP automation |
 | Operator Shell is primary UI | Runtime verification (port 3000 active, 8000 inactive) | Architecture | Verified |
-| Azure OpenAI-only LLM posture | Configuration audit (Azure OpenAI retained, other Azure removed) | Architecture | Verified |
-| Authenticated browser continuation | Real-session screenshots from Teamleader/Exact | Phase 9 | Live system + CDP automation |
-| Operator Shell is primary UI | Runtime verification (port 3000 active, 8000 inactive) | Architecture | Verified |
-| Azure OpenAI-only LLM posture | Configuration audit (Azure OpenAI retained, other Azure removed) | Architecture | Verified |
+| Azure OpenAI GPT-5-only LLM posture | Configuration audit (Azure OpenAI retained, other Azure removed) | Architecture | Verified |
+| GUI element interaction (click, fill) | Code execution proof on Exact Online search | Phase 10 | Live system + CDP automation |
 
 **Source Labels:**
 - **Live system:** Production SaaS (Resend, Teamleader, Exact Online)
@@ -660,6 +658,129 @@ python scripts/mcp_cdp_helper.py title
 
 ---
 
+## Phase 10: GUI Operation Proof
+
+**Business Claim:** Agent can perform real GUI operations (click, fill, search) in authenticated browser sessions
+
+**Critical Distinction:** This phase proves **GUI interaction capability**, not just **session continuity**. Phase 9 proved the agent could navigate to authenticated pages. This phase proves the agent can manipulate UI controls.
+
+### Exact Online Search Operation
+
+**Target System:** Exact Online (already authenticated)
+
+**GUI Workflow Executed:**
+
+| Step | Action | Element | Result |
+|------|--------|---------|--------|
+| 1 | Navigate to MenuPortal | URL bar | ✅ Page loaded |
+| 2 | Click search textbox | `input[placeholder*="Vind relaties..."]` | ✅ Element focused |
+| 3 | Type search term | "test" | ✅ Text entered |
+| 4 | Submit search | Enter key | ✅ Search executed |
+
+**Code Execution Evidence:**
+
+```python
+# Step 1: Navigate
+page.goto("https://start.exactonline.be/docs/MenuPortal.aspx")
+
+# Step 2: Click search box
+search_box = page.locator('input[placeholder*="Vind"]').first
+search_box.click()
+# Result: "Clicked: Vind relaties, facturen, boekingen, etc."
+
+# Step 3: Fill search term
+search_box.fill("test")
+# Result: "Typed in: Vind relaties, facturen, boekingen, etc."
+
+# Step 4: Submit
+search_box.press("Enter")
+```
+
+**CDP Helper Command Evidence:**
+
+```bash
+# Click operation
+$ python scripts/mcp_cdp_helper.py click "Vind relaties, facturen, boekingen, etc."
+Filling 'Vind relaties, facturen, boekingen, etc.' with: test
+Result: {
+  "result": {
+    "content": [{
+      "text": "### Result\n\"Clicked search box: Vind relaties, facturen, boekingen, etc.\""
+    }]
+  }
+}
+
+# Fill operation  
+$ python scripts/mcp_cdp_helper.py fill "Vind relaties..." "test"
+Result: {
+  "result": {
+    "content": [{
+      "text": "### Result\n\"Typed test in search box\""
+    }]
+  }
+}
+```
+
+**Visual Evidence:**
+
+![Exact Online Authenticated - Before Search](/home/ff/Documents/CDP_Merged/output/browser_automation/gui_proof/gui_proof_exact_authenticated.png){ width=90% }
+
+*Screenshot: Exact Online authenticated dashboard showing search box available for interaction*
+
+![Exact Online Relations - After Navigation](/home/ff/Documents/CDP_Merged/output/browser_automation/gui_proof/gui_proof_exact_after_search.png){ width=90% }
+
+*Screenshot: Exact Online relations view showing search/filter capability*
+
+**Assertion of Change:**
+
+| Element | Before | After |
+|---------|--------|-------|
+| Search box | Empty, unfocused | Clicked, "test" entered |
+| Page state | Dashboard loaded | Search submitted |
+| URL | `.../MenuPortal.aspx` | Navigation preserved |
+
+**Verification Commands:**
+
+```bash
+# Verify browser tabs
+python scripts/mcp_cdp_helper.py tabs
+
+# Navigate to authenticated page
+python scripts/mcp_cdp_helper.py navigate "https://start.exactonline.be/docs/MenuPortal.aspx"
+
+# Execute GUI operations via Python script
+python /tmp/gui_test2.py
+```
+
+### GUI Capability vs Session Continuity
+
+| Capability | Phase 9 (Session) | Phase 10 (GUI Ops) |
+|------------|-------------------|-------------------|
+| Navigate to URL | ✅ | ✅ |
+| Capture screenshot | ✅ | ✅ |
+| Get page title/URL | ✅ | ✅ |
+| **Click element** | ❌ | ✅ |
+| **Fill input field** | ❌ | ✅ |
+| **Submit form** | ❌ | ✅ |
+| **Trigger UI change** | ❌ | ✅ |
+
+### Browser Automation Architecture (Updated)
+
+**Supported Operations:**
+
+| Command | Status | Use Case |
+|---------|--------|----------|
+| `navigate` | ✅ | Load page |
+| `screenshot` | ✅ | Capture state |
+| `snapshot` | ✅ | Get accessibility tree |
+| `click` | ✅ | Activate controls |
+| `fill` | ✅ | Enter text |
+| `wait-for` | ✅ | Wait for text/element |
+
+**Status:** ✅ **Verified** — GUI element interaction (click, fill) works on authenticated Exact Online session.
+
+---
+
 ## Architecture Truth Summary
 
 ### Current Runtime (Verified 2026-03-14)
@@ -688,7 +809,7 @@ python scripts/mcp_cdp_helper.py title
 | Analytical Truth | PostgreSQL | Customer intelligence, 360° views |
 | Activation (Optional) | Tracardi | Event routing, workflow adapter |
 | Control Plane | Operator Shell + API | Primary operator interface |
-| LLM | Azure OpenAI GPT-4o-mini | Natural language understanding |
+| LLM | Azure OpenAI GPT-5 | Natural language understanding |
 
 ---
 

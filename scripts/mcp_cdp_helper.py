@@ -164,6 +164,52 @@ class MCPBrowserController:
                     return data
         return None
         
+    def click(self, element_description: str, ref: str = None) -> dict:
+        """Click an element by description or ref."""
+        params = {"element": element_description}
+        if ref:
+            params["ref"] = ref
+        return self.send("browser_click", params)
+        
+    def fill(self, element_description: str, text: str, ref: str = None) -> dict:
+        """Fill an input field with text."""
+        params = {
+            "element": element_description,
+            "text": text
+        }
+        if ref:
+            params["ref"] = ref
+        return self.send("browser_type", params)
+        
+    def wait_for_text(self, text: str, timeout_sec: int = 10) -> bool:
+        """Wait for specific text to appear on page."""
+        start = time.time()
+        while time.time() - start < timeout_sec:
+            snapshot = self.snapshot()
+            if text in snapshot:
+                return True
+            time.sleep(0.5)
+        return False
+        
+    def get_element_ref(self, element_description: str) -> str:
+        """Get ref for an element from snapshot by description."""
+        result = self.send("browser_snapshot", {})
+        if "result" in result:
+            content = result["result"].get("content", [])
+            for item in content:
+                if item.get("type") == "text":
+                    text = item.get("text", "")
+                    # Look for element with matching description
+                    lines = text.split("\n")
+                    for line in lines:
+                        if element_description.lower() in line.lower() and "[" in line:
+                            # Extract ref from line like "- button 'Search' [ref=s23e45]"
+                            import re
+                            match = re.search(r'\[ref=([^\]]+)\]', line)
+                            if match:
+                                return match.group(1)
+        return None
+        
     def close(self):
         """Close the MCP subprocess."""
         if self.proc:
@@ -277,6 +323,35 @@ def main():
                     title = tab.get('title', 'N/A')[:50]
                     url = tab.get('url', 'N/A')[:60]
                     print(f"{i}. {title}... ({url})")
+                    
+        elif command == "click":
+            if len(sys.argv) < 3:
+                print("Usage: python mcp_cdp_helper.py click '<element description>'")
+                sys.exit(1)
+            element = sys.argv[2]
+            print(f"Clicking: {element}")
+            result = controller.click(element)
+            print(f"Result: {json.dumps(result, indent=2)}")
+            
+        elif command == "fill":
+            if len(sys.argv) < 4:
+                print("Usage: python mcp_cdp_helper.py fill '<element description>' '<text>'")
+                sys.exit(1)
+            element = sys.argv[2]
+            text = sys.argv[3]
+            print(f"Filling '{element}' with: {text}")
+            result = controller.fill(element, text)
+            print(f"Result: {json.dumps(result, indent=2)}")
+            
+        elif command == "wait-for":
+            if len(sys.argv) < 3:
+                print("Usage: python mcp_cdp_helper.py wait-for '<text>' [timeout_seconds]")
+                sys.exit(1)
+            text = sys.argv[2]
+            timeout = int(sys.argv[3]) if len(sys.argv) > 3 else 10
+            print(f"Waiting for text: '{text}' (timeout: {timeout}s)")
+            found = controller.wait_for_text(text, timeout)
+            print(f"Result: {'Found' if found else 'Not found'}")
             
         else:
             print(f"Unknown command: {command}")

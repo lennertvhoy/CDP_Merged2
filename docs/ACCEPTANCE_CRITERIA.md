@@ -3,7 +3,7 @@
 **Purpose:** Reviewer-facing proof package for CDP_Merged POC verification  
 **Audience:** Technical auditors, QA reviewers, stakeholder sign-off  
 **Last Updated:** 2026-03-14  
-**Version:** 1.1 (Aligned with Illustrated Guide v3.3 — Operator Shell Primary UI)
+**Version:** 1.2 (Aligned with Illustrated Guide v3.4 — GUI Operation Proof)
 
 ---
 
@@ -449,6 +449,65 @@ python scripts/mcp_cdp_helper.py url
 
 ---
 
+## AC-10: GUI Element Interaction
+
+### Claim
+The CDP can perform GUI operations (click, fill, submit) in authenticated browser sessions, not just navigation.
+
+**Critical Distinction:** AC-9 proves session continuity. AC-10 proves GUI control.
+
+### Verification
+
+**Step 1: Verify CDP endpoint and navigate to authenticated page**
+```bash
+# Navigate to Exact Online (pre-authenticated)
+cd /home/ff/Documents/CDP_Merged
+python scripts/mcp_cdp_helper.py navigate "https://start.exactonline.be/docs/MenuPortal.aspx"
+```
+
+**Expected:** Page loads without login prompt (already authenticated).
+
+**Step 2: Click on search textbox**
+```bash
+python scripts/mcp_cdp_helper.py click "Vind relaties, facturen, boekingen, etc."
+```
+
+**Expected:** Element is clicked and focused (no error).
+
+**Step 3: Fill search term**
+```bash
+python scripts/mcp_cdp_helper.py fill "Vind relaties, facturen, boekingen, etc." "test"
+```
+
+**Expected:** Text "test" is entered in the search field.
+
+**Step 4: Verify via JavaScript evaluation**
+```bash
+# Use Python script with evaluate
+python -c "
+import subprocess, json, time
+# ... CDP helper code ...
+result = controller.evaluate('''
+() => {
+    const inputs = document.querySelectorAll(\"input\");
+    for (let input of inputs) {
+        if (input.placeholder && input.placeholder.includes(\"Vind\")) {
+            return \"Value: \" + input.value;
+        }
+    }
+    return \"Not found\";
+}
+''')
+print(result)
+"
+```
+
+**Expected:** Returns "Value: test" confirming the input was filled.
+
+**Acceptance:** Pass if click and fill operations succeed and state change is verifiable.
+
+---
+
 ## Sign-Off Matrix
 
 | ID | Criterion | Verifier | Date | Status |
@@ -462,6 +521,7 @@ python scripts/mcp_cdp_helper.py url
 | AC-7 | Source System Sync | | | ⬜ |
 | AC-8 | Event Writeback | | | ⬜ |
 | AC-9 | Browser Automation | | | ⬜ |
+| AC-10 | GUI Element Interaction | | | ⬜ |
 
 **Overall Acceptance:** ⬜ PASS / ⬜ FAIL / ⬜ PARTIAL
 

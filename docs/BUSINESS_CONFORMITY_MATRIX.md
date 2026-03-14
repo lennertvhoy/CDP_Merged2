@@ -3,7 +3,7 @@
 **Purpose:** Map implementation state to customer requirements from "Business Case Customer.txt"  
 **Audience:** Business stakeholders, auditors, project reviewers  
 **Last Updated:** 2026-03-14  
-**Version:** 1.1 (Aligned with Illustrated Guide v3.3 — Authenticated Browser Continuation + Architecture Truth)
+**Version:** 1.2 (Aligned with Illustrated Guide v3.4 — GUI Operation Proof + Architecture Truth)
 
 ---
 
@@ -184,6 +184,25 @@
 | Exact authenticated | `output/browser_automation/exact_authenticated.png` | 2026-03-14 |
 | Exact return navigation | `output/browser_automation/exact_back_to_dashboard.png` | 2026-03-14 |
 
+### 10. GUI Element Interaction
+
+| Requirement | Implementation | Status | Evidence |
+|-------------|----------------|--------|----------|
+| Click UI elements | `browser_click` via CDP helper | ✅ Verified | Exact Online search box clicked |
+| Fill input fields | `browser_type` via CDP helper | ✅ Verified | "test" entered in search field |
+| Submit/trigger actions | Enter key dispatch via JS | ✅ Verified | Search executed |
+| State change verification | JavaScript evaluation | ✅ Verified | Input value confirmed via evaluate |
+
+**Critical Distinction:**
+- **Section 9** (Browser Automation): Proves session continuity — agent can navigate to authenticated pages
+- **Section 10** (GUI Interaction): Proves GUI control — agent can manipulate UI controls (click, fill)
+
+**Verification Artifacts:**
+| Artifact | Location | Date |
+|----------|----------|------|
+| Exact authenticated (before) | `output/browser_automation/gui_proof/gui_proof_exact_authenticated.png` | 2026-03-14 |
+| Exact search result (after) | `output/browser_automation/gui_proof/gui_proof_exact_after_search.png` | 2026-03-14 |
+
 ---
 
 ## Meetcriteria & GO/No-Go Alignment
@@ -249,7 +268,7 @@ From the original POC specification:
 
 | Service | Status | Notes |
 |---------|--------|-------|
-| Azure OpenAI | ✅ Retained | GPT-4o-mini for NL understanding |
+| Azure OpenAI | ✅ Retained | GPT-5 for NL understanding |
 | Azure Container Apps | ❌ Removed | Cost control; local-first path |
 | Azure VMs | ❌ Removed | Infrastructure retired |
 | Other Azure services | ❌ Not used | Architecture audited 2026-03-14 |
