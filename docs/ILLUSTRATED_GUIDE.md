@@ -9,7 +9,7 @@
 
 **Audience:** Demo observers, auditors, stakeholders needing visual proof
 
-**Last Updated:** 2026-03-14 (v4.10 — SC-07 Fix: has_website filter)
+**Last Updated:** 2026-03-14 (v4.11 — SC-08/09/10 Complete, Tracker Reconciled)
 
 **Companion Docs:**
 
@@ -609,6 +609,9 @@ Use short evidence IDs in the matrix below so the PDF stays readable; the full f
 | **SG-14** | **SC-06 — Top 5 industries aggregation** | **2026-03-14** | **Local chatbot** |
 | **SG-15** | **SC-07 — timeout issue evidence (before fix)** | **2026-03-14** | **Local chatbot** |
 | **SG-16** | **SC-07 — success after has_website filter fix** | **2026-03-14** | **Local chatbot** |
+| **SG-17** | **SC-08 — Brussels companies with email (4,239)** | **2026-03-14** | **Local chatbot** |
+| **SG-18** | **SC-09 — Antwerp software companies (3,062)** | **2026-03-14** | **Local chatbot** |
+| **SG-19** | **SC-10 — Legal form aggregation (Top 5)** | **2026-03-14** | **Local chatbot** |
 
 **Filename Key:**
 - `SG-01` → `chatbot_360_bbs_four_source_final_2026-03-08.png`
@@ -627,6 +630,9 @@ Use short evidence IDs in the matrix below so the PDF stays readable; the full f
 - **`SG-14`** → **`reports/scenarios/sc06/sc06_top5_industries.png`**
 - **`SG-15`** → **`reports/scenarios/sc07/sc07_timeout_issue.png`**
 - **`SG-16`** → **`reports/scenarios/sc07/sc07_success_after_fix.png`**
+- **`SG-17`** → **`reports/scenarios/sc08/sc08_brussels_email.png`**
+- **`SG-18`** → **`reports/scenarios/sc09/sc09_antwerp_software.png`**
+- **`SG-19`** → **`reports/scenarios/sc10/sc10_legal_forms.png`**
 
 **Label Note:** The guide intentionally mixes live SaaS screens, local runtime views, demo-backed integration evidence, and generated local artifacts. Each item is labeled by source rather than flattened into a single "live" claim.
 
@@ -2125,6 +2131,151 @@ If the count does NOT change after applying the filter, you MUST explicitly expl
 2. **Timeout testing is important** — SC-07 revealed a performance edge case
 3. **Compound slices are efficient** — Multiple scenarios in one session
 4. **Honest tracking continues** — SC-07 marked with known issue rather than skipped
+
+---
+
+## Phase 22 — Compound Slice: SC-08/09/10 + Tracker Reconciliation (2026-03-14)
+
+**Version:** v4.11  
+**Focus:** Complete Foundation scenarios (SC-08 to SC-10) with tracker hygiene
+
+### 22.1 Track A — SC-08 Companies with Email in Brussels
+
+**Query:** "How many companies in Brussels have email?"
+
+**Canonical SQL:**
+```sql
+SELECT COUNT(*) 
+FROM companies 
+WHERE city IN ('Brussels', 'Brussel', 'Bruxelles')
+AND main_email IS NOT NULL AND main_email != ''
+```
+
+**Result:**
+- Answer: 4,239 companies
+- Canonical SQL result: 4,239 ✓
+- First content: ~12s
+- Total: ~12s
+- Streaming: ✓
+- Answer-first: ✓
+
+**Status:** ✅ quality_pass
+
+**Evidence:** `reports/scenarios/sc08/sc08_brussels_email.png`
+
+### 22.2 Track B — SC-09 Antwerp Software Companies
+
+**Query:** "Find software companies in Antwerp."
+
+**Result:**
+- Answer: 3,062 software companies in Antwerp
+- First content: ~15s
+- Total: ~15s
+- Streaming: ✓
+- Answer-first: ✓
+- Follow-up actions offered: segment, export, analytics, narrow, campaign
+
+**Status:** ✅ quality_pass
+
+**Evidence:** `reports/scenarios/sc09/sc09_antwerp_software.png`
+
+### 22.3 Track C — SC-10 Legal Form Aggregation
+
+**Query:** "What are the most common legal forms in Brussels?"
+
+**Canonical SQL:**
+```sql
+SELECT legal_form, COUNT(*) as count
+FROM companies 
+WHERE city IN ('Brussels', 'Brussel', 'Bruxelles')
+AND legal_form IS NOT NULL AND legal_form != ''
+GROUP BY legal_form
+ORDER BY count DESC
+LIMIT 5
+```
+
+**Result:**
+- Real aggregation from PostgreSQL
+- Top 5:
+  1. Besloten Vennootschap (BV): 14,015 (33.9%)
+  2. Vereniging zonder winstoogmerk (VZW): 10,359 (25.1%)
+  3. Naamloze vennootschap (NV): 3,847 (9.3%)
+  4. Besloten vennootschap met beperkte aansprakelijkheid (BVBA): 3,668 (8.9%)
+  5. Vereniging van mede-eigenaars (VME): 3,522 (8.5%)
+- Canonical SQL verified: All counts match exactly ✓
+- First content: ~15s
+- Streaming: ✓
+
+**Status:** ✅ quality_pass
+
+**Evidence:** `reports/scenarios/sc10/sc10_legal_forms.png`
+
+### 22.4 Track D — SC-01 Regression Check
+
+**Query:** "How many companies are in Brussels?"
+
+**Result:**
+- Answer: 41,290 companies
+- Expected: 41,290 ✓
+- Status: ✅ PASSED (regression check)
+
+### 22.5 Track E — Runtime Discipline Audit
+
+**Issue Found:**
+- `cdp-operator-api.service` was in restart loop (343 restarts)
+- Root cause: Ad-hoc uvicorn process (pid 2058140) occupying port 8170
+- Systemd service couldn't bind to port
+
+**Fix Applied:**
+- Killed ad-hoc process: `kill 2058140`
+- Restarted systemd service: `systemctl --user restart cdp-operator-api.service`
+- Service now running under proper systemd management
+
+**Canonical Runtime Path:**
+| Service | Port | Status |
+|---------|------|--------|
+| cdp-operator-shell.service | 3000 | ✓ running |
+| cdp-operator-api.service | 8170 | ✓ running (fixed) |
+| preview-watchdog.service | — | ✓ running |
+
+### 22.6 Track F — Tracker Reconciliation
+
+**Before:**
+| Category | Count | Issue |
+|----------|-------|-------|
+| Foundation (SC-01 to SC-10) | 7 quality_pass | Missing SC-08,09,10 |
+| Admin/Auth (SC-39 to SC-45) | 4 passed | Not counted in total |
+| **Total** | **9** | **Incorrect** |
+
+**After Correction:**
+| Category | Count | Status |
+|----------|-------|--------|
+| Foundation (SC-01 to SC-10) | 10 quality_pass | ✓ Complete |
+| Follow-up (SC-11 to SC-18) | 0 | ⏳ Pending |
+| Segments/Exports (SC-19 to SC-28) | 0 | ⏳ Pending |
+| 360/Analytics (SC-29 to SC-38) | 0 | ⏳ Pending |
+| Admin/Auth (SC-39 to SC-45) | 4 passed | ✅ Verified |
+| Intent/Robustness (SC-46 to SC-50) | 0 | ⏳ Pending |
+| **Total Complete** | **14** | **18% of 50** |
+
+**Note:** SC-39 to SC-42 were previously verified in earlier compound slices but not consistently counted.
+
+### 22.7 Updated Scenario Tracker Status
+
+All Foundation scenarios (SC-01 to SC-10) now complete:
+
+| ID | Status |
+|----|--------|
+| SC-01 | ✅ quality_pass |
+| SC-02 | ✅ quality_pass |
+| SC-03 | ✅ quality_pass |
+| SC-04 | ✅ quality_pass |
+| SC-05 | ✅ quality_pass |
+| SC-06 | ✅ quality_pass |
+| SC-07 | ✅ quality_pass |
+| SC-08 | ✅ quality_pass |
+| SC-09 | ✅ quality_pass |
+| SC-10 | ✅ quality_pass |
 
 ---
 
