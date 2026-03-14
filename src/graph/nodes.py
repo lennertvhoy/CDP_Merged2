@@ -447,7 +447,18 @@ async def agent_node(state: AgentState) -> dict:
     messages = state["messages"]
     provider_type = settings.LLM_PROVIDER.lower()
 
-    logger.debug("agent_node_invoked", provider=provider_type, message_count=len(messages))
+    # Instrument payload size entering the LLM
+    total_message_chars = sum(len(str(getattr(m, 'content', ''))) for m in messages)
+    tool_message_count = sum(1 for m in messages if isinstance(m, ToolMessage))
+    
+    logger.info(
+        "agent_node_invoked",
+        provider=provider_type,
+        message_count=len(messages),
+        tool_message_count=tool_message_count,
+        total_input_chars=total_message_chars,
+        estimated_tokens=total_message_chars // 4,  # Rough estimate: 4 chars per token
+    )
 
     if provider_type == "mock":
         latest_user_message = next(
@@ -463,6 +474,42 @@ async def agent_node(state: AgentState) -> dict:
                 AIMessage(content=f"Mock response to: {latest_user_message or 'your request'}")
             ]
         }
+
+    # GPT-5 WORKAROUND: GPT-5 doesn't handle ToolMessage after tool_calls properly
+    # Rewrite the conversation to remove tool_calls/ToolMessage pattern
+    is_gpt5 = settings.AZURE_OPENAI_DEPLOYMENT_NAME and settings.AZURE_OPENAI_DEPLOYMENT_NAME.lower().startswith("gpt-5")
+    
+    if is_gpt5:
+        # Debug: log all message types
+        msg_types = [type(m).__name__ for m in messages]
+        has_tool_msg = any(isinstance(m, ToolMessage) for m in messages)
+        logger.info("gpt5_message_check", msg_types=msg_types, has_tool_msg=has_tool_msg, msg_count=len(messages))
+        
+        # Find and extract tool result from ToolMessage
+        tool_message = next((m for m in messages if isinstance(m, ToolMessage)), None)
+        if tool_message:
+            try:
+                import json
+                result_data = json.loads(tool_message.content)
+                if result_data.get('status') == 'ok' and 'counts' in result_data:
+                    count = result_data['counts'].get('authoritative_total', 0)
+                    preview = f"I found {count} matching companies."
+                else:
+                    preview = "I found the information you requested."
+            except:
+                preview = "I found the information you requested."
+            
+            # Rewrite: keep only HumanMessage and SystemMessage, add result as AIMessage
+            rewritten = []
+            for m in messages:
+                if isinstance(m, (HumanMessage, SystemMessage)):
+                    rewritten.append(m)
+                # Skip AIMessage with tool_calls and ToolMessage
+            
+            # Add the result as a simple AIMessage
+            rewritten.append(AIMessage(content=preview))
+            messages = rewritten
+            logger.info("gpt5_conversation_rewritten", original_count=len(messages), new_count=len(rewritten), preview=preview)
 
     if provider_type == "ollama":
         model = ChatOllama(
@@ -494,12 +541,18 @@ async def agent_node(state: AgentState) -> dict:
                 "Azure OpenAI authentication is not configured for LangChain path. "
                 "Provide AZURE_OPENAI_API_KEY (or Key Vault secret) or enable managed identity"
             )
-        model = AzureChatOpenAI(
-            **_build_azure_chat_model_kwargs(
-                api_key=auth.api_key,
-                token_provider=auth.token_provider,
-            )
-        ).bind_tools(tools)
+        kwargs = _build_azure_chat_model_kwargs(
+            api_key=auth.api_key,
+            token_provider=auth.token_provider,
+        )
+        model = AzureChatOpenAI(**kwargs)
+        
+        # For GPT-5, don't bind tools if there's a ToolMessage in history
+        # (we're in the second call after tool execution)
+        has_tool_message = any(isinstance(m, ToolMessage) for m in messages)
+        
+        if not has_tool_message:
+            model = model.bind_tools(tools)
     else:
         # Default to OpenAI.
         model = ChatOpenAI(
@@ -508,9 +561,47 @@ async def agent_node(state: AgentState) -> dict:
             model=settings.LLM_MODEL,
             temperature=0,
         ).bind_tools(tools)
-
-    response = await model.ainvoke(messages)
-    return {"messages": [response]}
+    
+    # Granular instrumentation for the LLM call
+    import time
+    llm_call_start = time.monotonic()
+    
+    # Track payload size entering the LLM
+    total_input_chars = sum(len(str(getattr(m, 'content', ''))) for m in messages)
+    tool_result_chars = sum(len(str(getattr(m, 'content', ''))) for m in messages if isinstance(m, ToolMessage))
+    tool_message_count = sum(1 for m in messages if isinstance(m, ToolMessage))
+    
+    logger.info(
+        "agent_node_llm_call_start",
+        provider=provider_type,
+        message_count=len(messages),
+        tool_message_count=tool_message_count,
+        total_input_chars=total_input_chars,
+        tool_result_chars=tool_result_chars,
+        estimated_tokens=total_input_chars // 4,
+    )
+    
+    try:
+        logger.info("agent_node_ainvoke_calling", model_type=type(model).__name__, message_count=len(messages))
+        response = await model.ainvoke(messages)
+        llm_call_duration = time.monotonic() - llm_call_start
+        logger.info(
+            "agent_node_llm_call_complete",
+            provider=provider_type,
+            duration_ms=round(llm_call_duration * 1000, 2),
+            response_has_content=bool(getattr(response, 'content', None)),
+            response_has_tool_calls=bool(getattr(response, 'tool_calls', None)),
+        )
+        return {"messages": [response]}
+    except Exception as e:
+        llm_call_duration = time.monotonic() - llm_call_start
+        logger.error(
+            "agent_node_llm_call_failed",
+            provider=provider_type,
+            duration_ms=round(llm_call_duration * 1000, 2),
+            error=str(e),
+        )
+        raise
 
 
 # ─── CRITIC NODE ─────────────────────────────────────────────────────────────
@@ -1146,7 +1237,78 @@ async def tools_node(state: AgentState, config: RunnableConfig | None = None) ->
                 except Exception as parse_exc:
                     logger.warning("failed_to_extract_tql_from_search", error=str(parse_exc))
 
-            tool_messages.append(ToolMessage(content=str(result), tool_call_id=tool_call_id))
+            # Instrument and potentially truncate large results before passing to LLM
+            result_str = str(result)
+            result_size_chars = len(result_str)
+            result_size_bytes = len(result_str.encode('utf-8'))
+            
+            # Log payload size for diagnostics
+            logger.info(
+                "tool_result_payload_metrics",
+                tool=tool_name,
+                tool_call_id=tool_call_id,
+                payload_chars=result_size_chars,
+                payload_bytes=result_size_bytes,
+                payload_lines=result_str.count('\n'),
+            )
+            
+            # Truncate large payloads to prevent LLM context overflow
+            MAX_TOOL_RESULT_CHARS = 15000  # ~3-4k tokens, leaving room for system prompt
+            if result_size_chars > MAX_TOOL_RESULT_CHARS:
+                # For search_profiles, extract just the summary, not all sample rows
+                if tool_name == "search_profiles":
+                    try:
+                        result_data = json.loads(result_str)
+                        if isinstance(result_data, dict) and result_data.get("status") == "ok":
+                            # Build a summarized version: keep counts/metadata, truncate samples
+                            summary = {
+                                "status": "ok",
+                                "tool_contract": result_data.get("tool_contract"),
+                                "retrieval_backend": result_data.get("retrieval_backend"),
+                                "search_strategy": result_data.get("search_strategy"),
+                                "keyword": result_data.get("keyword"),
+                                "resolved_nace_codes": result_data.get("resolved_nace_codes"),
+                                "applied_filters": result_data.get("applied_filters"),
+                                "counts": result_data.get("counts"),
+                                "dataset_state": result_data.get("dataset_state"),
+                                "data_quality": result_data.get("data_quality"),
+                                "query": result_data.get("query"),
+                                "lexical_fallback": result_data.get("lexical_fallback"),
+                                # Truncate samples to first 10 only
+                                "profiles_sample": result_data.get("profiles_sample", [])[:10],
+                                "next_steps_suggestions": result_data.get("next_steps_suggestions"),
+                                "guidance": result_data.get("guidance"),
+                                "truncation_notice": f"Result truncated: {result_size_chars} chars → {MAX_TOOL_RESULT_CHARS} max. Showing first 10 profiles only.",
+                            }
+                            result_str = json.dumps(summary, ensure_ascii=False)
+                            logger.info(
+                                "tool_result_truncated",
+                                tool=tool_name,
+                                original_chars=result_size_chars,
+                                truncated_chars=len(result_str),
+                                profiles_kept=10,
+                            )
+                    except json.JSONDecodeError:
+                        # Not JSON, fall back to simple truncation
+                        result_str = result_str[:MAX_TOOL_RESULT_CHARS] + "\n...[truncated for LLM context]"
+                        logger.warning(
+                            "tool_result_simple_truncation",
+                            tool=tool_name,
+                            original_chars=result_size_chars,
+                        )
+                else:
+                    # For non-search tools, simple truncation
+                    result_str = result_str[:MAX_TOOL_RESULT_CHARS] + "\n...[truncated for LLM context]"
+                    logger.info(
+                        "tool_result_truncated",
+                        tool=tool_name,
+                        original_chars=result_size_chars,
+                        truncated_chars=len(result_str),
+                    )
+            
+            # Add the tool result message
+            tool_messages.append(ToolMessage(content=result_str, tool_call_id=tool_call_id))
+            logger.info("tool_message_appended", tool=tool_name, tool_call_id=tool_call_id, content_chars=len(result_str))
 
         except Exception as exc:
             logger.error("tool_execution_failed", tool=tool_name, error=str(exc))
