@@ -215,6 +215,82 @@ class MCPBrowserController:
                             if match:
                                 return match.group(1)
         return None
+    
+    def select_tab_by_url(self, url_pattern: str) -> bool:
+        """Select browser tab by URL pattern match.
+        
+        Args:
+            url_pattern: URL substring to match (e.g., "localhost:3000" or "resend.com")
+            
+        Returns:
+            True if tab found and selected, False otherwise
+        """
+        import urllib.request
+        try:
+            with urllib.request.urlopen(f"{self.cdp_endpoint}/json/list", timeout=5) as response:
+                tabs = json.loads(response.read().decode())
+                for tab in tabs:
+                    tab_url = tab.get("url", "")
+                    if url_pattern in tab_url:
+                        # Found matching tab - navigate to its webSocketDebuggerUrl
+                        ws_url = tab.get("webSocketDebuggerUrl")
+                        if ws_url:
+                            # Use CDP to activate this target
+                            # For now, we navigate to the URL which reuses the tab
+                            self.navigate(tab_url)
+                            return True
+            return False
+        except Exception as e:
+            print(f"Error selecting tab by URL: {e}", file=sys.stderr)
+            return False
+    
+    def select_tab_by_title(self, title_pattern: str) -> bool:
+        """Select browser tab by title pattern match.
+        
+        Args:
+            title_pattern: Title substring to match (e.g., "CDP_Merged" or "Teamleader")
+            
+        Returns:
+            True if tab found and selected, False otherwise
+        """
+        import urllib.request
+        try:
+            with urllib.request.urlopen(f"{self.cdp_endpoint}/json/list", timeout=5) as response:
+                tabs = json.loads(response.read().decode())
+                for tab in tabs:
+                    tab_title = tab.get("title", "")
+                    if title_pattern in tab_title:
+                        tab_url = tab.get("url", "")
+                        if tab_url:
+                            self.navigate(tab_url)
+                            return True
+            return False
+        except Exception as e:
+            print(f"Error selecting tab by title: {e}", file=sys.stderr)
+            return False
+    
+    def list_tabs_detailed(self) -> list[dict]:
+        """List all browser tabs with details.
+        
+        Returns:
+            List of tab dictionaries with id, title, url, type
+        """
+        import urllib.request
+        try:
+            with urllib.request.urlopen(f"{self.cdp_endpoint}/json/list", timeout=5) as response:
+                tabs = json.loads(response.read().decode())
+                return [
+                    {
+                        "id": tab.get("id"),
+                        "title": tab.get("title", "N/A"),
+                        "url": tab.get("url", "N/A"),
+                        "type": tab.get("type", "page"),
+                    }
+                    for tab in tabs
+                ]
+        except Exception as e:
+            print(f"Error listing tabs: {e}", file=sys.stderr)
+            return []
         
     def close(self):
         """Close the MCP subprocess."""
