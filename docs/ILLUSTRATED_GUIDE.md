@@ -180,48 +180,99 @@ B.B.S. Entreprise | 1 | 1 | 4
 
 ## System Coverage Matrix
 
-**What the System Can Do — Scenario Map**
+**What the System Can Do — Comprehensive Scenario Map**
 
-This matrix documents current capabilities and coverage gaps. It complements the phase-by-phase evidence with a functional view.
+This matrix documents current capabilities and coverage gaps honestly. It complements the phase-by-phase evidence with a functional view of what is proven, partial, and missing.
 
 ### Prompt Type Coverage
 
-| Category | Example Prompt | Status | Evidence |
-|----------|----------------|--------|----------|
-| **Market Research** | "How many IT companies in Brussels?" | ⚠️ Works, UX improving | Live runtime verified 2026-03-14 |
-| **360° Profile** | "Show me B.B.S. Entreprise" | ✅ Verified | Phase 1 evidence |
-| **Segmentation** | "Create a segment of dentists in Antwerp" | ✅ Verified | Phase 2 evidence |
-| **Export** | "Export this segment to CSV" | ✅ Verified | Phase 4 evidence |
-| **Activation** | "Push this segment to Resend" | ✅ Verified | Phase 3 evidence |
-| **Scoring Query** | "What are the top engagement leads?" | ✅ Verified | Phase 5 evidence |
-| **Operational** | "How many companies have websites?" | ✅ Verified | PostgreSQL counts |
-| **Browser-Assisted** | "Check this company in Teamleader" | ✅ Verified | Phase 9-10 evidence |
-| **Follow-up** | "Add email filter to that search" | ⚠️ Partial | Continuity exists, needs more testing |
-| **Error Handling** | "Search for xyz123nonexistent" | ⏳ Not documented | Gap identified |
+| Category | Example Prompt | Status | Quality | Evidence |
+|----------|----------------|--------|---------|----------|
+| **Market Research** | "How many IT companies in Brussels?" | ⚠️ Partial | Works, thinking visible | Count correct; streaming shows internal steps |
+| **Market Sizing** | "What's the total addressable market?" | ✅ Verified | Good | PostgreSQL aggregates |
+| **360° Profile** | "Show me B.B.S. Entreprise" | ✅ Verified | Good | Phase 1 evidence |
+| **Cross-Source View** | "What's their revenue across all systems?" | ⚠️ Partial | Limited linkage | Only 1 company fully linked |
+| **Segmentation** | "Create a segment of dentists in Antwerp" | ✅ Verified | Good | Phase 2 evidence |
+| **Segment Refinement** | "Add email filter to that segment" | ⚠️ Partial | Works, needs polish | Continuity exists |
+| **Export** | "Export this segment to CSV" | ✅ Verified | Good | Phase 4 evidence |
+| **Activation** | "Push this segment to Resend" | ✅ Verified | Good | Phase 3 evidence |
+| **Scoring Query** | "What are the top engagement leads?" | ✅ Verified | Good | Phase 5 evidence |
+| **Next Best Action** | "What should I do with B.B.S.?" | ✅ Verified | Good | NBA API working |
+| **Operational** | "How many companies have websites?" | ✅ Verified | Good | PostgreSQL counts |
+| **Data Quality** | "Which companies are missing emails?" | ✅ Verified | Good | Enrichment tracking |
+| **Browser-Assisted** | "Check this company in Teamleader" | ✅ Verified | Good | Phase 9-10 evidence |
+| **Browser Search** | "Search for them in Exact" | ✅ Verified | Good | Click/fill proven |
+| **Follow-up Context** | "Tell me more about #3" | ⚠️ Partial | Needs work | Thread memory limited |
+| **Error Handling** | "Search for xyz123nonexistent" | ⏳ Not tested | Unknown | Gap identified |
+| **Ambiguity Resolution** | "Show me B&S Enterprise" | ⏳ Not tested | Unknown | Disambiguation logic exists, not exercised |
+| **Multi-turn Complex** | "Find IT companies, then filter to those with websites, then export" | ⚠️ Partial | Works in steps | Multi-step needs verification |
 
-### UI Surface Coverage
+### UI Surface / Blade Coverage
 
-| Surface | Status | Evidence |
-|---------|--------|----------|
-| Login / Auth | ✅ Working | Local account + Entra ready |
-| Chat Interface | ⚠️ Functional, polishing | Response quality fix applied 2026-03-14 |
-| Thread History | ✅ Working | Thread persistence verified |
-| Admin Panel | ✅ Working | User management verified |
-| Company Browser | ✅ Working | List + detail views |
-| Segment Manager | ✅ Working | Create, view, export, activate |
-| Export Downloads | ✅ Working | CSV artifact generation |
-| Browser Automation | ✅ Available | Port 9223 CDP active |
+| Surface | Status | Quality | Evidence |
+|---------|--------|---------|----------|
+| **Login / Auth** | ✅ Verified | Good | Local account + Entra ready |
+| **Chat Interface** | ⚠️ Partial | Functional, polishing | Response quality fix applied |
+| **Streaming Display** | ⚠️ Partial | Shows raw thinking | Delta sanitization v2 added 2026-03-14 |
+| **Thread History** | ✅ Verified | Good | Thread persistence verified |
+| **Thread Continuity** | ⚠️ Partial | Works, limited context | Checkpoint-based |
+| **Admin Panel** | ✅ Verified | Good | User management verified |
+| **Company Browser** | ✅ Verified | Good | List + detail views |
+| **Company Search** | ✅ Verified | Good | PostgreSQL search |
+| **Segment Manager** | ✅ Verified | Good | Create, view, export, activate |
+| **Segment Preview** | ✅ Verified | Good | Count before save |
+| **Export Downloads** | ✅ Verified | Good | CSV artifact generation |
+| **Export Preview** | ✅ Verified | Good | First 5 rows shown |
+| **Browser Automation** | ✅ Verified | Good | Port 9223 CDP active |
+| **Browser Click/Fill** | ✅ Verified | Good | Phase 10 proven |
+| **Settings / Profile** | ⏳ Not implemented | N/A | Not in current scope |
 
-### Response Quality Status (2026-03-14)
+### User Scenario Coverage
 
-| Dimension | Before Fix | After Fix | Verification |
-|-----------|------------|-----------|--------------|
-| Tool name leakage | FAIL | PASS | `_sanitize_assistant_content()` applied |
-| Numbered thinking steps | FAIL | PASS | Filtered in post-processing |
-| Answer-first structure | POOR | IMPROVED | Sanitization removes preamble |
-| Factual grounding | GOOD | GOOD | Unchanged — uses actual search |
+| Scenario | User Type | Status | Friction |
+|----------|-----------|--------|----------|
+| First-time market research | Sales Rep | ⚠️ Partial | May see thinking steps |
+| Daily prospecting workflow | SDR | ✅ Verified | Smooth segment → export → activation flow |
+| Account manager prep | AM | ⚠️ Partial | 360° limited to linked companies |
+| Campaign activation | Marketing | ✅ Verified | Resend push working well |
+| Data quality audit | Admin | ✅ Verified | Enrichment counts visible |
+| User management | Admin | ✅ Verified | Admin panel functional |
+| Cross-source reporting | Analyst | ⚠️ Partial | Limited by linkage coverage |
+| Error recovery | Any | ⏳ Not tested | Unknown behavior on bad queries |
 
-**Note:** This is a post-processing fix. The ideal fix is training/prompting the agent to output cleaner responses directly. This intermediate fix improves UX immediately.
+### Response Quality Deep Status (2026-03-14)
+
+| Dimension | Before Fix | After Fix (v1) | After Fix (v2) | Target |
+|-----------|------------|----------------|----------------|--------|
+| Tool name leakage (final) | FAIL | PASS | PASS | PASS |
+| Tool name leakage (streaming) | FAIL | FAIL | PASS | PASS |
+| Numbered thinking steps (final) | FAIL | PASS | PASS | PASS |
+| Numbered thinking steps (streaming) | FAIL | FAIL | PASS | PASS |
+| Answer-first structure | POOR | IMPROVED | IMPROVED | GOOD |
+| Factual grounding | GOOD | GOOD | GOOD | GOOD |
+| Follow-up continuity | POOR | POOR | POOR | GOOD |
+| Error message quality | UNKNOWN | UNKNOWN | UNKNOWN | GOOD |
+
+**Fix Evolution:**
+- **v1 (post-processing):** Sanitizes final message only
+- **v2 (real-time):** Sanitizes streaming deltas using `_sanitize_streaming_delta()`
+- **Ideal (source fix):** Prompt/system improvements to reduce thinking output at source
+
+### Test / Eval Coverage
+
+| Test Type | Count | Status | Automation |
+|-----------|-------|--------|------------|
+| Unit tests | 51 files | ✅ Running | pytest |
+| Integration tests | 6 files | ⚠️ Mock-based | pytest |
+| Operator eval cases | 9 defined | ⚠️ Not wired | **NEW: `scripts/run_operator_eval.py`** |
+| Browser E2E tests | 0 | ⏳ Backlog | None |
+| Response quality evals | 0 | ⏳ Backlog | None |
+| Live load tests | 0 | ⏳ Backlog | None |
+
+**Eval Infrastructure Added This Session:**
+- `scripts/run_operator_eval.py` — Executable runner for the 9 eval cases
+- Real-time response quality filtering in streaming
+- Scoring dimensions: intent, autonomy, trust, actionability, ux_product_polish
 
 ---
 
@@ -636,7 +687,7 @@ AUTOTASK:   B.B.S. Entreprise | 1 Ticket | €15,000 Contract
 | Flexmail integration | Low | Explicitly deprioritized | Resend is verified alternative; Flexmail in backlog |
 | Event metadata privacy | Medium | Fixed 2026-03-14 | Event processor now hashes emails and sanitizes event_data | ✅ Resolved |
 | More linked companies | Medium | 1 fully linked; scripts available | Populate demo data for richer demos |
-| Browser form interaction | Low | Navigate/screenshot proven; click/fill not yet added | Add to helper if specific workflow requires |
+| Complex form submission (multi-field, validation) | Low | Click/fill proven for search; full submission not required for current demos | Add if CRM record creation workflow needed |
 
 **Resolved in This Pass:**
 - ✅ Authenticated browser continuation (Teamleader + Exact)

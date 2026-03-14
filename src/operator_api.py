@@ -159,6 +159,82 @@ def _format_sse_event(data: dict[str, Any]) -> str:
     return json.dumps(data, default=str) + "\n"
 
 
+def _is_thinking_content(text: str) -> bool:
+    """Detect if text is agent thinking/reasoning rather than user-facing answer.
+    
+    Returns True if the text appears to be internal reasoning that should not
+    be shown to users.
+    """
+    import re
+    
+    text_lower = text.lower().strip()
+    
+    # Numbered thinking steps: "1. I need to...", "2. Search for..."
+    if re.match(r'^\d+\.', text_lower):
+        thinking_indicators = [
+            'i need', 'i will', 'i should', 'let me', 'i shall', "i'll",
+            'search', 'create', 'export', 'push', 'get_', 'use ',
+            'first,', 'next,', 'then,', 'finally,', 'step ',
+            'looking up', 'querying', 'fetching', 'retrieving',
+        ]
+        if any(ind in text_lower for ind in thinking_indicators):
+            return True
+    
+    # Tool name leakage
+    tool_names = ['search_profiles', 'create_segment', 'export_segment', 
+                  'push_to_resend', 'get_company_360', 'query_unified']
+    if any(tool in text_lower for tool in tool_names):
+        return True
+    
+    # Raw parameter dumps
+    if re.search(r'\w+\s*=\s*[\'"\[]', text_lower) and ('keywords' in text_lower or 'city' in text_lower):
+        return True
+    
+    # Internal planning language
+    planning_phrases = [
+        'i should use', 'i will use', 'let me use',
+        'calling ', 'invoking ', 'executing ',
+    ]
+    if any(p in text_lower for p in planning_phrases):
+        return True
+    
+    return False
+
+
+def _sanitize_streaming_delta(delta: str, buffer: str) -> tuple[str, str, bool]:
+    """Sanitize a streaming delta in context of accumulated buffer.
+    
+    Returns: (emit_text, new_buffer, is_suppressed)
+    - emit_text: What to emit to the user (may be empty)
+    - new_buffer: Updated buffer state
+    - is_suppressed: Whether this delta was thinking content
+    """
+    import re
+    
+    new_buffer = buffer + delta
+    
+    # Check if we're in the middle of a thinking block
+    # If the buffer ends mid-thinking, we need to wait for more context
+    lines = new_buffer.split('\n')
+    
+    # If this looks like thinking content, suppress it
+    if _is_thinking_content(new_buffer) and not _is_thinking_content(buffer):
+        # Just started thinking - suppress this delta
+        return "", new_buffer, True
+    
+    if _is_thinking_content(new_buffer):
+        # Continuing thinking - suppress
+        return "", new_buffer, True
+    
+    # Check if we just finished thinking and now have real content
+    if _is_thinking_content(buffer) and not _is_thinking_content(new_buffer):
+        # Transition from thinking to answer - emit the new content
+        return delta, new_buffer, False
+    
+    # Regular content - emit as-is
+    return delta, new_buffer, False
+
+
 def _sanitize_assistant_content(content: str) -> str:
     """Post-process assistant content to remove internal thinking and tool leakage.
     
@@ -166,50 +242,60 @@ def _sanitize_assistant_content(content: str) -> str:
     - Removes numbered thinking steps ("1. I need to...", "2. I will...")
     - Hides tool names ("search_profiles", "create_segment", etc.)
     - Removes raw parameter dumps
+    - Removes internal planning language
     """
     import re
     
-    # Pattern 1: Remove numbered thinking lines ("1. I need to...", "2. I will...")
-    # These are agent reasoning steps that should not be visible
     lines = content.split('\n')
     filtered_lines = []
+    in_thinking_block = False
+    
     for line in lines:
-        # Skip lines that look like numbered thinking steps
-        if re.match(r'^\d+\.', line.strip()):
-            # Check if it's a thinking step (contains reasoning language)
-            thinking_patterns = [
-                'i need to', 'i will', 'i should', 'let me', 
-                'search_', 'create_', 'use ', 'with parameters',
-                "i'll", 'first,', 'next,', 'then,',
-            ]
-            line_lower = line.lower()
-            if any(p in line_lower for p in thinking_patterns):
-                continue  # Skip this line
+        line_stripped = line.strip()
+        
+        # Skip empty lines at the start (before actual answer)
+        if not filtered_lines and not line_stripped:
+            continue
+        
+        # Detect thinking content
+        if _is_thinking_content(line):
+            in_thinking_block = True
+            continue
+        
+        # If we hit non-thinking content, we're out of the thinking block
+        if line_stripped:
+            in_thinking_block = False
+        
         filtered_lines.append(line)
     
     content = '\n'.join(filtered_lines)
     
-    # Pattern 2: Replace tool function names with user-friendly descriptions
+    # Pattern: Replace tool function names with user-friendly descriptions
     tool_replacements = {
         'search_profiles': 'searching',
         'create_segment': 'creating segment',
         'export_segment': 'exporting',
         'push_to_resend': 'sending to Resend',
         'get_company_360': 'retrieving company profile',
+        'query_unified_360': 'retrieving company profile',
     }
     for tool_name, friendly in tool_replacements.items():
-        content = content.replace(f"use {tool_name}", f"{friendly}")
-        content = content.replace(f"I will {tool_name}", f"I will be {friendly}")
+        content = re.sub(rf'\b{tool_name}\b', friendly, content, flags=re.IGNORECASE)
     
-    # Pattern 3: Clean up excessive parameter dumps
-    # Replace "parameters: keywords='X', city='Y'" with cleaner format
+    # Clean up planning language
+    content = re.sub(r'\b(I need to|I will|I should|Let me)\s+', '', content, flags=re.IGNORECASE)
+    
+    # Clean up excessive parameter dumps
     content = re.sub(r"with parameters:?", "using", content, flags=re.IGNORECASE)
     
-    # Pattern 4: Remove parameter key=value noise but keep values
+    # Remove parameter key=value noise but keep values
     content = re.sub(r"\w+='([^']+)'", r"'\1'", content)
     
-    # Pattern 5: Clean up multiple blank lines
+    # Clean up multiple blank lines
     content = re.sub(r'\n{3,}', '\n\n', content)
+    
+    # Clean up leading/trailing whitespace per line
+    content = '\n'.join(l.rstrip() for l in content.split('\n'))
     
     return content.strip()
 
@@ -256,7 +342,9 @@ async def _chat_stream_generator(
         
         tool_calls: list[str] = []
         accumulated_content = ""
+        delta_buffer = ""
         message_id = str(uuid.uuid4())
+        suppressed_count = 0
         
         async for event in workflow.astream_events(inputs, config=config, version="v2"):
             kind = event.get("event", "")
@@ -267,14 +355,31 @@ async def _chat_stream_generator(
                 if hasattr(chunk, "content") and isinstance(chunk.content, str):
                     delta = chunk.content
                     accumulated_content += delta
-                    yield _format_sse_event({
-                        "type": "assistant_delta",
-                        "thread_id": thread_id,
-                        "delta": delta,
-                    })
+                    
+                    # Sanitize the delta in real-time to suppress thinking content
+                    emit_delta, delta_buffer, was_suppressed = _sanitize_streaming_delta(
+                        delta, delta_buffer
+                    )
+                    if was_suppressed:
+                        suppressed_count += 1
+                    
+                    # Only emit if we have content to show
+                    if emit_delta:
+                        yield _format_sse_event({
+                            "type": "assistant_delta",
+                            "thread_id": thread_id,
+                            "delta": emit_delta,
+                        })
             elif kind == "on_tool_start":
                 if name and name != "agent":
                     tool_calls.append(name)
+        
+        # If we suppressed content but never emitted anything, emit a fallback
+        if suppressed_count > 0 and not any(
+            _is_thinking_content(line) for line in accumulated_content.split('\n')[-3:]
+        ):
+            # Re-check final content for any missed thinking lines
+            pass
         
         # Sanitize the final content to remove internal thinking and tool leakage
         sanitized_content = _sanitize_assistant_content(accumulated_content)

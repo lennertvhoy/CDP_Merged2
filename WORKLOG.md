@@ -667,3 +667,71 @@ Raw response excerpt captured:
 2. **Wire operator eval cases** to automated runner
 3. **Add browser E2E test** for critical path (login → chat → segment)
 
+
+## 2026-03-14 (Response Quality + Eval Runner + Guide Coverage)
+
+### Task: Three-track backlog progress — Response Quality, Test/Eval Coverage, Guide Completeness
+
+**Type:** app_code + test_infra + docs  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-14 17:45 CET  
+**Git Head:** `867d777` (start)  
+**Worktree:** Clean
+
+**Summary:**
+Made real backlog progress on three tracks in one bounded session:
+
+1. **Track 1 — Response Quality Fix (Beyond Post-Processing):**
+   - Added `_is_thinking_content()` detector for real-time filtering
+   - Added `_sanitize_streaming_delta()` for stream-level filtering
+   - Updated `_chat_stream_generator()` to apply real-time sanitization
+   - Enhanced `_sanitize_assistant_content()` with better pattern matching
+   - Now suppresses thinking content in BOTH streaming deltas AND final message
+
+2. **Track 2 — Executable Eval Runner (Wired 9 Eval Cases):**
+   - Created `scripts/run_operator_eval.py` — fully executable runner
+   - Loads 9 eval cases from `docs/evals/operator_eval_cases.v1.json`
+   - Implements scoring dimensions: intent, autonomy, trust, actionability, ux_product_polish
+   - Outputs JSON, Markdown, or CSV formats
+   - Exit codes: 0 = all passed, 1 = failures, 2 = runtime error
+   - Added dependency: `aiohttp` (installed to venv)
+
+3. **Track 3 — Guide Coverage Improvements:**
+   - Fixed contradiction: "Browser form interaction" gap clarified to "Complex form submission"
+   - Expanded System Coverage Matrix with honest quality ratings:
+     - Prompt Type Coverage: 10 categories with ⚠️ Partial / ⏳ Not tested marks
+     - UI Surface Coverage: 14 surfaces with quality ratings
+     - User Scenario Coverage: 8 scenarios with friction notes
+     - Response Quality Deep Status: Before/After (v1/v2)/Target comparison
+     - Test/Eval Coverage table showing 51 unit tests, 6 integration, 9 eval cases
+
+**Files Modified:**
+- `src/operator_api.py` — Response quality v2 (streaming + final sanitization)
+- `scripts/run_operator_eval.py` — NEW: Executable eval runner
+- `docs/ILLUSTRATED_GUIDE.md` — Expanded coverage matrix, fixed contradictions
+
+**Runtime Verification:**
+| Port | Expected | Actual | Status |
+|------|----------|--------|--------|
+| 3000 | Active | next-server | ✅ |
+| 8170 | Active | uvicorn | ✅ |
+| 9223 | Active | msedge | ✅ |
+| 8000 | Inactive | No listener | ✅ |
+| Chainlit | None | No process | ✅ |
+
+**Test/Eval Status:**
+| Type | Count | Status |
+|------|-------|--------|
+| Unit tests | 51 | ✅ Running |
+| Integration tests | 6 | ⚠️ Mock-based |
+| Eval cases defined | 9 | ✅ Wired to runner |
+| Eval cases executable | 9 | ✅ Runner functional |
+
+**Remaining Gaps Identified:**
+1. Response quality: Ideal source-level fix still pending (prompt/system training)
+2. Error handling scenarios: Not documented/tested
+3. Ambiguity resolution: Logic exists but not exercised
+4. Follow-up continuity: Works but needs polish
+5. Complex form submission: Not required for current demos
+
+---
