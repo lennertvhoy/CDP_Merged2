@@ -27,7 +27,7 @@ class Settings(BaseSettings):
         default="openai", description="LLM provider: ollama, openai, azure_openai, moonshot, mock"
     )
     LLM_MODEL: str = Field(
-        default="gpt-4o-mini", description="Model name for the selected provider"
+        default="gpt-5.4", description="Model name for the selected provider"
     )
 
     # OpenAI Settings

@@ -84,7 +84,7 @@ class TestGetLLMProvider:
         with patch("src.core.llm_provider.settings") as mock_settings:
             mock_settings.LLM_PROVIDER = "azure_openai"
             mock_settings.AZURE_OPENAI_ENDPOINT = "https://aoai.example.com"
-            mock_settings.AZURE_OPENAI_DEPLOYMENT_NAME = "gpt-4o-mini"
+            mock_settings.AZURE_OPENAI_DEPLOYMENT_NAME = "gpt-5.4"
             mock_settings.AZURE_OPENAI_API_VERSION = "2024-02-01"
             mock_settings.AZURE_OPENAI_API_KEY = "fallback-key"
             mock_settings.AZURE_OPENAI_API_KEY_SECRET_NAME = None
@@ -99,7 +99,7 @@ class TestGetLLMProvider:
 
             mock_provider_cls.assert_called_once_with(
                 endpoint="https://aoai.example.com",
-                deployment_name="gpt-4o-mini",
+                deployment_name="gpt-5.4",
                 api_version="2024-02-01",
                 api_key="resolved-key",
                 azure_ad_token_provider=None,
@@ -111,7 +111,7 @@ class TestGetLLMProvider:
         with patch("src.core.llm_provider.settings") as mock_settings:
             mock_settings.LLM_PROVIDER = "azure_openai"
             mock_settings.AZURE_OPENAI_ENDPOINT = "https://aoai.example.com"
-            mock_settings.AZURE_OPENAI_DEPLOYMENT_NAME = "gpt-4o-mini"
+            mock_settings.AZURE_OPENAI_DEPLOYMENT_NAME = "gpt-5.4"
             mock_settings.AZURE_OPENAI_API_VERSION = "2024-02-01"
             mock_settings.AZURE_OPENAI_API_KEY = None
             mock_settings.AZURE_OPENAI_API_KEY_SECRET_NAME = None

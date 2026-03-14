@@ -170,7 +170,7 @@ class GeocodingEnricher:
 class AzureOpenAIEnricher:
     """Generate company descriptions using Azure OpenAI."""
     
-    def __init__(self, endpoint: Optional[str] = None, api_key: Optional[str] = None, deployment: str = "gpt-4o-mini"):
+    def __init__(self, endpoint: Optional[str] = None, api_key: Optional[str] = None, deployment: str = "gpt-5.4"):
         self.endpoint = endpoint
         self.api_key = api_key
         self.deployment = deployment
@@ -185,7 +185,7 @@ class AzureOpenAIEnricher:
         import os
         self.endpoint = self.endpoint or os.getenv('AZURE_OPENAI_ENDPOINT')
         self.api_key = self.api_key or os.getenv('AZURE_OPENAI_API_KEY')
-        self.deployment = self.deployment or os.getenv('AZURE_OPENAI_DEPLOYMENT', 'gpt-4o-mini')
+        self.deployment = self.deployment or os.getenv('AZURE_OPENAI_DEPLOYMENT', 'gpt-5.4')
     
     def _get_nace_description(self, nace_codes: List[str]) -> str:
         """Get human-readable description for NACE codes."""

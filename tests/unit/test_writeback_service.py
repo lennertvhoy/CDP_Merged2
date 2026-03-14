@@ -111,7 +111,7 @@ async def test_extract_and_write_ai_decision_uses_metadata_timestamp():
             "decision_name": "upsell",
             "decision_value": "high",
             "confidence": 0.8,
-            "model_name": "gpt-4o-mini",
+            "model_name": "gpt-5.4",
             "model_version": "2026-03-01",
             "explanation": {"reason": "recent activity"},
         },

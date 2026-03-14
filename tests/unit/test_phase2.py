@@ -60,7 +60,7 @@ class TestDescriptionEnricher:
             cache_file="test_desc_cache.json",
             endpoint="https://fake.openai.azure.com",
             api_key="test-key",
-            deployment="gpt-4o-mini",
+            deployment="gpt-5.4",
         )
         return e
 
