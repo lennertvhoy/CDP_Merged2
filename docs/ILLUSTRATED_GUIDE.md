@@ -42,14 +42,7 @@
 | Cross-source revenue aggregation | Only Autotask shows €15,000; CRM/Exact show €0 (demo tenant data) |
 | Linked company scale | Only 1 company has full 4-source linkage; scripts available for more |
 
-### What Is Optional / Not Required
-
-| Component | Status | Note |
-|-----------|--------|------|
-| Tracardi | ⚠️ Optional adapter | Demoted from core; CE cannot execute workflows; first-party event processor handles engagement |
-| Chainlit | ❌ Removed | Replaced by Operator Shell + API |
-
-### Architecture Truth (Current Runtime)
+### Current Runtime Architecture
 
 | Component | Role | Status |
 |-----------|------|--------|
@@ -59,7 +52,6 @@
 | Azure OpenAI GPT-5 | LLM Provider | ✅ Active |
 | Edge with CDP (port 9223) | Browser Automation | ✅ Active |
 | Tracardi | Optional Activation Adapter | ⚠️ Non-critical; not currently running |
-| Chainlit (port 8000) | Deprecated Historical Path | ❌ Removed |
 
 **Execution Mode:** Local-first (Azure deployment paused for cost control).
 
@@ -722,7 +714,7 @@ AUTOTASK:   B.B.S. Entreprise | 1 Ticket | €15,000 Contract
 
 **Resolved in This Pass:**
 - ✅ Authenticated browser continuation (Teamleader + Exact)
-- ✅ Architecture truth documented (Operator Shell primary, Chainlit deprecated)
+- ✅ Architecture truth documented (Operator Shell primary, Chainlit removed)
 - ✅ Azure posture clarified (Azure OpenAI only)
 - ✅ Tracardi framing downgraded from core dependency to optional adapter
 
@@ -993,17 +985,18 @@ Result: "Typed test in search box"
 | Operator Shell on port 3000 | `ss -tlnp` shows next-server | ✅ Active |
 | Operator API on port 8170 | `ss -tlnp` shows uvicorn | ✅ Active |
 | Edge CDP on port 9223 | `ss -tlnp` shows msedge | ✅ Active |
-| No Chainlit on port 8000 | `ss -tlnp` no listener; `pgrep chainlit` empty | ✅ Confirmed |
+| No services on port 8000 | `ss -tlnp` no listener | ✅ Confirmed (deprecated port) |
 | No Tracardi running locally | `pgrep tracardi` empty; not required for core demo | ✅ Confirmed (optional) |
 | Azure OpenAI only | `.env.local` audit: AZURE_OPENAI_API_KEY present, no other Azure services | ✅ Confirmed |
 
-### Deprecated / Removed
+### Retired Infrastructure
 
 | Component | Previous Role | Current Status |
 |-----------|---------------|----------------|
-| Chainlit | Chat UI (port 8000) | ❌ Deprecated — replaced by Operator Shell |
 | Azure Container Apps | Hosting | ❌ Removed — local-first deployment |
 | Azure VMs (Tracardi/ES) | Infrastructure | ❌ Retired — Tracardi now optional |
+
+*Note: Earlier UI prototypes (e.g., Chainlit on port 8000) are no longer part of the architecture.*
 
 ### Truth Layers
 
@@ -1089,7 +1082,7 @@ python -m pytest tests/e2e/test_attached_edge_cdp_smoke.py -v --tb=short
 - **Architecture validated** from "availability proof" to "execution proof"
 - **Real end-to-end flow validation** working: connect → select tab → navigate → open Segments → assert UI → screenshot → pass/fail
 - **Deterministic tab selection** eliminates flaky test behavior
-- **No Chainlit dependency** confirmed (port 8000 inactive)
+- **Clean control plane** verified (Operator Shell on 3000, no deprecated services)
 - **Bazzite-native execution** verified
 
 ### Remaining Gap
