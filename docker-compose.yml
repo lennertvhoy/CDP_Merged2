@@ -32,11 +32,22 @@ services:
       -c default_statistics_target=100
 
   # ==========================================
-  # Elasticsearch for Tracardi
+  # Tracardi services (OPTIONAL - use --profile tracardi to enable)
   # ==========================================
+  # Tracardi is now an optional activation adapter, not a core dependency.
+  # Core CDP functionality (PostgreSQL query plane, Operator Shell, API)
+  # works without Tracardi. Enable only if you need Tracardi-specific
+  # workflow/automation features.
+  #
+  # To start with Tracardi:
+  #   docker compose --profile tracardi up -d
+  #
+  # Architecture decision: 2026-03-14 - Tracardi demoted from core to optional
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
     container_name: cdp_merged_elasticsearch
+    profiles: ["tracardi"]
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
@@ -51,20 +62,16 @@ services:
       timeout: 10s
       retries: 5
 
-  # ==========================================
-  # Redis for Tracardi
-  # ==========================================
   redis:
     image: redis:alpine
     container_name: cdp_merged_redis
+    profiles: ["tracardi"]
     restart: unless-stopped
 
-  # ==========================================
-  # MySQL for Tracardi
-  # ==========================================
   mysql:
     image: mysql:8.0
     container_name: cdp_merged_mysql
+    profiles: ["tracardi"]
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-changeme}
@@ -76,12 +83,10 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
-  # ==========================================
-  # Tracardi API
-  # ==========================================
   tracardi-api:
     image: tracardi/tracardi-api:1.0.0
     container_name: cdp_merged_tracardi_api
+    profiles: ["tracardi"]
     restart: unless-stopped
     ports:
       - "8686:80"
@@ -106,12 +111,10 @@ services:
       mysql:
         condition: service_started
 
-  # ==========================================
-  # Tracardi GUI
-  # ==========================================
   tracardi-gui:
     image: tracardi/tracardi-gui:1.0.0
     container_name: cdp_merged_tracardi_gui
+    profiles: ["tracardi"]
     restart: unless-stopped
     ports:
       - "8787:80"
@@ -127,6 +130,7 @@ services:
   wiremock:
     image: wiremock/wiremock:latest
     container_name: cdp_merged_wiremock
+    profiles: ["wiremock"]
     ports:
       - "8080:8080"
     command: [ "--verbose", "--global-response-templating" ]

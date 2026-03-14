@@ -30,7 +30,7 @@ Dependency-manager note: `uv` migration plus the follow-on GitHub CI repair are 
 
 ### P0: Architecture Hardening - Tracardi Optionalization
 
-**Status:** DECISION RECORDED - Implementation pending
+**Status:** IMPLEMENTATION IN PROGRESS — Docker compose opt-in complete; docs update complete; remaining: PROJECT_STATE.yaml, event processor verification, CI/CD posture
 **Discovered:** 2026-03-14 via architecture review
 **Last Updated:** 2026-03-14 11:32 CET
 **Severity:** HIGH
@@ -42,11 +42,11 @@ Dependency-manager note: `uv` migration plus the follow-on GitHub CI repair are 
 - Tracardi CE limitations are reclassified as optional-platform limitation, not core delivery blocker
 
 #### Required Actions
-1. Update all documentation to describe Tracardi as optional (not core)
-2. Remove Tracardi from default local stack (docker-compose) - make it opt-in
-3. Document decision in PROJECT_STATE.yaml architecture section
-4. Verify first-party event processor covers all critical activation paths
-5. Decide keep-vs-remove posture for Tracardi in CI/CD and default deployments
+1. ✅ Update all documentation to describe Tracardi as optional (not core) — COMPLETED 2026-03-14
+2. ✅ Remove Tracardi from default local stack (docker-compose) - make it opt-in — COMPLETED 2026-03-14
+3. Document decision in PROJECT_STATE.yaml architecture section — PENDING
+4. Verify first-party event processor covers all critical activation paths — PENDING
+5. Decide keep-vs-remove posture for Tracardi in CI/CD and default deployments — PENDING
 
 ### ✅ COMPLETE: Operator Shell Admin Panel + Basic Admin Authorization
 

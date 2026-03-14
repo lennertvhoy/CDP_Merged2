@@ -71,7 +71,7 @@ Live state lives in `PROJECT_STATE.yaml` and `STATUS.md`. If files conflict, ver
 
 | Item | Status | Exit Criteria |
 |------|--------|---------------|
-| Tracardi optionalization | In progress | Docs updated, docker-compose modified (opt-in), default stack runs without Tracardi |
+| Tracardi optionalization | ✅ Complete | Docker compose profiles implemented; core stack runs without Tracardi; opt-in via `--profile tracardi` |
 | Core path verification | Pending | First-party event processor + PostgreSQL satisfy all demo/runtime needs without Tracardi |
 | Admin panel verification | Pending | Operator shell admin features verified or documented as not implemented |
 | RBAC model documentation | Pending | Access control model documented beyond simple `is_admin` flag |

@@ -9,7 +9,7 @@
 
 **Audience:** Demo observers, auditors, stakeholders needing visual proof
 
-**Last Updated:** 2026-03-14 (v4.0 — Deterministic Tab Selection + Attached-Edge E2E)
+**Last Updated:** 2026-03-14 (v4.1 — Tracardi Optionalization + Clean Core Stack)
 
 **Companion Docs:**
 
@@ -51,9 +51,22 @@
 | PostgreSQL | Analytical Truth / Customer Intelligence | ✅ Active |
 | Azure OpenAI GPT-5 | LLM Provider | ✅ Active |
 | Edge with CDP (port 9223) | Browser Automation | ✅ Active |
-| Tracardi | Optional Activation Adapter | ⚠️ Non-critical; not currently running |
+| Tracardi | Optional Activation Adapter | ⚠️ Opt-in via `--profile tracardi` (not default) |
 
 **Execution Mode:** Local-first (Azure deployment paused for cost control).
+
+### Architecture Decision: Tracardi Optionalization (2026-03-14)
+
+Tracardi has been demoted from **core dependency** to **optional activation adapter**:
+
+| Aspect | Before | After |
+|--------|--------|-------|
+| Default stack | Tracardi services started by default | PostgreSQL-only default; Tracardi opt-in via `--profile tracardi` |
+| Core dependency | Required for basic operation | Not required; core works with PostgreSQL + Operator Shell only |
+| Use case | Event hub + workflow engine | Optional workflow/automation for specific activation paths |
+| CE limitations | Blocked core delivery | No longer blocking; first-party event processor covers critical paths |
+
+**Verification:** `docker compose up -d` starts only PostgreSQL. Tracardi services start only with explicit `--profile tracardi`.
 
 ---
 
@@ -114,6 +127,7 @@
 | Azure OpenAI GPT-5-only LLM posture | Configuration audit (Azure OpenAI retained, other Azure removed) | Architecture | Verified |
 | GUI navigation with visible state change | Before/after screenshots showing page transition | Phase 10 | Live system + CDP automation |
 | Deterministic tab selection for E2E | 17/17 tests passing with robust tab matching | Phase 11 | Local runtime + Attached Edge |
+| Clean core stack (no Tracardi default) | Docker compose profiles; core works without Tracardi | Architecture | Verified |
 
 **Source Labels:**
 - **Live system:** Production SaaS (Resend, Teamleader, Exact Online)
