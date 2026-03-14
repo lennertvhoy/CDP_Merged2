@@ -9,7 +9,7 @@
 
 **Audience:** Demo observers, auditors, stakeholders needing visual proof
 
-**Last Updated:** 2026-03-14 (v3.7 — Response Quality Fix + Coverage Matrix)
+**Last Updated:** 2026-03-14 (v4.0 — Deterministic Tab Selection + Attached-Edge E2E)
 
 **Companion Docs:**
 
@@ -33,6 +33,7 @@
 | Engagement scoring & recommendations | ✅ Verified | Event processor API with deterministic scoring model |
 | Privacy-by-design (UID-first) | ✅ Verified | PostgreSQL stores KBO only; PII stays in source systems |
 | Browser automation (authenticated) | ✅ Verified | Teamleader + Exact Online continuation with GUI operations |
+| Deterministic E2E tab selection | ✅ Verified | 17/17 attached-Edge tests passing with priority-ordered matching |
 
 ### What Is Partial
 
@@ -120,6 +121,7 @@
 | Operator Shell is primary UI | Runtime verification (port 3000 active, 8000 inactive) | Architecture | Verified |
 | Azure OpenAI GPT-5-only LLM posture | Configuration audit (Azure OpenAI retained, other Azure removed) | Architecture | Verified |
 | GUI navigation with visible state change | Before/after screenshots showing page transition | Phase 10 | Live system + CDP automation |
+| Deterministic tab selection for E2E | 17/17 tests passing with robust tab matching | Phase 11 | Local runtime + Attached Edge |
 
 **Source Labels:**
 - **Live system:** Production SaaS (Resend, Teamleader, Exact Online)
@@ -273,21 +275,24 @@ grep "answer the user's question FIRST" src/graph/nodes.py
 | Unit tests | 51 files | ✅ Running | `tests/unit/` |
 | Integration tests | 6 files | ⚠️ Mock-based | `tests/integration/` |
 | Operator eval cases | 9 defined | ✅ Executable | `docs/evals/operator_eval_cases.v1.json` |
-| Eval runner | NEW | ✅ Implemented | `scripts/run_operator_eval.py` |
-| Direct quality test | NEW | ✅ Implemented | `scripts/test_response_quality_direct.py` |
-| Browser E2E tests | NEW | ✅ Scaffolded | `tests/e2e/test_critical_path_smoke.py` |
+| Eval runner | ✅ Implemented | ✅ Working | `scripts/run_operator_eval.py` |
+| Direct quality test | ✅ Implemented | ✅ Working | `scripts/test_response_quality_direct.py` |
+| **Attached-Edge E2E tests** | **17 tests** | **✅ Passing** | **`tests/e2e/test_attached_edge_cdp_smoke.py`** |
 | Response quality evals | 0 | ⏳ Backlog | — |
 | Live load tests | 0 | ⏳ Backlog | — |
 
-**Infrastructure Added This Session:**
+**Infrastructure Status:**
 1. `scripts/run_operator_eval.py` — Executable runner for 9 eval cases (JSON/Markdown/CSV output)
 2. `scripts/test_response_quality_direct.py` — Direct workflow testing (bypass HTTP auth)
-3. `tests/e2e/test_critical_path_smoke.py` — Browser E2E scaffold for critical paths
-4. Test user: `eval-test@cdp.local` created for automated testing
+3. `tests/e2e/test_attached_edge_cdp_smoke.py` — **17/17 attached-Edge E2E tests passing**
+4. `scripts/mcp_cdp_helper.py` — CDP helper with deterministic tab selection
+5. Test user: `eval-test@cdp.local` created for automated testing
 
-**Eval Artifacts Generated:**
-- `reports/evals/run_2026-03-14.json` — First eval run output
+**Latest Eval Artifacts:**
+- `reports/evals/run_2026-03-14.json` — Eval run output
+- `reports/e2e_evidence/segments_smoke_deterministic.png` — Attached-Edge smoke test evidence
 - Eval runner exit codes: 0=pass, 1=fail, 2=error
+- E2E test command: `python -m pytest tests/e2e/test_attached_edge_cdp_smoke.py -v`
 
 ---
 
@@ -590,6 +595,8 @@ Use short evidence IDs in the matrix below so the PDF stays readable; the full f
 | SG-07 | Opened CSV artifact preview | 2026-03-08 | Local artifact |
 | SG-08 | Teamleader authenticated continuation | 2026-03-14 | Live system + CDP automation |
 | SG-09 | Exact Online authenticated continuation | 2026-03-14 | Live system + CDP automation |
+| **SG-10** | **Segments smoke with deterministic tab selection** | **2026-03-14** | **Local runtime + Attached Edge** |
+| **SG-11** | **Segments smoke (latest alias)** | **2026-03-14** | **Local runtime + Attached Edge** |
 
 **Filename Key:**
 - `SG-01` → `chatbot_360_bbs_four_source_final_2026-03-08.png`
@@ -601,6 +608,8 @@ Use short evidence IDs in the matrix below so the PDF stays readable; the full f
 - `SG-07` → `docs/illustrated_guide/demo_screenshots/csv_export_opened_spreadsheet_view_2026-03-08.png`
 - `SG-08` → `output/browser_automation/teamleader_authenticated.png`
 - `SG-09` → `output/browser_automation/exact_authenticated.png`
+- **`SG-10`** → **`reports/e2e_evidence/segments_smoke_deterministic.png`**
+- **`SG-11`** → **`reports/e2e_evidence/segments_smoke_latest.png`**
 
 **Label Note:** The guide intentionally mixes live SaaS screens, local runtime views, demo-backed integration evidence, and generated local artifacts. Each item is labeled by source rather than flattened into a single "live" claim.
 
@@ -693,16 +702,23 @@ AUTOTASK:   B.B.S. Entreprise | 1 Ticket | €15,000 Contract
 
 ---
 
-## Remaining Evidence Gaps (After This Pass)
+## Remaining Evidence Gaps (Current State)
+
+**Critical go/no-go criteria are met.** The gaps below are real but do not block core demo claims.
 
 | Gap | Priority | Current State | Path Forward |
 |-----|----------|---------------|--------------|
+| **Chat-send smoke test** | **Medium** | **Not yet implemented** | Requires test user credentials for authenticated chat flow |
+| **Segment creation assertions** | **Low** | **Not yet implemented** | Avoids creating business data during tests; can add with test isolation |
+| **Multi-tab stress testing (5+ tabs)** | **Low** | **Not yet implemented** | Deterministic selection works; scale testing is future work |
 | Real website traffic | Medium | Demo-labeled writeback proven for B.B.S. UID | Replace with live traffic only if required |
 | Tracardi workflow execution | Low | Optional adapter; CE cannot execute; first-party event processor covers needs | Only revisit if Premium features explicitly required |
 | Flexmail integration | Low | Explicitly deprioritized | Resend is verified alternative; Flexmail in backlog |
 | Event metadata privacy | Medium | Fixed 2026-03-14 | Event processor now hashes emails and sanitizes event_data | ✅ Resolved |
 | More linked companies | Medium | 1 fully linked; scripts available | Populate demo data for richer demos |
 | Complex form submission (multi-field, validation) | Low | Click/fill proven for search; full submission not required for current demos | Add if CRM record creation workflow needed |
+
+**Honest Assessment:** While 17/17 attached-Edge E2E tests pass and the deterministic tab selection is proven, the chat-send smoke test (the primary user flow) is still missing. The architecture is validated but the full user journey automation remains incomplete.
 
 **Resolved in This Pass:**
 - ✅ Authenticated browser continuation (Teamleader + Exact)
