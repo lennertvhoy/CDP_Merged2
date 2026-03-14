@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
-"""Browser E2E smoke tests for critical operator paths.
+"""ISOLATED_CHROMIUM smoke tests for critical operator paths.
+
+WARNING: This uses generic Playwright with spawned Chromium, NOT the project's
+canonical attached-Edge/CDP path. Use test_attached_edge_cdp_smoke.py for
+the preferred architecture.
 
 Uses Playwright to verify end-to-end flows:
 1. Login → Chat → Response
 2. Segment creation flow
 3. Export functionality
 
-Run with: pytest tests/e2e/test_critical_path_smoke.py -v
+Run with: pytest tests/e2e/test_isolated_chromium_smoke.py -v
+
+Architecture: ISOLATED_PLAYWRIGHT (non-canonical)
 """
 
 from __future__ import annotations

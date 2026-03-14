@@ -1,4 +1,14 @@
-"""Seed, reset, and run the first operator-shell smoke baseline."""
+"""Seed, reset, and run the first operator-shell smoke baseline.
+
+WARNING: This script uses generic Playwright with spawned Chromium:
+  browser = playwright.chromium.launch(headless=not headed)
+
+For the project's canonical attached-Edge/CDP path, see:
+  - scripts/mcp_cdp_helper.py (MCPBrowserController)
+  - tests/e2e/test_attached_edge_cdp_smoke.py
+
+Architecture: ISOLATED_PLAYWRIGHT (historical, non-canonical)
+"""
 
 # ruff: noqa: E402
 

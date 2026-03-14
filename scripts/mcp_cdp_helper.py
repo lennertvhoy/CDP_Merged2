@@ -3,6 +3,10 @@
 MCP CDP Helper for CDP_Merged
 Real browser control via Chrome DevTools Protocol (CDP)
 
+CANONICAL BROWSER PATH: Attached Edge/CDP
+This is the project's preferred browser automation architecture.
+Reuses existing Edge instance on 127.0.0.1:9223, preserving session/auth.
+
 Usage:
     # Ensure Edge is running with CDP first:
     chrome-for-mcp
@@ -14,6 +18,8 @@ Usage:
     python scripts/mcp_cdp_helper.py title
     python scripts/mcp_cdp_helper.py url
     python scripts/mcp_cdp_helper.py tabs
+
+Architecture: ATTACHED_EDGE_CDP (canonical)
 """
 
 import subprocess
