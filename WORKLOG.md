@@ -384,3 +384,71 @@ git show --stat HEAD
 **PDF Note:** PDF generation requires LaTeX (xelatex/pdflatex) not available in this environment. HTML version generated as `docs/ILLUSTRATED_GUIDE_v3.5.html` and `docs/ILLUSTRATED_GUIDE.html`.
 
 **Status:** ✅ COMPLETE — Worktree clean at `79a5e10`
+
+---
+
+## 2026-03-14 (Illustrated Guide v3.5 — Finished Reviewer Artifact)
+
+### Task: Make the Illustrated Guide a finished reviewer deliverable
+
+**Type:** docs_or_process_only  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-14 17:05 CET  
+**Git Head:** `26202f6`  
+**Worktree:** Clean
+
+**What Was Required:**
+1. Generate a real, current PDF for the Illustrated Guide v3.5
+2. Verify the exported PDF
+3. Make one bounded reviewer-packaging improvement
+
+**PDF Toolchain Installed:**
+- Tectonic 0.15.0 (via drop-sh.fullyjustified.net)
+- Installed to: `~/.local/bin/tectonic`
+- Pandoc already available: 3.9
+
+**PDF Generation:**
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+pandoc ILLUSTRATED_GUIDE.md -o ILLUSTRATED_GUIDE_v3.5.pdf \
+  --pdf-engine=tectonic -V geometry:margin=2.5cm -V fontsize=10pt --toc
+```
+
+**PDF Verification:**
+| Metric | Value |
+|--------|-------|
+| Pages | 24 |
+| Size | 1.4 MB |
+| Creation | 2026-03-14 16:51 CET |
+| Format | PDF 1.5 |
+| Page size | Letter (612 x 792 pts) |
+
+**Reviewer Packaging Improvement:**
+Added "Reviewer Quick Start" section including:
+- How to use this guide (3-step process)
+- Key evidence types table (Live system, Local runtime, Local artifact, Demo-backed)
+- Verification status legend (✅ Verified, ⚠️ Partial, ❌ Removed/Deprecated)
+- Credibility statement explaining what makes the guide trustworthy
+
+**Artifacts Generated:**
+| File | Size | Purpose |
+|------|------|---------|
+| `ILLUSTRATED_GUIDE.md` | 32 KB | Source of truth |
+| `ILLUSTRATED_GUIDE.pdf` | 1.4 MB | Current PDF (stable pointer) |
+| `ILLUSTRATED_GUIDE_v3.5.pdf` | 1.4 MB | Versioned PDF |
+| `ILLUSTRATED_GUIDE.html` | 75 KB | Web-viewable current |
+| `ILLUSTRATED_GUIDE_v3.5.html` | 75 KB | Web-viewable versioned |
+
+**Runtime Verification (pre- and post-work):**
+- Port 3000: ✅ next-server (Operator Shell)
+- Port 8170: ✅ uvicorn (Operator API)
+- Port 9223: ✅ msedge (Edge CDP)
+- Port 8000: ✅ No listener (Chainlit deprecated)
+- No Chainlit processes found
+
+**Known Limitations:**
+- PDF shows warnings about Unicode characters (✅, ❌) not in default font
+- Characters render as boxes but document is fully readable
+- To fix: would need font with emoji support (out of scope for this session)
+
+**Status:** ✅ COMPLETE — Worktree clean at `26202f6`
