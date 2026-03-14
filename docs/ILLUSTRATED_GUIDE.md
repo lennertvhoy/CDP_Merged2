@@ -9,7 +9,7 @@
 
 **Audience:** Demo observers, auditors, stakeholders needing visual proof
 
-**Last Updated:** 2026-03-14 (v4.12 — SC-11/12/13 Follow-up Continuity Complete)
+**Last Updated:** 2026-03-14 (v4.13 — SC-14/15/16 Follow-up Action Continuity Complete)
 
 **Companion Docs:**
 
@@ -2415,9 +2415,9 @@ All Foundation scenarios (SC-01 to SC-10) now complete:
 | SC-11 | ✅ quality_pass |
 | SC-12 | ✅ quality_pass |
 | SC-13 | ✅ quality_pass |
-| SC-14 | ⏳ pending |
-| SC-15 | ⏳ pending |
-| SC-16 | ⏳ pending |
+| SC-14 | ✅ quality_pass |
+| SC-15 | ✅ quality_pass |
+| SC-16 | ✅ quality_pass |
 | SC-17 | ⏳ pending |
 | SC-18 | ⏳ pending |
 
@@ -2430,7 +2430,175 @@ All Foundation scenarios (SC-01 to SC-10) now complete:
 | 360/Analytics (SC-29 to SC-38) | 0 | 10 |
 | Admin/Auth (SC-39 to SC-45) | 4 | 3 |
 | Intent/Robustness (SC-46 to SC-50) | 0 | 5 |
-| **Total** | **17 (34%)** | **33 (66%)** |
+| **Total** | **20 (40%)** | **30 (60%)** |
+
+---
+
+## Phase 24 — Compound Slice: SC-14/15/16 Follow-up Action Continuity (2026-03-14)
+
+**Version:** v4.13  
+**Focus:** Follow-up action continuity — export, segment creation, and 360 view from prior search results
+
+### 24.1 Track A — SC-14 Follow-up Export from Last Search
+
+**Scenario:**
+- Turn 1: "Find software companies in Antwerp."
+- Turn 2: "Export these to CSV."
+
+**Turn 1 Result:**
+- Answer: "I found 3,062 software companies in Antwerp."
+- List behavior: ✓ (examples with KBO numbers)
+
+**Turn 2 Result:**
+- Answer: "Your CSV is ready."
+- Export artifact: ✓ (File: `software-companies-in-antwerp-csv-export_20260314_202406.csv`)
+- Rows exported: 1,000 (out of 3,062 matching companies)
+- Context reuse: ✓ (explicitly references "3,062 matching companies")
+- Download link: ✓ (http://localhost:8000/download/artifacts/...)
+- Evidence: `reports/scenarios/sc14/sc14_turn2_export.png`
+
+**Artifact Verification:**
+```bash
+$ head -5 software-companies-in-antwerp-csv-export_20260314_202406.csv
+kbo_number,company_name,city,postal_code,status,industry_nace_code,legal_form,main_email,main_phone,website_url
+0674498210,"""Keen & Wise""",Antwerpen,2600,AC,62200,Besloten Vennootschap,,,
+0544881761,0404,Antwerpen,2018,AC,62200,Besloten Vennootschap,,,
+0788948312,10000 SUNS,Antwerpen,2018,AC,70200,Besloten Vennentschap,,,
+0841625646,1105 Ventures I,Antwerpen,2000,AC,62900,Besloten Vennootschap,,,
+
+$ wc -l software-companies-in-antwerp-csv-export_20260314_202406.csv
+1001 (1 header + 1,000 data rows)
+```
+
+**Quality Metrics:**
+| Metric | Turn 1 | Turn 2 |
+|--------|--------|--------|
+| First content | ~15s | ~15s |
+| Streaming | ✓ | ✓ |
+| Answer-first | ✓ | ✓ |
+| Export artifact | — | ✓ (real CSV, 1,000 rows) |
+
+**Status:** ✅ quality_pass
+
+---
+
+### 24.2 Track B — SC-15 Follow-up Segment Creation from Last Search
+
+**Scenario:**
+- Turn 1: "Find software companies in Antwerp."
+- Turn 2: "Create a segment from that."
+
+**Turn 1 Result:**
+- Answer: "I found 3,062 software companies in Antwerp."
+
+**Turn 2 Result:**
+- Answer: "Segment created: 'Software companies in Antwerp' with 3,062 members."
+- Context reuse: ✓ (created from prior search)
+- Member count: 3,062 (aligned with search result)
+- Evidence: `reports/scenarios/sc15/sc15_turn2_segment.png`
+
+**Segment Verification (UI):**
+- Segment name: "Software companies in Antwerp"
+- Member count: 3,062 (matches search count ✓)
+- Filter shown: `(traits.city="Antwerp" OR ... ) AND (traits.nace_code IN [...])`
+- Email coverage: 18.7%
+- Phone coverage: 12.6%
+- Top city: Antwerpen
+- Member preview: ✓ (shows actual companies)
+- Evidence: `reports/scenarios/sc15/sc15_segment_verified.png`
+
+**Quality Metrics:**
+| Metric | Turn 1 | Turn 2 |
+|--------|--------|--------|
+| First content | ~15s | ~15s |
+| Streaming | ✓ | ✓ |
+| Answer-first | ✓ | ✓ |
+| Segment created | — | ✓ (verified in UI) |
+| Count aligned | — | ✓ (3,062 = 3,062) |
+
+**Status:** ✅ quality_pass
+
+---
+
+### 24.3 Track C — SC-16 Follow-up 360 from Prior Result
+
+**Scenario:**
+- Turn 1: "Find companies named B.B.S."
+- Turn 2: "Give me the 360 view of the first one."
+
+**Turn 1 Result:**
+- Answer: "I found 6 companies with 'B.B.S.' in the name."
+- Results listed:
+  1. AUTO 32 B.B.S. — Ukkel — KBO 0452177079 — Status: AC
+  2. B.B.S. — Skanderborg — KBO 0826997155 — Status: AC
+  3. B.B.S. — Puurs-Sint-Amands — KBO 0891299346 — Status: AC
+  4. B.B.S. ENTREPRISE — Erquelinnes — KBO 0438437723 — Status: AC
+  5. B.B.S.R MANAGEMENT — Westerlo — KBO 0860932309 — Status: AC
+  6. B.B.S.SPORT — Aarschot — KBO 0436302436 — Status: AC
+
+**Turn 2 Result:**
+- Answer: "Here is the 360° view for AUTO 32 B.B.S. (KBO 0452177079)"
+- Prior-result resolution: ✓ (correctly identified "first one" as AUTO 32 B.B.S.)
+- 360 data shown:
+  - Identity: AUTO 32 B.B.S., KBO 0452177079, AC, Besloten Vennootschap
+  - NACE: 70200 (Professional Services)
+  - City: Ukkel
+  - Teamleader: No linked record
+  - Exact: No linked account
+  - Autotask: No linked company
+  - Link status: kbo_only
+- Context reuse: ✓ (follow-up bound to first result from Turn 1)
+- Evidence: `reports/scenarios/sc16/sc16_turn2_360.png`
+
+**Quality Metrics:**
+| Metric | Turn 1 | Turn 2 |
+|--------|--------|--------|
+| First content | ~15s | ~15s |
+| Streaming | ✓ | ✓ |
+| Answer-first | ✓ | ✓ |
+| Prior-result resolution | — | ✓ (AUTO 32 B.B.S.) |
+| 360 binding verified | — | ✓ (KBO 0452177079) |
+
+**Status:** ✅ quality_pass
+
+---
+
+### 24.4 Summary: Follow-up Action Continuity Verification
+
+| Scenario | Context Reuse | Action | Verification | Status |
+|----------|---------------|--------|--------------|--------|
+| SC-14 | ✓ (3,062 matching) | CSV export | File inspected: 1,000 rows | quality_pass |
+| SC-15 | ✓ (search context) | Segment creation | UI verified: 3,062 members | quality_pass |
+| SC-16 | ✓ (first result) | 360 view | Binding verified: AUTO 32 B.B.S. | quality_pass |
+
+**Key Achievement:** All three scenarios demonstrate real operational continuity — the system correctly performs actions (export, segment creation, 360 lookup) based on prior search context, not fresh unrelated queries.
+
+---
+
+### 24.5 Updated Scenario Tracker Status
+
+**Follow-up Continuity (SC-11 to SC-18):**
+| ID | Status |
+|----|--------|
+| SC-11 | ✅ quality_pass |
+| SC-12 | ✅ quality_pass |
+| SC-13 | ✅ quality_pass |
+| SC-14 | ✅ quality_pass |
+| SC-15 | ✅ quality_pass |
+| SC-16 | ✅ quality_pass |
+| SC-17 | ⏳ pending |
+| SC-18 | ⏳ pending |
+
+**Overall Program Progress:**
+| Category | Complete | Pending |
+|----------|----------|---------|
+| Foundation (SC-01 to SC-10) | 10 | 0 |
+| Follow-up (SC-11 to SC-18) | 6 | 2 |
+| Segments/Exports (SC-19 to SC-28) | 0 | 10 |
+| 360/Analytics (SC-29 to SC-38) | 0 | 10 |
+| Admin/Auth (SC-39 to SC-45) | 4 | 3 |
+| Intent/Robustness (SC-46 to SC-50) | 0 | 5 |
+| **Total** | **20 (40%)** | **30 (60%)** |
 
 ---
 

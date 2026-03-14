@@ -61,9 +61,9 @@ Scenario status labels:
 | SC-11 | Follow-up narrowing by status | ✅ quality_pass | `reports/scenarios/sc11/sc11_turn2_active.png` | Context reuse: ✓; Count: 41,290/41,290; Explanation: ✓ "The count did not change because all 41,290 matching companies already have active status"; Turn 1: ~12s; Turn 2: ~15s; Streaming: ✓ |
 | SC-12 | Follow-up narrowing by city | ✅ quality_pass | `reports/scenarios/sc12/sc12_turn2_antwerp.png` | Context reuse: ✓; Turn 1: 78,470 (Belgium); Turn 2: 3,062 (Antwerp); Real list behavior: ✓ (examples shown); Consistent with SC-09: ✓; Turn 1: ~15s; Turn 2: ~15s; Streaming: ✓ |
 | SC-13 | Follow-up result limiting | ✅ quality_pass | `reports/scenarios/sc13/sc13_turn2_first20.png` | Context reuse: ✓; Bounded preview: ✓ (exactly 20 companies); Real list behavior: ✓ (names + KBO + contact info); Addresses SC-09 softness: ✓; Turn 1: ~15s; Turn 2: ~15s; Streaming: ✓ |
-| SC-14 | Follow-up export from last search | ⏳ pending | — | — |
-| SC-15 | Follow-up segment creation from last search | ⏳ pending | — | — |
-| SC-16 | Follow-up 360 from prior result | ⏳ pending | — | — |
+| SC-14 | Follow-up export from last search | ✅ quality_pass | `reports/scenarios/sc14/sc14_turn2_export.png` | Context reuse: ✓ (3,062 matching companies); Export artifact: ✓ (1,000 rows, real CSV); File verified: ✓; Turn 1: ~15s; Turn 2: ~15s; Streaming: ✓ |
+| SC-15 | Follow-up segment creation from last search | ✅ quality_pass | `reports/scenarios/sc15/sc15_turn2_segment.png`, `sc15_segment_verified.png` | Context reuse: ✓; Segment verified in UI: ✓; Member count aligned: ✓ (3,062 = 3,062); Turn 1: ~15s; Turn 2: ~15s; Streaming: ✓ |
+| SC-16 | Follow-up 360 from prior result | ✅ quality_pass | `reports/scenarios/sc16/sc16_turn2_360.png` | Prior-result resolution: ✓ (first result: AUTO 32 B.B.S., KBO 0452177079); 360 binding verified: ✓; Context reuse: ✓; Turn 1: ~15s; Turn 2: ~15s; Streaming: ✓ |
 | SC-17 | Follow-up count after search | ⏳ pending | — | — |
 | SC-18 | Follow-up resume after refresh | ⏳ pending | — | — |
 
