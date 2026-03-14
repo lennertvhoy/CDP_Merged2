@@ -3,7 +3,7 @@
 **Purpose:** Map implementation state to customer requirements from "Business Case Customer.txt"  
 **Audience:** Business stakeholders, auditors, project reviewers  
 **Last Updated:** 2026-03-14  
-**Version:** 1.2 (Aligned with Illustrated Guide v3.4 — GUI Operation Proof + Architecture Truth)
+**Version:** 1.3 (Aligned with Illustrated Guide v3.6 — Cleanup Pass: Tracardi Downgrade)
 
 ---
 
@@ -44,7 +44,7 @@
 |-------------|----------------|--------|----------|
 | No PII in CDP core | PostgreSQL stores only KBO/UID; PII in source systems | ✅ Verified | `companies` table has no name/email/phone columns |
 | UID-first design | All linking via KBO number or organization UID | ✅ Verified | `enterprise_number` is primary key |
-| Anonymous Tracardi profiles | Profiles store traits, not PII | ✅ Verified | 84 anonymous profiles in Tracardi dashboard |
+| Anonymous Tracardi profiles | Profiles store traits, not PII (optional layer) | ✅ Verified | 84 anonymous profiles shown when Tracardi active; now optional |
 | Event metadata sanitization | Raw email hashed before storage and downstream projection | ✅ Verified | `sanitize_resend_event_data()` in gateway + `sanitize_event_data()` in event processor |
 | Engagement data storage | Email hashed, event data sanitized | ✅ Verified | `company_engagement.email_hash` + sanitized `event_data` JSONB |
 
@@ -52,10 +52,10 @@
 | Layer | Target | Current | Status |
 |-------|--------|---------|--------|
 | PostgreSQL core | UID-first | UID-first | ✅ OK |
-| Tracardi profiles | Anonymous | Anonymous | ✅ OK |
-| Event metadata (stored) | Hashed only | Hashed only | ✅ Fixed 2026-03-14 |
 | Event metadata (gateway) | Sanitized | Sanitized | ✅ OK |
+| Event metadata (stored) | Hashed only | Hashed only | ✅ Fixed 2026-03-14 |
 | Engagement records | No raw PII | `email_hash` + sanitized `event_data` | ✅ Fixed 2026-03-14 |
+| Tracardi profiles | Anonymous | Anonymous (optional) | ✅ OK |
 
 ---
 

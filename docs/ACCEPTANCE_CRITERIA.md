@@ -3,7 +3,7 @@
 **Purpose:** Reviewer-facing proof package for CDP_Merged POC verification  
 **Audience:** Technical auditors, QA reviewers, stakeholder sign-off  
 **Last Updated:** 2026-03-14  
-**Version:** 1.2 (Aligned with Illustrated Guide v3.4 — GUI Operation Proof)
+**Version:** 1.3 (Aligned with Illustrated Guide v3.6 — Cleanup Pass)
 
 ---
 
@@ -16,9 +16,12 @@ This appendix provides **executable verification steps** for each major claim in
 3. Sign off on individual criteria
 
 **Prerequisites:**
-- Local Docker Compose stack running (`docker compose up -d`)
-- PostgreSQL accessible on `localhost:5432`
-- `.env.local` populated with valid credentials
+- PostgreSQL accessible on `localhost:5432` (required)
+- Operator API running on port 8170 (required)
+- Operator Shell running on port 3000 (required for UI tests)
+- `.env.local` populated with valid credentials (required)
+- Docker Compose stack (optional — only for full integration tests)
+- Tracardi (optional — not required for core acceptance tests)
 
 ---
 
@@ -232,7 +235,11 @@ AND column_name IN ('name', 'email', 'phone', 'contact');
 
 **Expected:** 0 rows (no PII columns in core table).
 
-**Step 2: Verify Tracardi profiles are anonymous**
+**Step 2: Verify Tracardi profiles are anonymous (Optional)**
+
+*Note: Tracardi is now an optional activation adapter, not required for core privacy.*
+
+If Tracardi is running:
 ```bash
 curl -H "Authorization: Bearer $TRACARDI_TOKEN" \
   http://localhost:8686/profile/select | jq '.results[0]'

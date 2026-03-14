@@ -5,11 +5,11 @@
 
 ## Evidence pack for the Customer Data Platform demo {.unnumbered .unlisted}
 
-**Purpose:** Screenshot proofs and verification evidence for the Customer Data Platform
+**Purpose:** Screenshot proofs and verification evidence for the local-first Customer Data Platform
 
 **Audience:** Demo observers, auditors, stakeholders needing visual proof
 
-**Last Updated:** 2026-03-14 (v3.5 — Meaningful GUI Navigation Proof)
+**Last Updated:** 2026-03-14 (v3.6 — Cleanup Pass: Tracardi Downgrade + Executive Summary)
 
 **Companion Docs:**
 
@@ -19,7 +19,36 @@
 - Acceptance criteria: `docs/ACCEPTANCE_CRITERIA.md`
 - Browser automation: `docs/BROWSER_AUTOMATION_GUIDE.md`
 
-**Architecture Truth (Current):**
+---
+
+## Executive Summary
+
+### What Is Proven
+
+| Claim | Status | Evidence |
+|-------|--------|----------|
+| 360° Golden Record (4-source unified view) | ✅ Verified | B.B.S. Entreprise with KBO + Teamleader + Exact + Autotask linkage |
+| Natural Language → Segment → Activation | ✅ Verified | 190 Brussels IT companies → Resend audience in <3s |
+| CSV Export with field validation | ✅ Verified | SHA-256 checksummed artifact opened in spreadsheet |
+| Engagement scoring & recommendations | ✅ Verified | Event processor API with deterministic scoring model |
+| Privacy-by-design (UID-first) | ✅ Verified | PostgreSQL stores KBO only; PII stays in source systems |
+| Browser automation (authenticated) | ✅ Verified | Teamleader + Exact Online continuation with GUI operations |
+
+### What Is Partial
+
+| Item | Limitation |
+|------|------------|
+| Cross-source revenue aggregation | Only Autotask shows €15,000; CRM/Exact show €0 (demo tenant data) |
+| Linked company scale | Only 1 company has full 4-source linkage; scripts available for more |
+
+### What Is Optional / Not Required
+
+| Component | Status | Note |
+|-----------|--------|------|
+| Tracardi | ⚠️ Optional adapter | Demoted from core; CE cannot execute workflows; first-party event processor handles engagement |
+| Chainlit | ❌ Removed | Replaced by Operator Shell + API |
+
+### Architecture Truth (Current Runtime)
 
 | Component | Role | Status |
 |-----------|------|--------|
@@ -28,16 +57,10 @@
 | PostgreSQL | Analytical Truth / Customer Intelligence | ✅ Active |
 | Azure OpenAI GPT-5 | LLM Provider | ✅ Active |
 | Edge with CDP (port 9223) | Browser Automation | ✅ Active |
-| Tracardi | Optional Activation Adapter | ⚠️ Non-critical |
+| Tracardi | Optional Activation Adapter | ⚠️ Non-critical; not currently running |
 | Chainlit (port 8000) | Deprecated Historical Path | ❌ Removed |
 
-**This guide is designed to show:**
-
-- One auditable `linked_all` 360° story anchored on B.B.S. Entreprise
-- Claim → evidence → verification flow across segmentation, activation, export, engagement, and integrations
-- Source labels: **Live system**, **Local runtime**, **Demo-backed**, **Local artifact**
-
-**Credibility Note:** All claims are verified against the implementation before being documented. If a claim is partial, it is labeled **Partial**. If something is not yet proven, it is labeled **Not yet covered**.
+**Execution Mode:** Local-first (Azure deployment paused for cost control).
 
 ---
 
@@ -90,7 +113,7 @@
 | Segment → Activation completes in <3s | POC test results + populated audience proof | Phase 3 | Live system |
 | CSV export contains all claimed fields | Opened spreadsheet artifact + validation checks | Phase 4 | Local artifact |
 | Engagement scoring generates recommendations | Live JSON API output | Phase 5 | Local runtime |
-| Privacy boundary status is documented | Tracardi profile view + divergence table | Phase 5 | Local runtime |
+| Privacy boundary status is documented | Tracardi profile view (optional/historical) + divergence table | Phase 5 | Supporting evidence |
 | Cross-source revenue aggregation | 360° view with contract values | Phase 7 | Demo-backed |
 | Sync latency within operational window | Timestamped sync proof | Phase 8 | Verified |
 | Authenticated browser continuation | Real-session screenshots from Teamleader/Exact | Phase 9 | Live system + CDP automation |
@@ -365,23 +388,17 @@ curl "http://localhost:5001/api/engagement/leads?min_score=5"
 
 ### Privacy Boundary Evidence
 
-![Tracardi UID-First](/home/ff/Documents/CDP_Merged/docs/illustrated_guide/demo_screenshots/tracardi_dashboard_anonymous_profiles_2026-03-08.png)
-
-**Visible Proof:**
-
-- 84 anonymous profiles (no PII in traits)
-- Gateway sanitizes before downstream projection
-- Event processor stores only hashed emails and sanitized event data
+The CDP maintains privacy-by-design through UID-first storage and sanitization at all layers.
 
 **Privacy Layers (All Verified):**
 
 | Layer | Target | Implementation | Status |
 |-------|--------|----------------|--------|
 | PostgreSQL core | UID-first | KBO number as primary key, no PII columns | ✅ OK |
-| Tracardi profiles | Anonymous | Traits only, no PII | ✅ OK |
-| Event metadata (stored) | Hashed only | SHA-256 hashed, domains extracted | ✅ Fixed 2026-03-14 |
 | Event metadata (gateway) | Sanitized | `sanitize_resend_event_data()` removes PII | ✅ OK |
+| Event metadata (stored) | Hashed only | SHA-256 hashed, domains extracted | ✅ Fixed 2026-03-14 |
 | Engagement records | No raw PII | `email_hash` + sanitized `event_data` | ✅ Fixed 2026-03-14 |
+| Tracardi profiles | Anonymous | Traits only, no PII | ✅ OK (Optional layer) |
 
 **Implementation:** 
 - Gateway: `sanitize_resend_event_data()` in `scripts/webhook_gateway.py`
@@ -389,6 +406,14 @@ curl "http://localhost:5001/api/engagement/leads?min_score=5"
 - Database: `company_engagement.email_hash` (SHA-256), sanitized `event_data` JSONB
 
 **Tests:** 48 webhook gateway tests + 6 privacy-specific event processor tests pass.
+
+**Optional/Historical Evidence:**
+
+When Tracardi was active, it demonstrated anonymous profile storage compatible with the privacy model:
+
+![Tracardi UID-First](/home/ff/Documents/CDP_Merged/docs/illustrated_guide/demo_screenshots/tracardi_dashboard_anonymous_profiles_2026-03-08.png)
+
+*Screenshot (Historical): Tracardi showing 84 anonymous profiles with no PII in traits. Tracardi is now an optional adapter and is not currently running.*
 
 ---
 
@@ -446,7 +471,7 @@ Use short evidence IDs in the matrix below so the PDF stays readable; the full f
 | SG-01 | 360° response excerpt showing `linked_all` linkage summary | 2026-03-08 | Local chatbot + live backend |
 | SG-02 | NL segment response excerpt for Brussels IT flow | 2026-03-08 | Local chatbot |
 | SG-03 | Populated Resend audience detail | 2026-03-08 | Live Resend |
-| SG-04 | Anonymous Tracardi profile view | 2026-03-08 | Local Tracardi runtime |
+| SG-04 | Anonymous Tracardi profile view | 2026-03-08 | Optional/Historical |
 | SG-05 | Teamleader CRM snapshot | 2026-03-08 | Live Teamleader |
 | SG-06 | Exact Online dashboard snapshot | 2026-03-08 | Live Exact |
 | SG-07 | Opened CSV artifact preview | 2026-03-08 | Local artifact |
@@ -560,7 +585,7 @@ AUTOTASK:   B.B.S. Entreprise | 1 Ticket | €15,000 Contract
 | Gap | Priority | Current State | Path Forward |
 |-----|----------|---------------|--------------|
 | Real website traffic | Medium | Demo-labeled writeback proven for B.B.S. UID | Replace with live traffic only if required |
-| Tracardi workflow execution | Medium | CE limitation documented; drafts only | Evaluate Premium or alternative engine |
+| Tracardi workflow execution | Low | Optional adapter; CE cannot execute; first-party event processor covers needs | Only revisit if Premium features explicitly required |
 | Flexmail integration | Low | Explicitly deprioritized | Resend is verified alternative; Flexmail in backlog |
 | Event metadata privacy | Medium | Fixed 2026-03-14 | Event processor now hashes emails and sanitizes event_data | ✅ Resolved |
 | More linked companies | Medium | 1 fully linked; scripts available | Populate demo data for richer demos |
@@ -570,6 +595,7 @@ AUTOTASK:   B.B.S. Entreprise | 1 Ticket | €15,000 Contract
 - ✅ Authenticated browser continuation (Teamleader + Exact)
 - ✅ Architecture truth documented (Operator Shell primary, Chainlit deprecated)
 - ✅ Azure posture clarified (Azure OpenAI only)
+- ✅ Tracardi framing downgraded from core dependency to optional adapter
 
 **Note:** All critical GO/No-Go criteria are met. These gaps are optimization and scale items, not blockers.
 
@@ -839,6 +865,7 @@ Result: "Typed test in search box"
 | Operator API on port 8170 | `ss -tlnp` shows uvicorn | ✅ Active |
 | Edge CDP on port 9223 | `ss -tlnp` shows msedge | ✅ Active |
 | No Chainlit on port 8000 | `ss -tlnp` no listener; `pgrep chainlit` empty | ✅ Confirmed |
+| No Tracardi running locally | `pgrep tracardi` empty; not required for core demo | ✅ Confirmed (optional) |
 | Azure OpenAI only | `.env.local` audit: AZURE_OPENAI_API_KEY present, no other Azure services | ✅ Confirmed |
 
 ### Deprecated / Removed

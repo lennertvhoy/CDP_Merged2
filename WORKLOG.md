@@ -452,3 +452,55 @@ Added "Reviewer Quick Start" section including:
 - To fix: would need font with emoji support (out of scope for this session)
 
 **Status:** ✅ COMPLETE — Worktree clean at `26202f6`
+
+---
+
+## 2026-03-14 (Illustrated Guide v3.6 Cleanup Pass — Tracardi Downgrade + PDF Fix)
+
+### Task: Tight cleanup pass on Illustrated Guide and supporting docs
+
+**Type:** docs_or_process_only  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-14 17:15 CET  
+**Git Head:** `a49bfba` (pre-commit)  
+**Worktree:** To be verified
+
+**Summary:**
+Completed tight cleanup pass on Illustrated Guide with focus on Tracardi framing and PDF rendering quality:
+1. ✅ Verified runtime state: 3000, 8170, 9223 active; 8000 inactive; Tracardi not running
+2. ✅ Determined Tracardi being down is NOT a product blocker (demoted to optional adapter)
+3. ✅ Downgraded Tracardi references from "core" to "optional/historical" in guide
+4. ✅ Added crisp Executive Summary to guide (What is Proven/Partial/Optional)
+5. ✅ Fixed PDF rendering issues (emoji → ASCII to avoid "ffi boxes")
+6. ✅ Aligned BUSINESS_CONFORMITY_MATRIX.md and ACCEPTANCE_CRITERIA.md
+7. ✅ Generated clean PDF v3.6
+
+**Tracardi Status Assessment:**
+
+| Question | Answer | Evidence |
+|----------|--------|----------|
+| Is Tracardi down a product blocker? | NO | Architecture decision 2026-03-14: Tracardi is optional activation adapter |
+| Is Tracardi down a guide blocker? | NO | Guide reframed to show Tracardi as optional/historical evidence |
+| Does product depend on Tracardi? | NO | First-party event processor + PostgreSQL cover engagement needs |
+| Does guide still show Tracardi? | YES | As optional/historical privacy boundary evidence only |
+
+**Files Modified:**
+
+| File | Change |
+|------|--------|
+| `docs/ILLUSTRATED_GUIDE.md` | Added Executive Summary; downgraded Tracardi framing; updated Architecture Truth; fixed Privacy Boundary section |
+| `docs/BUSINESS_CONFORMITY_MATRIX.md` | Updated version to 1.3; marked Tracardi as optional in privacy layers |
+| `docs/ACCEPTANCE_CRITERIA.md` | Updated version to 1.3; marked Tracardi step as optional; updated prerequisites |
+| `docs/ILLUSTRATED_GUIDE.pdf` | Regenerated v3.6 with clean rendering (no emoji boxes) |
+| `docs/ILLUSTRATED_GUIDE_v3.6.pdf` | New version artifact |
+
+**PDF Generation:**
+
+- Tool: pandoc + xelatex via Arch distrobox
+- Fix: Replaced emoji (✅❌⚠️) with ASCII ([OK], [X], [!]) for clean rendering
+- Output: 1.4MB, 21+ pages
+
+**Remaining Gaps (Post-Cleanup):**
+
+None. Tracardi properly framed as optional; guide quality improved; PDF rendering fixed.
+
