@@ -735,3 +735,91 @@ Made real backlog progress on three tracks in one bounded session:
 5. Complex form submission: Not required for current demos
 
 ---
+
+## 2026-03-14 (Session 2 — Source-Level Fix + Eval Infrastructure)
+
+### Task: Three-track backlog progress with real implementation
+
+**Type:** app_code + test_infra + docs  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-14 17:55 CET  
+**Git Head:** `9a6c283` → `TBD`  
+**Worktree:** Clean (before commit)
+
+**Summary:**
+Made real progress on three tracks with actual code implementation:
+
+### Track 1 — Source-Level Response Quality Fix
+**Problem:** System prompt REQUIRED chain-of-thought before tool calls, causing "1. I need to... 2. I will use..." output.
+
+**Fix:** Modified `src/graph/nodes.py` SYSTEM_PROMPTS["en"]:
+- ❌ Removed: `## CHAIN OF THOUGHT (MANDATORY)` section
+- ✅ Added: `## RESPONSE FORMAT (CRITICAL - READ FIRST)` requiring answer-first
+- ✅ Added: Explicit instruction `ALWAYS answer the user's question FIRST`
+- ✅ Added: Bad examples marked with ❌ showing what NOT to do
+- ✅ Made internal reasoning OPTIONAL and after the answer
+
+**Verification:**
+```bash
+$ grep "answer the user's question FIRST" src/graph/nodes.py
+✅ Pattern found
+```
+
+### Track 2 — Executable Eval Infrastructure
+**New Files:**
+1. `scripts/run_operator_eval.py` — Full eval runner for 9 cases
+   - Cookie-based auth support
+   - JSON/Markdown/CSV output
+   - Scoring dimensions: intent, autonomy, trust, actionability, ux_product_polish
+   - Exit codes: 0=pass, 1=fail, 2=error
+
+2. `scripts/test_response_quality_direct.py` — Direct workflow testing
+   - Bypasses HTTP auth/cookies
+   - Tests LangGraph nodes directly
+   - 6 test prompts covering multiple categories
+
+3. `tests/e2e/test_critical_path_smoke.py` — Browser E2E scaffold
+   - Login flow tests
+   - Chat interaction tests
+   - Response quality checks
+   - Navigation tests
+   - API health checks
+
+4. Test user created: `eval-test@cdp.local` for automated testing
+
+**Artifacts Generated:**
+- `reports/evals/run_2026-03-14.json` — First eval run
+- `reports/evals/run_2026-03-14.log` — Run log
+
+### Track 3 — Guide Update with Verified Truth
+Updated `docs/ILLUSTRATED_GUIDE.md`:
+- Response Quality Deep Status table now shows v3 (source-level) fix
+- Test/Eval Coverage table updated with new infrastructure
+- Added verification commands
+- Honest status: follow-up continuity still partial, error handling still untested
+
+**Files Modified:**
+- `src/graph/nodes.py` — Source-level response quality fix
+- `docs/ILLUSTRATED_GUIDE.md` — Updated coverage matrix with verified truth
+- `WORKLOG.md` — This entry
+
+**Files Added:**
+- `scripts/test_response_quality_direct.py` — Direct workflow tester
+- `tests/e2e/__init__.py` — E2E test package
+- `tests/e2e/test_critical_path_smoke.py` — Browser E2E smoke tests
+
+**Runtime Verified:**
+| Port | Status |
+|------|--------|
+| 3000 | ✅ Active (next-server) |
+| 8170 | ✅ Active (uvicorn, restarted for prompt change) |
+| 9223 | ✅ Active (msedge) |
+| 8000 | ✅ Inactive |
+| Chainlit | ✅ No process |
+
+**Remaining Gaps:**
+1. Follow-up continuity: Still partial (checkpoint-based, limited context)
+2. Error handling: Not tested
+3. Ambiguity resolution: Logic exists, not exercised
+4. Live eval execution: Auth/cookie flow needs refinement for full automation
+

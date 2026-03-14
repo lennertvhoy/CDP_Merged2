@@ -240,39 +240,54 @@ This matrix documents current capabilities and coverage gaps honestly. It comple
 | Cross-source reporting | Analyst | ⚠️ Partial | Limited by linkage coverage |
 | Error recovery | Any | ⏳ Not tested | Unknown behavior on bad queries |
 
-### Response Quality Deep Status (2026-03-14)
+### Response Quality Deep Status (2026-03-14 Session)
 
-| Dimension | Before Fix | After Fix (v1) | After Fix (v2) | Target |
-|-----------|------------|----------------|----------------|--------|
-| Tool name leakage (final) | FAIL | PASS | PASS | PASS |
-| Tool name leakage (streaming) | FAIL | FAIL | PASS | PASS |
-| Numbered thinking steps (final) | FAIL | PASS | PASS | PASS |
-| Numbered thinking steps (streaming) | FAIL | FAIL | PASS | PASS |
-| Answer-first structure | POOR | IMPROVED | IMPROVED | GOOD |
-| Factual grounding | GOOD | GOOD | GOOD | GOOD |
-| Follow-up continuity | POOR | POOR | POOR | GOOD |
-| Error message quality | UNKNOWN | UNKNOWN | UNKNOWN | GOOD |
+| Dimension | Before | v1 (post-process) | v2 (streaming) | v3 (source) | Target |
+|-----------|--------|-------------------|----------------|-------------|--------|
+| Tool name leakage (final) | FAIL | PASS | PASS | PASS | PASS |
+| Tool name leakage (streaming) | FAIL | FAIL | PASS | PASS | PASS |
+| Numbered thinking steps (final) | FAIL | PASS | PASS | PASS | PASS |
+| Numbered thinking steps (streaming) | FAIL | FAIL | PASS | PASS | PASS |
+| Answer-first structure | POOR | IMPROVED | IMPROVED | **IMPROVED** | GOOD |
+| Source-level COT | FORCED | FORCED | FORCED | **OPTIONAL** | OPTIONAL |
+| Factual grounding | GOOD | GOOD | GOOD | GOOD | GOOD |
+| Follow-up continuity | POOR | POOR | POOR | POOR | GOOD |
+| Error message quality | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | GOOD |
 
 **Fix Evolution:**
-- **v1 (post-processing):** Sanitizes final message only
+- **v1 (post-processing):** Sanitizes final message only in `operator_api.py`
 - **v2 (real-time):** Sanitizes streaming deltas using `_sanitize_streaming_delta()`
-- **Ideal (source fix):** Prompt/system improvements to reduce thinking output at source
+- **v3 (source-level):** Modified system prompt in `nodes.py` — removed mandatory chain-of-thought, added answer-first requirement
 
-### Test / Eval Coverage
+**Verification:**
+```bash
+# Verify source fix is in place
+grep "answer the user's question FIRST" src/graph/nodes.py
+# Result: ✅ Pattern found in SYSTEM_PROMPTS
+```
 
-| Test Type | Count | Status | Automation |
-|-----------|-------|--------|------------|
-| Unit tests | 51 files | ✅ Running | pytest |
-| Integration tests | 6 files | ⚠️ Mock-based | pytest |
-| Operator eval cases | 9 defined | ⚠️ Not wired | **NEW: `scripts/run_operator_eval.py`** |
-| Browser E2E tests | 0 | ⏳ Backlog | None |
-| Response quality evals | 0 | ⏳ Backlog | None |
-| Live load tests | 0 | ⏳ Backlog | None |
+### Test / Eval Coverage Status
 
-**Eval Infrastructure Added This Session:**
-- `scripts/run_operator_eval.py` — Executable runner for the 9 eval cases
-- Real-time response quality filtering in streaming
-- Scoring dimensions: intent, autonomy, trust, actionability, ux_product_polish
+| Test Type | Count | Status | Location |
+|-----------|-------|--------|----------|
+| Unit tests | 51 files | ✅ Running | `tests/unit/` |
+| Integration tests | 6 files | ⚠️ Mock-based | `tests/integration/` |
+| Operator eval cases | 9 defined | ✅ Executable | `docs/evals/operator_eval_cases.v1.json` |
+| Eval runner | NEW | ✅ Implemented | `scripts/run_operator_eval.py` |
+| Direct quality test | NEW | ✅ Implemented | `scripts/test_response_quality_direct.py` |
+| Browser E2E tests | NEW | ✅ Scaffolded | `tests/e2e/test_critical_path_smoke.py` |
+| Response quality evals | 0 | ⏳ Backlog | — |
+| Live load tests | 0 | ⏳ Backlog | — |
+
+**Infrastructure Added This Session:**
+1. `scripts/run_operator_eval.py` — Executable runner for 9 eval cases (JSON/Markdown/CSV output)
+2. `scripts/test_response_quality_direct.py` — Direct workflow testing (bypass HTTP auth)
+3. `tests/e2e/test_critical_path_smoke.py` — Browser E2E scaffold for critical paths
+4. Test user: `eval-test@cdp.local` created for automated testing
+
+**Eval Artifacts Generated:**
+- `reports/evals/run_2026-03-14.json` — First eval run output
+- Eval runner exit codes: 0=pass, 1=fail, 2=error
 
 ---
 

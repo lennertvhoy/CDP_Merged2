@@ -1,0 +1,163 @@
+{
+  "timestamp": "2026-03-14T17:48:44",
+  "api_endpoint": "http://localhost:8170",
+  "cases_run": 9,
+  "cases_passed": 0,
+  "cases_failed": 9,
+  "summary": {
+    "pass_rate": 0.0,
+    "avg_score": 0.0,
+    "by_category": {
+      "segment_search": {
+        "total": 1,
+        "passed": 0,
+        "avg_score": 0.0
+      },
+      "account_360": {
+        "total": 2,
+        "passed": 0,
+        "avg_score": 0.0
+      },
+      "segment_fit": {
+        "total": 1,
+        "passed": 0,
+        "avg_score": 0.0
+      },
+      "export_ux": {
+        "total": 1,
+        "passed": 0,
+        "avg_score": 0.0
+      },
+      "copy_ux": {
+        "total": 1,
+        "passed": 0,
+        "avg_score": 0.0
+      },
+      "publication_parsing": {
+        "total": 1,
+        "passed": 0,
+        "avg_score": 0.0
+      },
+      "disambiguation": {
+        "total": 1,
+        "passed": 0,
+        "avg_score": 0.0
+      },
+      "prioritization": {
+        "total": 1,
+        "passed": 0,
+        "avg_score": 0.0
+      }
+    }
+  },
+  "results": [
+    {
+      "case_id": "segment_search_antwerp_it_support_preview",
+      "category": "segment_search",
+      "passed": false,
+      "scores": {},
+      "total_score": 0.0,
+      "max_possible": 10.0,
+      "response_text": "",
+      "error": "Authentication required to start a chat",
+      "duration_ms": 3,
+      "checks": {}
+    },
+    {
+      "case_id": "account_360_blueharbor_source_disciplined",
+      "category": "account_360",
+      "passed": false,
+      "scores": {},
+      "total_score": 0.0,
+      "max_possible": 10.0,
+      "response_text": "",
+      "error": "Authentication required to start a chat",
+      "duration_ms": 1,
+      "checks": {}
+    },
+    {
+      "case_id": "account_360_bbs_call_prep",
+      "category": "account_360",
+      "passed": false,
+      "scores": {},
+      "total_score": 0.0,
+      "max_possible": 10.0,
+      "response_text": "",
+      "error": "Authentication required to start a chat",
+      "duration_ms": 0,
+      "checks": {}
+    },
+    {
+      "case_id": "segment_fit_nexa_cloud_brussels",
+      "category": "segment_fit",
+      "passed": false,
+      "scores": {},
+      "total_score": 0.0,
+      "max_possible": 10.0,
+      "response_text": "",
+      "error": "Authentication required to start a chat",
+      "duration_ms": 0,
+      "checks": {}
+    },
+    {
+      "case_id": "export_ux_brussels_it_servicebedrijven_q1",
+      "category": "export_ux",
+      "passed": false,
+      "scores": {},
+      "total_score": 0.0,
+      "max_possible": 10.0,
+      "response_text": "",
+      "error": "Authentication required to start a chat",
+      "duration_ms": 0,
+      "checks": {}
+    },
+    {
+      "case_id": "copy_troubleshooting_clipboarditem_not_defined",
+      "category": "copy_ux",
+      "passed": false,
+      "scores": {},
+      "total_score": 0.0,
+      "max_possible": 10.0,
+      "response_text": "",
+      "error": "Authentication required to start a chat",
+      "duration_ms": 0,
+      "checks": {}
+    },
+    {
+      "case_id": "staatsblad_delta_consult_change_card",
+      "category": "publication_parsing",
+      "passed": false,
+      "scores": {},
+      "total_score": 0.0,
+      "max_possible": 10.0,
+      "response_text": "",
+      "error": "Authentication required to start a chat",
+      "duration_ms": 0,
+      "checks": {}
+    },
+    {
+      "case_id": "account_name_disambiguation_b_and_s_enterprise",
+      "category": "disambiguation",
+      "passed": false,
+      "scores": {},
+      "total_score": 0.0,
+      "max_possible": 10.0,
+      "response_text": "",
+      "error": "Authentication required to start a chat",
+      "duration_ms": 0,
+      "checks": {}
+    },
+    {
+      "case_id": "priority_ranking_opsharbor_to_fincore",
+      "category": "prioritization",
+      "passed": false,
+      "scores": {},
+      "total_score": 0.0,
+      "max_possible": 10.0,
+      "response_text": "",
+      "error": "Authentication required to start a chat",
+      "duration_ms": 0,
+      "checks": {}
+    }
+  ]
+}
