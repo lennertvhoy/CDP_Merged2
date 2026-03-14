@@ -9,7 +9,7 @@
 
 **Audience:** Demo observers, auditors, stakeholders needing visual proof
 
-**Last Updated:** 2026-03-14 (v4.4 — Admin Verification Complete + Enrichment Status + Secret Sweep)
+**Last Updated:** 2026-03-14 (v4.5 — Scenario Acceptance Program Started + SC-01 Passed)
 
 **Companion Docs:**
 
@@ -1572,6 +1572,66 @@ FROM companies;
 - No hardcoded fallbacks in source code
 - All sensitive configuration externalized to .env files
 - Test secrets are fake/test-only values
+
+---
+
+## Phase 17: Scenario Acceptance Program
+
+### 17.1 Program Overview
+
+**Purpose:** Formal 50-scenario validation moving from partial proof to fully functional platform  
+**Started:** 2026-03-14  
+**Status:** In Progress  
+**Rule:** All scenarios executed against real platform — no mocked surfaces
+
+### 17.2 SC-01: Brussels Company Count Baseline
+
+**Scenario:** User asks "How many companies are in Brussels?"  
+**Expected:** Real chat flow returns 41,290 with answer-first format, no tool leakage
+
+#### Execution Results
+
+| Check | Result |
+|-------|--------|
+| Real chat flow | ✅ Pass |
+| Answer-first response | ✅ Pass |
+| Numeric result | ✅ Pass (41,290) |
+| No tool leakage | ✅ Pass |
+| Screenshot captured | ✅ Pass |
+
+**Response Excerpt:**
+> There are **41,290 companies** in Brussels.
+>
+> Notes: - This count includes all company statuses (not only active). If you want only active companies, I can filter to status AC.
+>
+> Would you like me to: - Create a segment from these results? - Export a CSV or markdown report? - Show a breakdown by juridical form or postal code? - Narrow to active companies or a specific industry (e.g., IT, restaurants)? - Find similar companies in nearby cities?
+
+**Screenshot:** `reports/scenarios/sc01/sc01_brussels_count_passed.png`
+
+#### Technical Fix Applied
+
+**Issue:** Azure OpenAI deployments returned "DeploymentNotFound" errors.  
+**Root Cause:** Azure OpenAI resource deployments were unavailable.  
+**Fix:** Switched LLM provider from `azure_openai` to `openai`:
+
+```bash
+# Updated .env.local
+LLM_PROVIDER=openai
+```
+
+**Verification:** OpenAI API key tested working; response time ~20 seconds.
+
+### 17.3 Scenario Tracker
+
+| Category | Passed | Pending |
+|----------|--------|---------|
+| Foundation search/count (SC-01–SC-10) | 1 | 9 |
+| Follow-up continuity (SC-11–SC-18) | 0 | 8 |
+| Segments/exports (SC-19–SC-28) | 0 | 10 |
+| 360/analytics (SC-29–SC-38) | 0 | 10 |
+| Admin/auth (SC-39–SC-45) | 4 | 3 |
+| Intent determinism (SC-46–SC-50) | 0 | 5 |
+| **Total** | **5** | **45** |
 
 ---
 
