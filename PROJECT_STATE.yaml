@@ -293,30 +293,37 @@ current_state:
       - Local deployment path via docker-compose is now the primary execution mode
       - Historical Azure deployment context retained for documentation purposes only
   observability:
-    status: observed
-    verified_at: 2026-03-06T15:33:21+01:00
-    container_app_environment: ca-cdpmerged-fast-env
-    log_destination: log-analytics
-    configured_customer_id: 156d285c-938d-4dc5-9eef-306c16296744
-    resource_group_workspace:
-      name: law-tracardi-cdpmerged-prod-nq6x
-      customer_id: d128bbb1-5cdb-44a6-8293-86ce36780677
-      recent_tables:
-        - AzureMetrics
-        - Usage
-      recent_metrics_resource: /SUBSCRIPTIONS/ED9400BC-D5EB-4AA6-8B3F-2D4C11B17B9F/RESOURCEGROUPS/RG-CDPMERGED-FAST/PROVIDERS/MICROSOFT.COMPUTE/VIRTUALMACHINES/VM-TRACARDI-EVENTHUB
-    note: The Container App environment still points to a non-existent Log Analytics customerId, while the workspace that actually exists in rg-cdpmerged-fast is not attached to the environment and only showed recent AzureMetrics/Usage rows for deleted VM-TRACARDI-EVENTHUB telemetry.
+    status: deleted_2026_03_14
+    deleted_at: 2026-03-14T12:30:00+01:00
+    note: |
+      All Azure observability infrastructure deleted as part of 2026-03-14 cleanup.
+      - Log Analytics workspace law-tracardi-cdpmerged-prod-nq6x: DELETED
+      - Container App Environment logging: DISABLED (environment being deleted)
+      - Application Insights Smart Detection action group: DELETED
+      Local observability now relies on docker-compose logs and local PostgreSQL.
   resource_group_audit:
-    status: observed
-    verified_at: 2026-03-06T15:33:21+01:00
+    status: cleaned_2026_03_14
+    cleaned_at: 2026-03-14T12:30:00+01:00
     resource_group: rg-cdpmerged-fast
-    resource_count: 20
+    resource_count: 2
     active_keep_set:
-      - ca-cdpmerged-fast
-      - ca-cdpmerged-fast-env
       - aoai-cdpmerged-fast
-      - cdp-postgres-661
-      - cdpmerged-eventhub
+    deleted_set:
+      - ca-cdpmerged-fast (Container App)
+      - ca-cdpmerged-fast-env (Container App Environment - ScheduledForDelete)
+      - vm-data-cdpmerged-prod (VM)
+      - vm-tracardi-cdpmerged-prod (VM)
+      - osdisk-data-cdpmerged-prod (Disk)
+      - osdisk-tracardi-cdpmerged-prod (Disk)
+      - cdp-postgres-661 (PostgreSQL Flexible Server)
+      - cdpmerged-eventhub (Event Hub)
+      - nic-data-cdpmerged-prod, nic-tracardi-cdpmerged-prod (NICs)
+      - nsg-data-cdpmerged-prod, nsg-tracardi-cdpmerged-prod (NSGs)
+      - pip-tracardi-cdpmerged-prod (Public IP)
+      - vnet-cdpmerged-fast-aca, vnet-tracardi-cdpmerged-prod (VNets)
+      - law-tracardi-cdpmerged-prod-nq6x (Log Analytics)
+      - stcdpmergedpr5roe, stcdpmergedprmqan, stcdpmergedprtnlp (Storage Accounts)
+      - Application Insights Smart Detection (Action Group)
       - vm-tracardi-cdpmerged-prod
       - vm-data-cdpmerged-prod
       - network_and_disk_dependencies_for_active_vms_and_container_app
