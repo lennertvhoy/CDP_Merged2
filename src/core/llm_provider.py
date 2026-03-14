@@ -52,7 +52,7 @@ class BaseLLMProvider(ABC):
 class OpenAIProvider(BaseLLMProvider):
     """Standard OpenAI provider."""
 
-    def __init__(self, api_key: str, model: str = "gpt-5.4", base_url: str | None = None):
+    def __init__(self, api_key: str, model: str = "gpt-4o-mini", base_url: str | None = None):
         try:
             from openai import AsyncOpenAI
         except ImportError as e:
