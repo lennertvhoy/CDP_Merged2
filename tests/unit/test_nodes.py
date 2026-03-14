@@ -109,7 +109,7 @@ class TestRouterNode:
 
 def test_build_azure_chat_model_kwargs_bounds_retries_and_output(monkeypatch):
     monkeypatch.setattr(settings, "AZURE_OPENAI_ENDPOINT", "https://aoai.example.com")
-    monkeypatch.setattr(settings, "AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o-mini")
+    monkeypatch.setattr(settings, "AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-5")
     monkeypatch.setattr(settings, "AZURE_OPENAI_API_VERSION", "2024-02-01")
     monkeypatch.setattr(settings, "AZURE_OPENAI_TIMEOUT", 15.0)
     monkeypatch.setattr(settings, "AZURE_OPENAI_MAX_RETRIES", 0)
@@ -119,7 +119,7 @@ def test_build_azure_chat_model_kwargs_bounds_retries_and_output(monkeypatch):
 
     assert kwargs == {
         "azure_endpoint": "https://aoai.example.com",
-        "azure_deployment": "gpt-4o-mini",
+        "azure_deployment": "gpt-5",
         "api_version": "2024-02-01",
         "temperature": 0,
         "timeout": 15.0,

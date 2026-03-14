@@ -110,7 +110,7 @@ class DescriptionEnricher(BaseEnricher):
 
         self.endpoint = endpoint or settings.AZURE_OPENAI_ENDPOINT
         self.api_key = api_key or settings.AZURE_OPENAI_API_KEY
-        self.deployment = deployment or settings.AZURE_OPENAI_DEPLOYMENT_NAME or "gpt-4o-mini"
+        self.deployment = deployment or settings.AZURE_OPENAI_DEPLOYMENT_NAME or "gpt-5"
         self.api_version = settings.AZURE_OPENAI_API_VERSION
 
         # Cost tracking (approximate)

@@ -85,7 +85,7 @@ def test_settings() -> Settings:
     """Return Settings configured for testing (mock LLM, no external services)."""
     return Settings(
         LLM_PROVIDER="mock",
-        LLM_MODEL="gpt-4o-mini",
+        LLM_MODEL="gpt-5",
         OPENAI_API_KEY="test-key",
         TRACARDI_API_URL="http://localhost:8686",
         TRACARDI_USERNAME="admin",
