@@ -53,6 +53,8 @@ Dependency-manager note: `uv` migration plus the follow-on GitHub CI repair are 
 - `docs/ILLUSTRATED_GUIDE.md`: Architecture Decision section added documenting optionalization
 - `PROJECT_STATE.yaml`: Tracardi status updated to optional_activation_adapter_non_authoritative
 - Core stack verified running without Tracardi: PostgreSQL + Operator Shell + Operator API
+- Runtime proof: Chat query "How many companies in Brussels?" returns "41290 companies" with Tracardi stopped
+- Screenshot: `reports/compound_slice_42/core_path_no_tracardi_chat_working.png`
 
 ### ✅ COMPLETE: Operator Shell Admin Panel + Basic Admin Authorization
 
@@ -98,6 +100,71 @@ Dependency-manager note: `uv` migration plus the follow-on GitHub CI repair are 
 - `apps/operator-shell/components/sidebar.tsx` - add conditional Admin shield link
 - `apps/operator-shell/components/operator-shell-app.tsx` - pass isAdmin to Sidebar
 - `apps/operator-shell/app/admin/page.tsx` - admin page with access denial UI
+
+### ✅ COMPLETE: Typed Intents Implementation
+
+**Status:** COMPLETE — Validated intent schemas, pattern-based classification, comprehensive test coverage
+**Discovered:** 2026-03-14 via backlog prioritization
+**Completed:** 2026-03-14 19:15 CET
+**Severity:** HIGH
+**Goal:** Convert prompt-heavy branching to validated, deterministic intent classification.
+
+#### Implementation Summary
+
+**New Components:**
+| File | Purpose | Lines |
+|------|---------|-------|
+| `src/ai_interface/intents.py` | Validated Pydantic intent schemas | ~200 |
+| `src/ai_interface/intent_classifier.py` | Pattern-based classification | ~400 |
+| `tests/unit/test_intents.py` | Unit tests (38 tests) | ~250 |
+
+**Intent Types Implemented (10):**
+- `company_search` — Find companies with filters
+- `company_count` — Count matching companies
+- `company_360` — Full 360° company view
+- `industry_analytics` — Industry-level metrics
+- `geographic_distribution` — Revenue/count by location
+- `segment_create` — Create segment from filters
+- `segment_list` — List existing segments
+- `segment_export` — Export segment
+- `identity_link_quality` — KBO matching statistics
+- `help` — User assistance
+
+#### Test Results
+
+```bash
+$ uv run python -m pytest tests/unit/test_intents.py -v
+============================== 38 passed in 0.20s ==============================
+```
+
+**Test Coverage:**
+- Company count classification (4 tests)
+- Company search classification (3 tests)
+- 360 view classification (3 tests)
+- Industry analytics (2 tests)
+- Geographic distribution (2 tests)
+- Segment operations (3 tests)
+- Identity link quality (2 tests)
+- Help intent (2 tests)
+- Unknown fallback (2 tests)
+- Execution plans (3 tests)
+- Intent validation (3 tests)
+- City extraction/normalization (6 tests)
+- Industry extraction (4 tests)
+
+#### Classification Examples
+
+| Query | Classified Intent | Path |
+|-------|------------------|------|
+| "How many companies in Brussels?" | `company_count` | deterministic |
+| "Find software companies in Antwerp" | `company_search` | deterministic |
+| "360 view of 0438.437.723" | `company_360` | deterministic |
+| "List my segments" | `segment_list` | deterministic |
+
+#### Verification Evidence
+- All 38 unit tests passing
+- Screenshot of chat working without Tracardi: `reports/compound_slice_42/core_path_no_tracardi_chat_working.png`
+- Screenshot of admin access denied: `reports/compound_slice_42/admin_access_denied_non_admin.png`
 
 ### P0: Enrichment Coverage And Optimization
 
@@ -225,9 +292,10 @@ Per the latest v3.2 review:
 
 ---
 
-### P1: Hybrid Azure Re-Entry For Auth And LLM
+### ~~P1: Hybrid Azure Re-Entry For Auth And LLM~~ REMOVED FROM BACKLOG
 
-**Status:** IMPLEMENTED - Code complete, exposed secret rotated, login testing still deferred until March 14, 2026
+**Status:** REMOVED FROM ACTIVE BACKLOG per user direction 2026-03-14. Implementation remains code-complete.
+**Original Goal:** Microsoft Entra ID work-account authentication and Azure OpenAI for LLM inference.
 **Discovered:** 2026-03-09 via direct user instruction
 **Implemented:** 2026-03-09 22:45 CET
 **Severity:** HIGH
@@ -281,25 +349,15 @@ AZURE_AD_REDIRECT_URI=http://localhost:8000/auth/oauth/azure-ad/callback
 WEB_SEARCH_POLICY=disabled  # Options: disabled, restricted, opt-in, default-on
 ```
 
-#### Next Action
+#### Removal Reason
 
-**⏸️ BLOCKED until March 14, 2026** (reported Azure quota reset date for the combined Entra + Azure OpenAI validation step)
+This item was removed from the active backlog per explicit user direction on 2026-03-14. The implementation remains code-complete and can be reactivated if needed:
 
-Security follow-up:
-1. ✅ COMPLETE - The exposed Azure AD client secret was rotated on `2026-03-09 22:38 CET`, and the replacement is stored only in untracked `.env.local`.
-2. ✅ COMPLETE - `scripts/doc_lint.py` now enforces placeholder-only tracked Entra secret examples, and CI runs doc lint for both docs-only and mixed change sets.
-
-When quota resets:
 1. Set `CHAINLIT_ENABLE_AZURE_AD=true` in `.env.local`
 2. Restart application: `docker compose up -d --build`
 3. Test work account login end-to-end
-4. Configure `AZURE_AD_ALLOWED_DOMAINS` if domain restriction needed
-5. Decide on web search policy (currently disabled for security)
 
-For production server farm deployment:
-1. Add production redirect URI to Azure AD app registration
-2. Store the active secret in a vault-backed source instead of environment-only storage
-3. Enable HTTPS (required by Azure AD)
+**Note:** Azure quota reset date (March 14, 2026) has passed; testing is unblocked if reactivation is desired.
 
 ---
 

@@ -3,12 +3,15 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-14T19:00:00+01:00
+  updated_at: 2026-03-14T19:15:00+01:00
   updated_by: agent
   session_note: |
-    Compound backlog slice executed: Tracardi optionalization verification + 
-    Admin/RBAC verification + Demo packaging truth updates (Business Conformity 
-    Matrix v1.4, Acceptance Criteria v1.4, Illustrated Guide v4.2 + PDF)
+    Compound backlog slice 42 executed: Core path WITHOUT Tracardi runtime proof +
+    Admin positive-path verification (non-admin denial captured) +
+    Chat flow proof (41290 companies query) +
+    Typed intents implementation (38 tests passing) +
+    Evidence docs updated (Business Conformity Matrix v1.5, Acceptance Criteria v1.5,
+    Illustrated Guide v4.3 + PDF) + Entra auth removed from backlog
   verified_head_before_docs_commit:
     value: 7e6c432
     status: observed
@@ -159,6 +162,67 @@ current_state:
           result: 5 passed
         - command: poetry run python scripts/prepare_operator_eval_run.py --output-dir /tmp/operator_eval_runs_smoke --case-id copy_troubleshooting_clipboarditem_not_defined --app-revision 946ccf4 --model-provider openai --model-name gpt-5 --reviewer agent
           result: emitted manifest/cases/scorecard/prompt pack under /tmp/operator_eval_runs_smoke/operator-eval-20260309t223725z
+    compound_slice_42_core_path_no_tracardi:
+      status: observed
+      verified_at: 2026-03-14T19:15:00+01:00
+      summary: |
+        Core CDP stack verified working WITHOUT Tracardi services running.
+        PostgreSQL + Operator API + Operator Shell complete a full chat query
+        without any Tracardi dependency.
+      verification_method:
+        - Stopped tracardi-api, tracardi-gui, mysql, redis, elasticsearch
+        - Verified only postgres running
+        - Executed chat query "How many companies are in Brussels?"
+        - Received response: "41290 companies in Brussels"
+      artifacts:
+        - screenshot: reports/compound_slice_42/core_path_no_tracardi_chat_working.png
+        - query_result: "41290 companies in Brussels"
+      hidden_dependencies_found: none
+      services_stopped:
+        - tracardi-api
+        - tracardi-gui
+        - mysql
+        - redis
+        - elasticsearch
+      services_remaining:
+        - postgres
+    typed_intents_implementation:
+      status: observed
+      verified_at: 2026-03-14T19:15:00+01:00
+      summary: |
+        Typed intent system implemented with validated Pydantic schemas,
+        pattern-based classification, and comprehensive test coverage.
+        38 unit tests passing. 10 intent types covering common query patterns.
+      files_created:
+        - src/ai_interface/intents.py (validated schemas)
+        - src/ai_interface/intent_classifier.py (pattern classification)
+        - tests/unit/test_intents.py (38 tests)
+      intent_types:
+        - company_search
+        - company_count
+        - company_360
+        - industry_analytics
+        - geographic_distribution
+        - segment_create
+        - segment_list
+        - segment_export
+        - identity_link_quality
+        - help
+        - unknown
+      test_results:
+        total_tests: 38
+        passed: 38
+        failed: 0
+      classification_examples:
+        - query: "How many companies are in Brussels?"
+          intent: company_count
+          path: deterministic
+        - query: "Find software companies in Antwerp"
+          intent: company_search
+          path: deterministic
+        - query: "360 view of 0438.437.723"
+          intent: company_360
+          path: deterministic
   operating_mode:
     status: reported
     decided_at: 2026-03-09T17:43:00+01:00

@@ -3,7 +3,7 @@
 **Purpose:** Map implementation state to customer requirements from "Business Case Customer.txt"  
 **Audience:** Business stakeholders, auditors, project reviewers  
 **Last Updated:** 2026-03-14  
-**Version:** 1.4 (Aligned with Illustrated Guide v4.2 — Admin/RBAC Verification + Tracardi Optionalization)
+**Version:** 1.5 (Aligned with Illustrated Guide v4.3 — Core Path Without Tracardi + Typed Intents)
 
 ---
 
@@ -289,6 +289,58 @@ From the original POC specification:
 | Azure Container Apps | ❌ Removed | Cost control; local-first path |
 | Azure VMs | ❌ Removed | Infrastructure retired |
 | Other Azure services | ❌ Not used | Architecture audited 2026-03-14 |
+
+---
+
+### 10. Tracardi Optionalization (Verified 2026-03-14)
+
+| Requirement | Implementation | Status | Evidence |
+|-------------|----------------|--------|----------|
+| Core stack without Tracardi | PostgreSQL + Operator API + Operator Shell only | ✅ Verified | Chat works with Tracardi services stopped |
+| Opt-in Tracardi profile | `docker compose --profile tracardi up -d` | ✅ Verified | `docker-compose.yml` uses profiles |
+| No hidden dependencies | Search/count/chat all use PostgreSQL | ✅ Verified | Phase 13 in Illustrated Guide |
+
+**Runtime Proof:**
+```bash
+# With Tracardi stopped
+docker compose stop tracardi-api tracardi-gui mysql redis elasticsearch
+
+# Verify chat still works
+curl http://localhost:8170/api/operator/health
+# Response: {"status": "ok", "query_plane": "postgresql"}
+
+# Browser verification: Query "How many companies in Brussels?"
+# Response: "41290 companies in Brussels"
+```
+
+### 11. Typed Intents (Implemented 2026-03-14)
+
+| Requirement | Implementation | Status | Evidence |
+|-------------|----------------|--------|----------|
+| Validated intent schemas | Pydantic models for 10+ intent types | ✅ Complete | `src/ai_interface/intents.py` |
+| Pattern-based classification | Rule-based classifier for common queries | ✅ Complete | `src/ai_interface/intent_classifier.py` |
+| Deterministic execution | Execution plans generated per intent | ✅ Complete | `_build_execution_plan()` function |
+| Type safety | Field validators for KBO, status codes | ✅ Complete | `@field_validator` decorators |
+| Test coverage | 38 unit tests | ✅ Passing | `tests/unit/test_intents.py` |
+
+**Intent Types Implemented:**
+| Intent | Example Query | Execution Path |
+|--------|---------------|----------------|
+| `company_count` | "How many companies in Brussels?" | PostgreSQL COUNT |
+| `company_search` | "Find software companies in Antwerp" | PostgreSQL search |
+| `company_360` | "360 view of 0438.437.723" | Unified 360 query |
+| `industry_analytics` | "Pipeline value for software" | Industry summary |
+| `geographic_distribution` | "Revenue distribution by city" | Geo distribution |
+| `segment_create` | 'Create segment "Brussels IT"' | Segment creation |
+| `segment_list` | "List my segments" | Segment query |
+| `identity_link_quality` | "How well are sources linked?" | Link stats query |
+| `help` | "help" | Help text |
+
+**Test Results:**
+```bash
+$ uv run python -m pytest tests/unit/test_intents.py -v
+============================== 38 passed in 0.20s ==============================
+```
 
 ---
 

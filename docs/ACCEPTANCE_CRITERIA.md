@@ -3,7 +3,7 @@
 **Purpose:** Reviewer-facing proof package for CDP_Merged POC verification  
 **Audience:** Technical auditors, QA reviewers, stakeholder sign-off  
 **Last Updated:** 2026-03-14  
-**Version:** 1.4 (Aligned with Illustrated Guide v4.2 — Admin/RBAC Verification)
+**Version:** 1.5 (Aligned with Illustrated Guide v4.3 — Core Path Without Tracardi + Typed Intents)
 
 ---
 
@@ -631,6 +631,135 @@ curl -sS http://localhost:8170/api/operator/admin/users \
 **Expected:** Shield icon only visible for admin users
 
 **Acceptance:** Pass if admin endpoints exist, server-side enforcement works, and UI correctly shows/hides admin elements.
+
+---
+
+## AC-12: Core Path Without Tracardi
+
+### Claim
+The core CDP functionality works without Tracardi services running.
+
+### Prerequisites
+- Docker Compose environment
+- Valid local account credentials
+
+### Verification
+
+**Step 1: Stop Tracardi services**
+```bash
+docker compose stop tracardi-api tracardi-gui mysql redis elasticsearch
+docker compose ps
+```
+
+**Expected:** Only `postgres` service running
+
+**Step 2: Verify API health**
+```bash
+curl -sS http://localhost:8170/api/operator/health
+```
+
+**Expected:**
+```json
+{
+  "status": "ok",
+  "service": "operator-bridge",
+  "backend": {
+    "service": "cdp-merged",
+    "query_plane": "postgresql",
+    "companies_table": "companies"
+  }
+}
+```
+
+**Step 3: Verify chat functionality**
+1. Open browser at `http://localhost:3000`
+2. Sign in with valid credentials
+3. Send message: "How many companies are in Brussels?"
+4. Wait for response
+
+**Expected:** Response shows company count (e.g., "41290 companies in Brussels")
+
+**Evidence:** Screenshot `reports/compound_slice_42/core_path_no_tracardi_chat_working.png`
+
+**Step 4: Verify no hidden Tracardi dependencies**
+Check that these work without Tracardi:
+- Company search
+- Company count
+- Chat response generation
+- Thread persistence
+- User authentication
+
+**Acceptance:** Pass if all core functionality works with Tracardi stopped.
+
+---
+
+## AC-13: Typed Intents
+
+### Claim
+The system provides validated intent schemas with deterministic classification.
+
+### Prerequisites
+- Python environment with dependencies installed
+- `uv` or `pytest` available
+
+### Verification
+
+**Step 1: Run intent unit tests**
+```bash
+uv run python -m pytest tests/unit/test_intents.py -v
+```
+
+**Expected:** 38 tests pass
+
+**Step 2: Verify pattern classification**
+```python
+from src.ai_interface.intent_classifier import classify_intent
+
+# Test company count
+result = classify_intent("How many companies are in Brussels?")
+assert result.intent.intent_type == IntentType.COMPANY_COUNT
+assert result.processing_path == "deterministic"
+
+# Test company search
+result = classify_intent("Find software companies in Antwerp")
+assert result.intent.intent_type == IntentType.COMPANY_SEARCH
+assert result.intent.city == "antwerp"
+assert result.intent.industry_keyword == "software"
+
+# Test 360 view
+result = classify_intent("360 view of 0438.437.723")
+assert result.intent.intent_type == IntentType.COMPANY_360
+assert result.intent.enterprise_number == "0438437723"
+```
+
+**Expected:** All assertions pass
+
+**Step 3: Verify intent validation**
+```python
+from src.ai_interface.intents import CompanyCountIntent
+
+# Valid status
+intent = CompanyCountIntent(original_query="test", status="AC")
+assert intent.status == "AC"
+
+# KBO normalization
+intent = Company360Intent(original_query="test", enterprise_number="0438.437.723")
+assert intent.enterprise_number == "0438437723"
+```
+
+**Expected:** Validators work correctly
+
+**Step 4: Verify execution plan generation**
+```python
+from src.ai_interface.intent_classifier import classify_intent
+
+result = classify_intent("How many companies in Brussels?")
+print(result.execution_plan)
+```
+
+**Expected:** Plan includes `["search_postgresql", "count_results", "format_response"]`
+
+**Acceptance:** Pass if all unit tests pass and classification works deterministically.
 
 ---
 
