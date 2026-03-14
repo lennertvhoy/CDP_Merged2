@@ -9,7 +9,7 @@
 
 **Audience:** Demo observers, auditors, stakeholders needing visual proof
 
-**Last Updated:** 2026-03-14 (v4.8 — Compound Slice: SC-04 Fix + SC-05/06/07)
+**Last Updated:** 2026-03-14 (v4.9 — Guide Consistency: Matrix/Inventory/LLM fixes)
 
 **Companion Docs:**
 
@@ -50,7 +50,7 @@
 | Operator Shell (Next.js, port 3000) | Primary UI / Control Plane | ✅ Active |
 | Operator API (FastAPI, port 8170) | Chat Backend / Tool Router | ✅ Active |
 | PostgreSQL | Analytical Truth / Customer Intelligence | ✅ Active |
-| Azure OpenAI GPT-5 | LLM Provider | ✅ Active |
+| OpenAI (GPT-5 configured) | LLM Provider | ✅ Active |
 | Edge with CDP (port 9223) | Browser Automation | ✅ Active |
 | Tracardi | Optional Activation Adapter | ⚠️ Opt-in via `--profile tracardi` (not default) |
 
@@ -125,7 +125,7 @@ Tracardi has been demoted from **core dependency** to **optional activation adap
 | Sync latency within operational window | Timestamped sync proof | Phase 8 | Verified |
 | Authenticated browser continuation | Real-session screenshots from Teamleader/Exact | Phase 9 | Live system + CDP automation |
 | Operator Shell is primary UI | Runtime verification (port 3000 active, 8000 inactive) | Architecture | Verified |
-| Azure OpenAI GPT-5-only LLM posture | Configuration audit (Azure OpenAI retained, other Azure removed) | Architecture | Verified |
+| OpenAI primary, Azure OpenAI configured | LLM Provider audit: OpenAI active, Azure OpenAI configured but not used | Architecture | Verified |
 | GUI navigation with visible state change | Before/after screenshots showing page transition | Phase 10 | Live system + CDP automation |
 | Deterministic tab selection for E2E | 17/17 tests passing with robust tab matching | Phase 11 | Local runtime + Attached Edge |
 | Clean core stack (no Tracardi default) | Docker compose profiles; core works without Tracardi | Architecture | Verified |
@@ -207,7 +207,7 @@ This matrix documents current capabilities and coverage gaps honestly. It comple
 | **Activation** | "Push this segment to Resend" | ✅ Verified | Good | Phase 3 evidence |
 | **Scoring Query** | "What are the top engagement leads?" | ✅ Verified | Good | Phase 5 evidence |
 | **Next Best Action** | "What should I do with B.B.S.?" | ✅ Verified | Good | NBA API working |
-| **Operational** | "How many companies have websites?" | ✅ Verified | Good | PostgreSQL counts |
+| **Operational** | "How many companies have websites?" | ⚠️ Partial | Timeout issue | SC-07 performance fix pending |
 | **Data Quality** | "Which companies are missing emails?" | ✅ Verified | Good | Enrichment tracking |
 | **Browser-Assisted** | "Check this company in Teamleader" | ✅ Verified | Good | Phase 9-10 evidence |
 | **Browser Search** | "Search for them in Exact" | ✅ Verified | Good | Click/fill proven |
@@ -604,6 +604,10 @@ Use short evidence IDs in the matrix below so the PDF stays readable; the full f
 | SG-09 | Exact Online authenticated continuation | 2026-03-14 | Live system + CDP automation |
 | **SG-10** | **Segments smoke with deterministic tab selection** | **2026-03-14** | **Local runtime + Attached Edge** |
 | **SG-11** | **Segments smoke (latest alias)** | **2026-03-14** | **Local runtime + Attached Edge** |
+| **SG-12** | **SC-04 fixed — explicit explanation when count unchanged** | **2026-03-14** | **Local chatbot** |
+| **SG-13** | **SC-05 — Brussels software companies (1,821)** | **2026-03-14** | **Local chatbot** |
+| **SG-14** | **SC-06 — Top 5 industries aggregation** | **2026-03-14** | **Local chatbot** |
+| **SG-15** | **SC-07 — timeout issue evidence** | **2026-03-14** | **Local chatbot** |
 
 **Filename Key:**
 - `SG-01` → `chatbot_360_bbs_four_source_final_2026-03-08.png`
@@ -617,6 +621,10 @@ Use short evidence IDs in the matrix below so the PDF stays readable; the full f
 - `SG-09` → `output/browser_automation/exact_authenticated.png`
 - **`SG-10`** → **`reports/e2e_evidence/segments_smoke_deterministic.png`**
 - **`SG-11`** → **`reports/e2e_evidence/segments_smoke_latest.png`**
+- **`SG-12`** → **`reports/scenarios/sc04/sc04_rerun_with_explanation.png`**
+- **`SG-13`** → **`reports/scenarios/sc05/sc05_brussels_software.png`**
+- **`SG-14`** → **`reports/scenarios/sc06/sc06_top5_industries.png`**
+- **`SG-15`** → **`reports/scenarios/sc07/sc07_timeout_issue.png`**
 
 **Label Note:** The guide intentionally mixes live SaaS screens, local runtime views, demo-backed integration evidence, and generated local artifacts. Each item is labeled by source rather than flattened into a single "live" claim.
 
@@ -1003,7 +1011,7 @@ Result: "Typed test in search box"
 | Edge CDP on port 9223 | `ss -tlnp` shows msedge | ✅ Active |
 | No services on port 8000 | `ss -tlnp` no listener | ✅ Confirmed (deprecated port) |
 | No Tracardi running locally | `pgrep tracardi` empty; not required for core demo | ✅ Confirmed (optional) |
-| Azure OpenAI only | `.env.local` audit: AZURE_OPENAI_API_KEY present, no other Azure services | ✅ Confirmed |
+| OpenAI primary, Azure configured | `.env.local` audit: LLM_PROVIDER=openai, Azure keys present but not active | ✅ Confirmed |
 
 ### Retired Infrastructure
 
@@ -1022,7 +1030,7 @@ Result: "Typed test in search box"
 | Analytical Truth | PostgreSQL | Customer intelligence, 360° views |
 | Activation (Optional) | Tracardi | Event routing, workflow adapter |
 | Control Plane | Operator Shell + API | Primary operator interface |
-| LLM | Azure OpenAI GPT-5 | Natural language understanding |
+| LLM | OpenAI GPT-5 | Natural language understanding |
 
 ---
 
@@ -2019,7 +2027,7 @@ LISTEN 0 511 *:3000            # next-server - Operator Shell
 
 ## Phase 21 — Compound Slice: SC-04 Fix + SC-05/06/07 Execution (2026-03-14)
 
-**Version:** v4.8  
+**Version:** v4.9  
 **Focus:** Forward progress on scenario backlog with quality fixes
 
 ### 21.1 Track A — SC-04 Quality Fix
