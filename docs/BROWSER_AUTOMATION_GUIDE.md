@@ -231,6 +231,71 @@ python scripts/mcp_cdp_helper.py screenshot output/capture.png
 
 ---
 
+## Proven Authenticated Workflows
+
+The following workflows have been verified with real authenticated sessions.
+
+### Teamleader Authenticated Continuation (Proven)
+
+**Verified 2026-03-14:** The browser had an existing Teamleader session. The agent successfully continued from that authenticated state.
+
+```bash
+# Navigate to Teamleader dashboard (already logged in)
+python scripts/mcp_cdp_helper.py navigate "https://focus.teamleader.eu/dashboard.php"
+
+# Verify authenticated state
+python scripts/mcp_cdp_helper.py url
+# → https://focus.teamleader.eu/dashboard.php
+
+python scripts/mcp_cdp_helper.py title
+# → Teamleader Focus
+
+# Capture authenticated dashboard
+python scripts/mcp_cdp_helper.py screenshot output/browser_automation/teamleader_authenticated.png
+
+# Post-login navigation within same session
+python scripts/mcp_cdp_helper.py navigate "https://focus.teamleader.eu/contact.php"
+python scripts/mcp_cdp_helper.py screenshot output/browser_automation/teamleader_contacts.png
+```
+
+**Evidence captured:**
+- `teamleader_authenticated.png` — Dashboard showing "Welkom, Lennert!" with full navigation sidebar
+- `teamleader_contacts.png` — Contacts page within authenticated session
+
+---
+
+### Exact Online Authenticated Continuation (Proven)
+
+**Verified 2026-03-14:** The browser had an existing Exact Online session. The agent successfully continued from that authenticated state.
+
+```bash
+# Navigate to Exact Online portal (already logged in)
+python scripts/mcp_cdp_helper.py navigate "https://start.exactonline.be/docs/MenuPortal.aspx"
+
+# Verify authenticated state
+python scripts/mcp_cdp_helper.py url
+# → https://start.exactonline.be/docs/MenuPortal.aspx
+
+python scripts/mcp_cdp_helper.py title
+# → 1 - Voorbeeldadministratie Exact Online - Lennert Van Hoyweghen - Exact Online
+
+# Capture authenticated dashboard
+python scripts/mcp_cdp_helper.py screenshot output/browser_automation/exact_authenticated.png
+
+# Post-login navigation within same session
+python scripts/mcp_cdp_helper.py navigate "https://start.exactonline.be/docs/CRMAccounts.aspx"
+python scripts/mcp_cdp_helper.py navigate "https://start.exactonline.be/docs/MenuPortal.aspx"
+python scripts/mcp_cdp_helper.py screenshot output/browser_automation/exact_back_to_dashboard.png
+```
+
+**Evidence captured:**
+- `exact_authenticated.png` — Financial cockpit showing real data (€757K bank balance, €118K sales)
+- `exact_back_to_dashboard.png` — Return to dashboard after internal navigation
+
+**Key insight:** Session remained authenticated throughout navigation, including when accessing pages that returned errors. The error page showed Exact branding (not login redirect), confirming session persistence.
+
+---
+
 ## Python Helper Script
 
 `scripts/mcp_cdp_helper.py` provides simple CLI commands for controlling the attached browser:
