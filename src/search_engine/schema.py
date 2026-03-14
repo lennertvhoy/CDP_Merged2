@@ -50,6 +50,9 @@ class ProfileSearchParams(BaseModel):
     has_email: bool | None = Field(
         False, description="If True, only return profiles with an email address."
     )
+    has_website: bool | None = Field(
+        False, description="If True, only return profiles with a website URL."
+    )
     email_domain: str | None = Field(
         None,
         description="Restrict results to a specific email domain (e.g., 'gmail.com').",

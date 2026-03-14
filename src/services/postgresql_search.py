@@ -57,6 +57,7 @@ class CompanySearchFilters:
     min_start_date: str | None = None
     has_phone: bool | None = None
     has_email: bool | None = None
+    has_website: bool | None = None
     email_domain: str | None = None
     limit: int = 100
     offset: int = 0
@@ -260,6 +261,10 @@ class PostgreSQLSearchService:
         # Has email filter
         if filters.has_email:
             conditions.append("main_email IS NOT NULL AND main_email != ''")
+
+        # Has website filter
+        if filters.has_website:
+            conditions.append("website_url IS NOT NULL AND website_url != ''")
 
         normalized_email_domain = self._normalize_email_domain(filters.email_domain)
         if normalized_email_domain:

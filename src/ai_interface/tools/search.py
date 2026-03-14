@@ -251,6 +251,7 @@ async def search_profiles(
     min_start_date: str | None = None,
     has_phone: bool | None = False,
     has_email: bool | None = None,
+    has_website: bool | None = None,
     email_domain: str | None = None,
 ) -> str:
     """Search for companies in the CDP using PostgreSQL as the authoritative source.
@@ -279,6 +280,7 @@ async def search_profiles(
         min_start_date: ISO date string (YYYY-MM-DD).
         has_phone: Filter to companies with phone number.
         has_email: Filter to companies with email.
+        has_website: Filter to companies with website URL.
         email_domain: Optional email-domain filter, for example ``gmail.com``.
 
     Returns:
@@ -335,6 +337,7 @@ async def search_profiles(
             min_start_date,
             bool(has_phone),
             bool(has_email),
+            bool(has_website),
             normalized_email_domain,
         ]
     )
@@ -352,6 +355,7 @@ async def search_profiles(
         min_start_date=min_start_date,
         has_phone=has_phone,
         has_email=has_email,
+        has_website=has_website,
         email_domain=normalized_email_domain,
         limit=sample_limit,
         offset=0,
@@ -647,6 +651,7 @@ async def search_profiles(
             "min_start_date": min_start_date,
             "has_phone": bool(has_phone),
             "has_email": bool(has_email),
+            "has_website": bool(has_website),
             "email_domain": normalized_email_domain,
         },
         "counts": {

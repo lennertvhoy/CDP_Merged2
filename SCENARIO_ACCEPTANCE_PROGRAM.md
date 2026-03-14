@@ -49,7 +49,7 @@ Scenario status labels:
 | SC-04 | All-status vs active-only semantics | ✅ quality_pass | `reports/scenarios/sc04/sc04_rerun_with_explanation.png` | Context reuse: ✓; Count: 1,495/1,495; Explanation: ✓ "The count did not change because all 1,495 companies already have active status"; Fix: System prompt updated with follow-up count explanation rule |
 | SC-05 | Brussels software scope clarity | ✅ quality_pass | `reports/scenarios/sc05/sc05_brussels_software.png` | Answer: 1,821; NACE codes: 62100, 62200, 62900, 63100; First content: ~12s; Total: ~15s; Streaming: ✓; Answer-first: ✓ |
 | SC-06 | Top industries in Brussels | ✅ quality_pass | `reports/scenarios/sc06/sc06_top5_industries.png` | Answer: Top 5 with counts (Unknown: 19,980; 70200: 1,977; 56112: 770; 69101: 689; 56111: 520); Real aggregation verified; First content: ~12s; Streaming: ✓ |
-| SC-07 | Companies with websites in Brussels | ⚠️ functional_pass | `reports/scenarios/sc07/sc07_timeout_issue.png` | Issue: Query timeout (>70s); Root cause: has_website filter performance; Simple queries work (41,290 Brussels count); Needs: Query optimization or index investigation |
+| SC-07 | Companies with websites in Brussels | ✅ quality_pass | `reports/scenarios/sc07/sc07_success_after_fix.png` | Answer: 5,421; First content: ~10s; Total: ~12s; Streaming: ✓; Fix: Added `has_website` filter to `CompanySearchFilters` and `search_profiles` tool; Query time: ~130ms; Regression: SC-01/SC-05 verified |
 | SC-08 | Companies with email in Brussels | ⏳ pending | — | — |
 | SC-09 | Search Antwerp software companies | ⏳ pending | — | — |
 | SC-10 | Legal-form aggregation | ⏳ pending | — | — |

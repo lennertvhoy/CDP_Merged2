@@ -9,7 +9,7 @@
 
 **Audience:** Demo observers, auditors, stakeholders needing visual proof
 
-**Last Updated:** 2026-03-14 (v4.9 — Guide Consistency: Matrix/Inventory/LLM fixes)
+**Last Updated:** 2026-03-14 (v4.10 — SC-07 Fix: has_website filter)
 
 **Companion Docs:**
 
@@ -207,7 +207,7 @@ This matrix documents current capabilities and coverage gaps honestly. It comple
 | **Activation** | "Push this segment to Resend" | ✅ Verified | Good | Phase 3 evidence |
 | **Scoring Query** | "What are the top engagement leads?" | ✅ Verified | Good | Phase 5 evidence |
 | **Next Best Action** | "What should I do with B.B.S.?" | ✅ Verified | Good | NBA API working |
-| **Operational** | "How many companies have websites?" | ⚠️ Partial | Timeout issue | SC-07 performance fix pending |
+| **Operational** | "How many companies have websites?" | ✅ Verified | Good | SC-07 fixed: has_website filter added |
 | **Data Quality** | "Which companies are missing emails?" | ✅ Verified | Good | Enrichment tracking |
 | **Browser-Assisted** | "Check this company in Teamleader" | ✅ Verified | Good | Phase 9-10 evidence |
 | **Browser Search** | "Search for them in Exact" | ✅ Verified | Good | Click/fill proven |
@@ -607,7 +607,8 @@ Use short evidence IDs in the matrix below so the PDF stays readable; the full f
 | **SG-12** | **SC-04 fixed — explicit explanation when count unchanged** | **2026-03-14** | **Local chatbot** |
 | **SG-13** | **SC-05 — Brussels software companies (1,821)** | **2026-03-14** | **Local chatbot** |
 | **SG-14** | **SC-06 — Top 5 industries aggregation** | **2026-03-14** | **Local chatbot** |
-| **SG-15** | **SC-07 — timeout issue evidence** | **2026-03-14** | **Local chatbot** |
+| **SG-15** | **SC-07 — timeout issue evidence (before fix)** | **2026-03-14** | **Local chatbot** |
+| **SG-16** | **SC-07 — success after has_website filter fix** | **2026-03-14** | **Local chatbot** |
 
 **Filename Key:**
 - `SG-01` → `chatbot_360_bbs_four_source_final_2026-03-08.png`
@@ -625,6 +626,7 @@ Use short evidence IDs in the matrix below so the PDF stays readable; the full f
 - **`SG-13`** → **`reports/scenarios/sc05/sc05_brussels_software.png`**
 - **`SG-14`** → **`reports/scenarios/sc06/sc06_top5_industries.png`**
 - **`SG-15`** → **`reports/scenarios/sc07/sc07_timeout_issue.png`**
+- **`SG-16`** → **`reports/scenarios/sc07/sc07_success_after_fix.png`**
 
 **Label Note:** The guide intentionally mixes live SaaS screens, local runtime views, demo-backed integration evidence, and generated local artifacts. Each item is labeled by source rather than flattened into a single "live" claim.
 
@@ -2027,7 +2029,7 @@ LISTEN 0 511 *:3000            # next-server - Operator Shell
 
 ## Phase 21 — Compound Slice: SC-04 Fix + SC-05/06/07 Execution (2026-03-14)
 
-**Version:** v4.9  
+**Version:** v4.10  
 **Focus:** Forward progress on scenario backlog with quality fixes
 
 ### 21.1 Track A — SC-04 Quality Fix
@@ -2090,15 +2092,14 @@ If the count does NOT change after applying the filter, you MUST explicitly expl
 **Query:** "How many companies in Brussels have websites?"
 
 **Result:**
-- Query timeout after >70 seconds
-- API remained responsive (simple queries still work)
-- Root cause: `has_website` filter performance issue
+- **Before Fix:** Query timeout after >70 seconds
+- **Root Cause:** Missing `has_website` filter in search tool - LLM couldn't pass filter to PostgreSQL
+- **Fix Applied:** Added `has_website` parameter to `CompanySearchFilters`, `_build_where_clause`, `ProfileSearchParams`, and `search_profiles` tool
+- **After Fix:** 5,421 companies found in ~12 seconds
 
-**Status:** ⚠️ functional_pass (performance issue)
+**Status:** ✅ quality_pass (fixed 2026-03-14)
 
-**Next Action:** Investigate PostgreSQL index on `website_url` field or query optimization
-
-**Evidence:** `reports/scenarios/sc07/sc07_timeout_issue.png`
+**Evidence:** `reports/scenarios/sc07/sc07_success_after_fix.png`
 
 ### 21.5 Track E — Quality Regression Check
 
@@ -2107,7 +2108,7 @@ If the count does NOT change after applying the filter, you MUST explicitly expl
 | SC-04 | ~10s | ~12s | ✓ |
 | SC-05 | ~12s | ~15s | ✓ |
 | SC-06 | ~12s | ~15s | ✓ |
-| SC-07 | N/A (timeout) | >70s | N/A |
+| SC-07 | ~10s | ~12s | ✓ |
 
 **Verdict:** Streaming still working correctly for successful queries.
 
@@ -2115,7 +2116,7 @@ If the count does NOT change after applying the filter, you MUST explicitly expl
 
 | Category | Passed | Notes |
 |----------|--------|-------|
-| Foundation (SC-01 to SC-10) | 6 quality_pass, 1 functional_pass | SC-07 has timeout issue |
+| Foundation (SC-01 to SC-10) | 7 quality_pass | SC-07 fixed |
 | Total Complete | 9 scenarios | 41 pending |
 
 ### 21.7 Key Lessons
