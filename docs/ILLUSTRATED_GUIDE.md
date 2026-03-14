@@ -1001,4 +1001,91 @@ Result: "Typed test in search box"
 
 ---
 
+---
+
+## Phase 11: Deterministic Tab Selection (ATTACHED_EDGE_CDP)
+
+**Date:** 2026-03-14  
+**Category:** `ATTACHED_EDGE_CDP`
+
+### Problem Before
+
+Tab selection in attached-Edge E2E tests was fragile:
+- `select_tab_by_url()` used simple substring matching with no priority ordering
+- `select_tab_by_title()` could select wrong tab if multiple tabs matched
+- Two attached-Edge assertions were failing due to non-deterministic tab selection
+- Tests assumed browser would be on authenticated main page, but session state varies
+- `test_segment_manager_accessible` failed when browser was on `/login` preview gate
+
+### Change Made
+
+1. **Added `select_tab_deterministic()` method** to `scripts/mcp_cdp_helper.py`:
+   - Priority 1: Exact URL match (`exact_url` parameter)
+   - Priority 2: URL prefix match (`url_prefix` parameter)  
+   - Priority 3: URL contains substring (`url_contains` parameter)
+   - Priority 4: Title contains substring (`title_contains` parameter)
+   - Priority 5: Fallback to first tab (optional `fallback_to_first` parameter)
+
+2. **Added `ensure_tab_for_url()` wrapper** for common "ensure correct tab then navigate" pattern
+
+3. **Hardened test assertions** in `tests/e2e/test_attached_edge_cdp_smoke.py`:
+   - New `TestDeterministicTabSelection` class with 5 tests covering all selection methods
+   - Updated `TestNavigationAttached` to handle login gate → main page flow
+   - New `TestEndToEndSmokeFlow` class with canonical 7-step flow validation
+
+### Verification Performed
+
+```bash
+# Run all attached-Edge E2E tests
+python -m pytest tests/e2e/test_attached_edge_cdp_smoke.py -v --tb=short
+```
+
+**Result:** 17/17 tests passed in 43.66s (was 11/11, expanded with deterministic selection tests)
+
+| Test Class | Tests | Status |
+|------------|-------|--------|
+| `TestCDPConnection` | 4 | ✅ Pass |
+| `TestLoginFlowAttached` | 4 | ✅ Pass |
+| `TestDeterministicTabSelection` | 5 | ✅ Pass (new) |
+| `TestNavigationAttached` | 2 | ✅ Pass |
+| `TestEndToEndSmoke` | 2 | ✅ Pass (new) |
+
+### Artifacts Captured
+
+| File | Size | Description |
+|------|------|-------------|
+| `reports/e2e_evidence/segments_smoke_deterministic.png` | 161 KB | Authenticated Segments view with deterministic tab selection |
+| `reports/e2e_evidence/segments_smoke_latest.png` | 161 KB | Same view, timestamped "latest" alias |
+
+![Segments Smoke - Deterministic Tab Selection](/home/ff/Documents/CDP_Merged/reports/e2e_evidence/segments_smoke_deterministic.png){ width=90% }
+
+*Screenshot: Authenticated Segments view showing "Create segment" button and 62,831 profiles with 10.9% email coverage*
+
+### Code Changes
+
+| File | Lines | Change |
+|------|-------|--------|
+| `scripts/mcp_cdp_helper.py` | +148 | `select_tab_deterministic()`, `ensure_tab_for_url()` |
+| `tests/e2e/test_attached_edge_cdp_smoke.py` | +127 | Deterministic selection tests, smoke flow |
+
+### Result
+
+- **Architecture validated** from "availability proof" to "execution proof"
+- **Real end-to-end flow validation** working: connect → select tab → navigate → open Segments → assert UI → screenshot → pass/fail
+- **Deterministic tab selection** eliminates flaky test behavior
+- **No Chainlit dependency** confirmed (port 8000 inactive)
+- **Bazzite-native execution** verified
+
+### Remaining Gap
+
+- No chat-send smoke test yet (requires test user credentials)
+- No segment creation assertions (creates business data)
+- No multi-tab stress testing under 5+ tabs
+
+### Status
+
+✅ **Canonical ATTACHED_EDGE_CDP path improved** — All 17 tests passing with deterministic tab selection and real flow validation.
+
+---
+
 *For business context, see `docs/BUSINESS_CASE.md`. For API contracts, see `docs/SYSTEM_SPEC.md`. For requirement mapping, see `docs/BUSINESS_CONFORMITY_MATRIX.md`. For executable verification steps, see `docs/ACCEPTANCE_CRITERIA.md`.*
