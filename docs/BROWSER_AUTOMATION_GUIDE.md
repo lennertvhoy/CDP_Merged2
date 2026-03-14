@@ -152,6 +152,71 @@ python scripts/mcp_cdp_helper.py screenshot output/browser_automation/step2_resu
 #### Key Point
 The agent controls **the same browser window** you logged into. Cookies, session tokens, and authentication state are preserved. This is why CDP attach mode is superior to isolated browser automation for authenticated workflows.
 
+---
+
+### Example: Teamleader Manual-Login Continuation
+
+**Prerequisites:** Edge running with CDP (`chrome-for-mcp`)
+
+```bash
+# 1. Agent navigates to login page (prepares for your login)
+python scripts/mcp_cdp_helper.py navigate "https://focus.teamleader.eu"
+
+# 2. [YOU] Log in manually in the Edge browser window
+#    - Enter email/password or use Google/Apple/Microsoft sign-in
+#    - Complete 2FA if required
+#    - Navigate to desired section (e.g., Contacts, Companies)
+#    - Stay on that page
+
+# 3. [AGENT] Continue from your logged-in session
+python scripts/mcp_cdp_helper.py url
+# → https://focus.teamleader.eu/your-logged-in-path
+
+python scripts/mcp_cdp_helper.py title
+# → Teamleader Focus - Your Section
+
+python scripts/mcp_cdp_helper.py screenshot output/browser_automation/teamleader_dashboard.png
+
+# Navigate within the same authenticated session
+python scripts/mcp_cdp_helper.py navigate "https://focus.teamleader.eu/your-target-page"
+python scripts/mcp_cdp_helper.py snapshot
+```
+
+---
+
+### Example: Exact Online Manual-Login Continuation
+
+**Prerequisites:** Edge running with CDP (`chrome-for-mcp`)
+
+```bash
+# 1. Agent navigates to login page (prepares for your login)
+python scripts/mcp_cdp_helper.py navigate "https://start.exactonline.be"
+
+# 2. [YOU] Log in manually in the Edge browser window
+#    - Enter email address or username
+#    - Click Continue
+#    - Enter password
+#    - Complete 2FA if required
+#    - Navigate to desired section (e.g., Financial, CRM)
+#    - Stay on that page
+
+# 3. [AGENT] Continue from your logged-in session
+python scripts/mcp_cdp_helper.py url
+# → https://start.exactonline.be/ui/... (logged-in URL)
+
+python scripts/mcp_cdp_helper.py title
+# → Exact Online - Your Section
+
+python scripts/mcp_cdp_helper.py screenshot output/browser_automation/exact_dashboard.png
+
+# List all tabs to see your session state
+python scripts/mcp_cdp_helper.py tabs
+
+# Navigate within the same authenticated session
+python scripts/mcp_cdp_helper.py navigate "https://start.exactonline.be/ui/your-target"
+python scripts/mcp_cdp_helper.py snapshot
+```
+
 ### Pattern 2: Full Agent Control (No Auth Required)
 
 ```bash
@@ -178,6 +243,7 @@ python scripts/mcp_cdp_helper.py screenshot output/capture.png
 | `url` | `python scripts/mcp_cdp_helper.py url` | Get current page URL |
 | `snapshot` | `python scripts/mcp_cdp_helper.py snapshot` | Capture accessibility snapshot |
 | `screenshot` | `python scripts/mcp_cdp_helper.py screenshot [filename]` | Take screenshot |
+| `tabs` | `python scripts/mcp_cdp_helper.py tabs` | List all browser tabs/pages |
 
 ### Examples
 

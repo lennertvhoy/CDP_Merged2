@@ -13,6 +13,7 @@ Usage:
     python scripts/mcp_cdp_helper.py screenshot output/test.png
     python scripts/mcp_cdp_helper.py title
     python scripts/mcp_cdp_helper.py url
+    python scripts/mcp_cdp_helper.py tabs
 """
 
 import subprocess
@@ -183,6 +184,16 @@ def check_cdp_endpoint(endpoint: str = DEFAULT_CDP_ENDPOINT) -> bool:
         return False
 
 
+def list_tabs(endpoint: str = DEFAULT_CDP_ENDPOINT) -> list:
+    """List all browser tabs via CDP HTTP endpoint."""
+    import urllib.request
+    try:
+        with urllib.request.urlopen(f"{endpoint}/json/list", timeout=5) as response:
+            return json.loads(response.read().decode())
+    except Exception as e:
+        return [{"error": str(e)}]
+
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__)
@@ -254,6 +265,18 @@ def main():
             print(f"✓ Snapshot captured ({len(snapshot)} chars)")
             if "CDP_Merged" in snapshot or "Private Preview" in snapshot:
                 print("✓ Verified: CDP_Merged operator shell is accessible")
+                
+        elif command == "tabs":
+            print("Listing browser tabs...")
+            tabs = list_tabs()
+            print(f"\nTotal tabs: {len(tabs)}\n")
+            for i, tab in enumerate(tabs[:10], 1):  # Limit to first 10
+                if "error" in tab:
+                    print(f"{i}. Error: {tab['error']}")
+                else:
+                    title = tab.get('title', 'N/A')[:50]
+                    url = tab.get('url', 'N/A')[:60]
+                    print(f"{i}. {title}... ({url})")
             
         else:
             print(f"Unknown command: {command}")
