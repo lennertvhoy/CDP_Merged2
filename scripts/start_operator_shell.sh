@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Start the operator shell (Next.js app) on port 3002
-# Note: Port 3000 has a ghost process, port 3001 had ENOSPC errors
+# Start the operator shell (Next.js app) on port 3000
 # This must be run on the host (not in a sandbox)
 
 set -euo pipefail
@@ -39,18 +38,14 @@ set -a
 source .env.local
 set +a
 
-# Determine which port to use
-# Port 3000 has a ghost process that serves HTML but not static files
-# Port 3001 had ENOSPC errors previously
-# Use 3002 as the default working port
-SHELL_PORT=3002
+# Port 3000 is the standard port for the operator shell
+SHELL_PORT=3000
 LOG_FILE="/tmp/operator-shell.log"
 
-# Check if the port is already in use by a working server
-if curl -s --max-time 1 http://127.0.0.1:3002/ > /dev/null 2>&1; then
-    # Port 3002 is responding - verify static files work
-    if curl -s --max-time 2 http://127.0.0.1:3002/_next/static/chunks/main-app-26fb858ab1a9f565.js > /dev/null 2>&1; then
-        echo "Operator shell is already running on port 3002"
+# Check if already running and working
+if curl -s --max-time 1 http://127.0.0.1:3000/ > /dev/null 2>&1; then
+    if curl -s --max-time 2 http://127.0.0.1:3000/_next/static/chunks/main-app-26fb858ab1a9f565.js > /dev/null 2>&1; then
+        echo "Operator shell is already running on port 3000"
         exit 0
     fi
 fi
@@ -98,10 +93,7 @@ for i in {1..30}; do
                 echo "  Public: $NGROK_URL"
             fi
             
-            echo ""
-            echo "Note: Port 3000 has a ghost process (HTML works, static files 404)"
-            echo "      Port 3001 had previous ENOSPC errors"
-            echo "      Using port 3002 as the stable working port"
+
             
             echo ""
             echo "To view logs: tail -f $LOG_FILE"

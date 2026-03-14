@@ -35,6 +35,54 @@ Use these files instead:
 
 ---
 
+## Bazzite Host/Sandbox Boundary (Critical)
+
+This development environment runs on **Bazzite** (Fedora Silverblue-based), where the agent runs in a **sandbox/container** but services run on the **host**.
+
+### Commands That MUST Use `flatpak-spawn --host`
+
+When debugging or managing services, these commands **must** be run through `flatpak-spawn --host` to see the real host state:
+
+| Command | Purpose | Sandbox Result | Host Result |
+|---------|---------|----------------|-------------|
+| `ss` | Check ports | Empty/wrong | Real bindings |
+| `ps`/`pgrep` | List processes | Partial | Full process tree |
+| `systemctl --user` | User services | Empty | Real service state |
+| `node`/`npm` | Node.js runtime | Not in PATH | Works with PATH export |
+| `pkill` | Kill processes | May fail | Actually works |
+| `curl` to localhost | Test services | May miss host-bound ports | Correct results |
+
+### Pattern for Host Commands
+
+```bash
+flatpak-spawn --host bash -lc '
+  export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
+  # your commands here
+  ss -ltnp "( sport = :3000 )"
+  pgrep -af "node|next"
+'
+```
+
+### Common Misdiagnoses to Avoid
+
+1. **"Ghost Process" on port 3000** - Not a ghost; the sandbox just can't see the host-bound Next.js server
+2. **"ENOSPC" errors** - Usually `inotify` exhaustion, not disk full; fix with sysctl:
+   ```bash
+   flatpak-spawn --host bash -c '
+     printf "fs.inotify.max_user_watches=524288\n" | sudo tee /etc/sysctl.d/99-inotify.conf
+     sudo sysctl --system
+   '
+   ```
+3. **"Server running but returns 404 for static files"** - Check if the server's cwd shows `(deleted)` in `pwdx`; this means files were replaced after server start
+
+### Critical Environment Variables
+
+Always set these when spawning host shells:
+- `PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"` - For Node.js/npm
+- `HOSTNAME=127.0.0.1` - To bind to IPv4 localhost (not public IPv6)
+
+---
+
 ## Read Order Before Work
 
 1. Confirm the current directory is `/home/ff/Documents/CDP_Merged`.
