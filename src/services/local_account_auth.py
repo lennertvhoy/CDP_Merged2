@@ -377,6 +377,85 @@ class LocalAccountStore:
             )
         return _row_to_local_account(row)
 
+    async def set_display_name(self, identifier: str, *, display_name: str | None) -> LocalAccount:
+        """Update the display name for a local account."""
+        normalized_identifier = normalize_local_account_identifier(identifier)
+        if normalized_identifier is None:
+            raise ValueError("Local account identifier must not be empty.")
+
+        normalized_display_name = normalize_local_account_display_name(display_name)
+
+        row = await self._fetchrow(
+            """
+            UPDATE app_auth_local_accounts
+            SET display_name = $2,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE identifier = $1
+            RETURNING
+                account_id::text AS account_id,
+                identifier,
+                display_name,
+                password_hash,
+                is_admin,
+                is_active,
+                account_metadata,
+                created_at,
+                updated_at,
+                last_login_at
+            """,
+            normalized_identifier,
+            normalized_display_name,
+        )
+        if row is None:
+            raise LocalAccountNotFoundError(
+                f"Local account {normalized_identifier!r} does not exist."
+            )
+        return _row_to_local_account(row)
+
+    async def set_admin(self, identifier: str, *, is_admin: bool) -> LocalAccount:
+        """Update the admin status for a local account."""
+        normalized_identifier = normalize_local_account_identifier(identifier)
+        if normalized_identifier is None:
+            raise ValueError("Local account identifier must not be empty.")
+
+        row = await self._fetchrow(
+            """
+            UPDATE app_auth_local_accounts
+            SET is_admin = $2,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE identifier = $1
+            RETURNING
+                account_id::text AS account_id,
+                identifier,
+                display_name,
+                password_hash,
+                is_admin,
+                is_active,
+                account_metadata,
+                created_at,
+                updated_at,
+                last_login_at
+            """,
+            normalized_identifier,
+            is_admin,
+        )
+        if row is None:
+            raise LocalAccountNotFoundError(
+                f"Local account {normalized_identifier!r} does not exist."
+            )
+        return _row_to_local_account(row)
+
+    async def count_admin_accounts(self) -> int:
+        """Count the number of active admin accounts."""
+        row = await self._fetchrow(
+            """
+            SELECT COUNT(*) AS count
+            FROM app_auth_local_accounts
+            WHERE is_admin = TRUE AND is_active = TRUE
+            """
+        )
+        return row["count"] if row else 0
+
     async def record_successful_login(self, identifier: str) -> None:
         normalized_identifier = normalize_local_account_identifier(identifier)
         if normalized_identifier is None:

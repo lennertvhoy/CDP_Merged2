@@ -619,10 +619,9 @@ async def operator_admin_update_user(
     if not _is_admin_user(user_context):
         raise HTTPException(status_code=403, detail="Admin access required")
     
-    # Prevent admins from deactivating themselves
     current_identifier = user_context.get("identifier") if user_context else None
-    if identifier.lower() == current_identifier and payload.is_active is False:
-        raise HTTPException(status_code=400, detail="Cannot deactivate your own account")
+    normalized_target = identifier.strip().lower()
+    is_self = current_identifier and current_identifier.lower() == normalized_target
     
     store = LocalAccountStore()
     try:
@@ -631,12 +630,32 @@ async def operator_admin_update_user(
         if account is None:
             raise HTTPException(status_code=404, detail=f"User '{identifier}' not found")
         
+        # Prevent self-deactivation
+        if is_self and payload.is_active is False:
+            raise HTTPException(status_code=400, detail="Cannot deactivate your own account")
+        
+        # Prevent self-demotion from admin (would lock out admin access)
+        if is_self and payload.is_admin is False and account.is_admin:
+            raise HTTPException(status_code=400, detail="Cannot remove your own admin privileges")
+        
+        # Safety check: prevent removing the last admin
+        if payload.is_admin is False and account.is_admin:
+            admin_count = await store.count_admin_accounts()
+            if admin_count <= 1:
+                raise HTTPException(
+                    status_code=400, 
+                    detail="Cannot remove the last admin account. Create another admin first."
+                )
+        
         # Apply updates
         if payload.is_active is not None:
             account = await store.set_account_active(identifier, is_active=payload.is_active)
         
-        # Note: display_name and is_admin updates would need additional store methods
-        # For now, we support the critical is_active toggle
+        if payload.display_name is not None:
+            account = await store.set_display_name(identifier, display_name=payload.display_name)
+        
+        if payload.is_admin is not None:
+            account = await store.set_admin(identifier, is_admin=payload.is_admin)
         
         return {
             "status": "ok",
@@ -652,6 +671,8 @@ async def operator_admin_update_user(
         }
     except LocalAccountNotFoundError:
         raise HTTPException(status_code=404, detail=f"User '{identifier}' not found")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     finally:
         await store.close()
 

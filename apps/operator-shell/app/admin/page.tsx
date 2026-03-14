@@ -48,6 +48,13 @@ export default function AdminPage() {
   const [resetPassword, setResetPassword] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
+  
+  // Edit user modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editUser, setEditUser] = useState<User | null>(null);
+  const [editForm, setEditForm] = useState({ display_name: "", is_admin: false });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -170,6 +177,39 @@ export default function AdminPage() {
       setResetError(err instanceof Error ? err.message : "Failed to reset password");
     } finally {
       setResetLoading(false);
+    }
+  }
+
+  async function handleEditUser(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editUser) return;
+
+    setEditLoading(true);
+    setEditError(null);
+
+    try {
+      const response = await fetch(`/operator-api/admin/users/${encodeURIComponent(editUser.identifier)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          display_name: editForm.display_name || null,
+          is_admin: editForm.is_admin,
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ detail: "Failed to update user" }));
+        throw new Error(err.detail || `HTTP ${response.status}`);
+      }
+
+      await loadUsers();
+      setShowEditModal(false);
+      setEditUser(null);
+      setEditForm({ display_name: "", is_admin: false });
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : "Failed to update user");
+    } finally {
+      setEditLoading(false);
     }
   }
 
@@ -343,6 +383,17 @@ export default function AdminPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setEditUser(user);
+                            setEditForm({ display_name: user.display_name || "", is_admin: user.is_admin });
+                            setShowEditModal(true);
+                          }}
+                          className="p-2 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition-colors"
+                          title="Edit User"
+                        >
+                          <UserCog size={16} />
+                        </button>
                         <button
                           onClick={() => {
                             setResetUser(user);
@@ -526,6 +577,66 @@ export default function AdminPage() {
                 >
                   {resetLoading && <Loader2 size={14} className="animate-spin" />}
                   Reset Password
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditModal && editUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-medium text-zinc-100 mb-2">Edit User</h3>
+            <p className="text-sm text-zinc-500 mb-4">
+              Update <span className="text-zinc-300">{editUser.identifier}</span>
+            </p>
+            <form onSubmit={handleEditUser} className="space-y-4">
+              <div>
+                <label className="block text-sm text-zinc-400 mb-1">Display Name</label>
+                <input
+                  type="text"
+                  value={editForm.display_name}
+                  onChange={(e) => setEditForm({ ...editForm, display_name: e.target.value })}
+                  className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-100 focus:outline-none focus:border-zinc-700"
+                  placeholder="Enter display name"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="is_admin"
+                  checked={editForm.is_admin}
+                  onChange={(e) => setEditForm({ ...editForm, is_admin: e.target.checked })}
+                  className="rounded border-zinc-700 bg-zinc-800"
+                />
+                <label htmlFor="is_admin" className="text-sm text-zinc-400">Admin privileges</label>
+              </div>
+              {editError && (
+                <div className="text-sm text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg p-3">
+                  {editError}
+                </div>
+              )}
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditUser(null);
+                    setEditForm({ display_name: "", is_admin: false });
+                  }}
+                  className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                >
+                  {editLoading && <Loader2 size={14} className="animate-spin" />}
+                  Save Changes
                 </button>
               </div>
             </form>
