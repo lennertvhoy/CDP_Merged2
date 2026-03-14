@@ -1,0 +1,22 @@
+# ngrok CDP Watchdog Timer
+# Place at: ~/.config/systemd/user/ngrok-cdp-watchdog.timer
+#
+# This timer runs the watchdog script every minute to check health.
+# It starts 1 minute after boot and then runs every minute.
+
+[Unit]
+Description=Run ngrok CDP watchdog every minute
+Documentation=file:///var/home/ff/Documents/CDP_Merged/infra/ngrok-systemd/README.md
+
+[Timer]
+# Start 1 minute after boot
+OnBootSec=1min
+
+# Run every minute thereafter
+OnUnitActiveSec=1min
+
+# The service unit to activate
+Unit=ngrok-cdp-watchdog.service
+
+[Install]
+WantedBy=timers.target

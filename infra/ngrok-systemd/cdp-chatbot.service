@@ -1,0 +1,50 @@
+# CDP Chatbot Service
+# Place at: ~/.config/systemd/user/cdp-chatbot.service
+#
+# This service runs the CDP chatbot locally on port 8000.
+# It auto-restarts on failure and ensures the app is always available.
+
+[Unit]
+Description=CDP_Merged Chatbot (port 8000)
+Documentation=file:///var/home/ff/Documents/CDP_Merged/README.md
+After=network-online.target postgresql.service docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/home/ff/Documents/CDP_Merged
+Environment="HOME=/var/home/ff"
+Environment="USER=ff"
+Environment="PATH=/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/var/home/ff/Documents/CDP_Merged/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONPATH=/var/home/ff/Documents/CDP_Merged"
+
+# Load environment files
+EnvironmentFile=-/var/home/ff/Documents/CDP_Merged/.env.local
+EnvironmentFile=-/var/home/ff/Documents/CDP_Merged/.env.database
+
+# Health check before declaring service started
+ExecStartPre=/bin/bash -lc 'cd /var/home/ff/Documents/CDP_Merged && test -f .venv/bin/python || (echo "Virtual env not found"; exit 1)'
+
+# Start the chatbot
+ExecStart=/bin/bash -lc 'cd /var/home/ff/Documents/CDP_Merged && source .venv/bin/activate && uv run python -m src.main'
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+# Graceful shutdown
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+# Resource limits (adjust as needed)
+LimitNOFILE=65536
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cdp-chatbot
+
+[Install]
+WantedBy=default.target

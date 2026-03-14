@@ -134,3 +134,127 @@ def test_init_database_creates_table_and_indexes():
     assert len(cursor.executed) == 3
     assert "CREATE TABLE IF NOT EXISTS company_engagement" in cursor.executed[0][0]
     assert "INDEX idx_kbo_number" not in cursor.executed[0][0]
+
+
+def test_hash_identifier_produces_deterministic_sha256():
+    """Test that hash_identifier produces consistent SHA-256 hashes."""
+    email = "test@example.com"
+    hash1 = event_processor.hash_identifier(email)
+    hash2 = event_processor.hash_identifier(email)
+    
+    # Should be deterministic
+    assert hash1 == hash2
+    # Should be 64 hex characters (SHA-256)
+    assert len(hash1) == 64
+    # Should be different from original
+    assert hash1 != email
+    # None input should return None
+    assert event_processor.hash_identifier(None) is None
+    # Empty string should return None
+    assert event_processor.hash_identifier("") is None
+
+
+def test_extract_email_domain_extracts_domain_only():
+    """Test that extract_email_domain preserves only the domain part."""
+    assert event_processor.extract_email_domain("user@example.com") == "example.com"
+    assert event_processor.extract_email_domain("USER@EXAMPLE.COM") == "example.com"
+    assert event_processor.extract_email_domain(None) is None
+    assert event_processor.extract_email_domain("invalid") is None
+    assert event_processor.extract_email_domain("") is None
+
+
+def test_sanitize_event_data_removes_pii_preserves_metadata():
+    """Test that sanitize_event_data removes PII but preserves useful metadata."""
+    raw_event = {
+        "email_id": "test-email-123",
+        "to": "user@example.com",
+        "from": "sender@company.com",
+        "subject": "Important Email Subject",
+        "user_agent": "Mozilla/5.0",
+        "kbo_number": "0438437723",
+        "metadata": {"campaign_id": "spring2026"},
+    }
+    
+    sanitized = event_processor.sanitize_event_data(raw_event)
+    
+    # Should NOT contain raw email
+    assert "user@example.com" not in str(sanitized)
+    assert "sender@company.com" not in str(sanitized)
+    # Should NOT contain raw subject
+    assert "Important Email Subject" not in str(sanitized)
+    
+    # SHOULD contain hashes
+    assert sanitized["recipient_hash"] == event_processor.hash_identifier("user@example.com")
+    assert sanitized["subject_hash"] == event_processor.hash_identifier("important email subject")
+    
+    # SHOULD contain domains
+    assert sanitized["recipient_domain"] == "example.com"
+    assert sanitized["sender_domain"] == "company.com"
+    
+    # SHOULD preserve non-PII metadata
+    assert sanitized["email_id"] == "test-email-123"
+    assert sanitized["user_agent"] == "Mozilla/5.0"
+    assert sanitized["kbo_number"] == "0438437723"
+    assert sanitized["metadata"]["campaign_id"] == "spring2026"
+
+
+def test_sanitize_event_data_handles_click_data():
+    """Test that sanitize_event_data properly extracts click domains."""
+    event_with_click = {
+        "to": "user@example.com",
+        "click": {"link": "https://example.com/page?param=1"},
+    }
+    
+    sanitized = event_processor.sanitize_event_data(event_with_click)
+    assert sanitized["click_domain"] == "example.com"
+    # Should not contain full URL
+    assert "https://example.com/page" not in str(sanitized)
+
+
+def test_update_engagement_score_uses_hashed_email_and_sanitized_data():
+    """Test that update_engagement_score stores hashed email and sanitized event data."""
+    cursor = FakeCursor(
+        fetchone_results=[
+            ("123e4567-e89b-12d3-a456-426614174001", "0438437723", "B.B.S. Entreprise", "43320"),
+            (15, 1, 1, datetime(2026, 3, 8, 23, 30, tzinfo=UTC)),
+        ]
+    )
+    connection = FakeConnection(cursor)
+
+    original_get_db_connection = event_processor.get_db_connection
+    event_processor.get_db_connection = lambda: connection
+    try:
+        result = event_processor.update_engagement_score(
+            "INFO@BBSENTREPRISE.BE",
+            "email.clicked",
+            {"to": "INFO@BBSENTREPRISE.BE", "subject": "Confidential"},
+        )
+    finally:
+        event_processor.get_db_connection = original_get_db_connection
+
+    assert result["kbo_number"] == "0438437723"
+    assert connection.committed is True
+    
+    # Find the INSERT query
+    insert_query = None
+    insert_params = None
+    for query, params in cursor.executed:
+        if "INSERT INTO company_engagement" in query:
+            insert_query = query
+            insert_params = params
+            break
+    
+    assert insert_query is not None
+    # Should use email_hash column, not email
+    assert "email_hash" in insert_query
+    # Should NOT have plain email column
+    assert "email," not in insert_query.replace("email_hash", "")
+    
+    # Verify params: email should be hashed
+    email_hash_param = insert_params[2]  # 3rd param is email_hash
+    assert email_hash_param == event_processor.hash_identifier("info@bbsentreprise.be")
+    
+    # Verify event_data is sanitized (no raw email in JSON)
+    event_data_param = insert_params[5]  # 6th param is event_data
+    assert "info@bbsentreprise.be" not in event_data_param
+    assert "Confidential" not in event_data_param  # Raw subject should not be present

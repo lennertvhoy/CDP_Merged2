@@ -30,6 +30,7 @@ export interface BootstrapPayload {
     user: {
       identifier?: string | null;
       display_name?: string | null;
+      is_admin?: boolean;
     } | null;
     auth: {
       required: boolean;

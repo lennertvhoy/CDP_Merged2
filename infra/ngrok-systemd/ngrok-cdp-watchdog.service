@@ -1,0 +1,6 @@
+[Unit]
+Description=Health check and auto-restart for ngrok CDP tunnel
+
+[Service]
+Type=oneshot
+ExecStart=%h/bin/check-ngrok-cdp.sh

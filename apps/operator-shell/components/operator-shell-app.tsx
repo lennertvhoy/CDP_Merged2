@@ -126,6 +126,7 @@ export function OperatorShellApp() {
     bootstrap.session.user?.display_name || bootstrap.session.user?.identifier || "CDP";
   const authStateKey =
     bootstrap.session.user?.identifier || (bootstrap.session.authenticated ? "authenticated" : "preview");
+  const isAdmin = bootstrap.session.user?.is_admin === true;
 
   function handleResumeThread(thread: ThreadDetail) {
     setResumeThread(thread);
@@ -139,6 +140,7 @@ export function OperatorShellApp() {
         onTabChange={setActiveTab}
         userInitials={initialsFromName(displayName)}
         adapter={adapter}
+        isAdmin={isAdmin}
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">

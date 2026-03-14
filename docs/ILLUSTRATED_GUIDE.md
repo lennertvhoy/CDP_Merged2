@@ -317,19 +317,24 @@ curl "http://localhost:5001/api/engagement/leads?min_score=5"
 
 - 84 anonymous profiles (no PII in traits)
 - Gateway sanitizes before downstream projection
+- Event processor stores only hashed emails and sanitized event data
 
-**Current Divergence (Documented):**
+**Privacy Layers (All Verified):**
 
-| Layer | Target | Current | Status |
-|-------|--------|---------|--------|
-| PostgreSQL core | UID-first | UID-first | ✅ OK |
-| Tracardi profiles | Anonymous | Anonymous | ✅ OK |
-| Event metadata | Hashed only | Raw email present | ⚠️ Partial |
-| Gateway forward | Sanitized | Sanitized | ✅ OK |
+| Layer | Target | Implementation | Status |
+|-------|--------|----------------|--------|
+| PostgreSQL core | UID-first | KBO number as primary key, no PII columns | ✅ OK |
+| Tracardi profiles | Anonymous | Traits only, no PII | ✅ OK |
+| Event metadata (stored) | Hashed only | SHA-256 hashed, domains extracted | ✅ Fixed 2026-03-14 |
+| Event metadata (gateway) | Sanitized | `sanitize_resend_event_data()` removes PII | ✅ OK |
+| Engagement records | No raw PII | `email_hash` + sanitized `event_data` | ✅ Fixed 2026-03-14 |
 
-**Mitigation:** `sanitize_resend_event_data()` in `scripts/webhook_gateway.py`.
+**Implementation:** 
+- Gateway: `sanitize_resend_event_data()` in `scripts/webhook_gateway.py`
+- Event Processor: `sanitize_event_data()` in `scripts/cdp_event_processor.py`
+- Database: `company_engagement.email_hash` (SHA-256), sanitized `event_data` JSONB
 
-**Tests:** 48 webhook gateway tests pass (email hashing, HMAC verification).
+**Tests:** 48 webhook gateway tests + 6 privacy-specific event processor tests pass.
 
 ---
 
@@ -417,7 +422,7 @@ Use short evidence IDs in the matrix below so the PDF stays readable; the full f
 | 6 | Event-processor API | ✅ Verified | `/api/next-best-action/0438437723` returns recommendations |
 | 7 | Engagement scoring | ✅ Verified | `/api/engagement/leads?min_score=5` returns leads |
 | 8 | Scoring model endpoint | ✅ Verified | `/api/scoring-model` with documented weights |
-| 9 | Privacy boundary | ⚠️ Partial | Documented divergence in event metadata |
+| 9 | Privacy boundary | ✅ Verified | All layers hash/sanitize; no raw PII in CDP core |
 | 10 | Privacy hardening | ✅ Verified | 48 webhook gateway tests pass |
 | 11 | Cross-division revenue aggregation | ⚠️ Partial | €15,000 proven; demo data shows €0 for CRM/Exact |
 | 12 | Sync latency | ✅ Verified | Timestamped: TL 14:57, Exact 11:19 |
@@ -499,7 +504,7 @@ AUTOTASK:   B.B.S. Entreprise | 1 Ticket | €15,000 Contract
 | Real website traffic | Medium | Demo-labeled writeback proven for B.B.S. UID | Replace with live traffic only if required |
 | Tracardi workflow execution | Medium | CE limitation documented; drafts only | Evaluate Premium or alternative engine |
 | Flexmail integration | Low | Explicitly deprioritized | Resend is verified alternative; Flexmail in backlog |
-| Event metadata privacy | Medium | Raw email in some events | Gateway sanitizes; full fix planned |
+| Event metadata privacy | Medium | Fixed 2026-03-14 | Event processor now hashes emails and sanitizes event_data | ✅ Resolved |
 | More linked companies | Medium | 1 fully linked; scripts available | Populate demo data for richer demos |
 
 **Note:** All critical GO/No-Go criteria are met. These gaps are optimization and scale items, not blockers.

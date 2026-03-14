@@ -3,7 +3,7 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-10T17:50:00+01:00
+  updated_at: 2026-03-14T11:32:00+01:00
   updated_by: agent
   verified_head_before_docs_commit:
     value: 7e6c432
@@ -152,18 +152,26 @@ current_state:
   architecture:
     status: observed
     decided_at: 2026-03-03
-    summary: Source systems remain the PII and operational master-record layer; PostgreSQL is the customer-intelligence and analytical truth layer; Tracardi is the projected activation runtime; the chatbot must answer authoritative questions only from PostgreSQL-backed tools.
+    revised_at: 2026-03-14
+    summary: Source systems remain the PII and operational master-record layer; PostgreSQL is the customer-intelligence and analytical truth layer; the operator shell/chatbot is the deterministic control plane; Tracardi is demoted to optional activation adapter (non-authoritative, non-critical for core demo path).
     truth_layers:
       source_systems: pii_and_operational_master_truth
       postgresql: customer_intelligence_and_analytical_truth
-      tracardi: projected_activation_runtime
+      operator_shell: deterministic_control_plane_and_primary_ui
       chatbot: deterministic_postgresql_backed_operator_interface
+      tracardi: optional_activation_adapter_non_authoritative
+    decisions:
+      - date: 2026-03-14
+        decision: Demote Tracardi from core dependency to optional activation adapter
+        rationale: Tracardi CE workflow execution requires Premium license; first-party event processor and PostgreSQL-backed writeback satisfy core demo/runtime needs without Tracardi
+        impact: Core delivery path no longer blocked by Tracardi CE limitations; Tracardi remains available for paid-feature activation path if justified later
   delivery_goal:
     status: reported
     decided_at: 2026-03-04
+    revised_at: 2026-03-14
     mode: demo_first_under_budget_constraints
     constraints:
-      - no_tracardi_license_yet
+      - tracardi_now_optional_not_core
       - azure_budget_about_150_eur_per_month
       - azure_deployment_path_temporarily_paused_to_save_costs
       - azure_usage_limit_reported_reached_until_2026_03_14
@@ -199,6 +207,42 @@ current_state:
       - no_shared_chatbot_surface_for_colleagues
       - chatgpt_like_interface_direction
       - explicit_web_search_policy_before_enablement
+  operator_shell_admin_rbac:
+    status: observed
+    verified_at: 2026-03-14T11:55:00+01:00
+    summary: |
+      Admin panel now implemented with basic admin authorization (boolean is_admin flag).
+      NOT full RBAC - only a simple admin/user distinction exists.
+    public_url: https://kbocdpagent.ngrok.app/admin
+    local_api_base: http://127.0.0.1:8170/api/operator
+    endpoints:
+      - path: /admin
+        description: Admin page (Next.js)
+        protection: client-side redirect for non-admins
+      - path: /admin/users
+        description: List all local accounts
+        protection: server-side 403 for non-admins
+      - path: /admin/me
+        description: Get current user's admin status
+        protection: server-side 401 for unauthenticated
+    authorization_model:
+      type: basic_admin_authorization
+      rbac_status: NOT_IMPLEMENTED
+      description: |
+        Only boolean is_admin flag exists. No roles, permissions, or multi-role system.
+        Admin users can view all accounts but cannot modify them through UI yet.
+    files_modified:
+      - src/services/operator_bridge.py (expose is_admin in bootstrap)
+      - src/services/operator_auth.py (add CHAINLIT_LOCAL_ACCOUNT_AUTH_ENABLED setting)
+      - src/operator_api.py (add /admin/users and /admin/me endpoints)
+      - apps/operator-shell/lib/types/operator.ts (add is_admin to BootstrapPayload)
+      - apps/operator-shell/components/sidebar.tsx (add Admin shield link)
+      - apps/operator-shell/components/operator-shell-app.tsx (pass isAdmin to Sidebar)
+      - apps/operator-shell/app/admin/page.tsx (new admin page)
+    admin_accounts:
+      - lennertvhoy@gmail.com (ADMIN)
+    non_admin_accounts:
+      - brandstekelorum2@gmail.com (user - explicitly NOT admin)
   chat_history_persistence_foundation:
     status: observed
     verified_at: 2026-03-09T21:47:19+01:00

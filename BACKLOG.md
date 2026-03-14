@@ -1,6 +1,6 @@
 # CDP_Merged Backlog v2
 
-**Architecture:** Source systems PII truth + PostgreSQL intelligence truth + Tracardi activation runtime + AI chatbot
+**Architecture:** Source systems PII truth + PostgreSQL intelligence truth + Operator shell control plane + Optional Tracardi activation adapter
 **Deployment:** Local-only permanent; Azure limited to Entra ID + Azure OpenAI only
 **Last Updated:** 2026-03-14
 **Purpose:** Actionable roadmap from current state to credible demo, then to production
@@ -24,7 +24,9 @@ Live state lives in `PROJECT_STATE.yaml` and `STATUS.md`. If files conflict, ver
 
 | # | Item | Epic | Why It Matters |
 |---|------|------|----------------|
-| 1 | **Guide v3.3 credibility pass** | Demo | Fix timestamp consistency, maturity labels, CSV export proof. Demo packaging > backend work now. |
+| 0 | **Architecture hardening: Tracardi optionalization** | Architecture | Formalize Tracardi demotion from core to optional; update docs, docker-compose, and default stack. Core delivery no longer blocked by CE limitations. |
+| 1 | **Operator shell admin/RBAC verification** | Product Shell | Verify admin panel exists (currently 404 at /admin), document RBAC model, confirm is_admin flag usage. |
+| 2 | **Guide v3.3 credibility pass** | Demo | Fix timestamp consistency, maturity labels, CSV export proof. Demo packaging > backend work now. |
 | 2 | **Business-case conformity matrix** | Demo | Requirement-by-requirement mapping: `Conforms / Partial / Not yet covered`. Makes POC scope explicit. |
 | 3 | **Acceptance-criteria appendix** | Demo | `>=95%` prompt/tool-selection proof, audit-log evidence, deploy repeatability for reviewers. |
 | 4 | **Decide `src/models/` fate** | Runtime | Keep-and-complete or archive. Half-alive ORM layer causes agent drift. |
@@ -52,13 +54,31 @@ Live state lives in `PROJECT_STATE.yaml` and `STATUS.md`. If files conflict, ver
 - Consent/suppression flow (blocked: needs source system integrations)
 - Server-farm deployment target decision (k3s/RKE2 vs alternatives)
 - Kubernetes manifests (pending server-farm decision)
-- Full Tracardi CE workflow runtime (blocked: license)
+- ~~Full Tracardi CE workflow runtime~~ → MOVED TO OPTIONAL/PREMIUM PATH (2026-03-14 decision: Tracardi no longer core dependency)
 - Hyperrealistic mock data expansion (50+ companies — only if demo needs breadth)
 - Website behavior proof upgrade (only if business case requires live public-site evidence)
+- Tracardi Premium activation (only if paid-feature path justified later)
 
 ---
 
 ## The Five Epics
+
+### Epic 0 — Architecture Hardening (NEW)
+
+**Goal:** Solidify architecture decisions and decouple optional components from core delivery path.
+
+**Decision Recorded 2026-03-14:** Tracardi is demoted from core dependency to optional activation adapter.
+
+| Item | Status | Exit Criteria |
+|------|--------|---------------|
+| Tracardi optionalization | In progress | Docs updated, docker-compose modified (opt-in), default stack runs without Tracardi |
+| Core path verification | Pending | First-party event processor + PostgreSQL satisfy all demo/runtime needs without Tracardi |
+| Admin panel verification | Pending | Operator shell admin features verified or documented as not implemented |
+| RBAC model documentation | Pending | Access control model documented beyond simple `is_admin` flag |
+
+**Key Principle:** Core delivery should not be blocked by optional component limitations.
+
+---
 
 ### Epic 1 — Credible Local Demo
 

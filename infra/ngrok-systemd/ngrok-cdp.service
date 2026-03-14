@@ -1,0 +1,16 @@
+[Unit]
+Description=ngrok tunnel for CDP at kbocdpagent.ngrok.app
+After=network-online.target cdp-operator-shell.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Wait for operator shell to be ready before starting tunnel
+ExecStartPre=/usr/bin/bash -lc 'until curl -fsS http://127.0.0.1:3000 >/dev/null 2>&1; do sleep 2; done'
+# Start ngrok with the fixed domain endpoint
+ExecStart=/home/ff/Documents/CDP_Merged/ngrok start cdp --config /home/ff/.config/ngrok/ngrok.yml
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

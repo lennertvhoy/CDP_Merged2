@@ -34,6 +34,7 @@ from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 import psycopg2
@@ -143,6 +144,77 @@ def normalize_email(value: Any) -> str | None:
                 return email
 
     return None
+
+
+def hash_identifier(value: str | None) -> str | None:
+    """Create a deterministic opaque identifier for privacy-safe storage."""
+    if not value:
+        return None
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def extract_email_domain(value: str | None) -> str | None:
+    """Extract the email domain without preserving the full address."""
+    if not value or "@" not in value:
+        return None
+    return value.split("@", 1)[1].lower()
+
+
+def sanitize_event_data(event_data: dict[str, Any]) -> dict[str, Any]:
+    """
+    Sanitize event data to remove PII before storage.
+    
+    Strips raw emails, names, and other PII, keeping only:
+    - Hashed identifiers (for matching)
+    - Email domains (for analysis)
+    - Event metadata (timestamps, IDs)
+    - Non-PII properties
+    """
+    if not event_data:
+        return {}
+    
+    # Extract email-related fields that need sanitization
+    email_fields = ["to", "from", "email", "recipient", "sender", "reply_to"]
+    subject = event_data.get("subject", "")
+    click = event_data.get("click")
+    
+    # Build sanitized payload
+    sanitized: dict[str, Any] = {
+        "email_id": event_data.get("email_id"),
+        "recipient_hash": hash_identifier(event_data.get("to") if isinstance(event_data.get("to"), str) else None),
+        "recipient_domain": extract_email_domain(event_data.get("to") if isinstance(event_data.get("to"), str) else None),
+        "sender_domain": extract_email_domain(event_data.get("from") if isinstance(event_data.get("from"), str) else None),
+        "subject_hash": hash_identifier(subject.strip().lower() if isinstance(subject, str) else None),
+        "timestamp": event_data.get("created_at") or event_data.get("timestamp"),
+    }
+    
+    # Add click domain if present
+    if isinstance(click, dict):
+        click_url = str(click.get("link") or click.get("url") or "").strip()
+        if click_url:
+            click_domain = urlparse(click_url).netloc.lower()
+            if click_domain:
+                sanitized["click_domain"] = click_domain
+    elif isinstance(click, str):
+        click_domain = urlparse(click).netloc.lower()
+        if click_domain:
+            sanitized["click_domain"] = click_domain
+    
+    # Add user agent (not PII)
+    if event_data.get("user_agent"):
+        sanitized["user_agent"] = event_data.get("user_agent")
+    
+    # Add KBO/company metadata if present (not PII)
+    for key in ("kbo_number", "company_number", "organization_number"):
+        if event_data.get(key):
+            sanitized[key] = event_data.get(key)
+    
+    # Add nested metadata if present
+    if event_data.get("metadata"):
+        sanitized["metadata"] = event_data.get("metadata")
+    
+    # Filter out None/empty values
+    return {k: v for k, v in sanitized.items() if v not in (None, "")}
 
 
 def extract_recipient_email(event_data: dict[str, Any]) -> str | None:
@@ -342,17 +414,17 @@ def update_engagement_score(email: str, event_type: str, event_data: dict) -> di
             cursor.execute(
                 """
                 INSERT INTO company_engagement (
-                    company_id, kbo_number, email, event_type, event_weight,
+                    company_id, kbo_number, email_hash, event_type, event_weight,
                     event_data, created_at
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     company_id,
                     kbo_number,
-                    normalized_email,
+                    hash_identifier(normalized_email),
                     event_type,
                     weight,
-                    json.dumps(event_data),
+                    json.dumps(sanitize_event_data(event_data)),
                     datetime.now(UTC),
                 ),
             )
@@ -806,10 +878,10 @@ def init_database():
                 id SERIAL PRIMARY KEY,
                 company_id UUID REFERENCES companies(id),
                 kbo_number VARCHAR(20) NOT NULL,
-                email VARCHAR(255),
+                email_hash VARCHAR(64),  -- SHA-256 hash for privacy
                 event_type VARCHAR(50) NOT NULL,
                 event_weight INTEGER NOT NULL DEFAULT 0,
-                event_data JSONB,
+                event_data JSONB,  -- Sanitized: no raw emails or PII
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             )
         """)

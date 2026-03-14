@@ -246,7 +246,7 @@ pytest tests/unit/test_webhook_gateway.py -v
 
 **Expected:** 48 tests pass.
 
-**Acceptance:** Pass if all privacy checks pass (noting documented divergence in event metadata).
+**Acceptance:** Pass if all privacy checks pass (all layers now verified, no raw PII in CDP core).
 
 ---
 
@@ -418,7 +418,7 @@ uv run python scripts/verify_acceptance_criteria.py
 ✅ AC-2: NL Segmentation - PASS (routing guard active)
 ✅ AC-3: Segment Activation - PASS (avg latency 0.28s)
 ✅ AC-4: Engagement Tracking - PASS (event processor healthy)
-⚠️  AC-5: Privacy Boundary - PARTIAL (raw email in metadata)
+✅ AC-5: Privacy Boundary - PASS (all layers verified, no raw PII)
 ✅ AC-6: Data Scale - PASS (1,940,603 records)
 ✅ AC-7: Source System Sync - PASS (all sources active)
 ✅ AC-8: Event Writeback - PASS (webhook gateway operational)

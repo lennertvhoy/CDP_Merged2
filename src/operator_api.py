@@ -21,6 +21,7 @@ from fastapi import FastAPI, File, Form, HTTPException, Request, Response, Uploa
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+from src.services.local_account_auth import LocalAccountStore
 from src.services.operator_auth import (
     authenticate_password_user,
     extract_request_user_context,
@@ -323,3 +324,64 @@ async def operator_download(filename: str):
         "text/csv" if Path(filename).suffix.lower() == ".csv" else "application/octet-stream"
     )
     return FileResponse(path=file_path, media_type=media_type, filename=filename)
+
+
+
+def _is_admin_user(user_context: dict[str, Any] | None) -> bool:
+    """Check if the current user has admin privileges."""
+    if user_context is None:
+        return False
+    metadata = user_context.get("metadata", {})
+    return bool(metadata.get("is_admin", False))
+
+
+@app.get("/api/operator/admin/users")
+async def operator_admin_list_users(request: Request) -> dict:
+    """List all local accounts (admin only)."""
+    user_context = extract_request_user_context(request)
+    
+    if operator_auth_enabled() and user_context is None:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    if not _is_admin_user(user_context):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    store = LocalAccountStore()
+    try:
+        accounts = await store.list_accounts(include_inactive=True)
+        return {
+            "status": "ok",
+            "users": [
+                {
+                    "account_id": acc.account_id,
+                    "identifier": acc.identifier,
+                    "display_name": acc.display_name,
+                    "is_admin": acc.is_admin,
+                    "is_active": acc.is_active,
+                    "created_at": acc.created_at.isoformat() if acc.created_at else None,
+                    "last_login_at": acc.last_login_at.isoformat() if acc.last_login_at else None,
+                }
+                for acc in accounts
+            ],
+            "total": len(accounts),
+        }
+    finally:
+        await store.close()
+
+
+@app.get("/api/operator/admin/me")
+async def operator_admin_me(request: Request) -> dict:
+    """Get current user's admin status."""
+    user_context = extract_request_user_context(request)
+    
+    if operator_auth_enabled() and user_context is None:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    return {
+        "status": "ok",
+        "user": {
+            "identifier": user_context.get("identifier") if user_context else None,
+            "display_name": user_context.get("display_name") if user_context else None,
+            "is_admin": _is_admin_user(user_context),
+        },
+    }

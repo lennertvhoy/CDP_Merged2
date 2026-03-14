@@ -153,6 +153,7 @@ async def build_operator_bootstrap(user_context: dict[str, Any] | None = None) -
                 {
                     "identifier": user_context["identifier"],
                     "display_name": user_context.get("display_name"),
+                    "is_admin": user_context.get("metadata", {}).get("is_admin", False),
                 }
                 if user_context
                 else None

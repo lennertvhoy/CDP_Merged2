@@ -10,6 +10,61 @@
 ## Active
 Dependency-manager note: `uv` migration plus the follow-on GitHub CI repair are complete as of 2026-03-10 17:50 CET. Commit `7e6c432` is green on run `22913778035`; the first red uv push (`1978e31`) and the intermediate partial repair (`fb85742`) are now superseded history, not active queue items.
 
+### P0: Architecture Hardening - Tracardi Optionalization
+
+**Status:** DECISION RECORDED - Implementation pending
+**Discovered:** 2026-03-14 via architecture review
+**Last Updated:** 2026-03-14 11:32 CET
+**Severity:** HIGH
+**Goal:** Formalize Tracardi demotion from core dependency to optional activation adapter.
+
+#### Decisions Recorded
+- Tracardi is no longer a core dependency for CDP_Merged
+- Authoritative demo/runtime path is PostgreSQL + first-party operator shell + first-party event/writeback logic
+- Tracardi CE limitations are reclassified as optional-platform limitation, not core delivery blocker
+
+#### Required Actions
+1. Update all documentation to describe Tracardi as optional (not core)
+2. Remove Tracardi from default local stack (docker-compose) - make it opt-in
+3. Document decision in PROJECT_STATE.yaml architecture section
+4. Verify first-party event processor covers all critical activation paths
+5. Decide keep-vs-remove posture for Tracardi in CI/CD and default deployments
+
+### ✅ COMPLETE: Operator Shell Admin Panel + Basic Admin Authorization
+
+**Status:** COMPLETE - Admin panel implemented, basic authorization verified
+**Discovered:** 2026-03-14 via public ngrok verification
+**Completed:** 2026-03-14 12:00 CET
+**Severity:** HIGH
+**Summary:** |
+  Admin panel now live at https://kbocdpagent.ngrok.app/admin
+  Basic admin authorization (boolean is_admin) implemented
+  NOT full RBAC - only admin/user distinction exists
+
+#### Verified State
+- Public admin URL: `https://kbocdpagent.ngrok.app/admin` (200 OK)
+- `/admin` page shows user list for admins, 403-style error for non-admins
+- `/operator-api/admin/users` - server-side protected (401/403)
+- `/operator-api/admin/me` - returns current user's admin status
+- `is_admin` exposed in bootstrap payload at `session.user.is_admin`
+- Admin shield icon appears in sidebar for admin users
+
+#### Authorization Model
+- **Type:** Basic admin authorization (NOT RBAC)
+- **Mechanism:** Boolean `is_admin` flag in PostgreSQL `app_auth_local_accounts` table
+- **Enforcement:** Server-side API checks + client-side UI adaptation
+- **Limitations:** No roles, no permissions, no multi-role system
+- **Current admin:** lennertvhoy@gmail.com
+
+#### Files Modified
+- `src/services/operator_bridge.py` - expose is_admin in bootstrap
+- `src/config.py` - add CHAINLIT_LOCAL_ACCOUNT_AUTH_ENABLED setting
+- `src/operator_api.py` - add /admin/users and /admin/me endpoints
+- `apps/operator-shell/lib/types/operator.ts` - add is_admin to types
+- `apps/operator-shell/components/sidebar.tsx` - add Admin shield link
+- `apps/operator-shell/components/operator-shell-app.tsx` - pass isAdmin prop
+- `apps/operator-shell/app/admin/page.tsx` - new admin page component
+
 ### P0: Enrichment Coverage And Optimization
 
 **Status:** ACTIVE

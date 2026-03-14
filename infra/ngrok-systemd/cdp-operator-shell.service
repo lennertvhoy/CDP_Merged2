@@ -1,0 +1,35 @@
+[Unit]
+Description=CDP Operator Shell (Next.js on port 3000)
+Documentation=file:///var/home/ff/Documents/CDP_Merged/apps/operator-shell/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/home/ff/Documents/CDP_Merged/apps/operator-shell
+Environment="HOME=/var/home/ff"
+Environment="USER=ff"
+Environment="PATH=/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/bin:/usr/bin:/bin"
+Environment="NODE_ENV=development"
+
+# Check node_modules exists
+ExecStartPre=/bin/bash -lc 'test -d /var/home/ff/Documents/CDP_Merged/apps/operator-shell/node_modules || (echo "node_modules not found, run npm install"; exit 1)'
+
+# Start the Next.js dev server
+ExecStart=/bin/bash -lc 'cd /var/home/ff/Documents/CDP_Merged/apps/operator-shell && npm run dev'
+
+# Restart policy
+Restart=always
+RestartSec=5
+
+# Graceful shutdown
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cdp-operator-shell
+
+[Install]
+WantedBy=default.target

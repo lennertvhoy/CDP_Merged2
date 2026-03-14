@@ -45,15 +45,17 @@
 | No PII in CDP core | PostgreSQL stores only KBO/UID; PII in source systems | ✅ Verified | `companies` table has no name/email/phone columns |
 | UID-first design | All linking via KBO number or organization UID | ✅ Verified | `enterprise_number` is primary key |
 | Anonymous Tracardi profiles | Profiles store traits, not PII | ✅ Verified | 84 anonymous profiles in Tracardi dashboard |
-| Event metadata sanitization | Raw email hashed before downstream projection | ⚠️ Partial | Gateway implements `sanitize_resend_event_data()` but raw email still present in some event metadata |
+| Event metadata sanitization | Raw email hashed before storage and downstream projection | ✅ Verified | `sanitize_resend_event_data()` in gateway + `sanitize_event_data()` in event processor |
+| Engagement data storage | Email hashed, event data sanitized | ✅ Verified | `company_engagement.email_hash` + sanitized `event_data` JSONB |
 
-**Known Divergence:**
-| Layer | Target | Current | Gap |
-|-------|--------|---------|-----|
+**Privacy Layers (All Verified):**
+| Layer | Target | Current | Status |
+|-------|--------|---------|--------|
 | PostgreSQL core | UID-first | UID-first | ✅ OK |
 | Tracardi profiles | Anonymous | Anonymous | ✅ OK |
-| Event metadata | Hashed only | Raw email present | ⚠️ Known divergence |
-| Gateway forward | Sanitized | Sanitized | ✅ OK |
+| Event metadata (stored) | Hashed only | Hashed only | ✅ Fixed 2026-03-14 |
+| Event metadata (gateway) | Sanitized | Sanitized | ✅ OK |
+| Engagement records | No raw PII | `email_hash` + sanitized `event_data` | ✅ Fixed 2026-03-14 |
 
 ---
 
@@ -182,7 +184,7 @@ From the original POC specification:
 | Only 1 company with full 4-source linkage | Limits 360° demo scope | Demo data population scripts available | Short-term |
 | Flexmail not integrated | Limits platform options | Resend verified as alternative; Flexmail backlog | Medium-term |
 | Tracardi workflow runtime blocked | CE limitation for automation | Event processor provides equivalent local automation | Documented limitation |
-| Event metadata carries raw email | Privacy divergence | Gateway sanitizes downstream; fix planned | Medium-term |
+| Event metadata privacy | Fixed 2026-03-14 | Event processor now hashes emails and sanitizes event_data | ✅ Resolved |
 | Email coverage 14-17% | B2B Belgian market reality | Realistic expectations set | Documented |
 
 ---

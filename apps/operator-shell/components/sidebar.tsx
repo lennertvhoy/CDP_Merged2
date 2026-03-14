@@ -6,9 +6,11 @@ import {
   MessageSquare,
   MessageSquareWarning,
   Settings,
+  Shield,
   TerminalSquare,
   Users,
 } from "lucide-react";
+import Link from "next/link";
 import type { TabId } from "@/lib/types/operator";
 import type { OperatorShellAdapter } from "@/lib/adapters/operator-shell";
 import { FeedbackButton } from "./feedback-button";
@@ -18,11 +20,13 @@ export function Sidebar({
   onTabChange,
   userInitials,
   adapter,
+  isAdmin = false,
 }: {
   activeTab: TabId;
   onTabChange: (tab: TabId) => void;
   userInitials: string;
   adapter: OperatorShellAdapter;
+  isAdmin?: boolean;
 }) {
   return (
     <div className="w-16 flex-shrink-0 border-r border-zinc-800 bg-zinc-950 flex flex-col items-center py-4 gap-6 z-10">
@@ -41,6 +45,15 @@ export function Sidebar({
       </nav>
 
       <div className="mt-auto flex flex-col gap-4 w-full items-center">
+        {isAdmin && (
+          <Link
+            href="/admin"
+            className="w-10 h-10 flex items-center justify-center rounded-[6px] transition-colors text-zinc-500 hover:text-emerald-400 hover:bg-zinc-900"
+            title="Admin Panel"
+          >
+            <Shield size={18} />
+          </Link>
+        )}
         <FeedbackButton
           adapter={adapter}
           surface="global"

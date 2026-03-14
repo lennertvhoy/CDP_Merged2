@@ -1,0 +1,10 @@
+version: 3
+
+agent:
+  authtoken: 2bc3FVHB9VrOjNziNXAdB78liz5_7SzMLgAxjYVLb1PuMJg68
+
+endpoints:
+  - name: cdp
+    url: https://kbocdpagent.ngrok.app
+    upstream:
+      url: http://127.0.0.1:3000

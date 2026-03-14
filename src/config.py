@@ -126,6 +126,10 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = Field(default="INFO", description="Logging level")
     DEBUG: bool = Field(default=False, description="Enable debug mode")
     CHAINLIT_PORT: int = Field(default=8000, description="Port for Chainlit UI")
+    CHAINLIT_LOCAL_ACCOUNT_AUTH_ENABLED: bool = Field(
+        default=False,
+        description="Enable PostgreSQL-backed local account authentication for the operator shell",
+    )
     CHAINLIT_DEV_AUTH_ENABLED: bool = Field(
         default=False,
         description="Enable local-only password auth for authenticated Chainlit verification before Entra rollout",
