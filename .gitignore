@@ -75,6 +75,3 @@ ngrok-*.tgz
 
 # Large artifacts directories
 restore_artifacts/
-
-# Large artifacts directories
-restore_artifacts/
