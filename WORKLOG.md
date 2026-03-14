@@ -4,6 +4,115 @@
 
 ---
 
+## 2026-03-14 (Illustrated Guide v3.3 + Architecture Truth + PDF Export)
+
+### Task: Execute three backlog items — Guide v3.3, Conformity Packaging, PDF Export
+
+**Type:** docs_or_process_only  
+**Status:** COMPLETE  
+**Timestamp:** 2026-03-14 16:15 CET  
+**Git Head:** `a49bfba`  
+**Worktree:** Clean
+
+**Summary:**
+Completed all three backlog items in one bounded session:
+1. ✅ Illustrated Guide v3.3 credibility pass — added authenticated browser continuation evidence + architecture truth
+2. ✅ Business-case conformity packaging — updated matrix and acceptance criteria
+3. ✅ PDF export and verification — generated fresh PDF, verified 21 pages render correctly
+
+**Phase A — Re-verification Results:**
+| Component | Expected | Actual | Status |
+|-----------|----------|--------|--------|
+| Git worktree | Clean | Clean at `16c0a48` | ✅ |
+| Port 3000 | Active | next-server | ✅ |
+| Port 8170 | Active | uvicorn | ✅ |
+| Port 9223 | Active | msedge | ✅ |
+| Port 8000 | Inactive | No listener | ✅ |
+| Chainlit process | None | No process | ✅ |
+| Authenticated screenshots | Exist | 4 files in output/browser_automation/ | ✅ |
+
+**Phase B — Illustrated Guide v3.3 Changes:**
+
+1. **New Architecture Truth header** — Added table showing Operator Shell/Operator API/PostgreSQL/Azure OpenAI/Edge CDP as active, Tracardi as optional, Chainlit as deprecated
+
+2. **New Evidence Overview rows:**
+   - Authenticated browser continuation (Phase 9)
+   - Operator Shell primary UI (Architecture)
+   - Azure OpenAI-only posture (Architecture)
+
+3. **New Phase 9: Authenticated Browser Continuation Evidence**
+   - Teamleader Focus proof with screenshot evidence
+   - Exact Online proof with screenshot evidence
+   - Browser automation architecture table
+   - Security note on PII handling
+   - Verification commands
+
+4. **New Architecture Truth Summary section**
+   - Current runtime verification table
+   - Deprecated/removed components table
+   - Truth layers table
+
+5. **Updated Screenshot Inventory:**
+   - Added SG-08 (Teamleader authenticated)
+   - Added SG-09 (Exact Online authenticated)
+
+6. **Updated Verification Checklist:**
+   - Added #17 Authenticated browser continuation
+   - Added #18 Operator Shell primary UI
+   - Added #19 Azure OpenAI-only posture
+
+7. **Updated Remaining Evidence Gaps:**
+   - Added browser form interaction as low-priority gap
+   - Documented resolved items in this pass
+
+**Phase C — Business Conformity Matrix Changes:**
+
+1. **New Section 9: Browser Automation & Authenticated Continuation**
+   - CDP-based browser control
+   - Authenticated session continuation
+   - Source system UI access
+   - Session persistence
+   - Security pattern documentation
+   - Verification artifacts table
+
+2. **New Architecture Truth section**
+   - Verified runtime state table
+   - Deprecated/removed components table
+   - Azure posture table
+
+3. **Version bump:** 1.0 → 1.1
+
+**Phase C — Acceptance Criteria Changes:**
+
+1. **Fixed AC-2 (NL Segmentation)** — Replaced Chainlit/port 8000 references with Operator Shell/port 3000
+2. **Fixed AC-8 (Event Writeback)** — Changed webhook URL from port 8000 to 5001
+3. **New AC-9: Browser Automation & Authenticated Continuation** — Complete verification steps
+4. **Updated Sign-Off Matrix** — Added AC-9
+5. **Updated Automated Verification** — Added AC-9 to expected output
+6. **Version bump:** 1.0 → 1.1
+
+**Phase D — PDF Export:**
+
+- Generated `docs/ILLUSTRATED_GUIDE_v3.3.pdf` via Playwright + browser CDP
+- Size: 168,900 bytes (165 KB)
+- Pages: 21
+- Format: A4
+- Verified readable with pdftotext
+- Contains all new sections including Architecture Truth
+
+**Files Changed:**
+- `docs/ILLUSTRATED_GUIDE.md` (+200 lines, Phase 9 + Architecture Truth)
+- `docs/BUSINESS_CONFORMITY_MATRIX.md` (+60 lines, Section 9 + Architecture)
+- `docs/ACCEPTANCE_CRITERIA.md` (+50 lines, AC-9 + fixes)
+- `docs/ILLUSTRATED_GUIDE_v3.3.pdf` (new, 165KB)
+
+**Verification:**
+- Worktree clean at `a49bfba`
+- Runtime: 3000/8170/9223 active, no Chainlit/8000
+- PDF renders correctly with all new content
+
+---
+
 ## 2026-03-14 (Privacy Boundary Fix - Gap Resolution)
 
 ### Task: Resolve event metadata privacy divergence (Gap #3)
