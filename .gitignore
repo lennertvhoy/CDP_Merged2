@@ -65,9 +65,16 @@ logs/*.pid
 .playwright-cli/*.log
 .playwright-cli/*.png
 .playwright-cli/page-*.yml
-output/ILLUSTRATED_GUIDE.*
-output/demo_screenshots/
-output/operator_eval_runs/
+
+# Output directory - generated artifacts only (screenshots, test outputs, temp files)
+output/
+
+# ngrok binary - should be downloaded, not tracked
+ngrok
+ngrok-*.tgz
+
+# Large artifacts directories
+restore_artifacts/
 
 # Large artifacts directories
 restore_artifacts/
