@@ -29,7 +29,12 @@ from pydantic import BaseModel, Field
 
 from src.graph.workflow import compile_workflow
 
-from src.services.local_account_auth import LocalAccountStore
+from src.services.local_account_auth import (
+    LocalAccountStore,
+    LocalAccountExistsError,
+    LocalAccountNotFoundError,
+    PASSWORD_MIN_LENGTH,
+)
 from src.services.operator_auth import (
     authenticate_password_user,
     extract_request_user_context,
@@ -531,3 +536,159 @@ async def operator_admin_me(request: Request) -> dict:
             "is_admin": _is_admin_user(user_context),
         },
     }
+
+
+
+# ============================================================================
+# Admin User Management Endpoints
+# ============================================================================
+
+class CreateUserRequest(BaseModel):
+    """Request to create a new local account."""
+    identifier: str = Field(min_length=1, max_length=255, description="Email or username")
+    display_name: str | None = Field(default=None, max_length=255)
+    password: str = Field(min_length=12, description=f"Password (min {PASSWORD_MIN_LENGTH} characters)")
+    is_admin: bool = Field(default=False)
+    is_active: bool = Field(default=True)
+
+
+class UpdateUserRequest(BaseModel):
+    """Request to update an existing local account."""
+    display_name: str | None = Field(default=None, max_length=255)
+    is_admin: bool | None = Field(default=None)
+    is_active: bool | None = Field(default=None)
+
+
+class ResetPasswordRequest(BaseModel):
+    """Request to reset a user's password."""
+    new_password: str = Field(min_length=12, description=f"New password (min {PASSWORD_MIN_LENGTH} characters)")
+
+
+@app.post("/api/operator/admin/users")
+async def operator_admin_create_user(request: Request, payload: CreateUserRequest) -> dict:
+    """Create a new local account (admin only)."""
+    user_context = extract_request_user_context(request)
+    
+    if operator_auth_enabled() and user_context is None:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    if not _is_admin_user(user_context):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    store = LocalAccountStore()
+    try:
+        account = await store.create_account(
+            identifier=payload.identifier,
+            password=payload.password,
+            display_name=payload.display_name,
+            is_admin=payload.is_admin,
+            is_active=payload.is_active,
+        )
+        return {
+            "status": "ok",
+            "message": f"User '{account.identifier}' created successfully",
+            "user": {
+                "account_id": account.account_id,
+                "identifier": account.identifier,
+                "display_name": account.display_name,
+                "is_admin": account.is_admin,
+                "is_active": account.is_active,
+                "created_at": account.created_at.isoformat() if account.created_at else None,
+            },
+        }
+    except LocalAccountExistsError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        await store.close()
+
+
+@app.patch("/api/operator/admin/users/{identifier:path}")
+async def operator_admin_update_user(
+    request: Request,
+    identifier: str,
+    payload: UpdateUserRequest,
+) -> dict:
+    """Update a local account (admin only)."""
+    user_context = extract_request_user_context(request)
+    
+    if operator_auth_enabled() and user_context is None:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    if not _is_admin_user(user_context):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Prevent admins from deactivating themselves
+    current_identifier = user_context.get("identifier") if user_context else None
+    if identifier.lower() == current_identifier and payload.is_active is False:
+        raise HTTPException(status_code=400, detail="Cannot deactivate your own account")
+    
+    store = LocalAccountStore()
+    try:
+        # Check if user exists
+        account = await store.get_account(identifier, include_inactive=True)
+        if account is None:
+            raise HTTPException(status_code=404, detail=f"User '{identifier}' not found")
+        
+        # Apply updates
+        if payload.is_active is not None:
+            account = await store.set_account_active(identifier, is_active=payload.is_active)
+        
+        # Note: display_name and is_admin updates would need additional store methods
+        # For now, we support the critical is_active toggle
+        
+        return {
+            "status": "ok",
+            "message": f"User '{identifier}' updated successfully",
+            "user": {
+                "account_id": account.account_id,
+                "identifier": account.identifier,
+                "display_name": account.display_name,
+                "is_admin": account.is_admin,
+                "is_active": account.is_active,
+                "updated_at": account.updated_at.isoformat() if account.updated_at else None,
+            },
+        }
+    except LocalAccountNotFoundError:
+        raise HTTPException(status_code=404, detail=f"User '{identifier}' not found")
+    finally:
+        await store.close()
+
+
+@app.post("/api/operator/admin/users/{identifier:path}/reset-password")
+async def operator_admin_reset_password(
+    request: Request,
+    identifier: str,
+    payload: ResetPasswordRequest,
+) -> dict:
+    """Reset a user's password (admin only)."""
+    user_context = extract_request_user_context(request)
+    
+    if operator_auth_enabled() and user_context is None:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    if not _is_admin_user(user_context):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    store = LocalAccountStore()
+    try:
+        account = await store.update_password(identifier, payload.new_password)
+        return {
+            "status": "ok",
+            "message": f"Password reset successfully for '{identifier}'",
+            "user": {
+                "account_id": account.account_id,
+                "identifier": account.identifier,
+                "display_name": account.display_name,
+                "is_admin": account.is_admin,
+                "is_active": account.is_active,
+                "updated_at": account.updated_at.isoformat() if account.updated_at else None,
+            },
+        }
+    except LocalAccountNotFoundError:
+        raise HTTPException(status_code=404, detail=f"User '{identifier}' not found")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        await store.close()
