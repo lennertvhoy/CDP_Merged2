@@ -75,3 +75,6 @@ ngrok-*.tgz
 
 # Large artifacts directories
 restore_artifacts/
+
+# Export directory - temporary bundle artifacts
+export/
