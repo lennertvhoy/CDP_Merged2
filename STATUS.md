@@ -2,7 +2,8 @@
 
 **Platform:** Azure target architecture with local-only execution mode
 **Current Execution Mode:** Local-only (`Azure deployment path paused to save costs`)
-**Last Updated:** 2026-03-10 17:50 CET
+**Last Updated:** 2026-03-14 10:44 CET
+**Backlog Version:** v2 (compressed to 5 epics, NOW/Next/Later/Watchlist structure)
 **Purpose:** Human-readable current snapshot
 **Structured Source:** `PROJECT_STATE.yaml`
 

@@ -4,6 +4,59 @@
 
 ---
 
+## 2026-03-14 (Backlog v2 Restructuring)
+
+### Task: Compress the overloaded backlog into 5 active epics with a tight NOW/Next/Later/Watchlist queue
+
+**Type:** docs_or_process_only
+**Status:** COMPLETE
+**Timestamp:** 2026-03-14 10:44 CET
+**Git Head:** `not rechecked`
+
+**Summary:**
+Received comprehensive feedback that the existing backlog (v1) had become operationally mature but editorially overloaded. It was trying to be: strategic roadmap, execution backlog, risk register, architecture guardrail, verification ledger, documentation audit, product critique, and future standards watchlist all at once.
+
+Restructured into **Backlog v2** with:
+1. **Five Active Epics** (replacing 14 milestones POC/0A/0B/0C/0D/0-7):
+   - Epic 1: Credible Local Demo (packaging > backend now)
+   - Epic 2: Enrichment Coverage (background throughput program)
+   - Epic 3: Colleague-Facing Product Shell (per-user workspaces)
+   - Epic 4: Data Model and Runtime Hardening (src/models/ fate decision)
+   - Epic 5: Production Hardening (secrets, observability, runbooks)
+
+2. **Active Queue** (NOW ≤10 items, Next, Later, Watchlist) — agents start from NOW, not from the bottom of the file
+
+3. **Azure Language Frozen** to match PROJECT_STATE.yaml's `local_only_permanent` reality — no more "paused" implying possible return to full Azure hosting
+
+4. **Explicit src/models/ Decision Point** — keep-and-complete or archive; no half-alive state
+
+5. **Watchlist Moved to Appendix** — A2A, AG-UI/A2UI, MCP expansion, Responses API alignment, etc. Not active bottlenecks
+
+6. **Architectural Truth Preserved** — PostgreSQL truth layer, source PII boundaries, Tracardi activation layer, chatbot query plane all remain prominent
+
+**Key Feedback Incorporated:**
+- Demo packaging layer is the risk, not fundamental capability (backend is further along than presentation)
+- Enrichment is a background throughput program, not the main daily narrative
+- The 5-epic structure compresses without losing rigor
+- Removed duplication (conformity matrix, acceptance criteria, maturity labels appeared in multiple places)
+
+**Files Changed:**
+- `BACKLOG.md` (complete rewrite from v1 → v2)
+- `STATUS.md` (updated last-updated header to reference v2)
+
+**Verification:**
+- `wc -l BACKLOG.md` -> ~340 lines (down from ~633 lines, ~46% reduction)
+- `rg "Epic [1-5]" BACKLOG.md` -> 5 epics found
+- `rg "^### (NOW|NEXT|LATER|WATCHLIST)" BACKLOG.md` -> queue structure confirmed
+- `rg "src/models/" BACKLOG.md` -> explicit decision point documented
+
+**Follow-up:**
+1. Work from NOW queue: guide v3.3 credibility pass, conformity matrix, acceptance appendix, src/models/ decision
+2. Keep enrichment moving as background throughput (verify via PostgreSQL counts, not runner logs)
+3. Verify Entra auth after March 14, 2026 quota reset
+
+---
+
 ## 2026-03-09 (Repo Audit Backlog Pass And Secret Sanitization)
 
 ### Task: Scan the repo for unfinished, legacy, organizational, and hygiene issues; fold the real findings into the backlog
