@@ -472,6 +472,30 @@ class LocalAccountStore:
             normalized_identifier,
         )
 
+    async def delete_account(self, identifier: str) -> None:
+        """Permanently delete a local account.
+        
+        Returns silently if account does not exist.
+        Raises LocalAccountStoreError if deletion fails.
+        """
+        normalized_identifier = normalize_local_account_identifier(identifier)
+        if normalized_identifier is None:
+            raise ValueError("Local account identifier must not be empty.")
+
+        # Execute DELETE and verify something was deleted
+        row = await self._fetchrow(
+            """
+            DELETE FROM app_auth_local_accounts
+            WHERE identifier = $1
+            RETURNING account_id
+            """,
+            normalized_identifier,
+        )
+        if row is None:
+            raise LocalAccountNotFoundError(
+                f"Local account {normalized_identifier!r} does not exist."
+            )
+
 
 async def authenticate_local_account(
     identifier: str,

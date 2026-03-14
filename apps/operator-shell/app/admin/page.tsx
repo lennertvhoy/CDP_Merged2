@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Shield, Users, Loader2, AlertTriangle, ArrowLeft, Plus, Key, Power, UserCog } from "lucide-react";
+import { Shield, Users, Loader2, AlertTriangle, ArrowLeft, Plus, Key, Power, UserCog, Trash2 } from "lucide-react";
 
 interface User {
   account_id: string;
@@ -55,6 +55,13 @@ export default function AdminPage() {
   const [editForm, setEditForm] = useState({ display_name: "", is_admin: false });
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+
+  // Delete user modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteUser, setDeleteUser] = useState<User | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -210,6 +217,40 @@ export default function AdminPage() {
       setEditError(err instanceof Error ? err.message : "Failed to update user");
     } finally {
       setEditLoading(false);
+    }
+  }
+
+  async function handleDeleteUser(e: React.FormEvent) {
+    e.preventDefault();
+    if (!deleteUser) return;
+
+    // Require typing the identifier to confirm
+    if (deleteConfirmText.trim().toLowerCase() !== deleteUser.identifier.trim().toLowerCase()) {
+      setDeleteError("Confirmation text does not match the user's identifier");
+      return;
+    }
+
+    setDeleteLoading(true);
+    setDeleteError(null);
+
+    try {
+      const response = await fetch(`/operator-api/admin/users/${encodeURIComponent(deleteUser.identifier)}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ detail: "Failed to delete user" }));
+        throw new Error(err.detail || `HTTP ${response.status}`);
+      }
+
+      await loadUsers();
+      setShowDeleteModal(false);
+      setDeleteUser(null);
+      setDeleteConfirmText("");
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Failed to delete user");
+    } finally {
+      setDeleteLoading(false);
     }
   }
 
@@ -414,6 +455,18 @@ export default function AdminPage() {
                           title={user.is_active ? "Deactivate" : "Activate"}
                         >
                           <Power size={16} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setDeleteUser(user);
+                            setDeleteConfirmText("");
+                            setDeleteError(null);
+                            setShowDeleteModal(true);
+                          }}
+                          className="p-2 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors"
+                          title="Delete User"
+                        >
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
@@ -637,6 +690,74 @@ export default function AdminPage() {
                 >
                   {editLoading && <Loader2 size={14} className="animate-spin" />}
                   Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete User Modal */}
+      {showDeleteModal && deleteUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-zinc-900 border border-rose-500/30 rounded-xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center">
+                <AlertTriangle size={20} className="text-rose-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-rose-400">Delete User</h3>
+                <p className="text-sm text-zinc-500">This action cannot be undone</p>
+              </div>
+            </div>
+            <form onSubmit={handleDeleteUser} className="space-y-4">
+              <div className="bg-rose-500/5 border border-rose-500/20 rounded-lg p-4">
+                <p className="text-sm text-zinc-300 mb-2">
+                  You are about to permanently delete:
+                </p>
+                <p className="text-sm font-medium text-rose-400 mb-1">
+                  {deleteUser.display_name || deleteUser.identifier}
+                </p>
+                <p className="text-xs text-zinc-500">{deleteUser.identifier}</p>
+              </div>
+              <div>
+                <label className="block text-sm text-zinc-400 mb-1">
+                  Type <span className="text-rose-400 font-medium">{deleteUser.identifier}</span> to confirm
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  className="w-full px-3 py-2 bg-zinc-950 border border-rose-500/30 rounded-lg text-zinc-100 focus:outline-none focus:border-rose-500/50"
+                  placeholder="Enter identifier to confirm deletion"
+                  autoFocus
+                />
+              </div>
+              {deleteError && (
+                <div className="text-sm text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg p-3">
+                  {deleteError}
+                </div>
+              )}
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeleteUser(null);
+                    setDeleteConfirmText("");
+                    setDeleteError(null);
+                  }}
+                  className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={deleteLoading || deleteConfirmText.trim().toLowerCase() !== deleteUser.identifier.trim().toLowerCase()}
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                >
+                  {deleteLoading && <Loader2 size={14} className="animate-spin" />}
+                  Delete Permanently
                 </button>
               </div>
             </form>

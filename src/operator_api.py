@@ -713,3 +713,61 @@ async def operator_admin_reset_password(
         raise HTTPException(status_code=400, detail=str(e))
     finally:
         await store.close()
+
+
+@app.delete("/api/operator/admin/users/{identifier:path}")
+async def operator_admin_delete_user(
+    request: Request,
+    identifier: str,
+) -> dict:
+    """Permanently delete a local account (admin only).
+    
+    Protections:
+    - Cannot delete your own account (would break current session)
+    - Cannot delete the last remaining admin (would lock out admin access)
+    """
+    user_context = extract_request_user_context(request)
+    
+    if operator_auth_enabled() and user_context is None:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    if not _is_admin_user(user_context):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    current_identifier = user_context.get("identifier") if user_context else None
+    normalized_target = identifier.strip().lower()
+    
+    # Prevent self-deletion
+    if current_identifier and current_identifier.lower() == normalized_target:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    
+    store = LocalAccountStore()
+    try:
+        # Get target account to check if it's the last admin
+        target_account = await store.get_account(identifier, include_inactive=True)
+        if target_account is None:
+            raise HTTPException(status_code=404, detail=f"User '{identifier}' not found")
+        
+        # Prevent deleting the last admin
+        if target_account.is_admin:
+            admin_count = await store.count_admin_accounts()
+            if admin_count <= 1:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Cannot delete the last admin account. Create another admin first."
+                )
+        
+        # Perform deletion
+        await store.delete_account(identifier)
+        
+        return {
+            "status": "ok",
+            "message": f"User '{identifier}' permanently deleted",
+            "deleted_identifier": identifier,
+        }
+    except LocalAccountNotFoundError:
+        raise HTTPException(status_code=404, detail=f"User '{identifier}' not found")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        await store.close()
