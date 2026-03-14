@@ -5,7 +5,7 @@
  * 
  * Completion detection uses multiple signals:
  * - Loading indicator disappears
- * - Send button leaves "Working" state
+ * - Send button leaves "Working" state  
  * - Assistant message content stabilizes
  * - Expected content appears (download link, count, etc.)
  */
@@ -48,16 +48,55 @@ async function waitForPageLoad(page) {
 }
 
 /**
+ * Get the last assistant message from the page
+ * Based on DOM structure: .flex.justify-start contains assistant messages
+ */
+async function getLastAssistantMessage(page) {
+  return await page.evaluate(() => {
+    // Assistant messages are in .flex.justify-start containers
+    const assistantContainers = document.querySelectorAll('.flex.justify-start');
+    if (assistantContainers.length === 0) return null;
+    
+    const lastContainer = assistantContainers[assistantContainers.length - 1];
+    const messageDiv = lastContainer.querySelector('.max-w-\[78ch\'], .rounded-\[24px\], [class*="bg-zinc-950"]');
+    return messageDiv ? messageDiv.textContent : lastContainer.textContent;
+  });
+}
+
+/**
+ * Get all messages (user and assistant)
+ */
+async function getAllMessages(page) {
+  return await page.evaluate(() => {
+    const messages = [];
+    const messageContainer = document.querySelector('.space-y-3');
+    if (!messageContainer) return messages;
+    
+    const rows = messageContainer.querySelectorAll(':scope > div');
+    for (const row of rows) {
+      const isUser = row.classList.contains('justify-end');
+      const isAssistant = row.classList.contains('justify-start');
+      const contentDiv = row.querySelector('[class*="rounded-"]');
+      const text = contentDiv ? contentDiv.textContent : row.textContent;
+      
+      if (isUser || isAssistant) {
+        messages.push({
+          role: isUser ? 'user' : 'assistant',
+          text: text?.trim() || ''
+        });
+      }
+    }
+    return messages;
+  });
+}
+
+/**
  * Enhanced completion detection with multiple signals
- * - Loading indicator disappears
- * - Send button returns to normal state
- * - Assistant message stabilizes (content stops changing)
- * - Optional: check for specific content
  */
 async function waitForResponse(page, options = {}) {
-  const maxWaitMs = options.maxWaitMs || 120000;
+  const maxWaitMs = options.maxWaitMs || 180000; // 3 minutes max
   const stabilityWindowMs = options.stabilityWindowMs || 3000;
-  const checkIntervalMs = 500;
+  const checkIntervalMs = 1000;
   const maxAttempts = maxWaitMs / checkIntervalMs;
   
   console.log(`[WAIT] Waiting for AI response (max ${maxWaitMs/1000}s, stability ${stabilityWindowMs}ms)...`);
@@ -65,59 +104,51 @@ async function waitForResponse(page, options = {}) {
   let attempts = 0;
   let lastMessageContent = '';
   let stabilityStartTime = null;
-  let lastMessageTimestamp = Date.now();
+  let startTime = Date.now();
   
   while (attempts < maxAttempts) {
     const state = await page.evaluate(() => {
-      // Check for loading indicators
-      const loadingIndicators = document.querySelectorAll(
-        '[class*="loading"], [class*="typing"], [class*="spinner"], [class*="dots"], [class*="animate-pulse"]'
-      );
+      // Check for loading indicators (dots/pulse animations)
+      const loadingIndicators = document.querySelectorAll('.animate-pulse, .animate-bounce, [class*="loading"], [class*="typing"]');
       const hasLoading = loadingIndicators.length > 0;
       
-      // Check send button state
-      const sendButton = document.querySelector('button[type="submit"], button:has-text("Send")');
-      const buttonText = sendButton ? sendButton.textContent : '';
-      const buttonDisabled = sendButton ? sendButton.disabled : false;
-      const buttonWorking = buttonText.toLowerCase().includes('working') || buttonDisabled;
-      
-      // Get last assistant message
-      const messages = document.querySelectorAll('.message, [class*="message"], [class*="assistant"]');
-      let lastMessageText = '';
-      let lastMessageIsAssistant = false;
-      
-      for (let i = messages.length - 1; i >= 0; i--) {
-        const msg = messages[i];
-        const isAssistant = msg.className.includes('assistant') || 
-                           msg.getAttribute('data-role') === 'assistant' ||
-                           msg.querySelector('[class*="assistant"]') !== null;
-        if (isAssistant) {
-          lastMessageText = msg.textContent || '';
-          lastMessageIsAssistant = true;
+      // Check send button state - look for "Working" text
+      const buttons = document.querySelectorAll('button');
+      let buttonWorking = false;
+      for (const btn of buttons) {
+        if (btn.textContent.toLowerCase().includes('working')) {
+          buttonWorking = true;
           break;
         }
+      }
+      
+      // Get last assistant message
+      const assistantContainers = document.querySelectorAll('.flex.justify-start');
+      let lastAssistantText = '';
+      if (assistantContainers.length > 0) {
+        const lastContainer = assistantContainers[assistantContainers.length - 1];
+        // Look for the message content div
+        const contentDiv = lastContainer.querySelector('div[class*="rounded-"], div[class*="border-"]');
+        lastAssistantText = contentDiv ? contentDiv.textContent : lastContainer.textContent;
       }
       
       return {
         hasLoading,
         buttonWorking,
-        lastMessageText: lastMessageText.substring(0, 1000),
-        lastMessageIsAssistant,
-        messageCount: messages.length
+        lastAssistantText: lastAssistantText?.substring(0, 2000) || '',
+        assistantCount: assistantContainers.length
       };
     });
     
-    // Check if we have a stable assistant message
-    const hasAssistantMessage = state.lastMessageIsAssistant && state.lastMessageText.length > 10;
-    const messageChanged = state.lastMessageText !== lastMessageContent;
+    const hasAssistantMessage = state.lastAssistantText.length > 10;
+    const messageChanged = state.lastAssistantText !== lastMessageContent;
     
     if (messageChanged) {
-      // Message is still changing
-      lastMessageContent = state.lastMessageText;
+      // Message is still streaming/changing
+      lastMessageContent = state.lastAssistantText;
       stabilityStartTime = null;
-      lastMessageTimestamp = Date.now();
-      if (attempts % 10 === 0) {
-        console.log(`[PROGRESS] Message changing... (${state.lastMessageText.substring(0, 80)}...)`);
+      if (attempts % 5 === 0) {
+        console.log(`[PROGRESS] Streaming... (${state.lastAssistantText.substring(0, 80)}...)`);
       }
     } else if (hasAssistantMessage && !state.hasLoading && !state.buttonWorking) {
       // Message stable, no loading, button ready
@@ -125,46 +156,51 @@ async function waitForResponse(page, options = {}) {
         stabilityStartTime = Date.now();
         console.log(`[STABLE] Message stabilized, waiting ${stabilityWindowMs}ms to confirm...`);
       } else if (Date.now() - stabilityStartTime >= stabilityWindowMs) {
-        console.log('[OK] Response complete (stable for ' + stabilityWindowMs + 'ms)');
+        const elapsed = Date.now() - startTime;
+        console.log(`[OK] Response complete in ${elapsed}ms`);
         return { 
           complete: true, 
-          content: state.lastMessageText,
-          elapsedMs: Date.now() - lastMessageTimestamp + stabilityWindowMs
+          content: state.lastAssistantText,
+          elapsedMs: elapsed
         };
       }
     }
     
     // Optional: check for specific content patterns
-    if (options.waitForPattern && state.lastMessageText.match(options.waitForPattern)) {
-      console.log('[OK] Response complete (pattern matched)');
+    if (options.waitForPattern && state.lastAssistantText.match(options.waitForPattern)) {
+      const elapsed = Date.now() - startTime;
+      console.log(`[OK] Response complete (pattern matched) in ${elapsed}ms`);
       return { 
         complete: true, 
-        content: state.lastMessageText,
-        elapsedMs: Date.now() - lastMessageTimestamp
+        content: state.lastAssistantText,
+        elapsedMs: elapsed
       };
     }
     
     await sleep(checkIntervalMs);
     attempts++;
     
-    if (attempts % 20 === 0) {
-      console.log(`[WAIT] Still waiting... (${Math.round(attempts * checkIntervalMs / 1000)}s elapsed)`);
+    if (attempts % 10 === 0) {
+      const elapsed = Math.round(attempts * checkIntervalMs / 1000);
+      console.log(`[WAIT] Still waiting... (${elapsed}s elapsed, loading=${state.hasLoading}, working=${state.buttonWorking})`);
     }
   }
   
-  console.log('[TIMEOUT] Max wait exceeded, returning current state');
+  const elapsed = Date.now() - startTime;
+  console.log(`[TIMEOUT] Max wait exceeded after ${elapsed}ms`);
   return { 
     complete: false, 
     content: lastMessageContent,
-    timeout: true
+    timeout: true,
+    elapsedMs: elapsed
   };
 }
 
 async function sendMessage(page, text) {
   console.log(`[ACTION] Sending message: "${text}"`);
   
-  // Find textarea using Playwright
-  const textarea = await page.$('textarea[placeholder*="question"], textarea[placeholder*="message"], textarea');
+  // Find textarea
+  const textarea = await page.$('textarea');
   if (!textarea) {
     console.error('[ERROR] No textarea found');
     return false;
@@ -178,7 +214,7 @@ async function sendMessage(page, text) {
   // Press Enter to send
   await textarea.press('Enter');
   console.log('[OK] Message sent');
-  await sleep(1000);
+  await sleep(500);
   return true;
 }
 
@@ -191,17 +227,19 @@ async function runSC14(page) {
   
   // Step 1: Find software companies
   await sendMessage(page, 'Find software companies in Antwerp.');
-  const searchResult = await waitForResponse(page, { maxWaitMs: 120000 });
+  const searchResult = await waitForResponse(page, { maxWaitMs: 180000 });
   await captureEvidence(page, 'sc14_search_results');
   
   if (!searchResult.complete) {
-    console.log('[WARN] Search response may be incomplete');
+    console.log('[WARN] Search response may be incomplete or timed out');
   }
+  
+  console.log(`[INFO] Search response: ${searchResult.content?.substring(0, 150)}...`);
   
   // Step 2: Export to CSV
   await sendMessage(page, 'Export these to CSV.');
   const exportResult = await waitForResponse(page, { 
-    maxWaitMs: 120000,
+    maxWaitMs: 180000,
     waitForPattern: /download|csv|file|export/i
   });
   const screenshot = await captureEvidence(page, 'sc14_export_response');
@@ -224,27 +262,15 @@ async function runSC14(page) {
   console.log(`[VERIFY] Stale path (port 8000): ${hasStalePath ? 'FOUND ✗' : 'NONE ✓'}`);
   console.log(`[VERIFY] Download URL found: ${downloadUrl || 'NONE'}`);
   
-  // Verify download works
-  let downloadWorks = false;
-  if (downloadUrl) {
-    try {
-      const fullUrl = `http://${downloadUrl}`;
-      console.log(`[VERIFY] Testing download: ${fullUrl}`);
-      // Note: Actual download test would require additional handling
-      downloadWorks = true; // Assume works if URL format is correct
-    } catch (e) {
-      console.log(`[VERIFY] Download test failed: ${e.message}`);
-    }
-  }
-  
   return {
     scenario: 'SC-14',
     correctPath: hasCorrectPath,
     noStalePath: !hasStalePath,
     downloadUrl,
-    downloadWorks,
-    searchResponse: searchResult.content?.substring(0, 200),
-    exportResponse: exportResult.content?.substring(0, 200),
+    searchResponse: searchResult.content?.substring(0, 300),
+    exportResponse: exportResult.content?.substring(0, 300),
+    searchTimeMs: searchResult.elapsedMs,
+    exportTimeMs: exportResult.elapsedMs,
     screenshot
   };
 }
@@ -258,7 +284,7 @@ async function runSC17(page) {
   
   // Step 1: Find restaurant companies
   await sendMessage(page, 'Find restaurant companies in Gent.');
-  const searchResult = await waitForResponse(page, { maxWaitMs: 120000 });
+  const searchResult = await waitForResponse(page, { maxWaitMs: 180000 });
   await captureEvidence(page, 'sc17_search_results');
   
   console.log(`[INFO] Search response: ${searchResult.content?.substring(0, 150)}...`);
@@ -266,14 +292,14 @@ async function runSC17(page) {
   // Step 2: Count follow-up - this tests context reuse
   await sendMessage(page, 'How many is that exactly?');
   const countResult = await waitForResponse(page, { 
-    maxWaitMs: 120000,
+    maxWaitMs: 180000,
     waitForPattern: /\d+/  // Wait for a number
   });
   const screenshot = await captureEvidence(page, 'sc17_count_response');
   
   const responseText = countResult.content || '';
-  const numberMatch = responseText.match(/(\d+)/);
-  const count = numberMatch ? parseInt(numberMatch[1]) : null;
+  const numberMatch = responseText.match(/(\d[\d,]*)/);
+  const count = numberMatch ? numberMatch[1].replace(/,/g, '') : null;
   
   console.log(`[VERIFY] Count found: ${count !== null ? count : 'NO'}`);
   console.log(`[RESPONSE] ${responseText.substring(0, 200)}...`);
@@ -284,6 +310,8 @@ async function runSC17(page) {
     count,
     searchResponse: searchResult.content?.substring(0, 200),
     countResponse: responseText.substring(0, 500),
+    searchTimeMs: searchResult.elapsedMs,
+    countTimeMs: countResult.elapsedMs,
     screenshot
   };
 }
@@ -297,12 +325,16 @@ async function runSC18(page) {
   
   // Step 1: Perform search
   await sendMessage(page, 'Find marketing agencies in Brussels.');
-  const searchResult = await waitForResponse(page, { maxWaitMs: 120000 });
+  const searchResult = await waitForResponse(page, { maxWaitMs: 180000 });
   await captureEvidence(page, 'sc18_search_results');
   
   // Step 2: Get current URL (thread ID)
   const threadUrl = page.url();
   console.log(`[INFO] Thread URL: ${threadUrl}`);
+  
+  // Get messages before refresh for comparison
+  const messagesBefore = await getAllMessages(page);
+  console.log(`[INFO] Messages before refresh: ${messagesBefore.length}`);
   
   // Step 3: Refresh the page
   console.log('[ACTION] Refreshing page...');
@@ -311,16 +343,15 @@ async function runSC18(page) {
   await captureEvidence(page, 'sc18_after_refresh');
   
   // Verify thread context persisted
-  const hasContext = await page.evaluate(() => {
-    const messages = document.querySelectorAll('.message, [class*="message"]');
-    return messages.length > 0;
-  });
-  console.log(`[VERIFY] Thread context persisted: ${hasContext ? 'YES' : 'NO'}`);
+  const messagesAfter = await getAllMessages(page);
+  const hasContext = messagesAfter.length > 0;
+  console.log(`[INFO] Messages after refresh: ${messagesAfter.length}`);
+  console.log(`[VERIFY] Thread context persisted: ${hasContext ? 'YES ✓' : 'NO ✗'}`);
   
   // Step 4: Follow-up export - should reference prior search
   await sendMessage(page, 'Export that one.');
   const exportResult = await waitForResponse(page, { 
-    maxWaitMs: 120000,
+    maxWaitMs: 180000,
     waitForPattern: /export|csv|file|download/i
   });
   const screenshot = await captureEvidence(page, 'sc18_export_followup');
@@ -340,8 +371,12 @@ async function runSC18(page) {
     mentionsExport,
     hasCorrectPath,
     threadUrl,
+    messagesBeforeCount: messagesBefore.length,
+    messagesAfterCount: messagesAfter.length,
     searchResponse: searchResult.content?.substring(0, 200),
     exportResponse: responseText.substring(0, 500),
+    searchTimeMs: searchResult.elapsedMs,
+    exportTimeMs: exportResult.elapsedMs,
     screenshot
   };
 }
@@ -407,12 +442,18 @@ async function main() {
     console.log(`  - Correct path: ${results.sc14?.correctPath ? 'YES' : 'NO'}`);
     console.log(`  - No stale path: ${results.sc14?.noStalePath ? 'YES' : 'NO'}`);
     console.log(`  - Download URL: ${results.sc14?.downloadUrl || 'N/A'}`);
+    console.log(`  - Search time: ${results.sc14?.searchTimeMs || 'N/A'}ms`);
+    console.log(`  - Export time: ${results.sc14?.exportTimeMs || 'N/A'}ms`);
     console.log(`SC-17 (Context Reuse): ${results.sc17?.contextReused ? 'PASS ✓' : 'FAIL ✗'}`);
     console.log(`  - Count returned: ${results.sc17?.count !== null ? results.sc17.count : 'N/A'}`);
+    console.log(`  - Search time: ${results.sc17?.searchTimeMs || 'N/A'}ms`);
+    console.log(`  - Count time: ${results.sc17?.countTimeMs || 'N/A'}ms`);
     console.log(`SC-18 (Persistence): ${results.sc18?.persistenceWorks ? 'PASS ✓' : 'FAIL ✗'}`);
     console.log(`  - Context persisted: ${results.sc18?.hasContext ? 'YES' : 'NO'}`);
     console.log(`  - Export followed: ${results.sc18?.mentionsExport ? 'YES' : 'NO'}`);
     console.log(`  - Correct path: ${results.sc18?.hasCorrectPath ? 'YES' : 'NO'}`);
+    console.log(`  - Search time: ${results.sc18?.searchTimeMs || 'N/A'}ms`);
+    console.log(`  - Export time: ${results.sc18?.exportTimeMs || 'N/A'}ms`);
     
     await browser.close();
     
