@@ -3,7 +3,7 @@
 **Project:** Customer Data Platform (CDP) with AI Chatbot Interface  
 **Repository:** CDP_Merged  
 **Infrastructure:** AZURE (VMs, Container Apps, OpenAI)  
-**Last Updated:** 2026-03-09
+**Last Updated:** 2026-03-14
 **Version:** 5.1 (Condensed Live Docs)
 
 ---
@@ -35,51 +35,290 @@ Use these files instead:
 
 ---
 
-## Bazzite Host/Sandbox Boundary (Critical)
+## Bazzite / Host Runtime Operating Rules (Critical)
 
-This development environment runs on **Bazzite** (Fedora Silverblue-based), where the agent runs in a **sandbox/container** but services run on the **host**.
+This project is developed and verified on **Bazzite**. Treat that as a first-class constraint, not a generic Linux environment.
 
-### Commands That MUST Use `flatpak-spawn --host`
+> **Execution context note:** Before doing any debugging on Bazzite, add a short "Execution context" note in your own reasoning: **sandbox or host?** If the task touches ports, processes, systemd, ngrok, Node, npm, Linuxbrew, or Podman, the answer must be **host**.
 
-When debugging or managing services, these commands **must** be run through `flatpak-spawn --host` to see the real host state:
+### Fast Bazzite Sanity Check
 
-| Command | Purpose | Sandbox Result | Host Result |
-|---------|---------|----------------|-------------|
-| `ss` | Check ports | Empty/wrong | Real bindings |
-| `ps`/`pgrep` | List processes | Partial | Full process tree |
-| `systemctl --user` | User services | Empty | Real service state |
-| `node`/`npm` | Node.js runtime | Not in PATH | Works with PATH export |
-| `pkill` | Kill processes | May fail | Actually works |
-| `curl` to localhost | Test services | May miss host-bound ports | Correct results |
-
-### Pattern for Host Commands
+Before deep debugging, prefer these host-side checks:
 
 ```bash
-flatpak-spawn --host bash -lc '
-  export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
-  # your commands here
-  ss -ltnp "( sport = :3000 )"
-  pgrep -af "node|next"
+flatpak-spawn --host bash -lc 'export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"; which node; node -v; which npm; npm -v'
+flatpak-spawn --host bash -lc 'ss -ltnp "( sport = :3000 or sport = :8000 or sport = :8170 )"'
+flatpak-spawn --host bash -lc 'pgrep -af "node|next|server.js|uvicorn|ngrok|operator"'
+flatpak-spawn --host bash -lc 'systemctl --user --no-pager --full status preview-watchdog.service 2>/dev/null || true'
+```
+
+### 1. Host truth vs sandbox truth
+
+Anything involving **ports, processes, systemd user services, ngrok, Node.js, npm, Linuxbrew, Podman, or host paths** must be treated as **host reality**, not sandbox/container reality.
+
+**Rule:** when checking or changing host runtime state, use host execution paths such as:
+- `flatpak-spawn --host ...`
+
+Do **not** trust sandbox results for:
+- `ss`
+- `ps`
+- `systemctl --user`
+- `journalctl --user`
+- `node`
+- `npm`
+- `brew`
+- `ngrok`
+- port ownership
+- process ownership
+- shell runtime state
+
+If a port responds but sandbox `ss` / `ps` shows nothing, assume you are looking in the wrong execution context before inventing "ghost process" theories.
+
+### 2. Bazzite package/runtime assumptions
+
+Bazzite is immutable-ish and often relies on:
+- **Linuxbrew** for host developer tooling
+- **Podman** instead of Docker
+- **systemd user services** instead of ad hoc background sessions
+- Flatpak-host bridging for tools running inside GUI sandboxes
+
+Do **not** assume:
+- `node` is on default PATH
+- `npm` is on default PATH
+- `docker` exists
+- `systemctl --user` works from sandbox without host bridging
+
+Preferred host PATH when needed:
+```bash
+export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
+```
+
+### 3. Primary product ports and role separation
+
+Treat these roles as intentional unless explicitly changed:
+
+| Port | Role |
+|------|------|
+| `3000` | **Primary operator shell UI** |
+| `8170` | **Operator API / shell bridge** |
+| `8000` | **Chat/backend runtime**, **not** the primary user-facing UI |
+
+ngrok public preview should point to the intended user-facing shell path, not arbitrary old ports.
+
+Do not confuse:
+- "8000 is reachable" with "the user-facing app is healthy"
+- "HTML loads on 3000" with "the real app is healthy"
+- "ngrok is up" with "public preview works"
+
+For the shell to be considered healthy:
+- main page loads
+- static assets load (`/_next/static/*` returns 200, not 404)
+- hydration/bootstrap works
+- `/operator-api/bootstrap` works through the shell path
+
+### 4. Node / Next.js rules on Bazzite
+
+The operator shell is a **Next.js app** and requires host-side Node tooling.
+
+Rules:
+- Run Node/npm/build/start checks on the **host**
+- Respect `.nvmrc` / intended Node version, but also verify what is actually installed
+- If Linuxbrew Node is used, make PATH explicit
+- Standalone Next.js output may require:
+  - correct working directory
+  - copied static assets
+  - explicit `HOSTNAME=127.0.0.1`
+- Do not declare the shell fixed if `/_next/static/*` still returns `404`
+
+If localhost `3000` serves HTML but the app hangs, inspect:
+- browser console
+- network requests
+- bootstrap responses
+- static asset paths
+- actual host logs
+
+Do not stop at "page returns 200".
+
+### 5. Inotify / ENOSPC on Bazzite
+
+If Node/Next.js reports:
+- `ENOSPC`
+- "no space left on device"
+
+do **not** assume disk is full first.
+
+On this host, treat it as likely **inotify watch exhaustion**.
+
+Check and fix host-side watch limits before doing random cleanup:
+- `fs.inotify.max_user_watches`
+- `fs.inotify.max_user_instances`
+
+```bash
+flatpak-spawn --host bash -c '
+  printf "fs.inotify.max_user_watches=524288\n" | sudo tee /etc/sysctl.d/99-inotify.conf
+  printf "fs.inotify.max_user_instances=8192\n" | sudo tee -a /etc/sysctl.d/99-inotify.conf
+  sudo sysctl --system
 '
 ```
 
-### Common Misdiagnoses to Avoid
+Do not misdiagnose tmpfs or unrelated mounts as the main issue without evidence.
 
-1. **"Ghost Process" on port 3000** - Not a ghost; the sandbox just can't see the host-bound Next.js server
-2. **"ENOSPC" errors** - Usually `inotify` exhaustion, not disk full; fix with sysctl:
-   ```bash
-   flatpak-spawn --host bash -c '
-     printf "fs.inotify.max_user_watches=524288\n" | sudo tee /etc/sysctl.d/99-inotify.conf
-     sudo sysctl --system
-   '
-   ```
-3. **"Server running but returns 404 for static files"** - Check if the server's cwd shows `(deleted)` in `pwdx`; this means files were replaced after server start
+### 6. systemd user services are preferred
 
-### Critical Environment Variables
+For persistent or resilient host behavior, prefer **systemd user services** over:
+- `nohup`
+- random background shells
+- one-off terminal sessions
 
-Always set these when spawning host shells:
-- `PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"` - For Node.js/npm
-- `HOSTNAME=127.0.0.1` - To bind to IPv4 localhost (not public IPv6)
+This especially applies to:
+- preview watchdog
+- preview continuity automation
+- long-running host checks
+- shell/service supervision
+
+When proving a service:
+1. install/link service correctly
+2. `systemctl --user daemon-reload`
+3. enable/start it
+4. prove status
+5. inspect journal/logs
+6. simulate a safe failure if recovery is part of the contract
+
+Do not mark automation "complete" until runtime proof exists.
+
+### 7. Podman-first, Docker-not-assumed
+
+On Bazzite, local container execution should be treated as:
+- **Podman-first**
+- Compose-spec compatible where possible
+- Docker-specific assumptions avoided unless explicitly required
+
+If checking databases/services that run on host containers:
+- verify whether the active path is Podman, Docker, or host-managed
+- do not assume one from the other
+
+### 8. Public preview / ngrok rules
+
+ngrok free-tier URLs are ephemeral.
+
+Rules:
+- Never trust an old pasted ngrok URL as current truth
+- Use the canonical current-URL discovery path/script
+- If the public preview is down, determine whether the problem is:
+  - stale URL
+  - dead tunnel
+  - wrong target port
+  - broken local shell
+  - ngrok auth/account issue
+
+Do not say "ngrok fixed" unless:
+- the **current** public URL is known
+- the public URL responds
+- the shell behind it is healthy
+
+Public preview continuity must be checked with the repo-owned scripts, not guessed.
+
+### 9. Host verification is the fallback CI truth
+
+If remote CI is blocked or untrustworthy, use the host verification path as the strongest local fallback.
+
+Prefer repo-owned verification entrypoints over ad hoc command drift:
+- `scripts/host_verify.sh`
+- `scripts/check_preview_health.sh`
+- `scripts/get_public_preview_url.sh`
+- `scripts/verify_public_preview.sh`
+- `scripts/operator_smoke.py`
+- `scripts/preview_control.sh`
+
+A local verification script should be:
+- **check-only by default**
+- machine-readable where useful
+- non-destructive unless explicitly asked
+
+### 10. Worktree discipline on this repo
+
+A worktree is only clean if:
+- no modified tracked files remain
+- no untracked junk remains
+
+"Clean except untracked files" is **not clean**.
+
+Rules:
+- Real source/config/scripts must be committed
+- Generated/runtime artifacts must be ignored
+- Junk must be deleted
+- Do not leave bundles, tarballs, logs, screenshots, built binaries, export artifacts, or random translations hanging around untracked if they are not intentional
+
+Always end with:
+```bash
+git status --short
+```
+and ensure it is empty before claiming clean state.
+
+### 11. Generated artifact policy
+
+Do **not** track generated artifacts unless explicitly intended as source truth.
+
+Typical paths to treat as generated/runtime-only:
+- `export/`
+- `logs/`
+- screenshot output
+- build output
+- downloaded binaries
+- temporary bundles/patches
+- runtime-generated translation files
+- `.preview_state.json` and similar operational state, unless explicitly designated otherwise
+
+If in doubt:
+- keep source
+- ignore artifacts
+- do not pollute history
+
+### 12. Evidence standard
+
+On Bazzite, always distinguish:
+- **host-proved**
+- **sandbox-observed**
+- **public-preview-proved**
+- **CI-proved**
+
+Do not upgrade a claim without proof in the correct execution context.
+
+Examples:
+- port/process claim → host proof
+- public preview claim → current public URL proof
+- service supervision claim → systemd user service proof
+- browser UX claim → real browser/network proof, not just curl
+
+### 13. No "ghost process" claims without host proof
+
+Before claiming:
+- ghost process
+- zombie port
+- invisible server
+- impossible binding issue
+
+you must inspect from the **host**.
+
+Use host-side:
+- `ss`
+- `ps`
+- `pgrep`
+- `systemctl --user`
+- `journalctl --user`
+
+Only after host proof should you describe a process/port state as anomalous.
+
+### 14. Safe default behavior for agents
+
+If you are unsure on Bazzite:
+1. inspect from host
+2. verify PATH and runtime source
+3. verify port/process ownership from host
+4. prefer existing repo scripts
+5. make the narrowest real fix
+6. prove it in the correct context
+7. leave the worktree truly clean
 
 ---
 
