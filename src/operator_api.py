@@ -13,6 +13,7 @@ import json
 from datetime import datetime
 import time
 import uuid
+import asyncio
 from pathlib import Path
 from typing import Any, AsyncGenerator
 
@@ -311,12 +312,24 @@ async def _chat_stream_generator(
     - assistant_delta: Streaming text chunks
     - assistant_message: Final complete message
     - error: Error information
+    
+    Includes detailed latency instrumentation for performance analysis.
     """
+    # LATENCY TRACKING: Full request timeline
+    request_start_time = time.monotonic()
+    stage_times: dict[str, float] = {}
+    
+    def record_stage(stage_name: str) -> float:
+        elapsed = time.monotonic() - request_start_time
+        stage_times[stage_name] = elapsed
+        return elapsed
+    
     # Generate or use provided thread_id
     thread_id = request.thread_id or str(uuid.uuid4())
     chat_profile = request.chat_profile or "default"
     
     # Yield thread event first
+    thread_init_elapsed = record_stage("thread_init")
     yield _format_sse_event({
         "type": "thread",
         "thread_id": thread_id,
@@ -328,10 +341,18 @@ async def _chat_stream_generator(
     checkpointer_path = Path("./data/checkpoints/checkpoints.db")
     checkpointer_path.parent.mkdir(parents=True, exist_ok=True)
     
+    # LATENCY TRACKING: Checkpointer init
+    checkpointer_start = time.monotonic()
+    
     try:
         conn = await aiosqlite.connect(checkpointer_path)
         checkpointer = AsyncSqliteSaver(conn)
+        stage_times["checkpointer_init"] = time.monotonic() - checkpointer_start
+        
+        # LATENCY TRACKING: Workflow compilation
+        workflow_start = time.monotonic()
         workflow = compile_workflow(checkpointer=checkpointer)
+        stage_times["workflow_compile"] = time.monotonic() - workflow_start
         
         inputs = {
             "messages": [HumanMessage(content=request.message)],
@@ -340,13 +361,24 @@ async def _chat_stream_generator(
         }
         config = {"configurable": {"thread_id": thread_id}}
         
+        # LATENCY TRACKING: First token timing
+        first_token_seen = False
+        first_token_time: float | None = None
+        streaming_started = time.monotonic()
+        
         tool_calls: list[str] = []
         accumulated_content = ""
         delta_buffer = ""
         message_id = str(uuid.uuid4())
         suppressed_count = 0
         
+        # LATENCY TRACKING: Stream processing
+        stream_start = time.monotonic()
+        event_count = 0
+        chunk_count = 0
+        
         async for event in workflow.astream_events(inputs, config=config, version="v2"):
+            event_count += 1
             kind = event.get("event", "")
             name = event.get("name", "")
             
@@ -355,6 +387,12 @@ async def _chat_stream_generator(
                 if hasattr(chunk, "content") and isinstance(chunk.content, str):
                     delta = chunk.content
                     accumulated_content += delta
+                    chunk_count += 1
+                    
+                    # LATENCY TRACKING: First token
+                    if not first_token_seen:
+                        first_token_seen = True
+                        first_token_time = time.monotonic() - stream_start
                     
                     # Sanitize the delta in real-time to suppress thinking content
                     emit_delta, delta_buffer, was_suppressed = _sanitize_streaming_delta(
@@ -381,10 +419,14 @@ async def _chat_stream_generator(
             # Re-check final content for any missed thinking lines
             pass
         
+        # LATENCY TRACKING: Complete stream timing
+        total_stream_time = time.monotonic() - stream_start
+        total_request_time = time.monotonic() - request_start_time
+        
         # Sanitize the final content to remove internal thinking and tool leakage
         sanitized_content = _sanitize_assistant_content(accumulated_content)
         
-        # Yield final assistant message with cleaned content
+        # Yield final assistant message with cleaned content and detailed latency report
         yield _format_sse_event({
             "type": "assistant_message",
             "thread_id": thread_id,
@@ -396,6 +438,16 @@ async def _chat_stream_generator(
                 "content": sanitized_content,
                 "created_at": datetime.now().isoformat(),
                 "status": "complete",
+            },
+            "latency_report": {
+                "total_ms": round(total_request_time * 1000, 2),
+                "to_first_token_ms": round(first_token_time * 1000, 2) if first_token_time else None,
+                "stream_processing_ms": round(total_stream_time * 1000, 2),
+                "stages_ms": {
+                    k: round(v * 1000, 2) for k, v in stage_times.items()
+                },
+                "chunks_emitted": chunk_count,
+                "thinking_suppressed": suppressed_count,
             },
         })
         

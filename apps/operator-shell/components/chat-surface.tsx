@@ -508,42 +508,39 @@ function ChatBubble({
   return (
     <div className="flex justify-start">
       <div className={`max-w-[78ch] rounded-[24px] border px-4 py-3.5 text-sm ${bubbleClass}`}>
-        {message.status === "streaming" ? (
-          <StreamingIndicator />
-        ) : (
-          <div className="space-y-3">
-            {blocks.length > 0 ? (
-              blocks.map((block, index) => {
-                if (block.type === "bullet_list") {
-                  return (
-                    <ul key={`list-${index}`} className="space-y-2 pl-4 text-sm leading-6 text-zinc-300">
-                      {block.items.map((item, itemIndex) => (
-                        <li key={`item-${itemIndex}`} className="list-disc">
-                          {renderInlineText(item)}
-                        </li>
-                      ))}
-                    </ul>
-                  );
-                }
-
-                const className =
-                  block.tone === "answer"
-                    ? "text-[15px] font-medium leading-7 text-zinc-100"
-                    : block.tone === "note"
-                      ? "rounded-2xl border border-amber-500/15 bg-amber-500/5 px-3 py-2 text-sm leading-6 text-zinc-200"
-                      : "text-sm leading-6 text-zinc-300";
-
+        <div className="space-y-3">
+          {blocks.length > 0 ? (
+            blocks.map((block, index) => {
+              if (block.type === "bullet_list") {
                 return (
-                  <p key={`paragraph-${index}`} className={className}>
-                    {renderInlineText(block.content)}
-                  </p>
+                  <ul key={`list-${index}`} className="space-y-2 pl-4 text-sm leading-6 text-zinc-300">
+                    {block.items.map((item, itemIndex) => (
+                      <li key={`item-${itemIndex}`} className="list-disc">
+                        {renderInlineText(item)}
+                      </li>
+                    ))}
+                  </ul>
                 );
-              })
-            ) : (
-              <p className="text-sm leading-6 text-zinc-300">{message.content}</p>
-            )}
-          </div>
-        )}
+              }
+
+              const className =
+                block.tone === "answer"
+                  ? "text-[15px] font-medium leading-7 text-zinc-100"
+                  : block.tone === "note"
+                    ? "rounded-2xl border border-amber-500/15 bg-amber-500/5 px-3 py-2 text-sm leading-6 text-zinc-200"
+                    : "text-sm leading-6 text-zinc-300";
+
+              return (
+                <p key={`paragraph-${index}`} className={className}>
+                  {renderInlineText(block.content)}
+                </p>
+              );
+            })
+          ) : (
+            <p className="text-sm leading-6 text-zinc-300">{message.content}</p>
+          )}
+          {message.status === "streaming" && <StreamingIndicator />}
+        </div>
 
         {message.status !== "streaming" && message.suggestedActions && message.suggestedActions.length > 0 ? (
           <div className="mt-4 flex flex-wrap gap-2">

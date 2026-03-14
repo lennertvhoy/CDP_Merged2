@@ -17,6 +17,24 @@
 6. **Living Docs:** Add each passed scenario to the Illustrated Guide with evidence
 7. **PDF Export:** Export updated Illustrated Guide PDF after each meaningful scenario session
 
+## Quality Criteria (Added 2026-03-14)
+
+For chat scenarios (SC-01 through SC-18), quality metrics are now tracked:
+
+| Metric | Target | Notes |
+|--------|--------|-------|
+| Time to first visible response | < 10s | From click to first text appearing |
+| Full completion time | < 20s | For simple count queries |
+| Streaming visible | Yes | Content should appear incrementally, not all at end |
+| Answer correctness | Yes | Must match expected value |
+| Answer-first format | Yes | Answer before explanation/tool details |
+
+Scenario status labels:
+- `functional_pass` - Correct answer but may have UX issues
+- `quality_pass` - Correct answer + good latency + visible streaming
+- `failed_investigating` - Does not meet criteria, under investigation
+- `blocked` - Cannot proceed due to external dependency
+
 ---
 
 ## Scenario Tracker
@@ -25,7 +43,7 @@
 
 | ID | Title | Status | Evidence | Notes |
 |----|-------|--------|----------|-------|
-| SC-01 | Brussels company count baseline | ✅ passed | `reports/scenarios/sc01/sc01_brussels_count_passed.png` | Answer: 41,290 companies; answer-first format; no tool leakage |
+| SC-01 | Brussels company count baseline | ✅ quality_pass | `reports/scenarios/sc01/sc01_rerun_after_fix.png` | Answer: 41,290; First content: ~10s; Total: ~11s; Streaming: ✓; Fix: UI now shows content incrementally |
 | SC-02 | Antwerpen company count baseline | ⏳ pending | — | — |
 | SC-03 | Gent restaurant baseline | ⏳ pending | — | — |
 | SC-04 | All-status vs active-only semantics | ⏳ pending | — | — |

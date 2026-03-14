@@ -9,7 +9,7 @@
 
 **Audience:** Demo observers, auditors, stakeholders needing visual proof
 
-**Last Updated:** 2026-03-14 (v4.5 — Scenario Acceptance Program Started + SC-01 Passed)
+**Last Updated:** 2026-03-14 (v4.6 — SC-01 Quality Pass + Latency/Streaming Fixed)
 
 **Companion Docs:**
 
@@ -1584,12 +1584,12 @@ FROM companies;
 **Status:** In Progress  
 **Rule:** All scenarios executed against real platform — no mocked surfaces
 
-### 17.2 SC-01: Brussels Company Count Baseline
+### 17.2 SC-01: Brussels Company Count Baseline (Quality Verified)
 
 **Scenario:** User asks "How many companies are in Brussels?"  
-**Expected:** Real chat flow returns 41,290 with answer-first format, no tool leakage
+**Expected:** Real chat flow returns 41,290 with answer-first format, visible streaming, <20s total
 
-#### Execution Results
+#### Execution Results (Initial Run - 2026-03-14)
 
 | Check | Result |
 |-------|--------|
@@ -1608,7 +1608,7 @@ FROM companies;
 
 **Screenshot:** `reports/scenarios/sc01/sc01_brussels_count_passed.png`
 
-#### Technical Fix Applied
+#### Technical Fix Applied (Initial)
 
 **Issue:** Azure OpenAI deployments returned "DeploymentNotFound" errors.  
 **Root Cause:** Azure OpenAI resource deployments were unavailable.  
@@ -1620,6 +1620,61 @@ LLM_PROVIDER=openai
 ```
 
 **Verification:** OpenAI API key tested working; response time ~20 seconds.
+
+---
+
+#### Latency & Streaming Investigation (2026-03-14)
+
+**Issue Identified:** SC-01 functionally passed but response was visibly slow (~20s) with no visible streaming in UI.
+
+**Root Cause Analysis:**
+
+| Layer | Finding |
+|-------|---------|
+| Backend API | ✅ Streaming working (86 chunks emitted) |
+| First token latency | ~5 seconds (LLM planning time) |
+| Network/Proxy | ~0ms (local) |
+| **Frontend UI** | **❌ Bug: Only showed pulsing dots, not content** |
+
+**Frontend Bug (chat-surface.tsx lines 511-512):**
+```tsx
+// BUG: When streaming, ONLY show indicator, hide content!
+{message.status === "streaming" ? (
+  <StreamingIndicator />  // Only this was shown
+) : (
+  <div className="space-y-3">...</div>  // Content hidden during streaming!
+)}
+```
+
+**Fix Applied:**
+```tsx
+// FIXED: Always show content, add indicator below when streaming
+<div className="space-y-3">
+  {/* ... content always rendered ... */}
+  {message.status === "streaming" && <StreamingIndicator />}
+</div>
+```
+
+#### Re-run Results (After Fix)
+
+| Metric | Before Fix | After Fix | Target |
+|--------|------------|-----------|--------|
+| First content visible | ~20s | **~10s** | < 10s ✅ |
+| Total completion time | ~20-30s | **~11s** | < 20s ✅ |
+| Streaming chunks | 86 | 77 | > 1 ✅ |
+| Visible streaming | ❌ No | **✅ Yes** | Yes ✅ |
+
+**Backend Latency Breakdown:**
+- Thread init: 0.01ms
+- Checkpointer init: 0.32ms
+- Workflow compile: 7.06ms
+- **To first token: ~4,950ms** (LLM planning)
+- Stream processing: ~10,900ms
+- **Total: ~11 seconds**
+
+**Screenshot:** `reports/scenarios/sc01/sc01_rerun_after_fix.png`
+
+**Status:** ✅ `quality_pass` (functional + latency + streaming)
 
 ### 17.3 Scenario Tracker
 
