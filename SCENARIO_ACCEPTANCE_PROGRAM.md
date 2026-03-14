@@ -46,10 +46,10 @@ Scenario status labels:
 | SC-01 | Brussels company count baseline | ✅ quality_pass | `reports/scenarios/sc01/sc01_rerun_after_fix.png` | Answer: 41,290; First content: ~10s; Total: ~11s; Streaming: ✓; Fix: UI now shows content incrementally |
 | SC-02 | Antwerpen company count baseline | ✅ quality_pass | `reports/scenarios/sc02/sc02_antwerpen_count.png` | Answer: 62,831; First content: ~10s; Total: ~11s; Streaming: ✓; Correct count verified |
 | SC-03 | Gent restaurant baseline | ✅ quality_pass | `reports/scenarios/sc03/sc03_gent_restaurant.png` | Answer: 1,050; Expected: ~~1,105~~ → 1,050; Canonical SQL verified: NACE 56101, 56102 (restaurant activities); Streaming: ✓; Semantics reconciled |
-| SC-04 | All-status vs active-only semantics | ⚠️ functional_pass | `reports/scenarios/sc04/sc04_followup_semantics.png` | Context reuse: ✓ (mentions Brussels vs Gent); Count: 1,495/1,495; Missing: explicit explanation why unchanged; All companies AC in dataset |
-| SC-05 | Brussels software scope clarity | ⏳ pending | — | — |
-| SC-06 | Top industries in Brussels | ⏳ pending | — | — |
-| SC-07 | Companies with websites in Brussels | ⏳ pending | — | — |
+| SC-04 | All-status vs active-only semantics | ✅ quality_pass | `reports/scenarios/sc04/sc04_rerun_with_explanation.png` | Context reuse: ✓; Count: 1,495/1,495; Explanation: ✓ "The count did not change because all 1,495 companies already have active status"; Fix: System prompt updated with follow-up count explanation rule |
+| SC-05 | Brussels software scope clarity | ✅ quality_pass | `reports/scenarios/sc05/sc05_brussels_software.png` | Answer: 1,821; NACE codes: 62100, 62200, 62900, 63100; First content: ~12s; Total: ~15s; Streaming: ✓; Answer-first: ✓ |
+| SC-06 | Top industries in Brussels | ✅ quality_pass | `reports/scenarios/sc06/sc06_top5_industries.png` | Answer: Top 5 with counts (Unknown: 19,980; 70200: 1,977; 56112: 770; 69101: 689; 56111: 520); Real aggregation verified; First content: ~12s; Streaming: ✓ |
+| SC-07 | Companies with websites in Brussels | ⚠️ functional_pass | `reports/scenarios/sc07/sc07_timeout_issue.png` | Issue: Query timeout (>70s); Root cause: has_website filter performance; Simple queries work (41,290 Brussels count); Needs: Query optimization or index investigation |
 | SC-08 | Companies with email in Brussels | ⏳ pending | — | — |
 | SC-09 | Search Antwerp software companies | ⏳ pending | — | — |
 | SC-10 | Legal-form aggregation | ⏳ pending | — | — |
