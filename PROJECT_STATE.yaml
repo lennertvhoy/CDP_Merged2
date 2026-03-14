@@ -3,8 +3,12 @@
 # External source systems remain outside the repo-managed infrastructure boundary.
 
 metadata:
-  updated_at: 2026-03-14T11:32:00+01:00
+  updated_at: 2026-03-14T19:00:00+01:00
   updated_by: agent
+  session_note: |
+    Compound backlog slice executed: Tracardi optionalization verification + 
+    Admin/RBAC verification + Demo packaging truth updates (Business Conformity 
+    Matrix v1.4, Acceptance Criteria v1.4, Illustrated Guide v4.2 + PDF)
   verified_head_before_docs_commit:
     value: 7e6c432
     status: observed
@@ -228,40 +232,75 @@ current_state:
       - explicit_web_search_policy_before_enablement
   operator_shell_admin_rbac:
     status: observed
-    verified_at: 2026-03-14T11:55:00+01:00
+    verified_at: 2026-03-14T19:00:00+01:00
     summary: |
-      Admin panel now implemented with basic admin authorization (boolean is_admin flag).
+      Admin panel verified with basic admin authorization (boolean is_admin flag).
       NOT full RBAC - only a simple admin/user distinction exists.
+      Server-side enforcement verified: non-admin users receive 403 on admin endpoints.
+      UI access denial verified: non-admin users see "Access Denied" at /admin.
+      Sidebar admin link visibility verified: shield icon only shows for admin users.
     public_url: https://kbocdpagent.ngrok.app/admin
+    local_url: http://localhost:3000/admin
     local_api_base: http://127.0.0.1:8170/api/operator
+    verification_evidence:
+      - type: browser_screenshot
+        file: reports/admin_verification/admin_access_denied_non_admin_user.png
+        description: Non-admin user (Operator Smoke A) shown "Access Denied" at /admin
+      - type: api_test
+        endpoint: GET /api/operator/admin/users
+        result: "HTTP 403 {\"detail\":\"Admin access required\"}" for non-admin
+      - type: code_review
+        file: src/operator_api.py
+        lines: "652-881"
+        finding: All admin endpoints check _is_admin_user() before processing
+      - type: code_review
+        file: apps/operator-shell/components/sidebar.tsx
+        lines: "48-56"
+        finding: Admin shield icon conditionally rendered only when isAdmin=true
     endpoints:
       - path: /admin
         description: Admin page (Next.js)
-        protection: client-side redirect for non-admins
-      - path: /admin/users
-        description: List all local accounts
-        protection: server-side 403 for non-admins
-      - path: /admin/me
+        protection: client-side access denial for non-admins
+      - path: /api/operator/admin/me
         description: Get current user's admin status
         protection: server-side 401 for unauthenticated
+      - path: /api/operator/admin/users
+        description: List all local accounts (admin only)
+        protection: server-side 403 for non-admins
+      - path: POST /api/operator/admin/users
+        description: Create new user (admin only)
+        protection: server-side 403 for non-admins
+      - path: PATCH /api/operator/admin/users/{id}
+        description: Update user (admin only)
+        protection: server-side 403 for non-admins
+      - path: POST /api/operator/admin/users/{id}/reset-password
+        description: Reset user password (admin only)
+        protection: server-side 403 for non-admins
+      - path: DELETE /api/operator/admin/users/{id}
+        description: Delete user (admin only)
+        protection: server-side 403 for non-admins + last-admin protection
     authorization_model:
       type: basic_admin_authorization
       rbac_status: NOT_IMPLEMENTED
       description: |
-        Only boolean is_admin flag exists. No roles, permissions, or multi-role system.
-        Admin users can view all accounts but cannot modify them through UI yet.
-    files_modified:
-      - src/services/operator_bridge.py (expose is_admin in bootstrap)
-      - src/services/operator_auth.py (add CHAINLIT_LOCAL_ACCOUNT_AUTH_ENABLED setting)
-      - src/operator_api.py (add /admin/users and /admin/me endpoints)
-      - apps/operator-shell/lib/types/operator.ts (add is_admin to BootstrapPayload)
-      - apps/operator-shell/components/sidebar.tsx (add Admin shield link)
-      - apps/operator-shell/components/operator-shell-app.tsx (pass isAdmin to Sidebar)
-      - apps/operator-shell/app/admin/page.tsx (new admin page)
+        Boolean is_admin flag only. No roles, permissions, or multi-role system.
+        Binary access control: admin (full access) vs non-admin (no admin access).
+      enforced_in:
+        - src/operator_api.py:_is_admin_user()
+        - apps/operator-shell/app/admin/page.tsx:client-side check
+        - apps/operator-shell/components/sidebar.tsx:conditional rendering
+    safety_features:
+      - self_demotion_protection: Prevents admin from removing own admin status
+      - last_admin_protection: Prevents deletion of the last remaining admin
     admin_accounts:
-      - lennertvhoy@gmail.com (ADMIN)
+      - identifier: lennertvhoy@gmail.com
+        is_admin: true
     non_admin_accounts:
-      - brandstekelorum2@gmail.com (user - explicitly NOT admin)
+      - identifier: brandstekelorum2@gmail.com
+        is_admin: false
+      - identifier: operator-smoke-a@cdp.local
+        is_admin: false
+        note: Test account used for verification
   chat_history_persistence_foundation:
     status: observed
     verified_at: 2026-03-09T21:47:19+01:00

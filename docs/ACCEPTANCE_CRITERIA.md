@@ -3,7 +3,7 @@
 **Purpose:** Reviewer-facing proof package for CDP_Merged POC verification  
 **Audience:** Technical auditors, QA reviewers, stakeholder sign-off  
 **Last Updated:** 2026-03-14  
-**Version:** 1.3 (Aligned with Illustrated Guide v3.6 — Cleanup Pass)
+**Version:** 1.4 (Aligned with Illustrated Guide v4.2 — Admin/RBAC Verification)
 
 ---
 
@@ -22,6 +22,9 @@ This appendix provides **executable verification steps** for each major claim in
 - `.env.local` populated with valid credentials (required)
 - Docker Compose stack (optional — only for full integration tests)
 - Tracardi (optional — not required for core acceptance tests)
+
+**Authorization Model Note:**
+The system uses basic boolean `is_admin` authorization (NOT full RBAC). Admin checks are enforced server-side on all admin endpoints.
 
 ---
 
@@ -529,6 +532,7 @@ print(result)
 | AC-8 | Event Writeback | | | ⬜ |
 | AC-9 | Browser Automation | | | ⬜ |
 | AC-10 | GUI Element Interaction | | | ⬜ |
+| AC-11 | Admin Access Control | | | ⬜ |
 
 **Overall Acceptance:** ⬜ PASS / ⬜ FAIL / ⬜ PARTIAL
 
@@ -561,6 +565,72 @@ uv run python scripts/verify_acceptance_criteria.py
 
 Overall: 9 PASS, 0 PARTIAL, 0 FAIL
 ```
+
+---
+
+## AC-11: Admin Access Control
+
+### Claim
+The system provides basic admin authorization with server-side enforcement.
+
+### Verification
+
+**Step 1: Verify admin endpoints exist**
+```bash
+curl -sS http://localhost:8170/api/operator/admin/me \
+  -H "Cookie: <valid-session-cookie>"
+```
+
+**Expected Result (admin user):**
+```json
+{
+  "status": "ok",
+  "user": {
+    "identifier": "admin@example.com",
+    "display_name": "Admin User",
+    "is_admin": true
+  }
+}
+```
+
+**Expected Result (non-admin user):**
+```json
+{
+  "status": "ok",
+  "user": {
+    "identifier": "user@example.com",
+    "display_name": "Regular User",
+    "is_admin": false
+  }
+}
+```
+
+**Step 2: Verify server-side enforcement (non-admin access denied)**
+```bash
+curl -sS http://localhost:8170/api/operator/admin/users \
+  -H "Cookie: <non-admin-session-cookie>"
+```
+
+**Expected:** HTTP 403 with `{"detail": "Admin access required"}`
+
+**Step 3: Verify UI admin panel behavior**
+1. Sign in as non-admin user
+2. Navigate to `http://localhost:3000/admin`
+3. Observe "Access Denied" message
+
+**Expected:** Page shows "Access Denied - You do not have admin privileges."
+
+**Evidence:** `reports/admin_verification/admin_access_denied_non_admin_user.png`
+
+**Step 4: Verify admin sidebar visibility**
+1. Sign in as admin user
+2. Check sidebar for shield icon
+3. Sign in as non-admin user
+4. Verify shield icon is NOT present
+
+**Expected:** Shield icon only visible for admin users
+
+**Acceptance:** Pass if admin endpoints exist, server-side enforcement works, and UI correctly shows/hides admin elements.
 
 ---
 

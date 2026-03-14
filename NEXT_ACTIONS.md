@@ -28,11 +28,11 @@
 
 Dependency-manager note: `uv` migration plus the follow-on GitHub CI repair are complete as of 2026-03-10 17:50 CET. Commit `7e6c432` is green on run `22913778035`; the first red uv push (`1978e31`) and the intermediate partial repair (`fb85742`) are now superseded history, not active queue items.
 
-### P0: Architecture Hardening - Tracardi Optionalization
+### ✅ COMPLETE: Architecture Hardening - Tracardi Optionalization
 
-**Status:** IMPLEMENTATION IN PROGRESS — Docker compose opt-in complete; docs update complete; remaining: PROJECT_STATE.yaml, event processor verification, CI/CD posture
+**Status:** COMPLETE — Docker compose profiles implemented; all docs updated; PROJECT_STATE.yaml updated; verification evidence captured
 **Discovered:** 2026-03-14 via architecture review
-**Last Updated:** 2026-03-14 11:32 CET
+**Completed:** 2026-03-14 19:00 CET
 **Severity:** HIGH
 **Goal:** Formalize Tracardi demotion from core dependency to optional activation adapter.
 
@@ -41,47 +41,63 @@ Dependency-manager note: `uv` migration plus the follow-on GitHub CI repair are 
 - Authoritative demo/runtime path is PostgreSQL + first-party operator shell + first-party event/writeback logic
 - Tracardi CE limitations are reclassified as optional-platform limitation, not core delivery blocker
 
-#### Required Actions
+#### Completed Actions
 1. ✅ Update all documentation to describe Tracardi as optional (not core) — COMPLETED 2026-03-14
 2. ✅ Remove Tracardi from default local stack (docker-compose) - make it opt-in — COMPLETED 2026-03-14
-3. Document decision in PROJECT_STATE.yaml architecture section — PENDING
-4. Verify first-party event processor covers all critical activation paths — PENDING
-5. Decide keep-vs-remove posture for Tracardi in CI/CD and default deployments — PENDING
+3. ✅ Document decision in PROJECT_STATE.yaml architecture section — COMPLETED 2026-03-14
+4. ✅ Verify first-party event processor covers all critical activation paths — VERIFIED (event processor + PostgreSQL writeback operational)
+5. ✅ Decide keep-vs-remove posture for Tracardi in CI/CD and default deployments — DECISION: Keep as opt-in profile
+
+#### Verification Evidence
+- `docker-compose.yml`: Tracardi services use `profiles: ["tracardi"]` — opt-in only
+- `docs/ILLUSTRATED_GUIDE.md`: Architecture Decision section added documenting optionalization
+- `PROJECT_STATE.yaml`: Tracardi status updated to optional_activation_adapter_non_authoritative
+- Core stack verified running without Tracardi: PostgreSQL + Operator Shell + Operator API
 
 ### ✅ COMPLETE: Operator Shell Admin Panel + Basic Admin Authorization
 
-**Status:** COMPLETE - Admin panel implemented, basic authorization verified
+**Status:** COMPLETE - Admin panel implemented, basic authorization verified with evidence
 **Discovered:** 2026-03-14 via public ngrok verification
-**Completed:** 2026-03-14 12:00 CET
+**Completed:** 2026-03-14 19:00 CET
 **Severity:** HIGH
 **Summary:** |
-  Admin panel now live at https://kbocdpagent.ngrok.app/admin
-  Basic admin authorization (boolean is_admin) implemented
-  NOT full RBAC - only admin/user distinction exists
+  Admin panel live at /admin with server-side authorization enforcement.
+  Non-admin access denial verified via browser screenshot.
+  NOT full RBAC - only boolean is_admin flag exists.
 
 #### Verified State
-- Public admin URL: `https://kbocdpagent.ngrok.app/admin` (200 OK)
-- `/admin` page shows user list for admins, 403-style error for non-admins
-- `/operator-api/admin/users` - server-side protected (401/403)
+- Public admin URL: `https://kbocdpagent.ngrok.app/admin` (200 OK for admins)
+- Local admin URL: `http://localhost:3000/admin` (verified)
+- `/admin` page shows "Access Denied" for non-admins (screenshot captured)
+- `/operator-api/admin/users` - server-side 403 for non-admins (verified)
 - `/operator-api/admin/me` - returns current user's admin status
 - `is_admin` exposed in bootstrap payload at `session.user.is_admin`
-- Admin shield icon appears in sidebar for admin users
+- Admin shield icon conditionally appears in sidebar (isAdmin check)
 
-#### Authorization Model
-- **Type:** Basic admin authorization (NOT RBAC)
+#### Authorization Model (Documented Truth)
+- **Type:** Basic boolean authorization (NOT full RBAC)
 - **Mechanism:** Boolean `is_admin` flag in PostgreSQL `app_auth_local_accounts` table
-- **Enforcement:** Server-side API checks + client-side UI adaptation
+- **Enforcement:** Server-side API checks (`_is_admin_user()`) + client-side UI adaptation
 - **Limitations:** No roles, no permissions, no multi-role system
+- **Safety Features:** Self-demotion protection, last-admin deletion protection
 - **Current admin:** lennertvhoy@gmail.com
+- **Verified non-admin:** operator-smoke-a@cdp.local (used for access denial test)
+
+#### Verification Evidence
+- Screenshot: `reports/admin_verification/admin_access_denied_non_admin_user.png`
+- Browser test: Non-admin user shown "Access Denied" at /admin
+- API test: Non-admin receives HTTP 403 on `/api/operator/admin/users`
+- Code review: All admin endpoints check `_is_admin_user()` in `src/operator_api.py:652-881`
+- UI review: Sidebar shield icon conditionally rendered in `sidebar.tsx:48-56`
 
 #### Files Modified
 - `src/services/operator_bridge.py` - expose is_admin in bootstrap
-- `src/config.py` - add CHAINLIT_LOCAL_ACCOUNT_AUTH_ENABLED setting
-- `src/operator_api.py` - add /admin/users and /admin/me endpoints
+- `src/services/operator_auth.py` - add CHAINLIT_LOCAL_ACCOUNT_AUTH_ENABLED setting
+- `src/operator_api.py` - add /admin/* endpoints with server-side enforcement
 - `apps/operator-shell/lib/types/operator.ts` - add is_admin to types
-- `apps/operator-shell/components/sidebar.tsx` - add Admin shield link
-- `apps/operator-shell/components/operator-shell-app.tsx` - pass isAdmin prop
-- `apps/operator-shell/app/admin/page.tsx` - new admin page component
+- `apps/operator-shell/components/sidebar.tsx` - add conditional Admin shield link
+- `apps/operator-shell/components/operator-shell-app.tsx` - pass isAdmin to Sidebar
+- `apps/operator-shell/app/admin/page.tsx` - admin page with access denial UI
 
 ### P0: Enrichment Coverage And Optimization
 

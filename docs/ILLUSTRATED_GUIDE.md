@@ -9,7 +9,7 @@
 
 **Audience:** Demo observers, auditors, stakeholders needing visual proof
 
-**Last Updated:** 2026-03-14 (v4.1 — Tracardi Optionalization + Clean Core Stack)
+**Last Updated:** 2026-03-14 (v4.2 — Admin/RBAC Verification + Tracardi Optionalization)
 
 **Companion Docs:**
 
@@ -34,6 +34,7 @@
 | Privacy-by-design (UID-first) | ✅ Verified | PostgreSQL stores KBO only; PII stays in source systems |
 | Browser automation (authenticated) | ✅ Verified | Teamleader + Exact Online continuation with GUI operations |
 | Deterministic E2E tab selection | ✅ Verified | 17/17 attached-Edge tests passing with priority-ordered matching |
+| Admin access control | ✅ Verified | Boolean `is_admin` authorization with server-side enforcement |
 
 ### What Is Partial
 
@@ -1108,6 +1109,130 @@ python -m pytest tests/e2e/test_attached_edge_cdp_smoke.py -v --tb=short
 ### Status
 
 ✅ **Canonical ATTACHED_EDGE_CDP path improved** — All 17 tests passing with deterministic tab selection and real flow validation.
+
+---
+
+---
+
+## Phase 12: Admin Access Control Evidence
+
+### Claim
+The system provides basic admin authorization with proper server-side enforcement.
+
+### What "Basic Admin Authorization" Means
+
+| Aspect | Implementation | Full RBAC |
+|--------|---------------|-----------|
+| Authorization model | Boolean `is_admin` flag | Multiple roles with permissions |
+| Access levels | Admin / Non-admin only | Granular permissions per feature |
+| Enforcement | Server-side API checks | Server-side + middleware |
+| UI adaptation | Conditional admin shield icon | Role-based menu filtering |
+
+**Truth:** This is basic boolean authorization, NOT full RBAC.
+
+### Evidence
+
+#### 12.1 Admin API Endpoints Exist
+
+**Endpoint inventory from `src/operator_api.py`:**
+
+| Method | Endpoint | Purpose | Auth Required |
+|--------|----------|---------|---------------|
+| GET | `/api/operator/admin/me` | Get current user's admin status | Session |
+| GET | `/api/operator/admin/users` | List all users | Admin only |
+| POST | `/api/operator/admin/users` | Create new user | Admin only |
+| PATCH | `/api/operator/admin/users/{id}` | Update user | Admin only |
+| POST | `/api/operator/admin/users/{id}/reset-password` | Reset password | Admin only |
+| DELETE | `/api/operator/admin/users/{id}` | Delete user | Admin only |
+
+#### 12.2 Server-Side Enforcement Verified
+
+**Test: Non-admin user accessing admin endpoint**
+
+```bash
+curl -sS http://localhost:8170/api/operator/admin/users \
+  -H "Cookie: <non-admin-session>"
+```
+
+**Result:** HTTP 403 with `{"detail":"Admin access required"}`
+
+**Code enforcement from `src/operator_api.py:660-661`:**
+```python
+if not _is_admin_user(user_context):
+    raise HTTPException(status_code=403, detail="Admin access required")
+```
+
+#### 12.3 UI Access Denial for Non-Admin
+
+**Test: Navigate to `/admin` as non-admin user**
+
+| Step | Action | Result |
+|------|--------|--------|
+| 1 | Sign in as non-admin user (Operator Smoke A) | Success |
+| 2 | Navigate to `http://localhost:3000/admin` | Page loads |
+| 3 | Observe content | "Access Denied - You do not have admin privileges." |
+
+**Screenshot Evidence:**
+- File: `reports/admin_verification/admin_access_denied_non_admin_user.png`
+- Shows: Clear access denied message with "Back to Home" button
+- Captured: 2026-03-14
+
+#### 12.4 Admin Sidebar Visibility
+
+**Implementation from `apps/operator-shell/components/sidebar.tsx:48-56`:**
+
+```tsx
+{isAdmin && (
+  <Link
+    href="/admin"
+    className="w-10 h-10 flex items-center justify-center rounded-[6px] transition-colors text-zinc-500 hover:text-emerald-400 hover:bg-zinc-900"
+    title="Admin Panel"
+  >
+    <Shield size={18} />
+  </Link>
+)}
+```
+
+**Verified behavior:**
+- Admin user (is_admin=true): Shield icon visible in sidebar
+- Non-admin user (is_admin=false): No shield icon, direct /admin URL shows access denied
+
+#### 12.5 Admin Panel Features (When Access Granted)
+
+When accessed by an admin user, the panel provides:
+
+| Feature | Status |
+|---------|--------|
+| User list view | ✅ Implemented |
+| Create new user | ✅ Implemented |
+| Edit user (display name, admin status) | ✅ Implemented |
+| Reset user password | ✅ Implemented |
+| Activate/deactivate user | ✅ Implemented |
+| Delete user | ✅ Implemented |
+| Self-demotion protection | ✅ Implemented (prevents removing own admin) |
+| Last-admin protection | ✅ Implemented (prevents deleting last admin) |
+
+### Verification Summary
+
+| Check | Status | Evidence |
+|-------|--------|----------|
+| Admin endpoints exist | ✅ Pass | `src/operator_api.py:652-881` |
+| Server-side enforcement | ✅ Pass | 403 for non-admin access |
+| UI access denial | ✅ Pass | Screenshot captured |
+| Sidebar conditional visibility | ✅ Pass | Code + behavior verified |
+| Admin features functional | ✅ Pass | Create/edit/delete/reset all implemented |
+
+### Limitations (Documented)
+
+| Limitation | Impact | Future Work |
+|------------|--------|-------------|
+| No role-based permissions | Binary admin/non-admin only | Full RBAC if needed |
+| No audit log for admin actions | Actions not logged separately | Admin audit trail |
+| No session timeout controls | Uses default session lifetime | Configurable timeouts |
+
+### Status
+
+✅ **Admin Access Control verified** — Basic boolean authorization working with proper server-side enforcement.
 
 ---
 

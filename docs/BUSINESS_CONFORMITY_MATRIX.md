@@ -3,7 +3,7 @@
 **Purpose:** Map implementation state to customer requirements from "Business Case Customer.txt"  
 **Audience:** Business stakeholders, auditors, project reviewers  
 **Last Updated:** 2026-03-14  
-**Version:** 1.3 (Aligned with Illustrated Guide v3.6 — Cleanup Pass: Tracardi Downgrade)
+**Version:** 1.4 (Aligned with Illustrated Guide v4.2 — Admin/RBAC Verification + Tracardi Optionalization)
 
 ---
 
@@ -263,6 +263,23 @@ From the original POC specification:
 | Chainlit | Chat UI (port 8000) | ❌ Deprecated | Replaced by Operator Shell |
 | Azure Container Apps | Hosting | ❌ Removed | Local-first deployment |
 | Azure VMs (Tracardi/ES) | Infrastructure | ❌ Retired | Tracardi now optional adapter |
+
+### Admin & Access Control (Verified 2026-03-14)
+
+| Feature | Implementation | Status | Evidence |
+|---------|---------------|--------|----------|
+| Admin panel route | `/admin` page exists | ✅ Verified | `apps/operator-shell/app/admin/page.tsx` |
+| Admin API endpoints | `/api/operator/admin/*` | ✅ Verified | `src/operator_api.py:652-881` |
+| Authorization model | Boolean `is_admin` flag | ✅ Verified | PostgreSQL `app_auth_local_accounts.is_admin` |
+| Admin sidebar link | Shield icon (conditional) | ✅ Verified | `apps/operator-shell/components/sidebar.tsx:48-56` |
+| Non-admin access denial | 403-style error page | ✅ Verified | Screenshot: `reports/admin_verification/admin_access_denied_non_admin_user.png` |
+
+**RBAC Truth:**
+- **What exists:** Basic admin authorization (boolean `is_admin` flag)
+- **What does NOT exist:** Full RBAC with roles/permissions, multi-level access control
+- **Authorization model:** Simple binary (admin vs non-admin) enforced server-side
+- **Current admin:** lennertvhoy@gmail.com (verified via database)
+- **Non-admin test user:** Operator Smoke A (verified via browser test)
 
 ### Azure Posture
 
