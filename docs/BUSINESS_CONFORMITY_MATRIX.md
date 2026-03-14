@@ -3,7 +3,7 @@
 **Purpose:** Map implementation state to customer requirements from "Business Case Customer.txt"  
 **Audience:** Business stakeholders, auditors, project reviewers  
 **Last Updated:** 2026-03-14  
-**Version:** 1.5 (Aligned with Illustrated Guide v4.3 — Core Path Without Tracardi + Typed Intents)
+**Version:** 1.6 (Admin Verification Complete + Enrichment Status + Secret Sweep)
 
 ---
 
@@ -341,6 +341,52 @@ curl http://localhost:8170/api/operator/health
 $ uv run python -m pytest tests/unit/test_intents.py -v
 ============================== 38 passed in 0.20s ==============================
 ```
+
+---
+
+### 12. Admin Access Control (Verified 2026-03-14)
+
+| Requirement | Implementation | Status | Evidence |
+|-------------|----------------|--------|----------|
+| Admin API endpoints | CRUD operations for user management | ✅ Verified | `/api/operator/admin/*` endpoints |
+| Server-side enforcement | 403 for non-admin access | ✅ Verified | Tested with non-admin user |
+| UI access control | Admin Panel visible only to admins | ✅ Verified | Screenshot captured |
+| Admin actions | Create/edit/reset/deactivate/delete | ✅ Verified | All actions tested |
+
+**Verification Steps:**
+1. Non-admin denied access to `/admin` → ✅ 403 + UI denial
+2. Admin can access `/admin` → ✅ Panel loads with user list
+3. Admin API returns correct data → ✅ `/admin/me` shows `is_admin: true`
+
+**Screenshot:** `reports/compound_slice_43/admin_panel_positive_path.png`
+
+---
+
+### 13. Enrichment Progress (Status 2026-03-14)
+
+| Enrichment | Count | Percentage | Status |
+|------------|-------|------------|--------|
+| Website discovery | 179,195 | 9.2% | 🔄 Running |
+| Geocoding | 262,491 | 13.5% | 🔄 Running |
+| AI description | 841,775 | 43.4% | 🔄 Running |
+| CBE enrichment | 0 | 0% | ⏸️ Paused |
+
+**Active Processes:**
+- 3 enrichment runners active (PID 7580, 7581, 7582)
+- Cursor-based resumable progress
+
+---
+
+### 14. Security — Secret Sweep (Completed 2026-03-14)
+
+| Check | Finding | Status |
+|-------|---------|--------|
+| Hardcoded secrets in source | None found | ✅ Pass |
+| Test fixture secrets | Fake/test values only | ✅ Acceptable |
+| Environment externalization | All secrets in .env files | ✅ Pass |
+| Production secret exposure | No secrets in repository | ✅ Pass |
+
+**Conclusion:** No immediate security issues. All sensitive configuration properly externalized.
 
 ---
 

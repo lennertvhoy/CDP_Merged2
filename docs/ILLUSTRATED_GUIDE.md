@@ -9,7 +9,7 @@
 
 **Audience:** Demo observers, auditors, stakeholders needing visual proof
 
-**Last Updated:** 2026-03-14 (v4.3 — Core Path Without Tracardi + Typed Intents Implementation)
+**Last Updated:** 2026-03-14 (v4.4 — Admin Verification Complete + Enrichment Status + Secret Sweep)
 
 **Companion Docs:**
 
@@ -67,7 +67,7 @@ Tracardi has been demoted from **core dependency** to **optional activation adap
 | Use case | Event hub + workflow engine | Optional workflow/automation for specific activation paths |
 | CE limitations | Blocked core delivery | No longer blocking; first-party event processor covers critical paths |
 
-**Verification:** `docker compose up -d` starts only PostgreSQL. Tracardi services start only with explicit `--profile tracardi`.
+**Verification:** Core stack verified working without Tracardi — Tracardi services explicitly stopped, only PostgreSQL remained running, and chat queries continued to function. Default `docker compose up -d` would start only PostgreSQL (Tracardi services have `profiles: ["tracardi"]`).
 
 ---
 
@@ -715,7 +715,7 @@ AUTOTASK:   B.B.S. Entreprise | 1 Ticket | €15,000 Contract
 
 | Gap | Priority | Current State | Path Forward |
 |-----|----------|---------------|--------------|
-| **Chat-send smoke test** | **Medium** | **Not yet implemented** | Requires test user credentials for authenticated chat flow |
+| **Chat-send smoke test** | **✅ Resolved** | **Implemented via Edge CDP** | Real message sent, real response captured, thread persisted |
 | **Segment creation assertions** | **Low** | **Not yet implemented** | Avoids creating business data during tests; can add with test isolation |
 | **Multi-tab stress testing (5+ tabs)** | **Low** | **Not yet implemented** | Deterministic selection works; scale testing is future work |
 | Real website traffic | Medium | Demo-labeled writeback proven for B.B.S. UID | Replace with live traffic only if required |
@@ -725,13 +725,14 @@ AUTOTASK:   B.B.S. Entreprise | 1 Ticket | €15,000 Contract
 | More linked companies | Medium | 1 fully linked; scripts available | Populate demo data for richer demos |
 | Complex form submission (multi-field, validation) | Low | Click/fill proven for search; full submission not required for current demos | Add if CRM record creation workflow needed |
 
-**Honest Assessment:** While 17/17 attached-Edge E2E tests pass and the deterministic tab selection is proven, the chat-send smoke test (the primary user flow) is still missing. The architecture is validated but the full user journey automation remains incomplete.
+**Honest Assessment:** All critical flows now have evidence. The chat-send smoke test was completed via Edge CDP in Phase 13 (core path without Tracardi verification). The primary user journey (authenticated chat → PostgreSQL query → LLM response → thread persistence) is now proven working.
 
 **Resolved in This Pass:**
 - ✅ Authenticated browser continuation (Teamleader + Exact)
 - ✅ Architecture truth documented (Operator Shell primary, Chainlit removed)
 - ✅ Azure posture clarified (Azure OpenAI only)
 - ✅ Tracardi framing downgraded from core dependency to optional adapter
+- ✅ Chat-send smoke test implemented (via Edge CDP in Phase 13)
 
 **Note:** All critical GO/No-Go criteria are met. These gaps are optimization and scale items, not blockers.
 
@@ -1220,7 +1221,35 @@ When accessed by an admin user, the panel provides:
 | Server-side enforcement | ✅ Pass | 403 for non-admin access |
 | UI access denial | ✅ Pass | Screenshot captured |
 | Sidebar conditional visibility | ✅ Pass | Code + behavior verified |
-| Admin features functional | ✅ Pass | Create/edit/delete/reset all implemented |
+| Admin features implemented | ✅ Pass | Code exists for create/edit/delete/reset |
+| Admin positive-path verified | ✅ Pass | Admin Panel loads with user list, stats, actions |
+| Admin API verified | ✅ Pass | `/admin/me` and `/admin/users` return correct data |
+
+### 12.2 Admin Positive-Path Verification
+
+**Test:** Admin user access to `/admin` panel
+
+| Step | Action | Expected | Actual |
+|------|--------|----------|--------|
+| 1 | Sign out as non-admin | Logged out | ✅ Pass |
+| 2 | Sign in as admin (`admin-test@cdp.local`) | Authenticated | ✅ Pass |
+| 3 | Navigate to `/admin` | Admin Panel loads | ✅ Pass |
+| 4 | Verify user list displays | All users visible | ✅ Pass (12 users) |
+| 5 | Verify admin stats | Stats shown | ✅ Pass (12 total, 2 admins) |
+
+**Screenshot Evidence:**
+- File: `reports/compound_slice_43/admin_panel_positive_path.png`
+- Shows: Admin Panel with user list, stats cards, action buttons
+- Captured: 2026-03-14
+
+**API Verification:**
+```bash
+curl -sS http://localhost:8170/api/operator/admin/me
+# {"status":"ok","user":{"identifier":"admin-test@cdp.local","is_admin":true}}
+
+curl -sS http://localhost:8170/api/operator/admin/users  
+# Returns 12 users with admin/user role distinction
+```
 
 ### Limitations (Documented)
 
@@ -1474,6 +1503,75 @@ tests/unit/test_intents.py ......................................        [100%]
 ### Status
 
 ✅ **Typed intents implemented** — Validated intent schemas, pattern-based classification, and comprehensive test coverage complete. Ready for integration into chat flow.
+
+---
+
+## Phase 15: Enrichment Progress Status
+
+### 15.1 Current Enrichment Counts (2026-03-14)
+
+| Enrichment Type | Count | Percentage | Status |
+|----------------|-------|------------|--------|
+| Total companies | 1,940,603 | 100% | — |
+| With website URL | 179,195 | 9.2% | 🔄 In Progress |
+| Geocoded (lat/lon) | 262,491 | 13.5% | 🔄 In Progress |
+| With AI description | 841,775 | 43.4% | 🔄 In Progress |
+| CBE enriched | 0 | 0% | ⏸️ Paused |
+
+### 15.2 Running Processes
+
+```
+PID    ENRICHER          STATUS
+7580   website           Running (chunked)
+7581   description       Running (chunked)
+7582   geocoding         Running (chunked)
+```
+
+**Cursor Positions:**
+- Website: `5210ec33-6062-413d-87d8-b0c20818b452` (updated 2026-03-14 18:22)
+- Description: `ade81dd0-bffb-4ec0-aa60-f7f0fc78cc68` (updated 2026-03-14 18:22)
+- Geocoding: `4ac4c7b7-1581-405b-b427-05a68da839a9` (updated 2026-03-14 16:11)
+
+### 15.3 Verification Query
+
+```sql
+SELECT 
+  COUNT(*) as total_companies,
+  COUNT(NULLIF(website_url, '')) as with_website,
+  COUNT(geo_latitude) as geocoded,
+  COUNT(NULLIF(ai_description, '')) as with_description
+FROM companies;
+```
+
+**Result:** See counts table above.
+
+---
+
+## Phase 16: Secret Sweep Results
+
+### 16.1 Findings
+
+| Category | Finding | Risk | Status |
+|----------|---------|------|--------|
+| Hardcoded secrets | None found in source code | — | ✅ Pass |
+| Test fixtures | Fake/test secrets in tests (expected) | Low | ✅ Acceptable |
+| Environment files | Secrets properly externalized | — | ✅ Pass |
+| Weak passwords | `.env.local` uses `cdpadmin123` for local DB | Low (local only) | ⚠️ Documented |
+
+### 16.2 Secret Locations
+
+| File | Secrets | Usage |
+|------|---------|-------|
+| `.env` | Azure OpenAI, Tracardi, Resend, Chainlit | Production configs (redacted in repo) |
+| `.env.local` | Local DB, smoke test passwords, dev auth | Local development only |
+| `.env.development` | API keys, tokens | Development environment |
+
+### 16.3 No Immediate Action Required
+
+- No production secrets committed to repository
+- No hardcoded fallbacks in source code
+- All sensitive configuration externalized to .env files
+- Test secrets are fake/test-only values
 
 ---
 

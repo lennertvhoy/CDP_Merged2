@@ -3,7 +3,7 @@
 **Purpose:** Reviewer-facing proof package for CDP_Merged POC verification  
 **Audience:** Technical auditors, QA reviewers, stakeholder sign-off  
 **Last Updated:** 2026-03-14  
-**Version:** 1.5 (Aligned with Illustrated Guide v4.3 — Core Path Without Tracardi + Typed Intents)
+**Version:** 1.6 (Admin Verification Complete + Enrichment Status + Secret Sweep)
 
 ---
 
@@ -760,6 +760,148 @@ print(result.execution_plan)
 **Expected:** Plan includes `["search_postgresql", "count_results", "format_response"]`
 
 **Acceptance:** Pass if all unit tests pass and classification works deterministically.
+
+---
+
+## AC-14: Admin Access Control (Positive Path)
+
+### Claim
+Admin users can access the Admin Panel and perform user management actions.
+
+### Prerequisites
+- Operator API running
+- Operator Shell running
+- Admin user account exists
+
+### Verification
+
+**Step 1: Non-admin denial (already verified in AC-12)**
+- Sign in as non-admin user
+- Attempt to access `/admin`
+- **Expected:** Access denied (403 + UI message)
+
+**Step 2: Admin login**
+1. Sign out current user
+2. Sign in as admin: `admin-test@cdp.local` / `AdminTest_2026!`
+3. **Expected:** Authenticated successfully, "Admin Panel" visible in sidebar
+
+**Step 3: Admin Panel access**
+1. Click "Admin Panel" in sidebar
+2. **Expected:** `/admin` loads with:
+   - Stats cards (Total Users, Admins, Active)
+   - User list table with all users
+   - Action buttons (Edit, Reset Password, Deactivate, Delete)
+   - "Create User" button
+
+**Step 4: Admin API verification**
+```bash
+# Login and save cookie
+curl -sS -X POST http://localhost:8170/api/operator/auth/login \
+  -d "username=admin-test@cdp.local&password=AdminTest_2026!" \
+  -c /tmp/admin_cookie.txt
+
+# Verify admin status
+curl -sS http://localhost:8170/api/operator/admin/me -b /tmp/admin_cookie.txt
+# Expected: {"status":"ok","user":{"identifier":"admin-test@cdp.local","is_admin":true}}
+
+# Verify user list
+curl -sS http://localhost:8170/api/operator/admin/users -b /tmp/admin_cookie.txt
+# Expected: List of all users with is_admin flag
+```
+
+**Evidence:** Screenshot `reports/compound_slice_43/admin_panel_positive_path.png`
+
+**Acceptance:** Pass if admin can access panel and API returns correct data.
+
+---
+
+## AC-15: Enrichment Progress Verification
+
+### Claim
+Enrichment processes are running and making measurable progress.
+
+### Prerequisites
+- PostgreSQL running
+- Enrichment processes active (or cursor files exist)
+
+### Verification
+
+**Step 1: Query current counts**
+```sql
+SELECT 
+  COUNT(*) as total_companies,
+  COUNT(NULLIF(website_url, '')) as with_website,
+  COUNT(geo_latitude) as geocoded,
+  COUNT(NULLIF(ai_description, '')) as with_description
+FROM companies;
+```
+
+**Expected:** Returns current counts (as of 2026-03-14):
+- Total: ~1,940,603
+- With website: ~179,195 (9.2%)
+- Geocoded: ~262,491 (13.5%)
+- With description: ~841,775 (43.4%)
+
+**Step 2: Verify enrichment processes**
+```bash
+ps aux | grep enrich_companies
+```
+
+**Expected:** Shows running enrichment processes (PID 7580, 7581, 7582)
+
+**Step 3: Check cursor files**
+```bash
+cat logs/enrichment/website_discovery_cursor.json
+cat logs/enrichment/geocoding_parallel_cursor.json
+cat logs/enrichment/description_ollama_cursor.json
+```
+
+**Expected:** Valid JSON with `start_after_id` and recent `updated_at` timestamps
+
+**Acceptance:** Pass if counts are queryable and processes are running or have cursor files.
+
+---
+
+## AC-16: Secret Sweep
+
+### Claim
+No hardcoded secrets or unsafe credential fallbacks exist in the codebase.
+
+### Prerequisites
+- `grep` available
+- Access to source code
+
+### Verification
+
+**Step 1: Search for hardcoded passwords**
+```bash
+grep -rn "password.*=.*'admin'\|password.*=.*'password'\|password.*=.*'123'" src/ --include="*.py"
+```
+
+**Expected:** No matches (exit code 1)
+
+**Step 2: Search for API key patterns**
+```bash
+grep -rn "sk-[a-zA-Z0-9]\{20,\}" src/ --include="*.py"
+```
+
+**Expected:** No production API keys in source
+
+**Step 3: Verify environment externalization**
+```bash
+grep -rn "os.environ\|os.getenv\|env(" src/config.py src/services/ --include="*.py" | head -20
+```
+
+**Expected:** All sensitive config uses environment variables
+
+**Step 4: Check .env file handling**
+```bash
+ls -la .env*
+```
+
+**Expected:** `.env` and `.env.local` exist and are in `.gitignore`
+
+**Acceptance:** Pass if no hardcoded secrets found and all sensitive config externalized.
 
 ---
 
