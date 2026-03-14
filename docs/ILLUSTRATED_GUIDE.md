@@ -39,6 +39,42 @@
 
 **Credibility Note:** All claims are verified against the implementation before being documented. If a claim is partial, it is labeled **Partial**. If something is not yet proven, it is labeled **Not yet covered**.
 
+---
+
+## Reviewer Quick Start
+
+**For Auditors and Demo Observers**
+
+### How to Use This Guide
+
+1. **Start with Evidence Overview** (next page) — the master table of all claims and their evidence
+2. **Pick a Phase** — each phase is self-contained with claim → evidence → verification
+3. **Check the Architecture Truth** — runtime status verified at time of document generation
+
+### Key Evidence Types
+
+| Type | What It Means | Trust Level |
+|------|---------------|-------------|
+| **Live system** | Screenshots from real SaaS platforms (Teamleader, Exact Online, Resend) | Highest — real production data |
+| **Local runtime** | API responses and SQL results from running local stack | High — directly reproducible |
+| **Local artifact** | Generated files (CSV exports, PDFs) with checksums | High — tangible outputs |
+| **Demo-backed** | Demo tenant data with verified production-ready linkage | Medium — realistic but demo data |
+
+### Verification Status Legend
+
+| Symbol | Meaning |
+|--------|---------|
+| ✅ Verified | Claim checked against implementation |
+| ⚠️ Partial | Claim partially proven, limitations noted |
+| ❌ Removed/Deprecated | Component retired or no longer part of architecture |
+
+### What Makes This Credible
+
+- Every screenshot has a corresponding verification command or SQL query
+- Every count has a semantic definition (see Count Semantics Dictionary)
+- Phase 10 proves the agent can actually operate the GUI, not just view pages
+- Architecture Truth table shows what was running when this was generated
+
 \clearpage
 
 \tableofcontents

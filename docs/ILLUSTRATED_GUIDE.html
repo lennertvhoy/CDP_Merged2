@@ -325,6 +325,94 @@ artifact</strong></li>
 the implementation before being documented. If a claim is partial, it is
 labeled <strong>Partial</strong>. If something is not yet proven, it is
 labeled <strong>Not yet covered</strong>.</p>
+<hr />
+<h2 id="reviewer-quick-start">Reviewer Quick Start</h2>
+<p><strong>For Auditors and Demo Observers</strong></p>
+<h3 id="how-to-use-this-guide">How to Use This Guide</h3>
+<ol type="1">
+<li><strong>Start with Evidence Overview</strong> (next page) — the
+master table of all claims and their evidence</li>
+<li><strong>Pick a Phase</strong> — each phase is self-contained with
+claim → evidence → verification</li>
+<li><strong>Check the Architecture Truth</strong> — runtime status
+verified at time of document generation</li>
+</ol>
+<h3 id="key-evidence-types">Key Evidence Types</h3>
+<table>
+<colgroup>
+<col style="width: 17%" />
+<col style="width: 44%" />
+<col style="width: 38%" />
+</colgroup>
+<thead>
+<tr>
+<th>Type</th>
+<th>What It Means</th>
+<th>Trust Level</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Live system</strong></td>
+<td>Screenshots from real SaaS platforms (Teamleader, Exact Online,
+Resend)</td>
+<td>Highest — real production data</td>
+</tr>
+<tr>
+<td><strong>Local runtime</strong></td>
+<td>API responses and SQL results from running local stack</td>
+<td>High — directly reproducible</td>
+</tr>
+<tr>
+<td><strong>Local artifact</strong></td>
+<td>Generated files (CSV exports, PDFs) with checksums</td>
+<td>High — tangible outputs</td>
+</tr>
+<tr>
+<td><strong>Demo-backed</strong></td>
+<td>Demo tenant data with verified production-ready linkage</td>
+<td>Medium — realistic but demo data</td>
+</tr>
+</tbody>
+</table>
+<h3 id="verification-status-legend">Verification Status Legend</h3>
+<table>
+<colgroup>
+<col style="width: 47%" />
+<col style="width: 52%" />
+</colgroup>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>✅ Verified</td>
+<td>Claim checked against implementation</td>
+</tr>
+<tr>
+<td>⚠️ Partial</td>
+<td>Claim partially proven, limitations noted</td>
+</tr>
+<tr>
+<td>❌ Removed/Deprecated</td>
+<td>Component retired or no longer part of architecture</td>
+</tr>
+</tbody>
+</table>
+<h3 id="what-makes-this-credible">What Makes This Credible</h3>
+<ul>
+<li>Every screenshot has a corresponding verification command or SQL
+query</li>
+<li>Every count has a semantic definition (see Count Semantics
+Dictionary)</li>
+<li>Phase 10 proves the agent can actually operate the GUI, not just
+view pages</li>
+<li>Architecture Truth table shows what was running when this was
+generated</li>
+</ul>
 <h2 id="evidence-overview">Evidence Overview</h2>
 <table style="width:100%;">
 <colgroup>
