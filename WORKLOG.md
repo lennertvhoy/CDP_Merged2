@@ -860,3 +860,53 @@ GPT-5 fails to call tools for 50% of queries (e.g., "How many companies..." retu
 ### Next Steps
 - Monitor GPT-5.1 availability for future retesting
 - Consider GPT-5 for simple chat flows if hybrid approach justified
+
+## 2026-03-15 - Proven: GPT-5.1 Unavailability for This Subscription
+
+**Task**: Provide exact Azure proof for GPT-5.1 availability status
+
+### User Requirement
+Prove GPT-5.1 status for THIS specific subscription, not make general claims.
+
+### Evidence Gathered
+
+**Azure Identity**:
+- Subscription: ed9400bc-d5eb-4aa6-8b3f-2d4c11b17b9f (Visual Studio Enterprise MPN)
+- Tenant: ce408fd5-2526-4cbb-bbe6-f0c2e188b89d
+- Resource: aoai-cdpmerged-fast (westeurope)
+
+**Available Models** (confirmed via Azure CLI):
+- gpt-5.1 version 2025-11-13 exists in westeurope
+- gpt-5.1-codex version 2025-11-13 exists in westeurope
+
+**Deployment Attempts**:
+
+1. GlobalStandard SKU (like existing gpt-4o, gpt-5 deployments):
+   ```
+   ERROR: InvalidResourceProperties
+   "The specified SKU 'GlobalStandard' for model 'gpt-5.1 2025-11-13' 
+    is not supported in this region 'westeurope'."
+   ```
+
+2. GlobalProvisionedManaged SKU with capacity 15:
+   ```
+   ERROR: InsufficientQuota
+   "This operation require 15 new capacity in quota Global Provisioned Managed Throughput Unit,
+    which is bigger than the current available capacity 0.
+    The current quota usage is 0 and the quota limit is 0"
+   ```
+
+### Verified Conclusion
+We CANNOT use GPT-5.1 or GPT-5.1-codex on this subscription/resource/region right now because:
+- Subscription has 0 quota for "Global Provisioned Managed Throughput Unit"
+- GPT-5.1 requires ProvisionedManaged SKU (not Standard)
+- This is a subscription entitlement issue, not a regional availability issue
+
+### What We CAN Use
+- gpt-4o (deployed, working)
+- gpt-5 (deployed, working but poor tool accuracy)
+- gpt-4.1 (deployed, working)
+- gpt-5-mini, gpt-5-nano, gpt-4.1-mini (all deployed)
+
+### Files Changed
+- `reports/GPT51_AVAILABILITY_PROOF.md` (new)
