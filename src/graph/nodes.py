@@ -445,22 +445,45 @@ def _determine_token_limit_for_stage(messages: list) -> int:
 
 
 # Simple in-memory rate limiter for Azure OpenAI
-# gpt-4o: 10 requests per 10 seconds = 1 request per second
+# Dynamically adjusts based on deployment capacity
+# gpt-5 at capacity 20: 200 RPM = 0.3s min interval
+# gpt-4o at capacity 10: 10 RPM per 10s = 1.1s min interval (legacy)
 _last_azure_request_time: float = 0.0
-_azure_min_interval: float = 1.1  # 1.1s to be safe (10 req per 10s = 1 req/s)
+
+
+def _get_azure_min_interval() -> float:
+    """Calculate minimum interval between requests based on deployment RPM.
+    
+    Azure OpenAI GlobalStandard SKU:
+    - RPM scales with capacity: capacity 10 = 10-100 RPM (model dependent)
+    - gpt-5 at capacity 20: 200 RPM = 0.3s interval
+    - gpt-4o at capacity 10: ~60 RPM = 1.0s interval
+    
+    We use conservative spacing (add 20% buffer) to account for:
+    - Short-window burst throttling
+    - TPM-based throttling on estimated tokens
+    - Multiple concurrent users
+    """
+    deployment = settings.AZURE_OPENAI_DEPLOYMENT_NAME or settings.LLM_MODEL
+    if deployment and deployment.lower().startswith("gpt-5"):
+        # gpt-5 at capacity 20: 200 RPM = 0.3s per request
+        # Conservative: 0.4s to allow for bursts and TPM throttling
+        return 0.4
+    # Default for gpt-4o and others at lower capacity
+    return 1.1
 
 
 async def _rate_limit_azure_request():
     """Ensure we don't exceed Azure rate limits by spacing requests."""
     global _last_azure_request_time
-    import time
     
+    min_interval = _get_azure_min_interval()
     now = time.monotonic()
     elapsed = now - _last_azure_request_time
     
-    if elapsed < _azure_min_interval:
-        sleep_time = _azure_min_interval - elapsed
-        logger.debug("rate_limiter_throttling", sleep_ms=round(sleep_time * 1000, 2))
+    if elapsed < min_interval:
+        sleep_time = min_interval - elapsed
+        logger.debug("rate_limiter_throttling", sleep_ms=round(sleep_time * 1000, 2), min_interval=min_interval)
         await asyncio.sleep(sleep_time)
     
     _last_azure_request_time = time.monotonic()
