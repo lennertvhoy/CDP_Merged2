@@ -426,7 +426,11 @@ LLM_MODEL=gpt-4o
 | Scenario | Status | Blocker |
 |----------|--------|---------|
 | SC-14 | ✅ quality_pass | Complete |
-| SC-17 | 🔄 ready | Fixed: Path resolution bug |
-| SC-18 | 🔄 ready | Fixed: Path resolution bug |
+| SC-17 | 🔄 ready | Code fixed, needs host-side verification |
+| SC-18 | 🔄 ready | Code fixed, needs host-side verification |
 
-**Note**: Fixed path resolution bug in PostgreSQL clients (2026-03-14). The `.env.database` file is now correctly located at project root instead of one directory above. Both scenarios ready for testing.
+**Note**: 
+1. Fixed path resolution bug in PostgreSQL clients (2026-03-14) - `.env.database` now correctly located
+2. Database URL loads successfully: `cdp-postgres-661.postgres.database.azure.com`
+3. Full scenario testing blocked by sandbox DNS resolution (known limitation)
+4. Tests pass for tool selection; database execution requires host-side Azure network access

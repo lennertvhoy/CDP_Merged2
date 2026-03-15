@@ -985,3 +985,27 @@ python3 -c "from pathlib import Path; p = Path('src/services/postgresql_client.p
 ```
 
 **Status:** ✅ Database connection now works. SC-17/SC-18 unblocked.
+
+## 2026-03-15 08:35 - Scenario Acceptance Testing Status
+
+**SC-17/SC-18 Test Attempt:**
+- Path fix verified: `.env.database` now loads correctly
+- Database URL resolves to: `cdp-postgres-661.postgres.database.azure.com`
+- **Blocker**: Sandbox DNS resolution failure prevents Azure PostgreSQL connection
+- **Evidence**: Per AGENTS.md section "sandbox PostgreSQL DNS resolution failure"
+
+**Test Results (from scripts/test_response_quality_direct.py):**
+| Test | Status | Notes |
+|------|--------|-------|
+| market_research_count | ✅ PASS | Tool selection works (1.66s) |
+| 360_profile | ⏱️ TIMEOUT | Database connection blocked |
+| segmentation | ⏱️ TIMEOUT | Database connection blocked |
+| operational_count | ✅ PASS | Tool selection works (1.30s) |
+| follow_up | ⏱️ TIMEOUT | Database connection blocked |
+
+**Conclusion:**
+- Code fix is verified correct
+- Database path resolution works
+- Full scenario testing requires host-side execution (outside sandbox)
+- SC-17/SC-18 ready for testing in environment with Azure PostgreSQL access
+
