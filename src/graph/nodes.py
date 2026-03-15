@@ -44,7 +44,7 @@ from src.ai_interface.tools import (
 from src.config import settings
 from src.core.llm_spend_guard import get_spend_guard
 from src.core.logger import get_logger
-from src.core.search_cache import get_search_cache
+from src.core.search_cache import get_search_cache, store_search_tql, get_last_search_tql
 from src.graph.state import AgentState
 
 logger = get_logger(__name__)
@@ -1095,11 +1095,12 @@ async def critic_node(state: AgentState) -> dict:
     return {}
 
 
-async def tools_node(state: AgentState) -> dict:
+async def tools_node(state: AgentState, config: RunnableConfig | None = None) -> dict:
     """Execute validated tool calls.
 
     Args:
         state: Current graph state with validated tool calls.
+        config: Optional RunnableConfig containing thread_id for persistence.
 
     Returns:
         Partial state update with tool execution results.
@@ -1118,13 +1119,49 @@ async def tools_node(state: AgentState) -> dict:
     tool_responses = []
     last_search_params = state.get("last_search_params")
 
+    # Try to retrieve last_search_params from SearchCache if not in state
+    # This enables follow-up operations across separate graph invocations
+    # Extract thread_id from config - handle both direct and nested configurable formats
+    thread_id = None
+    if config:
+        # Try nested configurable format first (standard LangGraph)
+        if isinstance(config, dict):
+            configurable = config.get("configurable", {})
+            thread_id = configurable.get("thread_id") if isinstance(configurable, dict) else None
+            # Fallback: try direct key
+            if not thread_id:
+                thread_id = config.get("thread_id")
+    
+    logger.info(
+        "tools_node_config_debug",
+        config_type=type(config).__name__ if config else None,
+        thread_id=thread_id,
+    )
+    logger.info(
+        "tools_node_start",
+        thread_id=thread_id,
+        has_last_search_params_in_state=bool(last_search_params),
+    )
+    if not last_search_params and thread_id:
+        cached_search = await get_last_search_tql(thread_id)
+        logger.info(
+            "tools_node_cache_lookup",
+            thread_id=thread_id,
+            cache_hit=bool(cached_search),
+            cached_tql_preview=cached_search[:50] if cached_search else None,
+        )
+        if cached_search:
+            # cached_search is the TQL string; we need to reconstruct params
+            # The TQL is stored in the cache; tool_args will have it as 'condition'
+            last_search_params = {"condition": cached_search}
+
     for tool_call in tool_calls:
         tool_name = tool_call.get("name", "")
         tool_args = tool_call.get("args", {})
         tool_id = tool_call.get("id", "")
 
-        # Merge last search params for artifact creation
-        if tool_name in {"create_data_artifact", "export_segment_to_csv", "email_segment_export"}:
+        # Merge last search params for follow-up operations
+        if tool_name in {"create_data_artifact", "export_segment_to_csv", "email_segment_export", "create_segment"}:
             tool_args = _merge_last_search_params(tool_args, last_search_params)
 
         logger.info(
@@ -1155,6 +1192,19 @@ async def tools_node(state: AgentState) -> dict:
             # Store search params for follow-up operations
             if tool_name == "search_profiles" and isinstance(result, dict):
                 state["last_search_params"] = tool_args
+
+                # Also store to SearchCache for persistence across graph invocations
+                # This is critical since checkpointer=None in operator_api.py
+                if thread_id:
+                    # Extract the TQL condition from tool_args if present
+                    tql = tool_args.get("condition") or tool_args.get("tql")
+                    if tql:
+                        await store_search_tql(thread_id, tql, tool_args)
+                        logger.info(
+                            "search_cached_for_followup",
+                            thread_id=thread_id,
+                            tql_preview=tql[:50] if tql else None,
+                        )
 
             # Serialize result for the LLM
             if isinstance(result, dict):
