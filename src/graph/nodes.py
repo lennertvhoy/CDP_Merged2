@@ -380,7 +380,11 @@ def _build_azure_chat_model_kwargs(
     api_key: str | None = None,
     token_provider: Any | None = None,
 ) -> dict[str, Any]:
-    """Build a bounded Azure OpenAI config for the interactive chat path."""
+    """Build a bounded Azure OpenAI config for the interactive chat path.
+    
+    Uses aggressive retry limits to fail fast under rate limiting rather than
+    hanging with long retry-after delays.
+    """
     deployment = settings.AZURE_OPENAI_DEPLOYMENT_NAME or settings.LLM_MODEL
     is_gpt5 = deployment and deployment.lower().startswith("gpt-5")
     
@@ -390,6 +394,9 @@ def _build_azure_chat_model_kwargs(
         "api_version": settings.AZURE_OPENAI_API_VERSION,
         "timeout": settings.AZURE_OPENAI_TIMEOUT,
         "max_retries": settings.AZURE_OPENAI_MAX_RETRIES,
+        # Explicit retry behavior: fail fast, don't wait for long retry-after
+        "retry_min_seconds": getattr(settings, "AZURE_OPENAI_RETRY_MIN_SECONDS", 1.0),
+        "retry_max_seconds": getattr(settings, "AZURE_OPENAI_RETRY_MAX_SECONDS", 5.0),
     }
     
     # GPT-5 compatibility: use max_completion_tokens instead of max_tokens
@@ -435,6 +442,134 @@ async def router_node(state: AgentState) -> dict:
     return {"language": language, "messages": new_messages}
 
 
+# Tool results that can bypass second LLM call for deterministic responses
+# These produce simple, predictable outputs where LLM summarization adds latency without value
+_DETERMINISTIC_TOOL_SHORTCUTS = {
+    "get_identity_link_quality": lambda r: _format_link_quality_result(r),
+    "get_geographic_revenue_distribution": lambda r: _format_geo_revenue_result(r),
+    "get_industry_summary": lambda r: _format_industry_summary_result(r),
+    "get_data_coverage_stats": lambda r: _format_coverage_result(r),
+}
+
+
+def _format_link_quality_result(result: dict) -> str | None:
+    """Format identity link quality result deterministically."""
+    if result.get("status") != "ok":
+        return None
+    data = result.get("data", {})
+    total = data.get("total_companies", 0)
+    links = data.get("source_links", {})
+    kbo = links.get("kbo", {})
+    exact = links.get("exact_online", {})
+    teamleader = links.get("teamleader", {})
+    
+    lines = ["## Identity Link Quality"]
+    lines.append(f"**Total companies:** {total:,}")
+    lines.append("")
+    lines.append("### Source System Coverage")
+    lines.append(f"- **KBO (base):** {kbo.get('linked', 0):,} linked ({kbo.get('percentage', 0):.1f}%)")
+    lines.append(f"- **Exact Online:** {exact.get('linked', 0):,} linked ({exact.get('percentage', 0):.1f}%)")
+    lines.append(f"- **Teamleader:** {teamleader.get('linked', 0):,} linked ({teamleader.get('percentage', 0):.1f}%)")
+    return "\n".join(lines)
+
+
+def _format_geo_revenue_result(result: dict) -> str | None:
+    """Format geographic revenue distribution deterministically."""
+    if result.get("status") != "ok":
+        return None
+    data = result.get("data", [])
+    if not data:
+        return "No geographic revenue data available."
+    
+    lines = ["## Revenue by City"]
+    lines.append("")
+    for item in data[:10]:  # Top 10
+        city = item.get("city", "Unknown")
+        revenue = item.get("total_revenue", 0)
+        companies = item.get("company_count", 0)
+        lines.append(f"- **{city}:** €{revenue:,.0f} ({companies} companies)")
+    return "\n".join(lines)
+
+
+def _format_industry_summary_result(result: dict) -> str | None:
+    """Format industry summary deterministically."""
+    if result.get("status") != "ok":
+        return None
+    data = result.get("data", [])
+    if not data:
+        return "No industry data available."
+    
+    lines = ["## Industry Summary"]
+    lines.append("")
+    for item in data[:10]:
+        industry = item.get("industry", "Unknown")
+        pipeline = item.get("total_pipeline", 0)
+        revenue = item.get("total_revenue", 0)
+        companies = item.get("company_count", 0)
+        lines.append(f"- **{industry}:** {companies} companies")
+        if pipeline:
+            lines.append(f"  - Pipeline: €{pipeline:,.0f}")
+        if revenue:
+            lines.append(f"  - Revenue: €{revenue:,.0f}")
+    return "\n".join(lines)
+
+
+def _format_coverage_result(result: dict) -> str | None:
+    """Format data coverage stats deterministically."""
+    if result.get("status") != "ok":
+        return None
+    data = result.get("data", {})
+    total = data.get("total_companies", 0)
+    fields = data.get("field_coverage", {})
+    
+    lines = ["## Data Coverage Statistics"]
+    lines.append(f"**Total companies:** {total:,}")
+    lines.append("")
+    lines.append("### Field Coverage")
+    for field, count in list(fields.items())[:10]:
+        pct = (count / total * 100) if total else 0
+        lines.append(f"- **{field}:** {count:,} ({pct:.1f}%)")
+    return "\n".join(lines)
+
+
+def _try_deterministic_shortcut(messages: list) -> str | None:
+    """Try to generate a deterministic response without second LLM call.
+    
+    Returns formatted string if shortcut applies, None otherwise.
+    """
+    # Need exactly: SystemMessage, HumanMessage, AIMessage(tool_calls), ToolMessage
+    if len(messages) < 4:
+        return None
+    
+    # Check last message is ToolMessage
+    tool_msg = messages[-1]
+    if not isinstance(tool_msg, ToolMessage):
+        return None
+    
+    # Check second-to-last is AIMessage with tool_calls
+    ai_msg = messages[-2]
+    if not isinstance(ai_msg, AIMessage):
+        return None
+    if not getattr(ai_msg, "tool_calls", None):
+        return None
+    
+    # Get the tool name from tool_calls
+    tool_calls = ai_msg.tool_calls
+    if not tool_calls or len(tool_calls) != 1:
+        return None  # Only handle single-tool calls for now
+    
+    tool_name = tool_calls[0].get("name", "")
+    if tool_name not in _DETERMINISTIC_TOOL_SHORTCUTS:
+        return None
+    
+    # Try to parse and format the result
+    try:
+        result_data = json.loads(tool_msg.content)
+        return _DETERMINISTIC_TOOL_SHORTCUTS[tool_name](result_data)
+    except (json.JSONDecodeError, KeyError, TypeError):
+        return None
+
+
 async def agent_node(state: AgentState) -> dict:
     """Core node that invokes the LLM with bound tools.
 
@@ -446,6 +581,17 @@ async def agent_node(state: AgentState) -> dict:
     """
     messages = state["messages"]
     provider_type = settings.LLM_PROVIDER.lower()
+    
+    # DEMAND-SIDE OPTIMIZATION: Check for deterministic shortcuts
+    # This avoids second LLM call for simple, predictable tool results
+    shortcut_response = _try_deterministic_shortcut(messages)
+    if shortcut_response:
+        logger.info(
+            "agent_node_deterministic_shortcut",
+            tool_name=messages[-2].tool_calls[0].get("name") if hasattr(messages[-2], "tool_calls") else "unknown",
+            saved_llm_call=True,
+        )
+        return {"messages": [AIMessage(content=shortcut_response)]}
 
     # Instrument payload size entering the LLM
     total_message_chars = sum(len(str(getattr(m, 'content', ''))) for m in messages)
@@ -599,12 +745,42 @@ async def agent_node(state: AgentState) -> dict:
         return {"messages": [response]}
     except Exception as e:
         llm_call_duration = time.monotonic() - llm_call_start
+        error_str = str(e)
+        
+        # Check for rate limit errors (429 Too Many Requests)
+        is_rate_limit = (
+            "429" in error_str
+            or "rate limit" in error_str.lower()
+            or "too many requests" in error_str.lower()
+        )
+        
         logger.error(
             "agent_node_llm_call_failed",
             provider=provider_type,
             duration_ms=round(llm_call_duration * 1000, 2),
-            error=str(e),
+            error=error_str,
+            is_rate_limit=is_rate_limit,
         )
+        
+        # Return user-friendly message for rate limits instead of raising
+        if is_rate_limit:
+            return {
+                "messages": [
+                    AIMessage(
+                        content="""⚠️ **Rate Limit Reached**
+
+The AI service is currently experiencing high demand. Please wait a moment and try again.
+
+**What you can do:**
+- Wait 10-20 seconds and retry your query
+- Try a simpler query (e.g., just "hello" to test)
+- If this persists, the service may need capacity adjustment
+
+_Error: Azure OpenAI rate limit (429)_"""
+                    )
+                ]
+            }
+        
         raise
 
 

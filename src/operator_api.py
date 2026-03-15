@@ -317,10 +317,15 @@ async def _chat_stream_generator(
     - error: Error information
     
     Includes detailed latency instrumentation for performance analysis.
+    Includes timeout and rate limit handling for bounded UX.
     """
     # LATENCY TRACKING: Full request timeline
     request_start_time = time.monotonic()
     stage_times: dict[str, float] = {}
+    
+    # TIMEOUT CONFIGURATION: Fail fast for better UX
+    MAX_TOTAL_TIME_SECONDS = 60.0  # Absolute maximum processing time
+    STALL_WARNING_THRESHOLD = 15.0  # Log warning if no events for this long
     
     def record_stage(stage_name: str) -> float:
         elapsed = time.monotonic() - request_start_time
@@ -369,10 +374,27 @@ async def _chat_stream_generator(
     stream_start = time.monotonic()
     event_count = 0
     chunk_count = 0
+    last_event_time = time.monotonic()
     
     try:
         async for event in workflow.astream_events(inputs, config=config, version="v2"):
+            current_time = time.monotonic()
             event_count += 1
+            last_event_time = current_time
+            
+            # TIMEOUT CHECK: Absolute maximum processing time
+            elapsed_total = current_time - request_start_time
+            if elapsed_total > MAX_TOTAL_TIME_SECONDS:
+                logger.error(
+                    f"Chat stream timeout: {elapsed_total:.1f}s exceeded {MAX_TOTAL_TIME_SECONDS}s"
+                )
+                yield _format_sse_event({
+                    "type": "error",
+                    "thread_id": thread_id,
+                    "error": "Request timed out. The AI service may be experiencing high demand. Please try again in a moment.",
+                })
+                return
+            
             kind = event.get("event", "")
             name = event.get("name", "")
             
@@ -449,10 +471,34 @@ async def _chat_stream_generator(
         })
         
     except Exception as exc:
+        error_str = str(exc)
+        
+        # Detect rate limit errors for user-friendly messaging
+        is_rate_limit = (
+            "429" in error_str
+            or "rate limit" in error_str.lower()
+            or "too many requests" in error_str.lower()
+        )
+        
+        if is_rate_limit:
+            user_error = """⚠️ **Rate Limit Reached**
+
+The AI service is currently experiencing high demand. Please wait 10-20 seconds and try again.
+
+**Tips:**
+- Simple greetings work fastest
+- Complex queries with tools need more processing time
+- If this persists, contact support for capacity adjustment"""
+            logger.error(f"Rate limit error in chat stream: {error_str}")
+        else:
+            user_error = f"An error occurred: {error_str}"
+            logger.error(f"Chat stream error: {error_str}", exc_info=True)
+        
         yield _format_sse_event({
             "type": "error",
             "thread_id": thread_id,
-            "error": str(exc),
+            "error": user_error,
+            "is_rate_limit": is_rate_limit,
         })
 
 

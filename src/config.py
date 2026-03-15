@@ -62,10 +62,16 @@ class Settings(BaseSettings):
         default="2024-02-01", description="Azure OpenAI API version"
     )
     AZURE_OPENAI_TIMEOUT: float = Field(
-        default=30.0, description="Timeout for Azure OpenAI API calls in seconds"
+        default=25.0, description="Timeout for Azure OpenAI API calls in seconds"
     )
     AZURE_OPENAI_MAX_RETRIES: int = Field(
-        default=3, description="Max retries for Azure OpenAI API calls"
+        default=1, description="Max retries for Azure OpenAI API calls (reduced to fail fast under rate limits)"
+    )
+    AZURE_OPENAI_RETRY_MIN_SECONDS: float = Field(
+        default=1.0, description="Minimum retry wait time in seconds"
+    )
+    AZURE_OPENAI_RETRY_MAX_SECONDS: float = Field(
+        default=5.0, description="Maximum retry wait time in seconds (capped to fail fast)"
     )
     AZURE_OPENAI_MAX_TOKENS: int = Field(
         default=800,
