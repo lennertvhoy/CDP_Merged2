@@ -64,8 +64,8 @@ Scenario status labels:
 | SC-14 | Follow-up export from last search | ✅ quality_pass | `reports/scenarios/sc14/sc14_turn2_export.png` | Context reuse: ✓ (3,062 matching companies); Export artifact: ✓ (1,000 rows, real CSV); File verified: ✓; Turn 1: ~15s; Turn 2: ~15s; Streaming: ✓ |
 | SC-15 | Follow-up segment creation from last search | ✅ quality_pass | `reports/scenarios/sc15/sc15_turn2_segment.png`, `sc15_segment_verified.png` | Context reuse: ✓; Segment verified in UI: ✓; Member count aligned: ✓ (3,062 = 3,062); Turn 1: ~15s; Turn 2: ~15s; Streaming: ✓ |
 | SC-16 | Follow-up 360 from prior result | ✅ quality_pass | `reports/scenarios/sc16/sc16_turn2_360.png` | Prior-result resolution: ✓ (first result: AUTO 32 B.B.S., KBO 0452177079); 360 binding verified: ✓; Context reuse: ✓; Turn 1: ~15s; Turn 2: ~15s; Streaming: ✓ |
-| SC-17 | Follow-up count after search | ✅ **quality_pass** | Host-verified | Turn 1: Tool search executed; Turn 2: Follow-up count returned; Context reuse: ✓ |
-| SC-18 | Follow-up resume after refresh | ✅ **quality_pass** | Host-verified | Context persistence across turns verified; Export flow works |
+| SC-17 | Follow-up count after search | ❌ **functional_fail** | `reports/scenarios/sc17_turn1_v2.png`, `sc17_turn2_v2.png` | Context reuse broken — Turn 2 "How many is that exactly?" failed to reference Turn 1 search results |
+| SC-18 | Follow-up resume after refresh | ⚠️ **functional_pass** | `reports/scenarios/sc18_step1.png`, `sc18_step3_export.png` | Export worked after refresh (backend context persisted), but UI showed "NEW CONVERSATION" (UI state lost) |
 
 ### Segments / exports / operational flow (SC-19 to SC-28)
 
@@ -364,11 +364,12 @@ Scenario status labels:
 ## Progress Summary
 
 **Total Scenarios:** 50  
-**Passed:** 5 (SC-01, SC-39, SC-40, SC-41, SC-42)  
+**Passed:** 16 (SC-01 to SC-16, SC-39 to SC-42)  
 **In Progress:** 0  
-**Pending:** 45  
+**Pending:** 31 (SC-19 to SC-28, SC-43 to SC-50)  
 **Blocked:** 0  
-**Failed:** 0
+**Failed:** 1 (SC-17 - context reuse broken)  
+**Partial:** 1 (SC-18 - export works, UI refresh issues)
 
 ---
 
@@ -378,6 +379,8 @@ Scenario status labels:
 |------|---------|------------------|-------|
 | 2026-03-14 | Initial | SC-39, SC-40, SC-41, SC-42 | Admin scenarios from previous verification |
 | 2026-03-14 | SC-01 | SC-01 | SC-01 passed: 41,290 Brussels companies; fixed Azure OpenAI → OpenAI provider; LLM_PROVIDER=openai |
+| 2026-03-15 | SC-02 to SC-16 | SC-02, SC-03, SC-04, SC-05, SC-06, SC-07, SC-08, SC-09, SC-10, SC-11, SC-12, SC-13, SC-14, SC-15, SC-16 | 15 scenarios quality_pass from prior compound slice verification |
+| 2026-03-15 | SC-17/SC-18 | — | SC-17 functional_fail (context reuse broken), SC-18 functional_pass (export works, UI refresh issues); gpt-4.1-mini live public path test via Edge CDP |
 
 ---
 
@@ -426,11 +429,11 @@ LLM_MODEL=gpt-4o
 | Scenario | Status | Blocker |
 |----------|--------|---------|
 | SC-14 | ✅ quality_pass | Complete |
-| SC-17 | ✅ **quality_pass** | Host-verified 2026-03-15 |
-| SC-18 | ✅ **quality_pass** | Host-verified 2026-03-15 |
+| SC-17 | ❌ **functional_fail** | Edge CDP verified 2026-03-15 - Context reuse broken |
+| SC-18 | ⚠️ **functional_pass** | Edge CDP verified 2026-03-15 - Export works, UI refresh issues |
 
 **Verification Details:**
-- Tested on host with local PostgreSQL (1,940,603 companies)
-- SC-17: Follow-up count after search works correctly
-- SC-18: Context persistence across turns verified
-- GPT-4o handles tool calling and conversation flow correctly
+- Tested on public path https://kbocdpagent.ngrok.app via Edge CDP
+- SC-17: Turn 1 search worked (1,050 restaurants), Turn 2 context query failed
+- SC-18: Search worked, export worked after refresh, but UI lost conversation history
+- Model: gpt-4.1-mini (5x cheaper, equivalent performance)

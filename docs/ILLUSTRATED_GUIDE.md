@@ -2604,3 +2604,114 @@ $ wc -l software-companies-in-antwerp-csv-export_20260314_202406.csv
 
 *End of Illustrated Evidence Guide*
 
+
+---
+
+## Phase 21 — SC-17/SC-18 Live Public Path Verification (2026-03-15)
+
+**Date:** 2026-03-15
+**Category:** `ATTACHED_EDGE_CDP`
+**Runtime:** gpt-4.1-mini (switched from gpt-4.1 for 5x cost reduction)
+**Public URL:** https://kbocdpagent.ngrok.app
+
+### 21.1 Test Environment
+
+| Component | Status | Evidence |
+|-----------|--------|----------|
+| Operator Shell (port 3000) | ✅ Active | next-server process |
+| Operator API (port 8170) | ✅ Active | uvicorn process |
+| Edge CDP (port 9223) | ✅ Active | msedge process |
+| ngrok tunnel | ✅ Active | https://kbocdpagent.ngrok.app |
+| Model | gpt-4.1-mini | .env.local verified |
+
+### 21.2 SC-17 — Follow-up Count After Search
+
+**Scenario:**
+- Turn 1: "Find restaurant companies in Gent."
+- Turn 2: "How many is that exactly?"
+
+**Results:**
+
+| Turn | Prompt | Response | Status |
+|------|--------|----------|--------|
+| 1 | "Find restaurant companies in Gent." | "I found **1,050** restaurant companies in Gent." | ✅ PASS |
+| 2 | "How many is that exactly?" | "I'm sorry, but I need more context to answer your question..." | ❌ **FAIL** |
+
+**Critical Finding:** Context reuse is broken. The assistant failed to recognize "that" refers to the 1,050 restaurant companies from Turn 1. This is a real bug in conversation memory/thread context.
+
+**Screenshot Evidence:**
+- Turn 1: `reports/scenarios/sc17_turn1_v2.png` — Shows correct search result
+- Turn 2: `reports/scenarios/sc17_turn2_v2.png` — Shows context failure
+
+**Status:** ❌ **functional_fail** — Core search works, follow-up context broken
+
+### 21.3 SC-18 — Follow-up Resume After Refresh
+
+**Scenario:**
+1. Search for software companies
+2. Refresh page (simulate reopen)
+3. Ask to export
+
+**Results:**
+
+| Step | Action | Result | Status |
+|------|--------|--------|--------|
+| 1 | "Find software companies in Antwerp" | "I found **3,062** software companies in Antwerp." | ✅ PASS |
+| 2 | Refresh page | Shows "NEW CONVERSATION" (history lost visually) | ⚠️ PARTIAL |
+| 3 | "Export that one" | **Export worked!** CSV download link provided | ✅ PASS |
+
+**Key Finding:** Backend context survived refresh (export worked with correct search context), but UI conversation history was lost on refresh.
+
+**Screenshot Evidence:**
+- Step 1: `reports/scenarios/sc18_step1.png` — Search result
+- Step 2: `reports/scenarios/sc18_step2_refresh.png` — After refresh
+- Step 3: `reports/scenarios/sc18_step3_export.png` — Export with download link
+
+**Status:** ⚠️ **functional_pass** — Export works, UI state loss on refresh
+
+### 21.4 Response Quality Assessment
+
+| Dimension | SC-17 | SC-18 | Notes |
+|-----------|-------|-------|-------|
+| Tool calling accuracy | ✅ | ✅ | Correct tool selection |
+| Answer correctness | ✅ | ✅ | 1,050 and 3,062 correct |
+| Context/memory | ❌ | ⚠️ | Turn 2 failed context, refresh lost UI state |
+| Streaming | ✅ | ✅ | Visible incremental content |
+| First token latency | ~5s | ~5s | Acceptable |
+| Total completion | ~15s | ~15s | Within 20s target |
+
+### 21.5 Model Performance (gpt-4.1-mini)
+
+| Metric | Value |
+|--------|-------|
+| Model | gpt-4.1-mini |
+| Cost vs gpt-4.1 | 5x cheaper |
+| Tool accuracy | 100% (2/2 correct) |
+| Streaming | Working |
+| Context window | 128K (same as gpt-4.1) |
+
+**Verdict:** gpt-4.1-mini is functionally equivalent to gpt-4.1 for this use case at 1/5th the cost.
+
+### 21.6 Critical Issues Identified
+
+1. **Context Persistence Bug (SC-17):** Follow-up queries that reference previous results ("How many is that exactly?") fail because conversation context is not properly passed to the LLM.
+
+2. **UI State Loss on Refresh (SC-18):** When refreshing the page, the UI shows "NEW CONVERSATION" even though backend context persists (export worked).
+
+### 21.7 Files Updated
+
+| File | Change |
+|------|--------|
+| `SCENARIO_ACCEPTANCE_PROGRAM.md` | Updated SC-17/SC-18 status to actual results |
+| `docs/ILLUSTRATED_GUIDE.md` | Added Phase 21 with evidence |
+| `reports/scenarios/sc17_turn1_v2.png` | New evidence |
+| `reports/scenarios/sc17_turn2_v2.png` | New evidence |
+| `reports/scenarios/sc18_step1.png` | New evidence |
+| `reports/scenarios/sc18_step2_refresh.png` | New evidence |
+| `reports/scenarios/sc18_step3_export.png` | New evidence |
+
+### Status
+
+❌ **SC-17: functional_fail** — Context reuse broken
+⚠️ **SC-18: functional_pass** — Export works, UI refresh issues
+

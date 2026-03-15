@@ -1114,3 +1114,62 @@ SC-18 (Context persistence): ✅ PASS
 
 **Next Action Required:**
 Increase Azure OpenAI deployment capacity OR implement rate limit handling.
+
+---
+
+## 2026-03-15 — SC-17/SC-18 Live Public Path Verification
+
+**Task:** Scenario acceptance testing on live public path via Edge CDP
+
+### Runtime Audit
+| Port | Status | Process |
+|------|--------|---------|
+| 3000 | ✅ Active | next-server (Operator Shell) |
+| 8170 | ✅ Active | uvicorn (Operator API) |
+| 8000 | ✅ Inactive | (Correct - Chainlit deprecated) |
+| ngrok | ✅ Active | https://kbocdpagent.ngrok.app |
+
+### SC-17 — Follow-up Count After Search
+| Turn | Prompt | Response | Status |
+|------|--------|----------|--------|
+| 1 | "Find restaurant companies in Gent." | "I found **1,050** restaurant companies in Gent." | ✅ PASS |
+| 2 | "How many is that exactly?" | "I'm sorry, but I need more context..." | ❌ **FAIL** |
+
+**Critical Finding:** Context reuse broken. Assistant failed to recognize "that" refers to previous search results.
+
+### SC-18 — Follow-up Resume After Refresh  
+| Step | Action | Result | Status |
+|------|--------|--------|--------|
+| 1 | "Find software companies in Antwerp" | "I found **3,062** software companies in Antwerp." | ✅ PASS |
+| 2 | Refresh page | "NEW CONVERSATION" (UI history lost) | ⚠️ PARTIAL |
+| 3 | "Export that one" | ✅ Export worked with download link | ✅ PASS |
+
+**Finding:** Backend context survived refresh (export worked), UI state lost.
+
+### Model Performance (gpt-4.1-mini)
+| Metric | Value |
+|--------|-------|
+| Tool accuracy | 100% (2/2 correct) |
+| Answer correctness | 100% (1,050 and 3,062 correct) |
+| First token latency | ~5s |
+| Total completion | ~15s |
+| Streaming | Working |
+
+### Evidence Captured
+- `reports/scenarios/sc17_turn1_v2.png` - SC-17 Turn 1 result
+- `reports/scenarios/sc17_turn2_v2.png` - SC-17 Turn 2 context failure
+- `reports/scenarios/sc18_step1.png` - SC-18 search result
+- `reports/scenarios/sc18_step2_refresh.png` - After refresh
+- `reports/scenarios/sc18_step3_export.png` - Export success
+- `reports/illustrated_guide/ILLUSTRATED_GUIDE_latest.pdf` - Updated PDF
+
+### Documentation Updates
+- `SCENARIO_ACCEPTANCE_PROGRAM.md` - Updated SC-17/SC-18 status
+- `docs/ILLUSTRATED_GUIDE.md` - Added Phase 21
+
+### Status Summary
+- SC-17: ❌ **functional_fail** (context reuse broken)
+- SC-18: ⚠️ **functional_pass** (export works, UI refresh issues)
+- 16 scenarios passed total (SC-01 to SC-16, SC-39 to SC-42)
+- 1 failed (SC-17), 1 partial (SC-18), 31 pending
+
