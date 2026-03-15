@@ -99,8 +99,10 @@ class PostgreSQLOptimizedClient:
         if url:
             return url
 
-        # Try config file
-        env_path = Path(__file__).parent.parent.parent / ".env.database"
+        # Try config file (local override first)
+        env_path = Path(__file__).parent.parent.parent / ".env.database.local"
+        if not env_path.exists():
+            env_path = Path(__file__).parent.parent.parent / ".env.database"
         if env_path.exists():
             import configparser
 
