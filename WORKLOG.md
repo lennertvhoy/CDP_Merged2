@@ -159,3 +159,16 @@ The SC-18 "export success" claim was false. The assistant was returning `http://
 - `apps/operator-shell/components/chat-surface.tsx` - UI redesign
 - `reports/scenarios/sc18_fixed_ui_redesign.png` - Evidence
 
+2026-03-15 13:45 - SC-17/SC-19 FIX COMMITTED
+
+Fixed context reuse bug in follow-up queries:
+- FK constraint: Added _ensure_thread_exists() to create thread row before saving state
+- JSON parsing: Handle Postgres JSONB strings via json.loads() fallback
+- Follow-up detection: Fixed isinstance(msg, HumanMessage) and field name 'keywords'
+
+Test Results:
+- SC-17: 'How many is that exactly?' -> 1 marketing agency (was 3062 IT companies) ✅
+- SC-19: Segment creation uses prior search context ✅
+
+Commit: 0eb5309
+
