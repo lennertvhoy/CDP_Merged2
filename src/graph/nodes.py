@@ -413,6 +413,28 @@ def _build_azure_chat_model_kwargs(
     return kwargs
 
 
+# Simple in-memory rate limiter for Azure OpenAI
+# gpt-4o: 10 requests per 10 seconds = 1 request per second
+_last_azure_request_time: float = 0.0
+_azure_min_interval: float = 1.1  # 1.1s to be safe (10 req per 10s = 1 req/s)
+
+
+async def _rate_limit_azure_request():
+    """Ensure we don't exceed Azure rate limits by spacing requests."""
+    global _last_azure_request_time
+    import time
+    
+    now = time.monotonic()
+    elapsed = now - _last_azure_request_time
+    
+    if elapsed < _azure_min_interval:
+        sleep_time = _azure_min_interval - elapsed
+        logger.debug("rate_limiter_throttling", sleep_ms=round(sleep_time * 1000, 2))
+        await asyncio.sleep(sleep_time)
+    
+    _last_azure_request_time = time.monotonic()
+
+
 async def router_node(state: AgentState) -> dict:
     """Analyse input, detect language, and inject the system prompt.
 
@@ -731,6 +753,11 @@ async def agent_node(state: AgentState) -> dict:
     )
     
     try:
+        # RATE LIMITER: Space out Azure requests to stay under limits
+        # gpt-4o: 10 req per 10s = 1 req/s
+        if provider_type == "azure_openai":
+            await _rate_limit_azure_request()
+        
         logger.info("agent_node_ainvoke_calling", model_type=type(model).__name__, message_count=len(messages))
         response = await model.ainvoke(messages)
         llm_call_duration = time.monotonic() - llm_call_start
