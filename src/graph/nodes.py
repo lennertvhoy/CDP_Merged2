@@ -379,15 +379,23 @@ def _build_azure_chat_model_kwargs(
     *,
     api_key: str | None = None,
     token_provider: Any | None = None,
+    max_tokens_override: int | None = None,
 ) -> dict[str, Any]:
     """Build a bounded Azure OpenAI config for the interactive chat path.
-    
+
     Uses aggressive retry limits to fail fast under rate limiting rather than
     hanging with long retry-after delays.
+
+    Args:
+        max_tokens_override: Optional override for max_completion_tokens to reduce
+            token-estimate throttling on Azure (lower = less likely to be throttled)
     """
     deployment = settings.AZURE_OPENAI_DEPLOYMENT_NAME or settings.LLM_MODEL
     is_gpt5 = deployment and deployment.lower().startswith("gpt-5")
-    
+
+    # Use stage-specific token limit if provided, otherwise default
+    max_tokens = max_tokens_override or settings.AZURE_OPENAI_MAX_TOKENS
+
     kwargs: dict[str, Any] = {
         "azure_endpoint": settings.AZURE_OPENAI_ENDPOINT,
         "azure_deployment": deployment,
@@ -397,20 +405,43 @@ def _build_azure_chat_model_kwargs(
         # NOTE: Azure OpenAI client has built-in rate limit handling with 30s retry-after
         # We set max_retries=1 to fail fast rather than waiting 60-90s for multiple retries
     }
-    
+
     # GPT-5 compatibility: use max_completion_tokens instead of max_tokens
     # GPT-5 only supports temperature=1 (default); omit for GPT-5
+    # DEMAND-SIDE OPTIMIZATION: Lower max_completion_tokens reduces Azure's token-estimate
+    # throttling because Azure throttles based on prompt + max_completion_tokens, not actual output
     if is_gpt5:
-        kwargs["max_completion_tokens"] = settings.AZURE_OPENAI_MAX_TOKENS
+        kwargs["max_completion_tokens"] = max_tokens
     else:
-        kwargs["max_tokens"] = settings.AZURE_OPENAI_MAX_TOKENS
+        kwargs["max_tokens"] = max_tokens
         kwargs["temperature"] = 0
-    
+
     if token_provider is not None:
         kwargs["azure_ad_token_provider"] = token_provider
     elif api_key is not None:
         kwargs["api_key"] = api_key
     return kwargs
+
+
+def _determine_token_limit_for_stage(messages: list) -> int:
+    """Determine appropriate token limit based on conversation stage.
+
+    Azure throttles based on estimated token count (prompt + max_completion_tokens).
+    Using lower limits for stages that don't need long outputs reduces throttling risk.
+
+    Stages:
+    - Routing/tool-selection (no ToolMessage): Short response, tool calls expected
+    - Final answer (has ToolMessage): Medium response with natural language
+    """
+    has_tool_message = any(isinstance(m, ToolMessage) for m in messages)
+
+    if not has_tool_message:
+        # First call: Tool selection/routing - minimal tokens needed
+        # The LLM just needs to output tool calls, not natural language
+        return settings.AZURE_OPENAI_MAX_TOKENS_ROUTING
+    else:
+        # Second call: Final answer generation - needs natural language
+        return settings.AZURE_OPENAI_MAX_TOKENS_MEDIUM
 
 
 # Simple in-memory rate limiter for Azure OpenAI
@@ -618,6 +649,9 @@ async def agent_node(state: AgentState) -> dict:
     total_message_chars = sum(len(str(getattr(m, 'content', ''))) for m in messages)
     tool_message_count = sum(1 for m in messages if isinstance(m, ToolMessage))
     
+    # Pre-compute stage token limit for logging and later use
+    stage_token_limit = _determine_token_limit_for_stage(messages) if provider_type == "azure_openai" else None
+    
     logger.info(
         "agent_node_invoked",
         provider=provider_type,
@@ -625,6 +659,8 @@ async def agent_node(state: AgentState) -> dict:
         tool_message_count=tool_message_count,
         total_input_chars=total_message_chars,
         estimated_tokens=total_message_chars // 4,  # Rough estimate: 4 chars per token
+        stage="routing" if tool_message_count == 0 else "final_answer",
+        max_completion_tokens=stage_token_limit,
     )
 
     if provider_type == "mock":
@@ -708,9 +744,11 @@ async def agent_node(state: AgentState) -> dict:
                 "Azure OpenAI authentication is not configured for LangChain path. "
                 "Provide AZURE_OPENAI_API_KEY (or Key Vault secret) or enable managed identity"
             )
+        # DEMAND-SIDE OPTIMIZATION: Use pre-computed stage-specific token limit
         kwargs = _build_azure_chat_model_kwargs(
             api_key=auth.api_key,
             token_provider=auth.token_provider,
+            max_tokens_override=stage_token_limit,
         )
         model = AzureChatOpenAI(**kwargs)
         
@@ -750,6 +788,8 @@ async def agent_node(state: AgentState) -> dict:
         total_input_chars=total_input_chars,
         tool_result_chars=tool_result_chars,
         estimated_tokens=total_input_chars // 4,
+        max_completion_tokens=stage_token_limit if provider_type == "azure_openai" else None,
+        stage="routing" if tool_message_count == 0 else "final_answer",
     )
     
     try:

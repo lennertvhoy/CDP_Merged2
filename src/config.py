@@ -68,8 +68,23 @@ class Settings(BaseSettings):
         default=1, description="Max retries for Azure OpenAI API calls (reduced to fail fast under rate limits)"
     )
     AZURE_OPENAI_MAX_TOKENS: int = Field(
-        default=800,
-        description="Maximum completion tokens for Azure OpenAI chat responses",
+        default=400,
+        description="Maximum completion tokens for Azure OpenAI chat responses (reduced from 800 to minimize token-estimate throttling)",
+    )
+    
+    # Stage-specific token limits to minimize Azure throttling based on estimated token counts
+    # Azure throttles on prompt + max_completion_tokens, so lower caps reduce 429 risk
+    AZURE_OPENAI_MAX_TOKENS_ROUTING: int = Field(
+        default=100,
+        description="Token limit for tool-selection/classifier calls (minimal output needed)",
+    )
+    AZURE_OPENAI_MAX_TOKENS_SHORT: int = Field(
+        default=150,
+        description="Token limit for short confirmations and count responses",
+    )
+    AZURE_OPENAI_MAX_TOKENS_MEDIUM: int = Field(
+        default=400,
+        description="Token limit for standard natural language responses",
     )
     AZURE_OPENAI_API_KEY_SECRET_NAME: str | None = Field(
         default=None,
