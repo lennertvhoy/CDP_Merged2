@@ -906,10 +906,20 @@ def _check_routing_rules(tool_name: str, user_query: str) -> tuple[bool, str]:
 
 def _merge_last_search_params(
     tool_args: dict[str, Any],
-    stored_params: dict[str, Any] | None,
+    stored_params: dict[str, Any] | str | None,
 ) -> dict[str, Any]:
     """Fill missing artifact/search arguments from stored search params."""
     if not stored_params:
+        return tool_args
+    
+    # Parse JSON string if needed (from Postgres JSONB)
+    if isinstance(stored_params, str):
+        try:
+            stored_params = json.loads(stored_params)
+        except json.JSONDecodeError:
+            return tool_args
+    
+    if not isinstance(stored_params, dict):
         return tool_args
 
     merged = dict(tool_args)
@@ -1121,14 +1131,37 @@ async def tools_node(state: AgentState) -> dict:
     # Build merged search params for follow-up operations
     merged_search_params = None
     if last_search_params:
-        merged_search_params = last_search_params
+        # Parse JSON string if needed (from Postgres JSONB)
+        if isinstance(last_search_params, str):
+            try:
+                merged_search_params = json.loads(last_search_params)
+            except json.JSONDecodeError:
+                merged_search_params = None
+        else:
+            merged_search_params = last_search_params
     elif last_search_tql:
         merged_search_params = {"condition": last_search_tql}
+    
+    # Detect follow-up context queries (SC-17: "How many is that exactly?")
+    # These should use prior search context instead of resolving new vague keywords
+    last_user_message = ""
+    for msg in reversed(messages):
+        if isinstance(msg, HumanMessage):
+            last_user_message = msg.content or ""
+            break
+    is_followup_count_query = bool(
+        merged_search_params and 
+        any(phrase in last_user_message.lower() for phrase in [
+            "how many", "how many is that", "exactly", "precise count", "total count"
+        ])
+    )
 
     logger.info(
         "tools_node_start",
         has_last_search_tql=bool(last_search_tql),
         has_last_search_params=bool(last_search_params),
+        is_followup_count_query=is_followup_count_query,
+        last_user_message_preview=last_user_message[:50] if last_user_message else None,
     )
 
     for tool_call in tool_calls:
@@ -1137,7 +1170,15 @@ async def tools_node(state: AgentState) -> dict:
         tool_id = tool_call.get("id", "")
 
         # Merge last search params for follow-up operations
-        if tool_name in {"create_data_artifact", "export_segment_to_csv", "email_segment_export", "create_segment"}:
+        # SC-17: "How many is that exactly?" needs prior context merged into search_profiles
+        if tool_name in {"search_profiles", "create_data_artifact", "export_segment_to_csv", "email_segment_export", "create_segment"}:
+            # For follow-up count queries, override vague new keywords with prior context
+            if tool_name == "search_profiles" and is_followup_count_query and merged_search_params:
+                # Override with prior context - clear new keywords/city so merge fills them
+                if tool_args.get("keywords") not in (None, ""):
+                    tool_args["keywords"] = None
+                if tool_args.get("city") not in (None, ""):
+                    tool_args["city"] = None
             tool_args = _merge_last_search_params(tool_args, merged_search_params)
 
         logger.info(

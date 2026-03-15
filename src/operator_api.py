@@ -18,6 +18,8 @@ import logging
 from pathlib import Path
 from typing import Any, AsyncGenerator
 
+import asyncpg
+
 from src.core.runtime_env import bootstrap_runtime_environment
 
 bootstrap_runtime_environment()
@@ -191,10 +193,35 @@ async def _load_thread_search_state(thread_id: str) -> dict[str, Any] | None:
     return None
 
 
+async def _ensure_thread_exists(
+    conn: asyncpg.Connection,
+    thread_id: str,
+    user_id: str | None = None,
+) -> None:
+    """Ensure thread row exists in app_chat_threads before saving state.
+    
+    The app_chat_thread_state table has FK constraints requiring the thread
+    to exist first. This helper creates the thread row if missing.
+    """
+    await conn.execute(
+        """
+        INSERT INTO app_chat_threads 
+            (thread_id, user_id, name, metadata, tags, created_at, updated_at)
+        VALUES ($1, $2::uuid, $3, '{}'::jsonb, '[]'::jsonb, NOW(), NOW())
+        ON CONFLICT (thread_id) DO UPDATE SET
+            updated_at = EXCLUDED.updated_at
+        """,
+        thread_id,
+        user_id,
+        None,  # name - let it be NULL or set by other logic
+    )
+
+
 async def _save_thread_search_state(
     thread_id: str, 
     tql: str | None, 
-    params: dict[str, Any] | None
+    params: dict[str, Any] | None,
+    user_id: str | None = None,
 ) -> None:
     """Save last search state to Postgres for cross-turn context binding.
     
@@ -212,6 +239,9 @@ async def _save_thread_search_state(
         assert pool is not None
         
         async with pool.acquire() as conn:
+            # First ensure thread exists (FK constraint requirement)
+            await _ensure_thread_exists(conn, thread_id, user_id)
+            
             # Upsert thread state
             await conn.execute(
                 """
@@ -523,11 +553,16 @@ async def _chat_stream_generator(
             if kind == "on_tool_end" and name == "search_profiles":
                 try:
                     result = event.get("data", {}).get("output", {})
+                    # Tool output may be a JSON string or a dict
+                    if isinstance(result, str):
+                        result = json.loads(result)
                     if isinstance(result, dict):
-                        # Extract TQL from search result
-                        last_search_tql = result.get("tql") or result.get("condition")
-                        last_search_params = result.get("params") or result.get("filters")
-                        logger.info(f"Captured search TQL from tool result: {last_search_tql[:50] if last_search_tql else None}...")
+                        # Extract TQL from nested query structure
+                        query_info = result.get("query", {})
+                        last_search_tql = query_info.get("tql") if query_info else None
+                        last_search_params = result.get("applied_filters") or result.get("params")
+                        if last_search_tql:
+                            logger.info(f"Captured search TQL: {last_search_tql[:80]}...")
                 except Exception as exc:
                     logger.warning(f"Failed to capture search TQL: {exc}")
         
@@ -547,7 +582,8 @@ async def _chat_stream_generator(
         
         # Persist search state if a search was performed
         if last_search_tql:
-            await _save_thread_search_state(thread_id, last_search_tql, last_search_params)
+            user_id = user_context.get("identifier") if user_context else None
+            await _save_thread_search_state(thread_id, last_search_tql, last_search_params, user_id)
         
         # Log latency report server-side only (not sent to client to avoid UX pollution)
         latency_report = {
