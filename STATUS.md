@@ -1,219 +1,66 @@
-# CDP_Merged Status - Local-First Working Mode
+# CDP_Merged Status
 
-**Platform:** Azure target architecture with local-only execution mode
-**Current Execution Mode:** Local-only (`Azure deployment path paused to save costs`)
-**Last Updated:** 2026-03-14 10:44 CET
-
-**⚠️ CHAINLIT DEPRECATED (2026-03-14):** Chainlit has been removed from the active runtime. All chat/UI flows now go through Operator Shell (port 3000) + Operator API (port 8170). See "Chainlit Deprecation" section below.
-
-**Backlog Version:** v2 (compressed to 5 epics, NOW/Next/Later/Watchlist structure)
-**Purpose:** Human-readable current snapshot
-**Structured Source:** `PROJECT_STATE.yaml`
-
-## Current Headline
-
-- `observed` from 2026-03-15 08:00 CET: **MODEL BENCHMARK COMPLETE - SWITCHED FROM GPT-5 TO GPT-4O.** Comprehensive benchmark of all 6 Azure OpenAI deployments proves GPT-5 family is incompatible (temperature=0.0 not supported). GPT-4o is 2-3x faster than alternatives and now the production deployment. See `reports/MODEL_BENCHMARK_REPORT.md` for full evidence.
-- `observed` from 2026-03-14 12:00 CET: **ADMIN PANEL IMPLEMENTED WITH BASIC ADMIN AUTHORIZATION.** Admin panel now live at `https://kbocdpagent.ngrok.app/admin`. Exposes user list to admin users with server-side protection. Boolean `is_admin` flag exposed in bootstrap. Admin shield link appears in sidebar. NOT full RBAC - only simple admin/user distinction.
-- `observed` from 2026-03-14 11:32 CET: **STABLE NGROK INFRASTRUCTURE LIVE.** Operator shell now publicly accessible at fixed ngrok-branded domain `https://kbocdpagent.ngrok.app` (Hobbyist plan). Complete systemd-based setup with auto-restart, health monitoring, and self-healing watchdog. All services enabled for boot-time startup.
-- `observed` from 2026-03-14 11:32 CET: **TRACARDI DEMOTED TO OPTIONAL ACTIVATION ADAPTER.** Architecture decision recorded - Tracardi CE limitations no longer block core delivery. First-party event processor + PostgreSQL writeback satisfy demo/runtime needs. Tracardi remains available for future paid-feature activation path if justified.
-- `observed` from 2026-03-10 17:50 CET: **THE REPO'S UV MIGRATION PLUS FOLLOW-ON CI REPAIR ARE NOW VERIFIED GREEN.** The repo now uses `uv` as the single dependency-manager path, the remaining Ruff/pytest/format/mypy backlog from the first uv push was cleared in commit `7e6c432`, local `uv` validation now passes for `ruff check`, `ruff format --check`, `mypy`, and `pytest tests/ -m "not integration and not e2e"`, and GitHub Actions run `22913778035` completed `success` for `7e6c432`.
-- `observed` from 2026-03-10 17:50 CET: **THE UNIT GATE NOW EXCLUDES THE API SUITE THAT ACTUALLY REQUIRES INTEGRATION CONDITIONS.** `tests/integration/test_api_suite.py` is now explicitly marked with `pytest.mark.integration`, so the unit workflow no longer mixes local/PostgreSQL-dependent export behavior into the `not integration and not e2e` gate.
-- `reported` from 2026-03-09 via direct user instruction: **THE NEXT CLOUD PIECES SHOULD BE LIMITED TO ENTRA AUTH + AZURE OPENAI.** Do not put the project online before Microsoft Entra ID auth exists. Keep PostgreSQL, Tracardi, and the rest of the runtime local for now. The user also reported that the Azure usage limit is reached until **March 14, 2026**, so this hybrid cloud step is blocked until that reset. The longer-term hosting target is the user's internal server farm.
-- `reported` from 2026-03-09 via direct user instruction: **COLLEAGUE-FACING ROLLOUT SHOULD BE PER-USER, NOT SHARED.** Each colleague should sign in with a Microsoft work account, get a private chatbot workspace with stored conversation history, and use a more ChatGPT-like interface. Web search is also desired, but only with explicit privacy/compliance guardrails.
-- `observed` from 2026-03-09 22:38 CET: **THE EXPOSED ENTRA CLIENT SECRET WAS ROTATED AND THE LOCAL ACTIVE VALUE WAS REPLACED.** Azure CLI access to the `CDP Chatbot` app registration was verified, the compromised password credential was reset, `.env.local` was updated immediately with the replacement secret, and tracked Entra secret examples are now guarded by `scripts/doc_lint.py` plus CI so future doc-only changes fail fast.
-- `observed` from 2026-03-09 21:47 CET: **LOCAL BROWSER CONTINUITY IS NOW VERIFIED UNDER DEV AUTH.** Fresh localhost checks on a temporary `127.0.0.1:8010` instance confirmed login gating plus readable auth/history labels, per-user thread-list isolation, owner `/project/thread/{thread_id}` fetches returning `200`, cross-user thread access returning `401`, and direct `/thread/{thread_id}` reopen restoring a live composer so follow-up messages stay on the same thread.
-- `observed` from 2026-03-09 22:10 CET: **THREAD TITLES NOW AUTO-GENERATED FROM FIRST MESSAGE.** The chatbot now generates readable sidebar titles (60 char max with ellipsis) from the first user message instead of showing UUID-derived names. Titles only update for empty or UUID-like names to preserve user edits. 7 new unit tests cover title generation, truncation, edge cases, and data-layer integration.
-- `observed` from 2026-03-09 23:38 CET: **OPERATOR EVALS NOW HAVE A REPO-OWNED RUN-PREP HARNESS.** `scripts/prepare_operator_eval_run.py` and `src/evals/operator_eval_run_prep.py` now turn `docs/evals/operator_eval_cases.v1.json` into timestamped `manifest.json`, `cases.json`, `scorecard.csv`, and `prompts.md` bundles under `output/operator_eval_runs/`. The next eval step is collecting the first baseline scorecard against the local chatbot, not inventing a harness from scratch.
-- `observed` from 2026-03-09 23:20 CET, following the same-day user priority change: **ENRICHMENT IS NOW THE TOP PRIORITY, AND AI DESCRIPTIONS SHOULD USE OLLAMA.** The latest fresh PostgreSQL counts now read `website_url=70,922`, `geo_latitude=63,979`, `ai_description=31,033`, and `cbe_enriched=1,252,019` from the `23:19 CET` recheck. `CBE` remains complete, `website discovery` last completed chunks at `23:10:35 CET` (`57` discoveries), `23:13:42 CET` (`64` discoveries), `23:16:24 CET` (`53` discoveries), and `23:19:39 CET` (`56` discoveries), and `description_ollama` last completed chunks at `22:55:59 CET` (`622` descriptions), `23:02:55 CET` (`645` descriptions), `23:09:47 CET` (`660` descriptions), and `23:16:27 CET` (`648` descriptions). The geocoding observability patch remains verified live, and a short recheck found fresh geocoded rows still streaming through `23:19 CET` with no fresh nullable-trait `strip()` failures after the already-known `21:27 CET` lines.
-- `observed` from 2026-03-08 23:24 CET: **DEMO 100% READY - Illustrated Guide v3.2 is now the best version so far and credibly proves the core local-only CDP+AI POC slice.** The PDF now opens with a real cover page, the CSV evidence page is self-contained around the opened artifact, and the maturity/privacy wording no longer overclaims beyond the evidence tables. The remaining v3.3 blockers are narrower: timestamp consistency, screenshot/prose label alignment, count/maturity precision, API/code-page styling, PDF text-layer/export quality, and acceptance-criteria packaging.
-- `observed` from 2026-03-08 20:06 CET: **EVENT PROCESSOR ALTERNATIVE VERIFIED LOCALLY.** `scripts/cdp_event_processor.py` now passes targeted unit tests, initializes `company_engagement` in PostgreSQL, serves `/health`, `/api/next-best-action/{kbo}`, and `/api/engagement/leads`, and accepts signed Resend-style webhook events. Verified outputs: B.B.S. Entreprise reached `engagement_score=15` after `email.opened` + `email.clicked` with support-expansion/re-activation recommendations, and Accountantskantoor Dubois produced cross-sell + multi-division recommendations through the same processor.
-- `observed` from 2026-03-08 21:45 CET: **TRACARDI WORKFLOW RUNTIME IS BLOCKED BY CE LIMITATION.** Investigation confirmed that Tracardi Community Edition does not support production workflow execution. The `/deploy/{path}` endpoint is licensed (premium), and rule updates to `production=true`/`running=true` do not persist. Workflow draft screenshots are the maximum verifiable evidence; live execution requires Tracardi Premium or an alternative implementation.
-- `observed` from 2026-03-08 20:21 CET: **TRACARDI PRIVACY BOUNDARY IS ONLY PARTIALLY ACHIEVED.** Live `/profile/select` samples still show anonymous profiles and the Tracardi projection path remains PII-light, but live `/event/select` samples for `email.opened` and `email.clicked` still carry raw email fields in event properties. The Illustrated Guide now explicitly documents that divergence instead of claiming a fully UID-only runtime.
-- `observed` from 2026-03-08 19:20 CET: **FOUR-SOURCE 360 BACKEND IMPLEMENTED LOCALLY.** Migration `007_add_autotask_to_unified_360.sql` plus a full `scripts/sync_autotask_to_postgres.py --full` run now produce one real `linked_all` company in `unified_company_360`: B.B.S. Entreprise with KBO + Teamleader + Exact + Autotask, `autotask_open_tickets=1`, `autotask_total_contracts=1`, and `total_source_count=4`.
-- `observed` from 2026-03-08 18:11 CET: **FRESH FOUR-SOURCE CHATBOT EVIDENCE CAPTURED.** `chatbot_360_bbs_four_source_final_2026-03-08.png` now shows B.B.S. Entreprise with `identity_link_status=linked_all` and `Sources linked: KBO + Teamleader + Exact + Autotask (4 sources)`.
-- `observed` from 2026-03-08 21:04 CET: **Illustrated Guide now has live populated Resend audience proof.** The exact Brussels IT primary-code subset was verified at `190` company rows and `189` unique contact emails, then loaded into the empty Resend audience `KBO Companies - Test Audience` with `0` failures. A fresh audience-list screenshot and audience-detail screenshot were captured from the live Resend dashboard. The current Resend plan is capped at `3` audiences, so a new audience could not be created and the empty existing audience had to be reused.
-- `observed` from 2026-03-08 21:20 CET: **Illustrated Guide now has B.B.S. website-behavior writeback proof.** After applying `scripts/migrations/001_add_projection_tables.sql` to the local compose PostgreSQL instance, the actual `WritebackService` recorded a demo-labeled website session for the real B.B.S. UID. Canonical `event_facts` now show `2` `page.view` events and `1` `goal.achieved` download for the same `linked_all` account used in the 360°, Resend, and event-processor story.
-- `reported` from 2026-03-08 16:52 CET via direct user instruction: **Resend is acceptable as the current activation platform.** Do not treat Flexmail parity as a near-term blocker unless the user explicitly reopens that requirement.
-- `observed` from 2026-03-08 15:50 CET: **DEMO DATA POPULATION SCRIPTS COMPLETE!** Added `scripts/populate_hyperrealistic_demo_data.py` and `scripts/create_360_demo_companies.py` for creating realistic Belgian company data across Teamleader, Exact, and KBO. Commit `51ac939`.
-- `observed` from 2026-03-08 14:45 CET: **OLLAMA AI DESCRIPTION ENRICHMENT SCALING UP!** Now at 441 AI descriptions (+371 from this session), batch of 1000 in progress. Coverage: 0.023% of 1.94M companies. Successfully running ~1.5s per description with NACE code caching. Run: `export DESCRIPTION_ENRICHER=ollama && python scripts/enrich_companies_batch.py --enrichers description --limit 1000`
-- `observed` from 2026-03-08 19:20 CET: **AUTOTASK NOW IN THE UNIFIED 360 QUERY PLANE.** Local sync still loads 5 companies, 5 tickets, and 3 contracts, but migration `007_add_autotask_to_unified_360.sql` now adds KBO/UID linkage, `autotask_*` fields in `unified_company_360`, Autotask rows in `company_activity_timeline`, and Autotask coverage in `identity_link_quality`.
-- `observed` from 2026-03-08 14:20 CET: **OLLAMA AI DESCRIPTION ENRICHMENT VERIFIED WORKING!** Successfully generated 70 AI descriptions (110 processed, 64% success rate). Zero failures. ~1.5s per description. Run: `export DESCRIPTION_ENRICHER=ollama && python scripts/enrich_companies_batch.py --enrichers description`
-- `observed` from 2026-03-08 14:15 CET: **OLLAMA AI DESCRIPTION ENRICHMENT ADDED!** New cost-free option for generating company descriptions using local Ollama LLM. Set `DESCRIPTION_ENRICHER=ollama` to use instead of Azure OpenAI (saves ~€20-40 for 516K profiles). Model configurable via `OLLAMA_MODEL` (default: llama3.1:8b). Commit `cc87d29`.
-- `observed` from 2026-03-08 14:15 CET: **Enrichment runners RESTARTED and RUNNING.** All three runners (CBE, geocoding, website discovery) successfully restarted after supervisor script fix. CBE cursor already advancing (updated 2026-03-08), geocoding and website discovery resumed from their pre-failure cursors. All supervisors using canonical workspace path `/home/ff/Documents/CDP_Merged`.
-- `observed` from 2026-03-08 13:38 CET: **360° TOOL SELECTION FIXED!** Option D routing guard implemented in critic_node. All 3 previously-failing queries now select correct tools: KBO linkage → `get_identity_link_quality`, Revenue distribution → `get_geographic_revenue_distribution`, Pipeline value → `get_industry_summary`. Commit `5c3117e`, 27 unit tests passed.
-
-- `observed` from 2026-03-08 11:00 CET: **360° TOOL SELECTION FIXED!** Option D routing guard implemented in critic_node. All 3 previously-failing queries now select correct tools: KBO linkage → `get_identity_link_quality`, Revenue distribution → `get_geographic_revenue_distribution`, Pipeline value → `get_industry_summary`. Commit `5c3117e`, 27 unit tests passed.
-- `observed` from 2026-03-07 22:46 CET: **EXACT ONLINE SYNC WORKING!** OAuth authorization completed. Current verified sync state in the guide/audit context is 258 GL accounts, 9 customers, and 78 invoices in PostgreSQL. Tokens saved to `.env.exact`. Run anytime: `uv run python scripts/sync_exact_to_postgres.py --full`
-- `observed` from 2026-03-07 21:00 CET: **Resend to Tracardi bridge script fixed.** The bridge script (`scripts/resend_to_tracardi_bridge.py`) now uses FastAPI for proper async handling, correctly translates Resend webhook format to Tracardi `/track` format with signature verification, and handles the `events` array properly. Tested and imports successfully.
-- `observed` from 2026-03-07 20:45 CET, refined by 2026-03-08 21:35 CET recheck: **Resend transport setup is only partially verified.** The `resend-webhook` event source is fixed to REST type and `/track` accepts events, but the earlier "all 5 workflows deployed and active" claim was contradicted by live re-verification: the drafts had to be repaired on 2026-03-08 and runtime execution is still not proven.
-- `observed` from 2026-03-07 20:00 CET: **Tracardi workflows created via GUI.** All 5 Resend email processing workflows have been created in the Tracardi GUI: Email Engagement Processor, Email Bounce Processor, Email Delivery Processor, High Engagement Segment, and Email Complaint Processor. Workflows are created but not yet deployed (need node configuration). Screenshots saved: tracardi_workflows_created.png, tracardi_workflow_editor.png, tracardi_event_sources_list.png.
-- `observed` from 2026-03-07 20:02 CET: **Tracardi workflow creation confirmed complete.** User has successfully created all 5 Resend email processing workflows via the Tracardi GUI. Current state: 5 workflows created (Email Engagement Processor, Email Bounce Processor, Email Delivery Processor, High Engagement Segment, Email Complaint Processor), 4 event sources configured, 31 profiles, 52 events. Next step: Configure workflow nodes and deploy.
-- `observed` from 2026-03-07 19:37 CET: **Tracardi activation layer setup complete.** Created comprehensive verification script (`scripts/setup_and_verify_tracardi.py`) that tests all Tracardi endpoints and provides clear next steps. Current state: 4 event sources configured ✅, 30 profiles stored ✅, API fully functional ✅, 5 workflows created (need node configuration and deployment), 0 destinations (need GUI configuration). Event sources: cdp-api, kbo-batch-import, kbo-realtime, resend-webhook all working.
-- `observed` from 2026-03-07 19:29 CET: **Tracardi fully verified and working via browser tool.** Dashboard shows 49 events, 28 profiles, 28 sessions. All 4 event sources enabled (CDP API, KBO Batch Import, KBO Real-time Updates, Resend Email Webhook). Chatbot integration tested and working - profile creation via `TracardiClient().get_or_create_profile()` and event tracking via `track_event()` both verified. Screenshot saved to `tracardi_dashboard_verified_2026-03-07.png`. Configuration gaps identified: 0 workflows, 0 segments, 0 destinations - these are future activation layer enhancements.
-- `observed` from 2026-03-07 18:36 CET: **The PostgreSQL-first canonical segment path now works locally.** `schema_local.sql` now includes the missing support tables, the same-session runtime bootstrap created `activation_projection_state`, `segment_definitions`, `segment_memberships`, and `source_identity_links` in the live local PostgreSQL database, and direct tool verification against the compose-managed stack aligned `search_profiles` → `create_segment` → `get_segment_stats` → `export_segment_to_csv` for "software companies in Brussels" at `1,652` members with segment/export backend `postgresql`.
-- `observed` from 2026-03-07 18:20 CET: **The earlier browser-driven multi-turn operator scenario exposed the old local segment/export gap.** Real threaded browser session against http://localhost:8000 still verified search → artifact flow and captured the evidence that the old Tracardi-only segment/export path returned 0 profiles; that gap has now been closed for canonical PostgreSQL-backed segment flows.
-- `reported` from 2026-03-07 17:12 CET via direct user instruction: **Work is currently completely local.** The Azure deployment path is temporarily paused to save costs, so local runtime, local PostgreSQL, and local Tracardi are the active verification targets until the user explicitly reopens cloud work.
-- `observed` from 2026-03-07 18:08 CET: **The default local deployment path is now compose-managed end to end.** `docker compose up -d --build` now brings up PostgreSQL, Tracardi, and the chatbot locally; `docker compose ps` shows the chatbot healthy on `:8000`, `/healthz` and `/readinessz` both returned `status: ok`, `scripts/regression_local_chatbot.py` passed 7/7 again, and `scripts/demo_smoke_test.py --quick` passed 8/8 after fixing its stale schema assumptions.
-- `observed` from 2026-03-07 17:38 CET: **Local chatbot hardening recheck passed 7/7 against host PostgreSQL.** The local regression now verifies `nace_code` alias search, `email_domain` filtering, corrected aggregation parsing, and local markdown artifact generation at [`output/agent_artifacts/regression-gent-restaurants_20260307_163846.markdown`](/home/ff/Documents/CDP_Merged/output/agent_artifacts/regression-gent-restaurants_20260307_163846.markdown).
-- `observed` from 2026-03-07 17:05 CET: **Full 1.94M KBO dataset import complete and chatbot verified working.** The local PostgreSQL now holds all 1,940,603 records. Quality tests confirm: 1,105 restaurants in Gent, 41,290 companies in Brussels, 62,831 companies in Antwerpen, and aggregation queries now work (top industry in Brussels: 70200 at 4.8%). All queries execute in <3 seconds.
-- `observed` from 2026-03-07 16:33 CET: the local PostgreSQL-first KBO load has been expanded beyond smoke scope. `scripts/import_kbo_full_enriched.py --max-records 10000 --skip-tracardi --batch-size 500 --checkpoint-interval 5000` now leaves local PostgreSQL at 10000 rows with canonical columns still populated (`status=10000`, `juridical_situation=10000`, `legal_form_code=10000`, `type_of_enterprise=10000`, `all_names=10000`, `all_nace_codes=4185`).
-- `observed` from 2026-03-07 15:43 CET: local chatbot count behavior has been hardened. Generic searches no longer default to `active` status, and zero-result local searches now expose an explicit empty-dataset diagnostic instead of implying a trustworthy market count. Direct localhost verification for `restaurant` + `Sint-Niklaas` returned `dataset_state.companies_table_empty=true`.
-- `observed` from 2026-03-07 15:26 CET: local Tracardi is now fully functional. Event sources created (`kbo-batch-import`, `kbo-realtime`, `resend-webhook`, `cdp-api`), `.env.local` updated with `TRACARDI_SOURCE_ID=cdp-api`, and chat-session bootstrap returns profiles successfully. Local development stack is ready for `LLM_PROVIDER` upgrade from mock.
-- `observed` from 2026-03-07 15:05 CET: offline local development bootstrap is now usable from `/home/ff/Documents/CDP_Merged`. The runtime tree has been restored, local PostgreSQL is healthy on Docker with `schema_local.sql`, and a same-shell smoke of `start_chatbot.sh` returned `/healthz` and `/readinessz` `status: ok` with `LLM_PROVIDER=mock`.
-- `observed` from 2026-03-06 20:09 CET: Analytics aggregation fix DEPLOYED to revision `ca-cdpmerged-fast--stg-877f0e9`. The "industry" alias for "nace_code" is now live. Pending live production verification.
-- `observed` from 2026-03-06 19:47 CET chatbot quality matrix evaluation completed on deployed `20e4e35`: Azure OpenAI rate limiting FIXED (no 429 errors), multi-turn continuity WORKING, analytics aggregation BROKEN (fails for "top industries" queries)
-- `observed` from 2026-03-06 18:35 CET Azure OpenAI capacity fix: gpt-4o-mini deployment increased from capacity 10 to 100 (now 1000 req/min, 100K tokens/min), resolving 429 rate limit errors; Playwright browser test verified successful response for restaurant/Brussels query in ~5 seconds
-- `observed` from 2026-03-06 18:08 CET deploy verification: GitHub Actions runs `22773361038` (CI) and `22773361035` (CD) both completed successfully for `a4344ae`, Azure now serves revision `ca-cdpmerged-fast--stg-a4344ae` from image `ghcr.io/lennertvhoy/cdp_merged:sha-a4344ae445286c5e382940c3db98c88c23041f4a`, the live browser baseline `restaurant/Brussels/all statuses` prompt returned `1`, and the deployed `started after 2026-01-01` follow-up returned `0`.
-- `observed` from 2026-03-06 17:37 CET rollout checkpoint: GitHub Actions runs `22771979533` (CI) and `22771979537` (CD) both completed successfully for `b84836f`; at that point Azure had moved to revision `ca-cdpmerged-fast--stg-b84836f` and `/project/readinessz` returned `status: ok` with `tool_layer.backend: postgresql` before the later `a4344ae` superseding rollout.
-- `observed` from 2026-03-06 16:57 CET runtime/PostgreSQL recheck: all three enrichment supervisors remain active, canonical PostgreSQL currently shows `total=1,940,603`, `website_url=36,091`, `geo_latitude=8,609`, `ai_description=0`, and `updated_last_10m=11,697`, and the second outside-sandbox website chunk has already completed successfully.
-- `observed` from 2026-03-06 17:37 CET deployed status smoke: the live `b84836f` app logs show `search_profiles_complete total_count=1` for `restaurant companies in Brussels across all statuses` and `total_count=0` for the `active only` follow-up, closing the production status-filter gap at the deployed tool layer.
-- `observed` from 2026-03-06 14:23 CET CBE selector tightening: the main local-only CBE selector now requires usable NACE input, cutting the main target set from `1,914,980` to `1,226,399` rows by excluding `688,581` structurally NACE-less companies; the first post-edit chunk completed `2,000` enriched / `0` skipped.
-- `observed` from 2026-03-06 14:58 CET geocoding durability recheck: eight post-cutover chunks completed with zero rate-limit or unexpected-error lines; canonical `geo_latitude` increased from `4,142` to `5,779` (+1,637); durability risk is now closed.
-- `observed` from 2026-03-06 16:35-16:57 CET website-runner recheck: the apparent 300-second website-runner failure from this local session was a sandbox-induced PostgreSQL connect timeout, not a verified production runner defect; outside-sandbox direct website batches completed cleanly (`1/1` then `4/25` discoveries), `scripts/run_enrichment_persistent.sh` now preserves the chunk exit code, and the conservative outside-sandbox `250/25` supervisor has now completed two successful chunks.
-- `observed` from 2026-03-06 15:33 CET resource audit: `rg-cdpmerged-fast` currently holds 20 resources and no broad waste; the strongest cleanup candidates are storage account `stcdpmergedprtnlp` and the orphan-like `Application Insights Smart Detection` action group.
-- `observed` in this doc-cleanup turn: the live doc set is now condensed to `AGENTS.md`, `STATUS.md`, `PROJECT_STATE.yaml`, `NEXT_ACTIONS.md`, `BACKLOG.md`, and `WORKLOG.md`.
-
-## Chainlit Deprecation (2026-03-14)
-
-**STATUS: CHAINLIT IS DEPRECATED AND REMOVED FROM ACTIVE RUNTIME**
-
-Chainlit has been completely removed from the supported runtime as of 2026-03-14.
-
-### What Changed
-- Chainlit service on port 8000: **STOPPED and DISABLED**
-- `cdp-chatbot.service`: **DISABLED** and **ARCHIVED** to `infra/ngrok-systemd/deprecated/`
-- Docker container `cdp_merged_agent`: **STOPPED and REMOVED**
-- `start_chatbot.sh`: **DEPRECATED** (renamed to `start_chatbot.sh.DEPRECATED`)
-- `docker-compose.yml`: Agent service **REMOVED**
-- `next.config.ts`: Port 8000 references **REMOVED**
-
-### New Architecture
-All user-facing chat/UI flows now go through:
-- **Operator Shell** (Next.js): Port 3000 → `https://kbocdpagent.ngrok.app`
-- **Operator API** (FastAPI): Port 8170
-- **Chat endpoint**: `POST /api/operator/chat/stream` (SSE streaming via LangGraph)
-
-### Migration
-To start the new chat stack:
-```bash
-# Terminal 1: Operator API
-uvicorn src.operator_api:app --host 127.0.0.1 --port 8170
-
-# Terminal 2: Operator Shell
-cd apps/operator-shell && npm run dev
-```
-
-Or use systemd:
-```bash
-systemctl --user start cdp-operator-shell.service
-```
-
-### Historical Context
-Chainlit code remains in `src/app.py` for reference but is no longer executed.
-The `.chainlit/` directory and Chainlit translations are kept for migration reference.
-Unit tests using Chainlit test harnesses remain in `tests/unit/test_app.py`.
-
-
-## Current State
-
-- Architecture: source systems hold PII and operational master truth, PostgreSQL holds customer-intelligence and analytical truth, the operator shell (port 3000) is the primary control plane and public surface, Tracardi is now an optional activation adapter (demoted from core dependency), and the chatbot answers authoritative questions from PostgreSQL-backed tools.
-- Execution mode (`reported`, 2026-03-07 17:12 CET): Azure deployment work is paused by user direction to save costs. The active engineering path is local-only until the user explicitly reopens cloud work.
-- **Public operator shell URL (`observed` 2026-03-14):** `https://kbocdpagent.ngrok.app` - stable ngrok-branded domain (Hobbyist plan), systemd-managed with auto-restart and health monitoring.
-- Local development (`observed`, 2026-03-08 21:45 CET): the canonical working copy is `/home/ff/Documents/CDP_Merged`; the default local runtime is the compose-managed stack. `docker compose up -d --build` brings up PostgreSQL on `5432`, Tracardi on `8686/8787`, Wiremock on `8080`, CHATBOT ON PORT 8000 REMOVED - now use Operator Shell (3000) + Operator API (8170); all services healthy. Local PostgreSQL holds the **full 1,940,603 record** KBO dataset. `scripts/migrations/001_add_projection_tables.sql` was re-applied successfully on 2026-03-08 21:20 CET, so the compose database now includes the missing canonical writeback tables (`event_facts`, `profile_traits`, `ai_decisions`) required for local behavior-proof verification. **Tracardi current truth:** all 4 event sources remain enabled and `/track` accepts events, the 5 email workflow drafts have been repaired locally via `scripts/setup_tracardi_workflows.py`, but **production workflow execution requires Tracardi Premium** (CE limitation). The `/deploy/{path}` endpoint is licensed, and `production=true`/`running=true` rule updates do not persist in CE. The Illustrated Guide should document this limitation.
-- Deployment path (`reported`, last Azure verification 2026-03-06 20:09 CET): the last known Azure Container App revision was `ca-cdpmerged-fast--stg-877f0e9`, but that deployment path is currently paused and should be treated as historical context, not as the active next step.
-- Colleague-facing chatbot product plan (`reported`, 2026-03-09): any future online mode should use Microsoft work-account login and isolated per-user conversation history rather than a shared session model. Chainlit is DEPRECATED - the operator shell is only a baseline and should move closer to a ChatGPT-like experience before broader colleague testing.
-- Chat history foundation (`observed`, 2026-03-09 22:10 CET): the local app now persists Chainlit users, threads, steps, elements, and feedback through repo-managed PostgreSQL tables, workflow checkpoint reuse is keyed by Chainlit's real `thread_id`, and a dev-only password-auth mode now enables authenticated local history checks before Entra rollout. The browser-driven localhost path is now working end-to-end: stale repo-owned Chainlit translations were resynced to current frontend keys, sparse thread upserts no longer fail on `app_chat_threads` JSONB defaults, reopened threads now restore a live composer through `@cl.on_chat_resume`, and thread titles auto-generate from first messages instead of UUIDs. The remaining gap is rollout readiness: **Microsoft Entra ID implementation is COMPLETE but DISABLED** (see `CHAINLIT_ENABLE_AZURE_AD` in `.env.local`), web-search policy is implemented as `restricted` mode but currently `disabled`, a low-severity Chainlit `set_chat_profiles` warning still appears in resume logs. Repo defaults/examples now use a 32+ character `CHAINLIT_AUTH_SECRET` placeholder, but any existing local `.env.local` still using the old short placeholder should be rotated before auth testing.
-- Chatbot quality (`observed` locally on 2026-03-07 17:38 CET): the strongest currently verified workflows are deterministic local market sizing, filtering, coverage diagnostics, analytics, `nace_code` alias search, `email_domain` filtering, multi-turn tool-handoff coverage, and local artifact/report generation against the full 1.94M-record PostgreSQL dataset. Live-production rechecks are intentionally deferred while the local-only cost-control mode is active.
-- Enrichment (`observed`, 2026-03-09 23:20 CET): the latest fresh PostgreSQL recheck now anchors the live counts at `website_url=70,922`, `geo_latitude=63,979`, `ai_description=31,033`, and `cbe_enriched=1,252,019` from `23:19 CET`. `CBE` is complete, `website discovery` is still advancing in the repo-supervised path, and `geocoding` is still writing rows with the observability fix verified live. The pre-patch geocoding batch worker was force-stopped at `18:25 CET`, the existing bash supervisor relaunched the observability-fixed chunked parent and a new batch child at `18:25:28-18:25:29 CET`, that pre-fix child finished `Batch 20/20` at `21:39:54 CET`, and the follow-on child launched immediately from cursor `1366466e-b3d5-4d7f-8cfd-ab91e7c9b503` after commit `5bf2595`. The live log then showed Batches `1/20` through `5/20` complete at `21:52:17`, `22:04:45`, `22:17:05`, `22:29:13`, and `22:41:25 CET`, while the latest short recheck still showed fresh geocoded rows through `23:19:17 CET` without new nullable-trait `strip()` failures after the already-known `21:27:39 CET` lines.
-- AI Description Enrichment (`observed`, 2026-03-09 23:20 CET): `Ollama` is now both the intended and active runtime path. The repo-supervised `description_ollama` runner was relaunched at `2026-03-09 17:26 CET`, has now completed twenty-nine 1000-row chunks, and most recently finished chunks at `22:55:59 CET` (`622` descriptions), `23:02:55 CET` (`645` descriptions), `23:09:47 CET` (`660` descriptions), and `23:16:27 CET` (`648` descriptions). Canonical `ai_description` has risen from `706` before launch to `31,033`, the current 1000-row batch is already active from cursor `064ec0ac-100d-4d70-9461-b7722608b68b`, and `ai_description_generated_at` shows `6,058` fresh descriptions in the last five minutes. Recent completed chunks are still holding roughly `2.4-2.6/s`, so there is still no tuning trigger for `CHUNK_SIZE=1000` / `BATCH_SIZE=20`.
-- Azure resource audit (`observed`, 2026-03-06 15:33 CET): `ca-cdpmerged-fast-env` still points app logs at missing Log Analytics customer ID `156d285c-938d-4dc5-9eef-306c16296744`, while the only workspace in `rg-cdpmerged-fast` is `law-tracardi-cdpmerged-prod-nq6x` (`d128bbb1-5cdb-44a6-8293-86ce36780677`) and only showed recent `AzureMetrics` and `Usage` rows for deleted `VM-TRACARDI-EVENTHUB` telemetry. The strongest cleanup candidates are `stcdpmergedprtnlp` and `Application Insights Smart Detection`; the workspace itself is not safe to delete blindly yet.
-- Canonical counts line: `total=1,940,603; website_url=70,922; geo_latitude=63,979; ai_description=31,033; cbe_enriched=1,252,019`.
-- Integrations: Teamleader and Exact Online are both real and syncing to PostgreSQL; **Autotask is now locally integrated into the unified 360 view** via migration `007_add_autotask_to_unified_360.sql` and a full resync. Current verified counts: `linked_all=1` (B.B.S. Entreprise), `linked_exact=8`, `linked_teamleader=6`, `kbo_only=1,940,588`. `identity_link_quality` now shows `autotask total_records=5`, `with_kbo_number=2`, `with_org_uid=1`, `unmatched=3`.
-- Historical incident detail and older closed milestones now live in `WORKLOG.md` and git history, not in this snapshot.
-
-## Top Risks
-
-- If the local-only mode is not kept explicit in the docs, future sessions will keep reopening Azure verification and deployment work that is intentionally paused for cost control.
-- A real Microsoft Entra client secret was written into tracked docs on 2026-03-09. The credential was rotated at `22:38 CET`, the local active value was replaced immediately, and tracked examples are now lint-guarded, but the retired value remains historically exposed in earlier local/git surfaces and must never be reused.
-- The Illustrated Guide now has the core local-only business-case proof in place and the worst layout failures are fixed, but the next credibility pass still needs evidence-timestamp alignment, one screenshot/prose naming fix, the count-semantics dictionary, tighter maturity wording, cleaner API/code-page styling, a better PDF text layer, and a reviewer-friendly acceptance/conformity appendix.
-- The current website-behavior proof is explicitly demo-labeled local writeback evidence for a real UID, not live public-site traffic; replace it only if a non-simulated website-tracking demo becomes a requirement.
-- **Tracardi demoted to optional activation adapter (2026-03-14 decision)**: Tracardi CE workflow execution requires Premium license, so Tracardi is no longer a core dependency. First-party event processor + PostgreSQL writeback satisfy core demo/runtime needs. Tracardi remains available for future paid-feature activation path if justified.
-- **Admin panel / basic admin authorization: COMPLETE (`observed` 2026-03-14)** - Admin panel now live at `https://kbocdpagent.ngrok.app/admin`. Basic admin authorization (boolean `is_admin` flag) implemented. NOT full RBAC. Admin shield icon appears in sidebar for admins. Server-side API protection for admin endpoints. lennertvhoy@gmail.com is admin; brandstekelorum2@gmail.com is explicitly NOT admin.
-- All stale `.openclaw` path assumptions have been cleaned from active helper/setup scripts; they now use repo-relative imports or `resolve_kbo_zip_path()`.
-- The old Chainlit compose service is REMOVED. Operator API + Shell require a populated `.env.local` and exclusive use of port `8000`; any leftover host-side `uvicorn` process will block the default local stack until it is stopped.
-- `sync_status` is still misleading as an enrichment-completion signal because every row is marked enriched while field coverage remains sparse.
-- **PostgreSQL aggregation queries resolved** - Brussels (0.13s), Antwerpen (0.31s), and Gent (0.09s) all now perform well within limits; the timeout issue from 2026-03-06 is closed.
-- Local regression script (`scripts/regression_local_chatbot.py`) now verifies 7 host-side checks, including artifact generation, but real interactive multi-message runs with the live model still need broader local operator scenarios.
-- The earlier browser phrasing "software companies in Brussels" produced `1,529`, while the same-session direct deterministic `search_profiles` check produced `1,652`; the segment/export gap is fixed, and the NACE resolution discrepancy has been explained and regression-tested (see PROJECT_STATE.yaml active_problems.browser_vs_direct_search_total_mismatch).
-- Tracardi-native projection of canonical PostgreSQL segments is still a future workflow concern, but authoritative local segment stats and exports no longer depend on Tracardi profile membership.
-- The main local-only CBE runner is no longer spending a third of each chunk on NACE-less records, but `688,581` structurally NACE-less companies are now an explicit separate/API-backed backlog bucket.
-- Website discovery coverage is still low at `70,922` (about 3.65% of 1.94M), even though the repo-supervised website runner is still completing chunks successfully.
-- Multi-session continuity is now browser-verified locally under the dev auth path: create, list, reopen, and follow-up all work against the same stored thread. There is still no browser-driven end-to-end verification under Microsoft work-account sessions (blocked until March 14, 2026 Azure quota reset).
-- The current Chainlit UI is now closer to colleague-ready: sidebar titles auto-generate from first messages (60 char limit), history/reopen flow is browser-verified, a low-severity `set_chat_profiles` resume warning still appears in logs, Microsoft work-account login is implemented but not yet enabled (see `CHAINLIT_ENABLE_AZURE_AD` in `.env.local`), and the web-search policy is defined as `restricted` mode with PII blocking but currently `disabled` by default.
-- Enrichment progress narratives are still at risk of drifting from real PostgreSQL coverage unless each phase is rechecked from the database after runner activity.
-- Azure observability and deployment drift still exist historically, but that work is paused and should not distract from the local hardening queue unless the user explicitly resumes cloud work.
-
-## Immediate Focus
-
-1. **Keep enrichment as the top operational background priority**: leave geocoding on background monitoring, keep website discovery progressing, and keep `description_ollama` at its current settings while recent completed chunks stay in the current `2.2-2.4/s` band.
-2. **Keep the active work local-only** for now; when Azure work resumes after the reported **March 14, 2026** quota reset, scope it narrowly to Microsoft Entra work-account login plus Azure OpenAI instead of reopening full Azure hosting.
-3. **Finish the colleague-facing chatbot rollout path** now that the uv/CI stabilization step is closed: connect the verified local continuity path to Microsoft work-account login and then tighten the minimum ChatGPT-like UX improvements before broader colleague rollout.
-4. **Keep Illustrated Guide alignment stable for now**: resume the v3.3 credibility pass only after the current tooling/CI refresh is recorded cleanly.
+**Updated At:** 2026-03-14 19:15 CET  
+**Execution Mode:** Local-only permanent  
+**Azure Deployment:** Disabled for cost control  
+**Public URL:** https://kbocdpagent.ngrok.app
 
 ---
 
-## Microsoft Entra ID Authentication
+## Runtime Status
 
-**Status:** ✅ IMPLEMENTED - Code complete, ready for activation  
-**Implemented:** 2026-03-09 22:45 CET  
-**Blocked until:** March 14, 2026 (Azure quota reset)  
-**Git Commit:** `8c2e5cf`
+| Component | Port | Status |
+|-----------|------|--------|
+| Operator Shell (Next.js) | 3000 | ✅ Live |
+| Operator API (FastAPI) | 8170 | ✅ Live |
+| PostgreSQL | 5432 | ✅ Full dataset (1.94M) |
+| Tracardi | 8686/8787 | ⚠️ Optional (profiles: 83) |
 
-### Configuration
+---
 
-| Setting | Value | Location |
-|---------|-------|----------|
-| App Registration | "CDP Chatbot" | Azure AD |
-| Client ID | `d13725b8-ce4e-4103-9518-2d66bcce5beb` | `.env.local` |
-| Tenant ID | `ce408fd5-2526-4cbb-bbe6-f0c2e188b89d` | `.env.local` |
-| Client Secret | `<stored-in-.env.local-only>` | `.env.local` (rotated 2026-03-09 22:38 CET; not committed) |
-| Redirect URI | `http://localhost:8000/auth/oauth/azure-ad/callback` | Azure AD + `.env.local` |
-| Status | `CHAINLIT_ENABLE_AZURE_AD=false` | `.env.local` |
+## Headlines (7 max)
 
-Security note: the client secret exposed in tracked docs earlier on 2026-03-09 was rotated the same evening. The retired value must not be reused, and tracked doc examples are now checked by `scripts/doc_lint.py` in CI.
+1. **Tracardi optionalization complete** — Core stack verified working without Tracardi (2026-03-14)
+2. **Admin panel live** — /admin with basic authorization, non-admin denial verified (2026-03-14)
+3. **Typed intents implemented** — 38 tests passing, 10 intent types covering common queries (2026-03-14)
+4. **Chainlit deprecated** — Operator Shell (port 3000) is the only supported UI (2026-03-14)
+5. **Microsoft Entra ID ready** — Implementation complete, activation blocked until Azure quota reset (2026-03-14)
+6. **Model benchmark complete** — Switched from GPT-5 (incompatible) to GPT-4o (2-3x faster) (2026-03-15)
+7. **Stable ngrok infrastructure** — Hobbyist plan with fixed domain, systemd-managed (2026-03-14)
 
-### Features Implemented
+---
 
-- **Domain restriction**: Optional `AZURE_AD_ALLOWED_DOMAINS` to limit access to specific email domains
-- **Per-user isolation**: Each work account gets private conversation history via PostgreSQL data layer
-- **Audit logging**: Authentication events logged with user metadata (email, tenant, object ID)
-- **Fallback support**: Dev password auth still available when `CHAINLIT_DEV_AUTH_ENABLED=true`
-- **Web search policy**: Four modes (disabled/restricted/opt-in/default-on) with PII blocking
+## Immediate Priority
 
-### Files Created/Modified
+1. Keep enrichment progressing (background monitoring)
+2. Verify Entra auth end-to-end after March 14 quota reset
+3. Complete Illustrated Guide v3.3 credibility pass
 
-- `src/config.py` - Added AZURE_AD_* and WEB_SEARCH_* configuration
-- `src/app.py` - Domain validation and Azure AD metadata capture
-- `.chainlit/config.toml` - OAuth provider configuration template
-- `.env.example` - Configuration templates
-- `src/services/web_search_policy.py` - Web search policy enforcement (NEW)
-- `scripts/setup_azure_ad_auth.py` - Setup validation script (NEW)
-- `docs/MICROSOFT_ENTRA_SETUP.md` - Comprehensive documentation (NEW)
-- `tests/unit/test_web_search_policy.py` - Unit tests (NEW, 14 passing)
+---
 
-### To Enable (after March 14, 2026)
+## Active Blockers
 
-```bash
-# In .env.local
-CHAINLIT_ENABLE_AZURE_AD=true
+None. Azure deployment path intentionally disabled, not blocked.
 
-# Optional: restrict to specific domains
-AZURE_AD_ALLOWED_DOMAINS=yourcompany.com
+---
 
-# Restart application
-docker compose up -d --build
-```
+## Canonical Counts (as_of: 2026-03-09)
 
-### Documentation
+See `PROJECT_STATE.yaml` section `enrichment.canonical_counts` for authoritative numbers.
 
-See `docs/MICROSOFT_ENTRA_SETUP.md` for complete setup, troubleshooting, and production deployment guide.
+Quick reference:
+- `total`: 1,940,603 (full KBO dataset)
+- `cbe_enriched`: 1,252,019
+- `website_url`: 70,922
+- `geo_latitude`: 63,979
+- `ai_description`: 31,033
+
+---
+
+## References
+
+- **Detailed history:** WORKLOG.md
+- **Structured state:** PROJECT_STATE.yaml
+- **Active queue:** NEXT_ACTIONS.md
+- **Roadmap:** BACKLOG.md
+- **Operating rules:** AGENTS.md
