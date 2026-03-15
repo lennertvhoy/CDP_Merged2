@@ -67,12 +67,6 @@ class Settings(BaseSettings):
     AZURE_OPENAI_MAX_RETRIES: int = Field(
         default=1, description="Max retries for Azure OpenAI API calls (reduced to fail fast under rate limits)"
     )
-    AZURE_OPENAI_RETRY_MIN_SECONDS: float = Field(
-        default=1.0, description="Minimum retry wait time in seconds"
-    )
-    AZURE_OPENAI_RETRY_MAX_SECONDS: float = Field(
-        default=5.0, description="Maximum retry wait time in seconds (capped to fail fast)"
-    )
     AZURE_OPENAI_MAX_TOKENS: int = Field(
         default=800,
         description="Maximum completion tokens for Azure OpenAI chat responses",

@@ -394,9 +394,8 @@ def _build_azure_chat_model_kwargs(
         "api_version": settings.AZURE_OPENAI_API_VERSION,
         "timeout": settings.AZURE_OPENAI_TIMEOUT,
         "max_retries": settings.AZURE_OPENAI_MAX_RETRIES,
-        # Explicit retry behavior: fail fast, don't wait for long retry-after
-        "retry_min_seconds": getattr(settings, "AZURE_OPENAI_RETRY_MIN_SECONDS", 1.0),
-        "retry_max_seconds": getattr(settings, "AZURE_OPENAI_RETRY_MAX_SECONDS", 5.0),
+        # NOTE: Azure OpenAI client has built-in rate limit handling with 30s retry-after
+        # We set max_retries=1 to fail fast rather than waiting 60-90s for multiple retries
     }
     
     # GPT-5 compatibility: use max_completion_tokens instead of max_tokens
