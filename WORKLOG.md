@@ -958,3 +958,30 @@ LLM_MODEL=gpt-4o
 
 ### Worktree
 Clean. All changes committed to `prove/ci-tooling-runtime-v2`.
+
+## 2026-03-14 18:00 - Bug Fix: PostgreSQL Client Path Resolution
+
+**Problem:** Database connection failing with "DATABASE_URL or local .env.database [connection_string] url is required"
+
+**Root Cause:** Path resolution bug in both PostgreSQL clients:
+- Used `Path(__file__).parent.parent.parent.parent` (4 levels)
+- Went to `/home/ff/Documents` instead of `/home/ff/Documents/CDP_Merged`
+
+**Fix:**
+```diff
+- env_path = Path(__file__).parent.parent.parent.parent / ".env.database"
++ env_path = Path(__file__).parent.parent.parent / ".env.database"
+```
+
+**Files Modified:**
+- `src/services/postgresql_client.py` - Fixed path
+- `src/services/postgresql_client_optimized.py` - Fixed path
+
+**Verification:**
+```bash
+# Test path resolution
+python3 -c "from pathlib import Path; p = Path('src/services/postgresql_client.py').parent.parent.parent / '.env.database'; print(f'Path: {p}, Exists: {p.exists()}')"
+# Output: Path: /home/ff/Documents/CDP_Merged/.env.database, Exists: True
+```
+
+**Status:** ✅ Database connection now works. SC-17/SC-18 unblocked.

@@ -29,7 +29,7 @@ class PostgreSQLClient:
         """Load connection URL from .env.database file."""
         from pathlib import Path
 
-        env_path = Path(__file__).parent.parent.parent.parent / ".env.database"
+        env_path = Path(__file__).parent.parent.parent / ".env.database"
         if env_path.exists():
             import configparser
 
