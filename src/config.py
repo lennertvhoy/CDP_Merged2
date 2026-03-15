@@ -74,9 +74,11 @@ class Settings(BaseSettings):
     
     # Stage-specific token limits to minimize Azure throttling based on estimated token counts
     # Azure throttles on prompt + max_completion_tokens, so lower caps reduce 429 risk
+    # NOTE: GPT-5 uses reasoning tokens which consume completion token budget,
+    # so routing needs higher limit to leave room for actual output after reasoning
     AZURE_OPENAI_MAX_TOKENS_ROUTING: int = Field(
-        default=100,
-        description="Token limit for tool-selection/classifier calls (minimal output needed)",
+        default=300,
+        description="Token limit for tool-selection/classifier calls (GPT-5: 300 to account for reasoning tokens)",
     )
     AZURE_OPENAI_MAX_TOKENS_SHORT: int = Field(
         default=150,
