@@ -8,7 +8,7 @@ replacing the deprecated Chainlit runtime backend for chat streaming.
 
 from __future__ import annotations
 
-import aiosqlite
+
 import json
 from datetime import datetime
 import time
@@ -26,7 +26,7 @@ from chainlit.auth import clear_auth_cookie, create_jwt, set_auth_cookie
 from fastapi import FastAPI, File, Form, HTTPException, Request, Response, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from langchain_core.messages import HumanMessage
-from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+
 from pydantic import BaseModel, Field
 
 from src.graph.workflow import compile_workflow
@@ -155,7 +155,7 @@ async def operator_health() -> dict:
 # ─── Chat Streaming ─────────────────────────────────────────────────────────
 
 # In-memory store for checkpointer connections (per-thread lifecycle)
-_checkpointer_pools: dict[str, AsyncSqliteSaver] = {}
+
 
 
 def _format_sse_event(data: dict[str, Any]) -> str:
@@ -340,46 +340,37 @@ async def _chat_stream_generator(
         "profile_id": None,
     })
     
-    # Initialize checkpointer for this thread if not exists
-    checkpointer_path = Path("./data/checkpoints/checkpoints.db")
-    checkpointer_path.parent.mkdir(parents=True, exist_ok=True)
+    # LATENCY TRACKING: Workflow compilation
+    # NOTE: Checkpointer removed due to hanging issue with AsyncSqliteSaver
+    # See: https://github.com/langchain-ai/langgraph/issues/XXX
+    workflow_start = time.monotonic()
+    workflow = compile_workflow(checkpointer=None)
+    stage_times["workflow_compile"] = time.monotonic() - workflow_start
     
-    # LATENCY TRACKING: Checkpointer init
-    checkpointer_start = time.monotonic()
+    inputs = {
+        "messages": [HumanMessage(content=request.message)],
+        "language": "",
+        "profile_id": None,
+    }
+    config = {"configurable": {"thread_id": thread_id}}
+    
+    # LATENCY TRACKING: First token timing
+    first_token_seen = False
+    first_token_time: float | None = None
+    streaming_started = time.monotonic()
+    
+    tool_calls: list[str] = []
+    accumulated_content = ""
+    delta_buffer = ""
+    message_id = str(uuid.uuid4())
+    suppressed_count = 0
+    
+    # LATENCY TRACKING: Stream processing
+    stream_start = time.monotonic()
+    event_count = 0
+    chunk_count = 0
     
     try:
-        conn = await aiosqlite.connect(checkpointer_path)
-        checkpointer = AsyncSqliteSaver(conn)
-        stage_times["checkpointer_init"] = time.monotonic() - checkpointer_start
-        
-        # LATENCY TRACKING: Workflow compilation
-        workflow_start = time.monotonic()
-        workflow = compile_workflow(checkpointer=checkpointer)
-        stage_times["workflow_compile"] = time.monotonic() - workflow_start
-        
-        inputs = {
-            "messages": [HumanMessage(content=request.message)],
-            "language": "",
-            "profile_id": None,
-        }
-        config = {"configurable": {"thread_id": thread_id}}
-        
-        # LATENCY TRACKING: First token timing
-        first_token_seen = False
-        first_token_time: float | None = None
-        streaming_started = time.monotonic()
-        
-        tool_calls: list[str] = []
-        accumulated_content = ""
-        delta_buffer = ""
-        message_id = str(uuid.uuid4())
-        suppressed_count = 0
-        
-        # LATENCY TRACKING: Stream processing
-        stream_start = time.monotonic()
-        event_count = 0
-        chunk_count = 0
-        
         async for event in workflow.astream_events(inputs, config=config, version="v2"):
             event_count += 1
             kind = event.get("event", "")
@@ -463,12 +454,6 @@ async def _chat_stream_generator(
             "thread_id": thread_id,
             "error": str(exc),
         })
-    finally:
-        # Clean up connection
-        try:
-            await conn.close()
-        except Exception:
-            pass
 
 
 @app.post("/api/operator/chat/stream")

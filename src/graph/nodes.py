@@ -547,11 +547,15 @@ async def agent_node(state: AgentState) -> dict:
         )
         model = AzureChatOpenAI(**kwargs)
         
-        # For GPT-5, don't bind tools if there's a ToolMessage in history
-        # (we're in the second call after tool execution)
-        has_tool_message = any(isinstance(m, ToolMessage) for m in messages)
-        
-        if not has_tool_message:
+        # GPT-5 WORKAROUND: For GPT-5, don't bind tools if there's a ToolMessage in history
+        # (we're in the second call after tool execution). GPT-4o and other models should
+        # always bind tools regardless of message history.
+        if is_gpt5:
+            has_tool_message = any(isinstance(m, ToolMessage) for m in messages)
+            if not has_tool_message:
+                model = model.bind_tools(tools)
+        else:
+            # For non-GPT-5 models (GPT-4o, etc.), always bind tools
             model = model.bind_tools(tools)
     else:
         # Default to OpenAI.
