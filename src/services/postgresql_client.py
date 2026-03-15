@@ -29,7 +29,10 @@ class PostgreSQLClient:
         """Load connection URL from .env.database file."""
         from pathlib import Path
 
-        env_path = Path(__file__).parent.parent.parent / ".env.database"
+        # Try local override first, then fall back to main config
+        env_path = Path(__file__).parent.parent.parent / ".env.database.local"
+        if not env_path.exists():
+            env_path = Path(__file__).parent.parent.parent / ".env.database"
         if env_path.exists():
             import configparser
 

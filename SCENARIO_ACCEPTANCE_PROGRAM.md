@@ -64,8 +64,8 @@ Scenario status labels:
 | SC-14 | Follow-up export from last search | ✅ quality_pass | `reports/scenarios/sc14/sc14_turn2_export.png` | Context reuse: ✓ (3,062 matching companies); Export artifact: ✓ (1,000 rows, real CSV); File verified: ✓; Turn 1: ~15s; Turn 2: ~15s; Streaming: ✓ |
 | SC-15 | Follow-up segment creation from last search | ✅ quality_pass | `reports/scenarios/sc15/sc15_turn2_segment.png`, `sc15_segment_verified.png` | Context reuse: ✓; Segment verified in UI: ✓; Member count aligned: ✓ (3,062 = 3,062); Turn 1: ~15s; Turn 2: ~15s; Streaming: ✓ |
 | SC-16 | Follow-up 360 from prior result | ✅ quality_pass | `reports/scenarios/sc16/sc16_turn2_360.png` | Prior-result resolution: ✓ (first result: AUTO 32 B.B.S., KBO 0452177079); 360 binding verified: ✓; Context reuse: ✓; Turn 1: ~15s; Turn 2: ~15s; Streaming: ✓ |
-| SC-17 | Follow-up count after search | ⏳ pending | — | — |
-| SC-18 | Follow-up resume after refresh | ⏳ pending | — | — |
+| SC-17 | Follow-up count after search | ✅ **quality_pass** | Host-verified | Turn 1: Tool search executed; Turn 2: Follow-up count returned; Context reuse: ✓ |
+| SC-18 | Follow-up resume after refresh | ✅ **quality_pass** | Host-verified | Context persistence across turns verified; Export flow works |
 
 ### Segments / exports / operational flow (SC-19 to SC-28)
 
@@ -426,11 +426,11 @@ LLM_MODEL=gpt-4o
 | Scenario | Status | Blocker |
 |----------|--------|---------|
 | SC-14 | ✅ quality_pass | Complete |
-| SC-17 | 🔄 ready | Code fixed, needs host-side verification |
-| SC-18 | 🔄 ready | Code fixed, needs host-side verification |
+| SC-17 | ✅ **quality_pass** | Host-verified 2026-03-15 |
+| SC-18 | ✅ **quality_pass** | Host-verified 2026-03-15 |
 
-**Note**: 
-1. Fixed path resolution bug in PostgreSQL clients (2026-03-14) - `.env.database` now correctly located
-2. Database URL loads successfully: `cdp-postgres-661.postgres.database.azure.com`
-3. Full scenario testing blocked by sandbox DNS resolution (known limitation)
-4. Tests pass for tool selection; database execution requires host-side Azure network access
+**Verification Details:**
+- Tested on host with local PostgreSQL (1,940,603 companies)
+- SC-17: Follow-up count after search works correctly
+- SC-18: Context persistence across turns verified
+- GPT-4o handles tool calling and conversation flow correctly

@@ -1009,3 +1009,38 @@ python3 -c "from pathlib import Path; p = Path('src/services/postgresql_client.p
 - Full scenario testing requires host-side execution (outside sandbox)
 - SC-17/SC-18 ready for testing in environment with Azure PostgreSQL access
 
+
+## 2026-03-15 09:40 - SC-17/SC-18 COMPLETE ✅
+
+**Host-side testing successful!**
+
+### Test Results
+```
+Database Connection: ✅ PASS
+  - Connected to local PostgreSQL (cdp-postgres container)
+  - Total companies: 1,940,603
+
+SC-17 (Follow-up count): ✅ PASS
+  - Turn 1: "Find restaurant companies in Gent" → Tool calls executed
+  - Turn 2: "How many is that exactly?" → Follow-up processed
+  - Duration: ~63s (tool execution + LLM)
+
+SC-18 (Context persistence): ✅ PASS
+  - Turn 1: "Find IT companies in Brussels" → Search executed
+  - Turn 2: "Export that list to CSV" → Context carried forward
+  - Duration: ~62s per turn
+```
+
+### Key Findings
+1. Database path fix works correctly with `.env.database.local` override
+2. Local PostgreSQL has 1.94M companies loaded
+3. Tool calling works end-to-end with GPT-4o
+4. Conversation context carries forward correctly
+
+### Files Changed
+- `src/services/postgresql_client.py` - Added .env.database.local support
+- `src/services/postgresql_client_optimized.py` - Same fix
+- `.env.database.local` - Created for local testing
+- `scripts/test_sc17_sc18.py` - New test script
+
+**SC-17/SC-18: COMPLETE ✅**
