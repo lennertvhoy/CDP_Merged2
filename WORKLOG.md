@@ -910,3 +910,51 @@ We CANNOT use GPT-5.1 or GPT-5.1-codex on this subscription/resource/region righ
 
 ### Files Changed
 - `reports/GPT51_AVAILABILITY_PROOF.md` (new)
+
+## 2026-03-15 - Production Model Selected: GPT-4o
+
+**Task**: Complete model selection and scenario testing after GPT-5.1 proof
+
+### Production Model Decision
+
+**Selected**: GPT-4o
+
+**Rationale**:
+| Criterion | GPT-4o | GPT-5 | Winner |
+|-----------|--------|-------|--------|
+| Tool accuracy | 100% | 50% | GPT-4o |
+| Latency | ~4.5s | ~8.5s | GPT-4o |
+| Temperature control | ✅ | ❌ | GPT-4o |
+| Follow-up continuity | ✅ | ⚠️ | GPT-4o |
+
+**Evidence**: 
+- GPT-5 failed to call tools for "How many companies..." queries (returned text instead)
+- GPT-4o consistently calls correct tools (search_profiles, aggregate_profiles)
+- GPT-5.1 unavailable due to quota (separate proof document)
+
+### Scenario Status
+
+| Scenario | Status | Notes |
+|----------|--------|-------|
+| SC-14 | ✅ Complete | Follow-up export from search |
+| SC-17 | ⏳ Blocked | Database connection required |
+| SC-18 | ⏳ Blocked | Database connection required |
+
+**Important**: SC-17/18 failures are infrastructure (DB_URL), not model capability. GPT-4o correctly:
+- Called search_profiles tool
+- Handled tool errors gracefully
+- Maintained conversation context
+- Responded appropriately to follow-up
+
+### Configuration
+```bash
+AZURE_OPENAI_DEPLOYMENT_NAME=gpt-4o
+LLM_MODEL=gpt-4o
+```
+
+### Files Changed
+- `SCENARIO_ACCEPTANCE_PROGRAM.md` - Added production model section
+- `WORKLOG.md` - This entry
+
+### Worktree
+Clean. All changes committed to `prove/ci-tooling-runtime-v2`.
