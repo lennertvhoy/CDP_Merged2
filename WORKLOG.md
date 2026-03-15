@@ -823,3 +823,40 @@ Updated `docs/ILLUSTRATED_GUIDE.md`:
 3. Ambiguity resolution: Logic exists, not exercised
 4. Live eval execution: Auth/cookie flow needs refinement for full automation
 
+
+## 2026-03-15 - Corrected GPT-5 Benchmark
+
+**Task**: Fair benchmark of GPT-5 vs GPT-4o after user pushback on previous conclusions
+
+### Previous Error
+Incorrectly concluded GPT-5 was "incompatible" and recommended GPT-4o without:
+- Testing the existing adapter fixes
+- Measuring tool-calling accuracy
+- Verifying actual GPT-5 behavior
+
+### Corrected Methodology
+1. **Verified Azure availability**: GPT-5.1 exists but requires special quota (not available)
+2. **Tested with adapter**: GPT-5 works when using `max_completion_tokens` and no `temperature`
+3. **Measured accuracy**: Tool calling success rate matters more than latency
+4. **Real scenarios**: Used actual operator queries, not toy prompts
+
+### Results
+| Metric | GPT-4o | GPT-5 | Winner |
+|--------|--------|-------|--------|
+| Tool accuracy | 100% | 50% | GPT-4o |
+| Avg latency | ~4.5s | ~8.5s | GPT-4o |
+| Cold start | ~31s | None | GPT-5 |
+| Temperature control | ✅ | ❌ | GPT-4o |
+
+### Key Finding
+GPT-5 fails to call tools for 50% of queries (e.g., "How many companies..." returns text instead of calling aggregate_profiles). This makes it unsuitable for the operator shell regardless of latency.
+
+### Honest Recommendation
+**GPT-4o remains the production choice** - but because it has better tool-calling accuracy, not just because "it works."
+
+### Files Changed
+- `reports/MODEL_BENCHMARK_REPORT_GPT5_VERIFIED.md` (new)
+
+### Next Steps
+- Monitor GPT-5.1 availability for future retesting
+- Consider GPT-5 for simple chat flows if hybrid approach justified
