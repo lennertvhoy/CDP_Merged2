@@ -59,6 +59,8 @@ from src.services.operator_bridge import (
     resolve_export_file,
 )
 from src.services.operator_feedback import FeedbackSubmission, submit_operator_feedback
+from src.services.postgresql_search import get_search_service
+from src.services.runtime_support_schema import ensure_runtime_support_schema
 
 app = FastAPI(
     title="CDP_Merged Operator Bridge",
@@ -155,6 +157,79 @@ async def operator_health() -> dict:
 # ─── Chat Streaming ─────────────────────────────────────────────────────────
 
 # In-memory store for checkpointer connections (per-thread lifecycle)
+
+
+async def _load_thread_search_state(thread_id: str) -> dict[str, Any] | None:
+    """Load last search state from Postgres for cross-turn context binding.
+    
+    This enables SC-17 ("How many is that exactly?") and SC-19 
+    ("Create a segment from these results") to reference prior searches.
+    """
+    try:
+        search_service = get_search_service()
+        await search_service.ensure_connected()
+        await ensure_runtime_support_schema(search_service._client)
+        pool = search_service._client.pool
+        assert pool is not None
+        
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                SELECT last_search_tql, last_search_params
+                FROM app_chat_thread_state
+                WHERE thread_id = $1
+                """,
+                thread_id,
+            )
+            if row:
+                return {
+                    "last_search_tql": row["last_search_tql"],
+                    "last_search_params": row["last_search_params"],
+                }
+    except Exception as exc:
+        logger.warning(f"Failed to load thread search state: {exc}")
+    return None
+
+
+async def _save_thread_search_state(
+    thread_id: str, 
+    tql: str | None, 
+    params: dict[str, Any] | None
+) -> None:
+    """Save last search state to Postgres for cross-turn context binding.
+    
+    Called after search_profiles to ensure follow-up queries can reference
+    the exact TQL that produced the results.
+    """
+    if not tql:
+        return
+        
+    try:
+        search_service = get_search_service()
+        await search_service.ensure_connected()
+        await ensure_runtime_support_schema(search_service._client)
+        pool = search_service._client.pool
+        assert pool is not None
+        
+        async with pool.acquire() as conn:
+            # Upsert thread state
+            await conn.execute(
+                """
+                INSERT INTO app_chat_thread_state 
+                    (thread_id, last_search_tql, last_search_params, updated_at)
+                VALUES ($1, $2, $3, NOW())
+                ON CONFLICT (thread_id) DO UPDATE SET
+                    last_search_tql = EXCLUDED.last_search_tql,
+                    last_search_params = EXCLUDED.last_search_params,
+                    updated_at = EXCLUDED.updated_at
+                """,
+                thread_id,
+                tql,
+                json.dumps(params) if params else None,
+            )
+            logger.info(f"Saved search state for thread {thread_id}")
+    except Exception as exc:
+        logger.warning(f"Failed to save thread search state: {exc}")
 
 
 
@@ -345,6 +420,12 @@ async def _chat_stream_generator(
         "profile_id": None,
     })
     
+    # Load prior search state from Postgres for cross-turn context binding
+    # This enables follow-up queries like "How many is that exactly?" to work
+    thread_state_load_start = time.monotonic()
+    prior_search_state = await _load_thread_search_state(thread_id)
+    stage_times["thread_state_load"] = time.monotonic() - thread_state_load_start
+    
     # LATENCY TRACKING: Workflow compilation
     # NOTE: Checkpointer removed due to hanging issue with AsyncSqliteSaver
     # See: https://github.com/langchain-ai/langgraph/issues/XXX
@@ -352,11 +433,19 @@ async def _chat_stream_generator(
     workflow = compile_workflow(checkpointer=None)
     stage_times["workflow_compile"] = time.monotonic() - workflow_start
     
-    inputs = {
+    # Build inputs with prior search state for context binding
+    inputs: dict[str, Any] = {
         "messages": [HumanMessage(content=request.message)],
         "language": "",
         "profile_id": None,
     }
+    # Include prior search state if available
+    if prior_search_state:
+        if prior_search_state.get("last_search_tql"):
+            inputs["last_search_tql"] = prior_search_state["last_search_tql"]
+        if prior_search_state.get("last_search_params"):
+            inputs["last_search_params"] = prior_search_state["last_search_params"]
+        logger.info(f"Loaded prior search state for thread {thread_id}")
     config = {"configurable": {"thread_id": thread_id}}
     
     # LATENCY TRACKING: First token timing
@@ -369,6 +458,8 @@ async def _chat_stream_generator(
     delta_buffer = ""
     message_id = str(uuid.uuid4())
     suppressed_count = 0
+    last_search_tql: str | None = None  # Track if search was performed
+    last_search_params: dict[str, Any] | None = None
     
     # LATENCY TRACKING: Stream processing
     stream_start = time.monotonic()
@@ -427,6 +518,18 @@ async def _chat_stream_generator(
             elif kind == "on_tool_start":
                 if name and name != "agent":
                     tool_calls.append(name)
+            
+            # Capture search TQL from tool results for persistence
+            if kind == "on_tool_end" and name == "search_profiles":
+                try:
+                    result = event.get("data", {}).get("output", {})
+                    if isinstance(result, dict):
+                        # Extract TQL from search result
+                        last_search_tql = result.get("tql") or result.get("condition")
+                        last_search_params = result.get("params") or result.get("filters")
+                        logger.info(f"Captured search TQL from tool result: {last_search_tql[:50] if last_search_tql else None}...")
+                except Exception as exc:
+                    logger.warning(f"Failed to capture search TQL: {exc}")
         
         # If we suppressed content but never emitted anything, emit a fallback
         if suppressed_count > 0 and not any(
@@ -442,6 +545,10 @@ async def _chat_stream_generator(
         # Sanitize the final content to remove internal thinking and tool leakage
         sanitized_content = _sanitize_assistant_content(accumulated_content)
         
+        # Persist search state if a search was performed
+        if last_search_tql:
+            await _save_thread_search_state(thread_id, last_search_tql, last_search_params)
+        
         # Log latency report server-side only (not sent to client to avoid UX pollution)
         latency_report = {
             "total_ms": round(total_request_time * 1000, 2),
@@ -452,6 +559,7 @@ async def _chat_stream_generator(
             },
             "chunks_emitted": chunk_count,
             "thinking_suppressed": suppressed_count,
+            "search_persisted": bool(last_search_tql),
         }
         logger.info(f"Chat turn latency report: {latency_report}")
         
