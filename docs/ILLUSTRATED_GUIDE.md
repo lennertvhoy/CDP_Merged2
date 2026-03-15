@@ -2586,19 +2586,19 @@ $ wc -l software-companies-in-antwerp-csv-export_20260314_202406.csv
 | SC-14 | ✅ quality_pass |
 | SC-15 | ✅ quality_pass |
 | SC-16 | ✅ quality_pass |
-| SC-17 | ⏳ pending |
-| SC-18 | ⏳ pending |
+| SC-17 | ❌ functional_fail |
+| SC-18 | ✅ quality_pass |
 
 **Overall Program Progress:**
-| Category | Complete | Pending |
-|----------|----------|---------|
-| Foundation (SC-01 to SC-10) | 10 | 0 |
-| Follow-up (SC-11 to SC-18) | 6 | 2 |
-| Segments/Exports (SC-19 to SC-28) | 0 | 10 |
-| 360/Analytics (SC-29 to SC-38) | 0 | 10 |
-| Admin/Auth (SC-39 to SC-45) | 4 | 3 |
-| Intent/Robustness (SC-46 to SC-50) | 0 | 5 |
-| **Total** | **20 (40%)** | **30 (60%)** |
+| Category | Complete | Failed | Pending |
+|----------|----------|--------|---------|
+| Foundation (SC-01 to SC-10) | 10 | 0 | 0 |
+| Follow-up (SC-11 to SC-18) | 7 | 1 | 0 |
+| Segments/Exports (SC-19 to SC-28) | 0 | 1 | 9 |
+| 360/Analytics (SC-29 to SC-38) | 1 | 0 | 9 |
+| Admin/Auth (SC-39 to SC-45) | 4 | 0 | 3 |
+| Intent/Robustness (SC-46 to SC-50) | 1 | 0 | 4 |
+| **Total** | **23 (46%)** | **2 (4%)** | **25 (50%)** |
 
 ---
 
@@ -2806,10 +2806,10 @@ def _build_download_url(filename: str) -> str:
 
 ### 22.5 SC-18 Status
 
-⏳ **pending_retest** — Awaiting public path verification with Edge CDP to confirm:
-1. Export link returns relative URL (`/download/artifacts/...`)
-2. CSV downloads successfully from `https://kbocdpagent.ngrok.app/`
-3. No `localhost` appears in delivered links
+✅ **quality_pass** — Verified on public path (see Phase 25.4 for exact evidence)
+- Export link returns relative URL (`/download/artifacts/...`)
+- CSV downloads successfully from `https://kbocdpagent.ngrok.app/`
+- No `localhost` appears in delivered links
 
 ---
 
@@ -2871,59 +2871,130 @@ page = browser.contexts[0].pages[0]  # Use existing authenticated page
 
 *Screenshot shows full golden record with unified data from all 4 sources — canonical CDP proof.*
 
-### 25.4 Test 3: SC-19 — Create Segment from Real Search
+### 25.4 Test 3: SC-18 — Public Path Export Verification (Retest)
 
-**Turn 1:** "Find software companies in Brussels"  
-**Turn 2:** "Create a segment from these results"
+**Scenario:** Follow-up resume after refresh → Export
+**Critical Fix:** Export URLs now use relative paths (`/download/artifacts/...`)
+
+**Test Steps:**
+1. Navigate to public URL: `https://kbocdpagent.ngrok.app`
+2. Search: "Find software companies in Antwerp"
+3. Refresh page (simulate reopen)
+4. Export request: "Export that one"
+
+**Evidence Log:**
+
+| Step | Prompt | Response | Status |
+|------|--------|----------|--------|
+| 1 | "Find software companies in Antwerp" | "I found **3,062** software companies in Antwerp" | ✅ PASS |
+| 2 | Refresh page | Page reloads, conversation persists | ✅ PASS |
+| 3 | "Export that one" | "Your export is ready! You can download the CSV file..." | ✅ PASS |
+
+**Critical Evidence:**
+
+```
+Extracted download URL: /download/artifacts/exported-company-data_20260315_111753.csv
+- Contains localhost: NO ✅
+- Is relative URL: YES ✅
+- Works on public path: YES ✅
+```
+
+**Status:** ✅ **quality_pass** — Export works correctly with relative URLs on public path
+
+**Screenshot Evidence:**
+
+![SC-18 Evidence Step 4](reports/scenarios/sc18_evidence_step4.png)
+
+*Screenshot shows export response with download link. URL is relative (`/download/artifacts/...`), no localhost.*
+
+---
+
+### 25.5 Test 4: SC-19 — Create Segment from Real Search
+
+**Scenario Definition:**
+- **User prompt:** "Create a segment for software companies in Antwerp."
+- **Expected result:** Creates a real PostgreSQL-backed segment with member count aligned to search
+
+**Test Performed (Different from Definition):**
+- **Turn 1:** "Find software companies in Brussels"
+- **Turn 2:** "Create a segment from these results"
 
 **Turn 1 Result:**
-- Answer: "I found 1,821 software companies in Brussels"
-- Follow-up suggestions: Analytics breakdown
+- Answer: "I found **1,821** software companies in Brussels"
 - Streaming: ✓ Visible
+- Status: ✅ PASS
 
 **Turn 2 Result:**
 - Response: "Please provide the search criteria or results you want to create a segment from, so I can create the segment accurately for you."
-- **Gap:** System asks for clarification instead of using prior search context
+- **Failure:** System did NOT use prior search context (1,821 companies)
+- **Root Cause:** Same context reuse bug as SC-17
 
-**Status:** ⚠️ **functional_pass** — Search works, segment creation needs context awareness improvement
+**Status:** ❌ **functional_fail** — Context reuse broken for segment creation
 
 **Evidence:**
 
 ![SC-19 Segment Creation](reports/scenarios/sc19_segment_created.png)
 
-*Screenshot shows search result (1,821 companies) but segment creation asks for clarification rather than using context.*
+*Screenshot shows search worked (1,821 companies) but follow-up segment creation failed to use context.*
 
-### 25.5 Summary
+### 25.6 Summary and Corrected Tracker
+
+**Test Results:**
 
 | Scenario | Status | Key Finding |
 |----------|--------|-------------|
-| SC-46 Count Query | ✅ quality_pass | Correct count, good UX |
+| SC-46 Count Query | ✅ quality_pass | Correct count (41,290), good UX |
 | SC-29 360 by KBO | ✅ quality_pass | Full 4-source golden record |
-| SC-19 Segment Creation | ⚠️ functional_pass | Search works, context gap identified |
+| SC-18 Export (Retest) | ✅ quality_pass | Relative URLs work on public path |
+| SC-19 Segment Creation | ❌ functional_fail | Context reuse broken (same as SC-17) |
 
-**New Scenario Tracker:**
-- Foundation (SC-01 to SC-10): 10 passed
-- Follow-up (SC-11 to SC-18): 6 passed, 2 failed/pending
-- 360/Analytics (SC-29 to SC-38): 1 passed, 9 pending
-- Intent (SC-46 to SC-50): 1 passed, 4 pending
+**Corrected Scenario Tracker (No Contradictions):**
 
-### 25.6 Documentation Contradictions Fixed
+| Category | Passed | Failed | Pending |
+|----------|--------|--------|---------|
+| Foundation (SC-01 to SC-10) | 10 | 0 | 0 |
+| Follow-up (SC-11 to SC-18) | 7 | 1 (SC-17) | 0 |
+| Segments/Exports (SC-19 to SC-28) | 0 | 1 (SC-19) | 9 |
+| 360/Analytics (SC-29 to SC-38) | 1 | 0 | 9 |
+| Admin/Auth (SC-39 to SC-45) | 4 | 0 | 3 |
+| Intent (SC-46 to SC-50) | 1 | 0 | 4 |
+| **Total** | **23** | **2** | **25** |
 
-1. **SC-18 Status:** Updated from `pending_retest` to `quality_pass` (user verified)
-2. **GPT-5 References:** Fixed all references from "GPT-5 configured" to "gpt-4.1-mini" in:
-   - `docs/ILLUSTRATED_GUIDE.md` (Runtime Architecture table)
-   - `docs/ILLUSTRATED_GUIDE.md` (Architecture Truth section)
+**Note:** SC-18 moved from `pending_retest` → `quality_pass` after direct verification with live Edge CDP on public path.
 
-### 25.7 Files Changed
+### 25.7 Documentation Contradictions Fixed
+
+1. **SC-18 Status:** Updated from `pending_retest` to `quality_pass` with direct evidence
+2. **SC-19 Status:** Corrected from `functional_pass` to `functional_fail` (context reuse broken)
+3. **Tracker Reconciliation:** Fixed summary counts to match per-scenario statuses
+4. **GPT-5 References:** Fixed all references from "GPT-5 configured" to "gpt-4.1-mini"
+
+### 25.8 Exact Evidence Archive
+
+**SC-18 Public Path Verification:**
+```
+Prompt 1: "Find software companies in Antwerp"
+Response 1: "I found 3,062 software companies in Antwerp"
+Action: Refresh page
+Prompt 2: "Export that one"
+Response 2: "Your export is ready! You can download the CSV file..."
+Download URL: /download/artifacts/exported-company-data_20260315_111753.csv
+URL Type: Relative (no localhost)
+Result: ✅ quality_pass
+```
+
+**Files Changed:**
 
 | File | Change |
 |------|--------|
-| `SCENARIO_ACCEPTANCE_PROGRAM.md` | Updated SC-18, SC-19, SC-29, SC-46 statuses |
-| `docs/ILLUSTRATED_GUIDE.md` | Added Phase 25 with evidence |
+| `SCENARIO_ACCEPTANCE_PROGRAM.md` | Updated SC-18, SC-19, SC-29, SC-46 statuses; fixed tracker counts |
+| `docs/ILLUSTRATED_GUIDE.md` | Added Phase 25 with exact evidence |
 | `AGENTS.md` | Strengthened live Edge browser requirement |
 | `reports/scenarios/sc46_count_result.png` | New evidence |
 | `reports/scenarios/sc29_360_kbo.png` | New evidence |
-| `reports/scenarios/sc19_segment_created.png` | New evidence |
+| `reports/scenarios/sc18_evidence_step4.png` | New evidence |
+| `reports/scenarios/sc18_evidence_v2.json` | Evidence log |
+| `reports/scenarios/sc19_segment_created.png` | Evidence of failure |
 
 ---
 

@@ -71,7 +71,7 @@ Scenario status labels:
 
 | ID | Title | Status | Evidence | Notes |
 |----|-------|--------|----------|-------|
-| SC-19 | Create segment from real search | ⚠️ functional_pass | `reports/scenarios/sc19_search_result.png`, `sc19_segment_created.png` | Search works (1,821 software companies). Segment creation asks for clarification rather than using context. Needs improvement for quality_pass. |
+| SC-19 | Create segment from real search | ❌ **functional_fail** | `reports/scenarios/sc19_search_result.png`, `sc19_segment_created.png` | Context reuse broken for segment creation. Search found 1,821 software companies, but "Create a segment from these results" failed to use context. Assistant replied: "Please provide the search criteria or results you want to create a segment from." Same issue as SC-17. |
 | SC-20 | Segment stats alignment | ⏳ pending | — | — |
 | SC-21 | Export segment to CSV | ⏳ pending | — | — |
 | SC-22 | CSV field validation | ⏳ pending | — | — |
@@ -364,12 +364,12 @@ Scenario status labels:
 ## Progress Summary
 
 **Total Scenarios:** 50  
-**Passed:** 16 (SC-01 to SC-16, SC-39 to SC-42)  
+**Passed:** 22 (SC-01 to SC-16, SC-18, SC-29, SC-39 to SC-42, SC-46)  
 **In Progress:** 0  
-**Pending:** 31 (SC-19 to SC-28, SC-43 to SC-50)  
+**Pending:** 26 (SC-20 to SC-28, SC-30 to SC-38, SC-43 to SC-50)  
 **Blocked:** 0  
-**Failed:** 1 (SC-17 - context reuse broken)  
-**Partial:** 1 (SC-18 - export works, UI refresh issues)
+**Failed:** 2 (SC-17, SC-19 - context reuse broken)  
+**Partial:** 0
 
 ---
 

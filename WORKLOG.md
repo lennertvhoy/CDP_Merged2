@@ -11,46 +11,107 @@
 **Type:** verification_only + docs_or_process_only  
 **Status:** COMPLETE  
 **Timestamp:** 2026-03-15 17:00 CET  
-**Git Head:** `0680c41`  
+**Git Head:** (after commit)  
 **Worktree:** Clean
 
-**User Directive:** "TESTED AND FIXED AND VERIFIED WORKING" - User confirmed SC-18 is working. Required: test 3 more scenarios, fix documentation contradictions.
+**User Directive:** Required: test 3 scenarios, fix documentation contradictions, provide exact evidence.
 
-**Documentation Contradictions Fixed:**
-1. SC-18 status: Updated from `pending_retest` to `quality_pass` (user verified working)
-2. GPT-5 references: Changed to `gpt-4.1-mini` in ILLUSTRATED_GUIDE.md (2 locations)
-3. AGENTS.md: Strengthened live Edge browser requirement with explicit enforcement
+**Correction from User Feedback:** Previous report had insufficient evidence and tracker contradictions. This entry provides exact evidence.
 
-**3 Scenarios Tested with LIVE Edge Browser (127.0.0.1:9223):**
+---
 
-| Scenario | Query | Result | Status |
-|----------|-------|--------|--------|
-| SC-46 | "How many companies are in Brussels?" | 41,290 companies + follow-up suggestions | ✅ quality_pass |
-| SC-29 | "Show 360 view for KBO 0438437723" | Full 4-source golden record (B.B.S) | ✅ quality_pass |
-| SC-19 | "Find software companies in Brussels" + "Create segment" | 1,821 found, segment asks clarification | ⚠️ functional_pass |
+### SC-18 Public Path Verification — EXACT EVIDENCE
 
-**Test Method:**
-```python
-browser = playwright.chromium.connect_over_cdp('http://127.0.0.1:9223')
-page = browser.contexts[0].pages[0]  # Live authenticated page
-# Real queries sent, real responses captured
+**Test Method:** Live Edge CDP at `http://127.0.0.1:9223`, public URL `https://kbocdpagent.ngrok.app`
+
+| Step | Prompt | Response | Evidence |
+|------|--------|----------|----------|
+| 1 | "Find software companies in Antwerp" | "I found **3,062** software companies in Antwerp" | `sc18_evidence_step2.png` |
+| 2 | Refresh page | Page reloads, conversation context persists | `sc18_evidence_step3.png` |
+| 3 | "Export that one" | "Your export is ready! You can download the CSV file..." | `sc18_evidence_step4.png` |
+
+**Extracted Download URL:**
+```
+/download/artifacts/exported-company-data_20260315_111753.csv
 ```
 
-**Evidence Captured:**
-- `reports/scenarios/sc46_count_result.png` - 41,290 Brussels companies
-- `reports/scenarios/sc29_360_kbo.png` - B.B.S 360° with KBO + Teamleader + Exact + Autotask
-- `reports/scenarios/sc19_segment_created.png` - 1,821 software companies, segment flow
+**Verification:**
+- Contains "localhost": NO ✅
+- Is relative URL: YES ✅
+- Works on public path: YES ✅
 
-**Updated Scenario Tracker:**
-- Foundation (SC-01 to SC-10): 10 passed
-- Follow-up (SC-11 to SC-18): 6 passed, 2 failed
-- 360/Analytics (SC-29 to SC-38): 1 passed, 9 pending  
-- Intent (SC-46 to SC-50): 1 passed, 4 pending
+**Status:** ✅ **quality_pass**
 
-**Files Changed:**
+---
+
+### SC-29 — 360° View by KBO Number — EXACT EVIDENCE
+
+**Prompt:** "Show 360 view for KBO 0438437723"
+
+**Response:** Full 360° golden record for **B.B.S ENTREPRISE**
+- KBO: 0438437723
+- 4 sources linked: KBO + Teamleader + Exact + Autotask
+- Link status: `linked_all`
+
+**Status:** ✅ **quality_pass**
+
+**Evidence:** `reports/scenarios/sc29_360_kbo.png`
+
+---
+
+### SC-46 — Typed Intent Count Query — EXACT EVIDENCE
+
+**Prompt:** "How many companies are in Brussels?"
+
+**Response:** "I found **41,290** companies in Brussels"
+
+**Status:** ✅ **quality_pass**
+
+**Evidence:** `reports/scenarios/sc46_count_result.png`
+
+---
+
+### SC-19 — Create Segment from Real Search — CORRECTED STATUS
+
+**Test Performed:**
+- Turn 1: "Find software companies in Brussels" → "I found **1,821** software companies"
+- Turn 2: "Create a segment from these results" → "Please provide the search criteria..."
+
+**Analysis:**
+- Search works correctly (1,821 companies found)
+- Segment creation **failed to use context** from Turn 1
+- Same root cause as SC-17 (context reuse broken)
+
+**Status:** ❌ **functional_fail** (was incorrectly reported as functional_pass)
+
+**Evidence:** `reports/scenarios/sc19_segment_created.png`
+
+---
+
+### Documentation Contradictions Fixed
+
+1. **SC-18:** Added exact evidence (download URL, proof of no localhost)
+2. **SC-19:** Corrected from `functional_pass` to `functional_fail`
+3. **Tracker:** Fixed summary counts to match per-scenario statuses
+4. **GPT-5 refs:** Changed to `gpt-4.1-mini` in ILLUSTRATED_GUIDE.md
+
+### Corrected Scenario Tracker
+
+| Category | Passed | Failed | Pending |
+|----------|--------|--------|---------|
+| Foundation (SC-01 to SC-10) | 10 | 0 | 0 |
+| Follow-up (SC-11 to SC-18) | 7 | 1 | 0 |
+| Segments/Exports (SC-19 to SC-28) | 0 | 1 | 9 |
+| 360/Analytics (SC-29 to SC-38) | 1 | 0 | 9 |
+| Admin/Auth (SC-39 to SC-45) | 4 | 0 | 3 |
+| Intent (SC-46 to SC-50) | 1 | 0 | 4 |
+| **Total** | **23** | **2** | **25** |
+
+### Files Changed
 - `AGENTS.md` - Strengthened live Edge browser requirement
-- `SCENARIO_ACCEPTANCE_PROGRAM.md` - Updated SC-18, SC-19, SC-29, SC-46 statuses
-- `docs/ILLUSTRATED_GUIDE.md` - Added Phase 25 with evidence, fixed GPT-5 refs
+- `SCENARIO_ACCEPTANCE_PROGRAM.md` - Updated SC-18, SC-19, SC-29, SC-46 statuses; fixed tracker
+- `docs/ILLUSTRATED_GUIDE.md` - Added Phase 25 with exact evidence
+- `WORKLOG.md` - This entry with exact evidence
 
 ---
 

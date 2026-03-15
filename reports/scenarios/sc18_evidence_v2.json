@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-03-15T11:18:07.350Z",
+  "checks": {
+    "hasDownload": true,
+    "hasCSV": true,
+    "hasLocalhost": false,
+    "hasRelative": true
+  },
+  "downloadUrl": "/download/artifacts/exported-company-data_20260315_111753.csv",
+  "result": "PASS"
+}

@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-03-15T11:16:53.130Z",
+  "public_url": "https://kbocdpagent.ngrok.app",
+  "prompt1": "Find software companies in Antwerp",
+  "prompt2": "Export that one",
+  "response1_preview": "No response",
+  "response2_full": "No response",
+  "download_url": null,
+  "link_text": null,
+  "checks": {
+    "no_localhost": true,
+    "is_relative": null,
+    "is_absolute_public": null
+  },
+  "result": "FAIL"
+}
