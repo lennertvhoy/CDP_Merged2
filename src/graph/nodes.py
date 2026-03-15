@@ -15,7 +15,7 @@ from typing import Any
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_ollama import ChatOllama
-from langchain_openai import AzureChatOpenAI, ChatOpenAI
+from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
 # ToolExecutor removed in LangGraph 1.x - using direct tool invocation instead
@@ -42,7 +42,7 @@ from src.ai_interface.tools import (
     send_email_via_resend,
 )
 from src.config import settings
-from src.core.azure_auth import AzureCredentialResolver
+from src.core.llm_spend_guard import get_spend_guard
 from src.core.logger import get_logger
 from src.core.search_cache import get_search_cache
 from src.graph.state import AgentState
@@ -377,120 +377,6 @@ def detect_language(text: str) -> str:
     return "en"
 
 
-def _build_azure_chat_model_kwargs(
-    *,
-    api_key: str | None = None,
-    token_provider: Any | None = None,
-    max_tokens_override: int | None = None,
-) -> dict[str, Any]:
-    """Build a bounded Azure OpenAI config for the interactive chat path.
-
-    Uses aggressive retry limits to fail fast under rate limiting rather than
-    hanging with long retry-after delays.
-
-    Args:
-        max_tokens_override: Optional override for max_completion_tokens to reduce
-            token-estimate throttling on Azure (lower = less likely to be throttled)
-    """
-    deployment = settings.AZURE_OPENAI_DEPLOYMENT_NAME or settings.LLM_MODEL
-    is_gpt5 = deployment and deployment.lower().startswith("gpt-5")
-
-    # Use stage-specific token limit if provided, otherwise default
-    max_tokens = max_tokens_override or settings.AZURE_OPENAI_MAX_TOKENS
-
-    kwargs: dict[str, Any] = {
-        "azure_endpoint": settings.AZURE_OPENAI_ENDPOINT,
-        "azure_deployment": deployment,
-        "api_version": settings.AZURE_OPENAI_API_VERSION,
-        "timeout": settings.AZURE_OPENAI_TIMEOUT,
-        "max_retries": settings.AZURE_OPENAI_MAX_RETRIES,
-        # NOTE: Azure OpenAI client has built-in rate limit handling with 30s retry-after
-        # We set max_retries=1 to fail fast rather than waiting 60-90s for multiple retries
-    }
-
-    # GPT-5 compatibility: use max_completion_tokens instead of max_tokens
-    # GPT-5 only supports temperature=1 (default); omit for GPT-5
-    # DEMAND-SIDE OPTIMIZATION: Lower max_completion_tokens reduces Azure's token-estimate
-    # throttling because Azure throttles based on prompt + max_completion_tokens, not actual output
-    if is_gpt5:
-        kwargs["max_completion_tokens"] = max_tokens
-    else:
-        kwargs["max_tokens"] = max_tokens
-        kwargs["temperature"] = 0
-
-    if token_provider is not None:
-        kwargs["azure_ad_token_provider"] = token_provider
-    elif api_key is not None:
-        kwargs["api_key"] = api_key
-    return kwargs
-
-
-def _determine_token_limit_for_stage(messages: list) -> int:
-    """Determine appropriate token limit based on conversation stage.
-
-    Azure throttles based on estimated token count (prompt + max_completion_tokens).
-    Using lower limits for stages that don't need long outputs reduces throttling risk.
-
-    Stages:
-    - Routing/tool-selection (no ToolMessage): Short response, tool calls expected
-    - Final answer (has ToolMessage): Medium response with natural language
-    """
-    has_tool_message = any(isinstance(m, ToolMessage) for m in messages)
-
-    if not has_tool_message:
-        # First call: Tool selection/routing - minimal tokens needed
-        # The LLM just needs to output tool calls, not natural language
-        return settings.AZURE_OPENAI_MAX_TOKENS_ROUTING
-    else:
-        # Second call: Final answer generation - needs natural language
-        return settings.AZURE_OPENAI_MAX_TOKENS_MEDIUM
-
-
-# Simple in-memory rate limiter for Azure OpenAI
-# Dynamically adjusts based on deployment capacity
-# gpt-5 at capacity 20: 200 RPM = 0.3s min interval
-# gpt-4o at capacity 10: 10 RPM per 10s = 1.1s min interval (legacy)
-_last_azure_request_time: float = 0.0
-
-
-def _get_azure_min_interval() -> float:
-    """Calculate minimum interval between requests based on deployment RPM.
-    
-    Azure OpenAI GlobalStandard SKU:
-    - RPM scales with capacity: capacity 10 = 10-100 RPM (model dependent)
-    - gpt-5 at capacity 20: 200 RPM = 0.3s interval
-    - gpt-4o at capacity 10: ~60 RPM = 1.0s interval
-    
-    We use conservative spacing (add 20% buffer) to account for:
-    - Short-window burst throttling
-    - TPM-based throttling on estimated tokens
-    - Multiple concurrent users
-    """
-    deployment = settings.AZURE_OPENAI_DEPLOYMENT_NAME or settings.LLM_MODEL
-    if deployment and deployment.lower().startswith("gpt-5"):
-        # gpt-5 at capacity 20: 200 RPM = 0.3s per request
-        # Conservative: 0.4s to allow for bursts and TPM throttling
-        return 0.4
-    # Default for gpt-4o and others at lower capacity
-    return 1.1
-
-
-async def _rate_limit_azure_request():
-    """Ensure we don't exceed Azure rate limits by spacing requests."""
-    global _last_azure_request_time
-    
-    min_interval = _get_azure_min_interval()
-    now = time.monotonic()
-    elapsed = now - _last_azure_request_time
-    
-    if elapsed < min_interval:
-        sleep_time = min_interval - elapsed
-        logger.debug("rate_limiter_throttling", sleep_ms=round(sleep_time * 1000, 2), min_interval=min_interval)
-        await asyncio.sleep(sleep_time)
-    
-    _last_azure_request_time = time.monotonic()
-
-
 async def router_node(state: AgentState) -> dict:
     """Analyse input, detect language, and inject the system prompt.
 
@@ -658,9 +544,37 @@ async def agent_node(state: AgentState) -> dict:
     """
     messages = state["messages"]
     provider_type = settings.LLM_PROVIDER.lower()
-    
-    # DEMAND-SIDE OPTIMIZATION: Check for deterministic shortcuts
-    # This avoids second LLM call for simple, predictable tool results
+
+    # Budget guard: check if we can afford this request
+    spend_guard = get_spend_guard()
+    total_input_chars = sum(len(str(getattr(m, 'content', ''))) for m in messages)
+    estimated_input_tokens = total_input_chars // 4
+    estimated_output_tokens = 200  # Conservative estimate for routing/final answer
+
+    budget_check = spend_guard.check_budget(estimated_input_tokens, estimated_output_tokens)
+    if not budget_check["allowed"]:
+        logger.warning(
+            "llm_budget_hard_stop_triggered",
+            current_spent=budget_check["current_spent_eur"],
+            hard_stop=budget_check["hard_stop_eur"],
+        )
+        return {
+            "messages": [
+                AIMessage(
+                    content=f"""🛑 **Monthly Testing Budget Reached**
+
+{budget_check["message"]}
+
+**Current Usage:**
+- Spent this month: €{budget_check["current_spent_eur"]:.2f}
+- Budget limit: €{budget_check["hard_stop_eur"]:.2f}
+
+The chatbot is temporarily disabled to stay within the monthly budget."""
+                )
+            ]
+        }
+
+    # Check for deterministic shortcuts to avoid second LLM call
     shortcut_response = _try_deterministic_shortcut(messages)
     if shortcut_response:
         logger.info(
@@ -674,18 +588,14 @@ async def agent_node(state: AgentState) -> dict:
     total_message_chars = sum(len(str(getattr(m, 'content', ''))) for m in messages)
     tool_message_count = sum(1 for m in messages if isinstance(m, ToolMessage))
     
-    # Pre-compute stage token limit for logging and later use
-    stage_token_limit = _determine_token_limit_for_stage(messages) if provider_type == "azure_openai" else None
-    
     logger.info(
         "agent_node_invoked",
         provider=provider_type,
         message_count=len(messages),
         tool_message_count=tool_message_count,
         total_input_chars=total_message_chars,
-        estimated_tokens=total_message_chars // 4,  # Rough estimate: 4 chars per token
+        estimated_tokens=total_message_chars // 4,
         stage="routing" if tool_message_count == 0 else "final_answer",
-        max_completion_tokens=stage_token_limit,
     )
 
     if provider_type == "mock":
@@ -702,42 +612,6 @@ async def agent_node(state: AgentState) -> dict:
                 AIMessage(content=f"Mock response to: {latest_user_message or 'your request'}")
             ]
         }
-
-    # GPT-5 WORKAROUND: GPT-5 doesn't handle ToolMessage after tool_calls properly
-    # Rewrite the conversation to remove tool_calls/ToolMessage pattern
-    is_gpt5 = settings.AZURE_OPENAI_DEPLOYMENT_NAME and settings.AZURE_OPENAI_DEPLOYMENT_NAME.lower().startswith("gpt-5")
-    
-    if is_gpt5:
-        # Debug: log all message types
-        msg_types = [type(m).__name__ for m in messages]
-        has_tool_msg = any(isinstance(m, ToolMessage) for m in messages)
-        logger.info("gpt5_message_check", msg_types=msg_types, has_tool_msg=has_tool_msg, msg_count=len(messages))
-        
-        # Find and extract tool result from ToolMessage
-        tool_message = next((m for m in messages if isinstance(m, ToolMessage)), None)
-        if tool_message:
-            try:
-                import json
-                result_data = json.loads(tool_message.content)
-                if result_data.get('status') == 'ok' and 'counts' in result_data:
-                    count = result_data['counts'].get('authoritative_total', 0)
-                    preview = f"I found {count} matching companies."
-                else:
-                    preview = "I found the information you requested."
-            except:
-                preview = "I found the information you requested."
-            
-            # Rewrite: keep only HumanMessage and SystemMessage, add result as AIMessage
-            rewritten = []
-            for m in messages:
-                if isinstance(m, (HumanMessage, SystemMessage)):
-                    rewritten.append(m)
-                # Skip AIMessage with tool_calls and ToolMessage
-            
-            # Add the result as a simple AIMessage
-            rewritten.append(AIMessage(content=preview))
-            messages = rewritten
-            logger.info("gpt5_conversation_rewritten", original_count=len(messages), new_count=len(rewritten), preview=preview)
 
     if provider_type == "ollama":
         model = ChatOllama(
@@ -757,53 +631,24 @@ async def agent_node(state: AgentState) -> dict:
             model=settings.LLM_MODEL,
             temperature=0,
         ).bind_tools(tools)
-    elif provider_type == "azure_openai":
-        auth = AzureCredentialResolver("azure_openai_langchain").resolve(
-            explicit_key=settings.AZURE_OPENAI_API_KEY,
-            key_vault_secret_name=settings.AZURE_OPENAI_API_KEY_SECRET_NAME,
-            token_scope="https://cognitiveservices.azure.com/.default",  # nosec B106
-            require_token_credential=False,
-        )
-        if not auth.api_key and auth.token_provider is None:
-            raise ValueError(
-                "Azure OpenAI authentication is not configured for LangChain path. "
-                "Provide AZURE_OPENAI_API_KEY (or Key Vault secret) or enable managed identity"
-            )
-        # DEMAND-SIDE OPTIMIZATION: Use pre-computed stage-specific token limit
-        kwargs = _build_azure_chat_model_kwargs(
-            api_key=auth.api_key,
-            token_provider=auth.token_provider,
-            max_tokens_override=stage_token_limit,
-        )
-        model = AzureChatOpenAI(**kwargs)
-        
-        # GPT-5 WORKAROUND: For GPT-5, don't bind tools if there's a ToolMessage in history
-        # (we're in the second call after tool execution). GPT-4o and other models should
-        # always bind tools regardless of message history.
-        if is_gpt5:
-            has_tool_message = any(isinstance(m, ToolMessage) for m in messages)
-            if not has_tool_message:
-                model = model.bind_tools(tools)
-        else:
-            # For non-GPT-5 models (GPT-4o, etc.), always bind tools
-            model = model.bind_tools(tools)
     else:
-        # Default to OpenAI.
+        # Default to OpenAI API (primary provider)
+        # Provider-agnostic: bounded retries, explicit timeout, sane token budget
         model = ChatOpenAI(
-            api_key=settings.OPENAI_API_KEY or "mock-key",  # type: ignore[arg-type]
+            api_key=SecretStr(settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None,
             base_url=settings.OPENAI_BASE_URL,
             model=settings.LLM_MODEL,
             temperature=0,
+            timeout=60,  # Absolute timeout to prevent hanging
+            max_retries=2,  # Bounded retries (provider-agnostic protection)
         ).bind_tools(tools)
     
     # Granular instrumentation for the LLM call
-    import time
     llm_call_start = time.monotonic()
     
     # Track payload size entering the LLM
     total_input_chars = sum(len(str(getattr(m, 'content', ''))) for m in messages)
     tool_result_chars = sum(len(str(getattr(m, 'content', ''))) for m in messages if isinstance(m, ToolMessage))
-    tool_message_count = sum(1 for m in messages if isinstance(m, ToolMessage))
     
     logger.info(
         "agent_node_llm_call_start",
@@ -813,25 +658,36 @@ async def agent_node(state: AgentState) -> dict:
         total_input_chars=total_input_chars,
         tool_result_chars=tool_result_chars,
         estimated_tokens=total_input_chars // 4,
-        max_completion_tokens=stage_token_limit if provider_type == "azure_openai" else None,
         stage="routing" if tool_message_count == 0 else "final_answer",
     )
     
     try:
-        # RATE LIMITER: Space out Azure requests to stay under limits
-        # gpt-4o: 10 req per 10s = 1 req/s
-        if provider_type == "azure_openai":
-            await _rate_limit_azure_request()
-        
         logger.info("agent_node_ainvoke_calling", model_type=type(model).__name__, message_count=len(messages))
         response = await model.ainvoke(messages)
         llm_call_duration = time.monotonic() - llm_call_start
+
+        # Record usage for cost tracking
+        # Note: OpenAI doesn't return usage in LangChain by default, so we estimate
+        response_content = getattr(response, 'content', '') or ''
+        output_chars = len(str(response_content))
+        output_tokens = output_chars // 4
+        stage = "routing" if tool_message_count == 0 else "final_answer"
+
+        usage_record = spend_guard.record_usage(
+            model=settings.LLM_MODEL,
+            input_tokens=estimated_input_tokens,
+            output_tokens=output_tokens,
+            request_type=stage,
+        )
+
         logger.info(
             "agent_node_llm_call_complete",
             provider=provider_type,
             duration_ms=round(llm_call_duration * 1000, 2),
-            response_has_content=bool(getattr(response, 'content', None)),
+            response_has_content=bool(response_content),
             response_has_tool_calls=bool(getattr(response, 'tool_calls', None)),
+            cost_eur=usage_record["cost_eur"],
+            monthly_total_eur=usage_record["total_monthly_eur"],
         )
         return {"messages": [response]}
     except Exception as e:
@@ -867,7 +723,7 @@ The AI service is currently experiencing high demand. Please wait a moment and t
 - Try a simpler query (e.g., just "hello" to test)
 - If this persists, the service may need capacity adjustment
 
-_Error: Azure OpenAI rate limit (429)_"""
+_Error: OpenAI API rate limit (429)_"""
                     )
                 ]
             }
@@ -1197,411 +1053,144 @@ async def critic_node(state: AgentState) -> dict:
     - No destructive operations
     - NACE codes are valid 5-digit codes
     - No potential injection attempts
-    - Arguments are properly typed
+    - Argument types are valid
 
     Args:
-        state: Current graph state containing messages.
+        state: Current graph state.
 
     Returns:
-        Partial state update. If validation fails, adds a feedback message
-        and clears tool calls. If validation passes, state is unchanged.
+        Partial state update with validated tool calls or error messages.
     """
-    messages = state.get("messages", [])
-    if not messages:
+    messages = state["messages"]
+    last_message = messages[-1] if messages else None
+
+    # If the last message isn't an AIMessage with tool calls, just pass through
+    if not isinstance(last_message, AIMessage):
         return {}
 
-    last_message = messages[-1]
-    if not hasattr(last_message, "tool_calls") or not last_message.tool_calls:
+    tool_calls = getattr(last_message, "tool_calls", None)
+    if not tool_calls:
         return {}
 
-    tool_calls = last_message.tool_calls
-    logger.debug("critic_validating_tool_calls", count=len(tool_calls))
+    # Extract the user's last query for routing validation
+    user_query = _extract_last_user_query(messages)
 
-    # Extract the last user query once for routing checks across all tool calls
-    user_query = _extract_last_user_query(list(messages))
-
-    validation_errors = []
+    validated_calls = []
     for tool_call in tool_calls:
-        is_valid, error = _validate_tool_call(tool_call, user_query=user_query)
-        if not is_valid:
-            validation_errors.append(f"Tool '{tool_call.get('name', 'unknown')}': {error}")
+        is_valid, error_msg = _validate_tool_call(tool_call, user_query)
+        if is_valid:
+            validated_calls.append(tool_call)
+        else:
+            # Return error as AI message instead of raising
+            return {
+                "messages": [
+                    AIMessage(
+                        content=f"⚠️ **Tool Validation Error**\n\n{error_msg}\n\nPlease correct and try again."
+                    )
+                ]
+            }
 
-    if validation_errors:
-        # Build feedback message
-        error_text = "\n".join(f"- {err}" for err in validation_errors)
-        feedback = (
-            f"Your tool call failed validation:\n{error_text}\n\n"
-            "Please correct these issues and try again. "
-            "Remember to use valid tool names and proper argument formats."
-        )
-
-        logger.warning("critic_rejected_tool_calls", errors=validation_errors)
-
-        # Return feedback message - this will be seen by the agent
-        return {"messages": [AIMessage(content=feedback)]}
-
-    logger.debug("critic_approved_tool_calls")
-    return {}  # Validation passed, proceed to tools
+    # Validation passed - tool calls are already in the last message
+    # No need to return anything; just let the workflow proceed
+    return {}
 
 
-# ─── CUSTOM TOOL NODE WITH STATE-AWARE SEARCH/SEGMENT ALIGNMENT ───────────────
-
-
-async def tools_node(state: AgentState, config: RunnableConfig | None = None) -> dict:
-    """Execute tools with state-aware handling for search/segment flow.
-
-    This custom tool node:
-    1. Executes all pending tool calls from the last AI message
-    2. For search_profiles: extracts and stores the TQL query in state AND cache
-    3. For create_segment: injects stored TQL if use_last_search=True (from state or cache)
-
-    This ensures segment counts match search counts by using the exact same TQL.
-
-    Uses BOTH state (via checkpointer) AND SearchCache (SQLite/in-memory) for redundancy:
-    - State is faster for same-turn access
-    - Cache persists across separate graph invocations reliably
+async def tools_node(state: AgentState) -> dict:
+    """Execute validated tool calls.
 
     Args:
-        state: Current graph state containing messages and last_search_tql.
-        config: RunnableConfig from LangGraph containing thread_id in configurable.
+        state: Current graph state with validated tool calls.
 
     Returns:
-        Partial state update with tool response messages and updated last_search_tql.
+        Partial state update with tool execution results.
     """
-    messages = state.get("messages", [])
-    if not messages:
-        logger.warning("tools_node_no_messages")
+    messages = state["messages"]
+    last_message = messages[-1] if messages else None
+
+    # If the last message isn't an AIMessage with tool calls, just pass through
+    if not isinstance(last_message, AIMessage):
         return {}
 
-    last_message = messages[-1]
-    if not hasattr(last_message, "tool_calls") or not last_message.tool_calls:
-        logger.debug("tools_node_no_tool_calls")
+    tool_calls = getattr(last_message, "tool_calls", None)
+    if not tool_calls:
         return {}
 
-    tool_calls = last_message.tool_calls
-
-    # EXTENSIVE DIAGNOSTIC LOGGING
-    logger.info("=" * 60)
-    logger.info("TOOLS_NODE_DEBUG_START")
-    logger.info("tools_node_executing", count=len(tool_calls))
-
-    # Try to get conversation_id from multiple sources
-    conversation_id: str | None = None
-    config_source = "none"
-
-    # Source 1: RunnableConfig from LangGraph (preferred)
-    if config:
-        logger.info("tools_node_config_received", config_type=type(config).__name__)
-        # RunnableConfig is a dict-like object with 'configurable' key
-        configurable = (
-            config.get("configurable", {})
-            if hasattr(config, "get")
-            else getattr(config, "configurable", {})
-        )
-        conversation_id = configurable.get("thread_id") if isinstance(configurable, dict) else None
-        if conversation_id:
-            config_source = "config.configurable.thread_id"
-        logger.info(
-            "tools_node_config_parsed",
-            configurable_type=type(configurable).__name__,
-            has_thread_id=bool(conversation_id),
-        )
-
-    # Source 2: Try to get from state metadata if available
-    if not conversation_id:
-        conversation_id = state.get("thread_id") or state.get("conversation_id")  # type: ignore[assignment]
-        if conversation_id:
-            config_source = "state"
-
-    logger.info(
-        "tools_node_conversation_id",
-        conversation_id=conversation_id,
-        config_source=config_source,
-        config_type=type(config).__name__ if config else None,
-    )
-
-    # Get stored TQL from state (persists across conversation turns via checkpointer)
-    stored_tql = state.get("last_search_tql")
-    stored_params = state.get("last_search_params")
-
-    logger.info(
-        "tools_node_state_tql",
-        has_state_tql=stored_tql is not None,
-        state_tql_preview=stored_tql[:50] if stored_tql else None,
-    )
-
-    # Also try to get from cache as fallback
-    cached_search = None
-    if conversation_id:
-        logger.info("tools_node_attempting_cache_fetch", conversation_id=conversation_id)
-        try:
-            cached_search = await search_cache.get_last_search(str(conversation_id))
-            logger.info("tools_node_cache_fetch_result", found_in_cache=cached_search is not None)
-            if cached_search:
-                if not stored_tql:
-                    stored_tql = cached_search["tql"]
-                    stored_params = cached_search.get("params")
-                    logger.info(
-                        "tools_node_using_cached_tql",
-                        conversation_id=conversation_id,
-                        tql_preview=stored_tql[:50] if stored_tql else None,
-                    )
-                else:
-                    logger.info("tools_node_has_both_state_and_cache", using="state")
-        except Exception as cache_exc:
-            logger.error(
-                "tools_node_cache_fetch_failed",
-                error=str(cache_exc),
-                error_type=type(cache_exc).__name__,
-            )
-    else:
-        logger.warning(
-            "tools_node_no_conversation_id",
-            message="Cannot use cache without conversation_id - TQL will not persist across turns!",
-        )
-
-    if stored_tql:
-        logger.info(
-            "tools_node_final_tql_status",
-            has_tql=True,
-            source="cache" if cached_search and not state.get("last_search_tql") else "state",
-        )
-    else:
-        logger.error(
-            "tools_node_final_tql_status",
-            has_tql=False,
-            message="CRITICAL: No TQL available for segment creation - segment will have 0 profiles!",
-        )
-
-    logger.info("TOOLS_NODE_DEBUG_END")
-    logger.info("=" * 60)
-
-    tool_messages = []
-    new_last_search_tql = stored_tql
-    new_last_search_params = stored_params
+    tool_responses = []
+    last_search_params = state.get("last_search_params")
 
     for tool_call in tool_calls:
         tool_name = tool_call.get("name", "")
         tool_args = tool_call.get("args", {})
-        tool_call_id = tool_call.get("id", "")
+        tool_id = tool_call.get("id", "")
+
+        # Merge last search params for artifact creation
+        if tool_name in {"create_data_artifact", "export_segment_to_csv", "email_segment_export"}:
+            tool_args = _merge_last_search_params(tool_args, last_search_params)
+
+        logger.info(
+            "tools_node_executing",
+            tool_name=tool_name,
+            tool_id=tool_id,
+            has_args=bool(tool_args),
+        )
 
         try:
-            # Special handling for create_segment to inject stored TQL
-            if tool_name == "create_segment":
-                use_last_search = tool_args.get("use_last_search", True)
-                logger.info(
-                    "create_segment_processing",
-                    name=tool_args.get("name"),
-                    use_last_search=use_last_search,
-                    has_stored_tql=stored_tql is not None,
-                    conversation_id=conversation_id,
-                )
-                if use_last_search and stored_tql:
-                    logger.info(
-                        "create_segment_injecting_stored_tql",
-                        name=tool_args.get("name"),
-                        stored_tql=stored_tql[:100],
-                        source="cache" if cached_search else "state",
-                        conversation_id=conversation_id,
-                    )
-                    # Inject the stored TQL as the condition
-                    tool_args = {**tool_args, "condition": stored_tql}
-                if use_last_search and stored_params:
-                    tool_args = _merge_last_search_params(tool_args, stored_params)
-                    logger.info(
-                        "create_segment_injected_last_search_params",
-                        name=tool_args.get("name"),
-                        applied_keys=sorted(stored_params.keys()),
-                        conversation_id=conversation_id,
-                    )
-                elif use_last_search and not stored_params:
-                    logger.warning(
-                        "create_segment_missing_last_search_params",
-                        name=tool_args.get("name"),
-                        conversation_id=conversation_id,
-                    )
-                if use_last_search and not stored_tql:
-                    logger.error(
-                        "create_segment_no_stored_tql",
-                        name=tool_args.get("name"),
-                        conversation_id=conversation_id,
-                        state_has_tql=state.get("last_search_tql") is not None,
-                        config_received=config is not None,
-                        message="CRITICAL: Segment will have 0 profiles - no TQL available",
-                    )
-            elif tool_name == "create_data_artifact":
-                use_last_search = tool_args.get("use_last_search", False)
-                logger.info(
-                    "create_data_artifact_processing",
-                    title=tool_args.get("title"),
-                    use_last_search=use_last_search,
-                    has_stored_params=stored_params is not None,
-                    conversation_id=conversation_id,
-                )
-                if use_last_search and stored_params:
-                    tool_args = _merge_last_search_params(tool_args, stored_params)
-                    logger.info(
-                        "create_data_artifact_injected_last_search_params",
-                        title=tool_args.get("title"),
-                        applied_keys=sorted(stored_params.keys()),
-                        conversation_id=conversation_id,
-                    )
-                elif use_last_search and not stored_params:
-                    logger.warning(
-                        "create_data_artifact_missing_last_search_params",
-                        title=tool_args.get("title"),
-                        conversation_id=conversation_id,
-                    )
-
-            # Execute the tool directly (ToolExecutor removed in LangGraph 1.x)
+            # Look up the tool function
             tool_func = tools_by_name.get(tool_name)
-            if not tool_func:
+            if tool_func is None:
                 raise ValueError(f"Unknown tool: {tool_name}")
-            result = await tool_func.ainvoke(tool_args)
 
-            # For search_profiles, extract TQL from result for state AND cache storage
-            if tool_name == "search_profiles":
-                try:
-                    result_data = json.loads(result) if isinstance(result, str) else result
-                    if isinstance(result_data, dict) and result_data.get("status") == "ok":
-                        query_info = result_data.get("query", {})
-                        extracted_tql = query_info.get("tql")
-                        if extracted_tql:
-                            new_last_search_tql = extracted_tql
-                            new_last_search_params = result_data.get("applied_filters", {})
-                            logger.info(
-                                "search_profiles_stored_tql_in_state",
-                                tql=extracted_tql[:100],
-                                total_count=result_data.get("counts", {}).get(
-                                    "authoritative_total"
-                                ),
-                            )
-                            # Also store in cache for redundancy
-                            if conversation_id:
-                                try:
-                                    logger.info(
-                                        "search_profiles_attempting_cache_store",
-                                        conversation_id=conversation_id,
-                                        tql_preview=extracted_tql[:50],
-                                    )
-                                    await search_cache.store_search(
-                                        conversation_id=str(conversation_id),
-                                        tql=extracted_tql,
-                                        params=new_last_search_params,
-                                    )
-                                    logger.info(
-                                        "search_profiles_stored_tql_in_cache",
-                                        conversation_id=conversation_id,
-                                        tql_preview=extracted_tql[:50],
-                                    )
-                                except Exception as cache_exc:
-                                    logger.error(
-                                        "search_profiles_cache_store_failed",
-                                        error=str(cache_exc),
-                                        error_type=type(cache_exc).__name__,
-                                    )
-                            else:
-                                logger.warning(
-                                    "search_profiles_no_conversation_id",
-                                    message="Cannot store in cache without conversation_id",
-                                )
-                except Exception as parse_exc:
-                    logger.warning("failed_to_extract_tql_from_search", error=str(parse_exc))
+            # Execute the tool using LangChain's ainvoke method
+            start_time = time.monotonic()
+            # StructuredTool uses ainvoke/invoke methods, not direct call
+            if hasattr(tool_func, 'ainvoke'):
+                result = await tool_func.ainvoke(tool_args)
+            elif hasattr(tool_func, 'invoke'):
+                result = tool_func.invoke(tool_args)
+            else:
+                # Fallback for regular functions
+                result = await tool_func(**tool_args) if asyncio.iscoroutinefunction(tool_func) else tool_func(**tool_args)
+            duration_ms = round((time.monotonic() - start_time) * 1000, 2)
 
-            # Instrument and potentially truncate large results before passing to LLM
-            result_str = str(result)
-            result_size_chars = len(result_str)
-            result_size_bytes = len(result_str.encode('utf-8'))
-            
-            # Log payload size for diagnostics
+            # Store search params for follow-up operations
+            if tool_name == "search_profiles" and isinstance(result, dict):
+                state["last_search_params"] = tool_args
+
+            # Serialize result for the LLM
+            if isinstance(result, dict):
+                content = json.dumps(result, default=str)
+            else:
+                content = str(result)
+
             logger.info(
-                "tool_result_payload_metrics",
-                tool=tool_name,
-                tool_call_id=tool_call_id,
-                payload_chars=result_size_chars,
-                payload_bytes=result_size_bytes,
-                payload_lines=result_str.count('\n'),
+                "tools_node_complete",
+                tool_name=tool_name,
+                tool_id=tool_id,
+                duration_ms=duration_ms,
+                result_type=type(result).__name__,
             )
-            
-            # Truncate large payloads to prevent LLM context overflow
-            MAX_TOOL_RESULT_CHARS = 15000  # ~3-4k tokens, leaving room for system prompt
-            if result_size_chars > MAX_TOOL_RESULT_CHARS:
-                # For search_profiles, extract just the summary, not all sample rows
-                if tool_name == "search_profiles":
-                    try:
-                        result_data = json.loads(result_str)
-                        if isinstance(result_data, dict) and result_data.get("status") == "ok":
-                            # Build a summarized version: keep counts/metadata, truncate samples
-                            summary = {
-                                "status": "ok",
-                                "tool_contract": result_data.get("tool_contract"),
-                                "retrieval_backend": result_data.get("retrieval_backend"),
-                                "search_strategy": result_data.get("search_strategy"),
-                                "keyword": result_data.get("keyword"),
-                                "resolved_nace_codes": result_data.get("resolved_nace_codes"),
-                                "applied_filters": result_data.get("applied_filters"),
-                                "counts": result_data.get("counts"),
-                                "dataset_state": result_data.get("dataset_state"),
-                                "data_quality": result_data.get("data_quality"),
-                                "query": result_data.get("query"),
-                                "lexical_fallback": result_data.get("lexical_fallback"),
-                                # Truncate samples to first 10 only
-                                "profiles_sample": result_data.get("profiles_sample", [])[:10],
-                                "next_steps_suggestions": result_data.get("next_steps_suggestions"),
-                                "guidance": result_data.get("guidance"),
-                                "truncation_notice": f"Result truncated: {result_size_chars} chars → {MAX_TOOL_RESULT_CHARS} max. Showing first 10 profiles only.",
-                            }
-                            result_str = json.dumps(summary, ensure_ascii=False)
-                            logger.info(
-                                "tool_result_truncated",
-                                tool=tool_name,
-                                original_chars=result_size_chars,
-                                truncated_chars=len(result_str),
-                                profiles_kept=10,
-                            )
-                    except json.JSONDecodeError:
-                        # Not JSON, fall back to simple truncation
-                        result_str = result_str[:MAX_TOOL_RESULT_CHARS] + "\n...[truncated for LLM context]"
-                        logger.warning(
-                            "tool_result_simple_truncation",
-                            tool=tool_name,
-                            original_chars=result_size_chars,
-                        )
-                else:
-                    # For non-search tools, simple truncation
-                    result_str = result_str[:MAX_TOOL_RESULT_CHARS] + "\n...[truncated for LLM context]"
-                    logger.info(
-                        "tool_result_truncated",
-                        tool=tool_name,
-                        original_chars=result_size_chars,
-                        truncated_chars=len(result_str),
-                    )
-            
-            # Add the tool result message
-            tool_messages.append(ToolMessage(content=result_str, tool_call_id=tool_call_id))
-            logger.info("tool_message_appended", tool=tool_name, tool_call_id=tool_call_id, content_chars=len(result_str))
 
-        except Exception as exc:
-            logger.error("tool_execution_failed", tool=tool_name, error=str(exc))
-            tool_messages.append(
+            tool_responses.append(
                 ToolMessage(
-                    content=json.dumps(
-                        {
-                            "status": "error",
-                            "tool": tool_name,
-                            "error": str(exc),
-                        }
-                    ),
-                    tool_call_id=tool_call_id,
+                    content=content,
+                    tool_call_id=tool_id,
+                    name=tool_name,
                 )
             )
 
-    result_update: dict[str, Any] = {"messages": tool_messages}
+        except Exception as e:
+            logger.error(
+                "tools_node_failed",
+                tool_name=tool_name,
+                tool_id=tool_id,
+                error=str(e),
+            )
+            tool_responses.append(
+                ToolMessage(
+                    content=json.dumps({"error": str(e), "status": "failed"}),
+                    tool_call_id=tool_id,
+                    name=tool_name,
+                )
+            )
 
-    # Update state if we have new TQL
-    if new_last_search_tql != state.get("last_search_tql"):
-        result_update["last_search_tql"] = new_last_search_tql
-    if new_last_search_params != state.get("last_search_params"):
-        result_update["last_search_params"] = new_last_search_params
-
-    return result_update
+    return {"messages": tool_responses}

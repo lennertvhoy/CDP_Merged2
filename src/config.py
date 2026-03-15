@@ -27,7 +27,7 @@ class Settings(BaseSettings):
         default="openai", description="LLM provider: ollama, openai, azure_openai, moonshot, mock"
     )
     LLM_MODEL: str = Field(
-        default="gpt-5", description="Model name for the selected provider"
+        default="gpt-4.1-mini", description="Model name for the selected provider (gpt-4.1-mini for cost control, gpt-4.1 for quality)"
     )
 
     # OpenAI Settings
@@ -45,52 +45,25 @@ class Settings(BaseSettings):
     # Ollama Settings (local development)
     OLLAMA_BASE_URL: str = Field(default="http://127.0.0.1:11434", description="Ollama server URL")
 
-    # Azure OpenAI Settings
-    AZURE_OPENAI_API_KEY: str | None = Field(default=None, description="Azure OpenAI API key")
-    AZURE_OPENAI_ENDPOINT: str | None = Field(
-        default=None, description="Azure OpenAI endpoint URL"
+    # ==========================================
+    # LLM Cost Control & Budget Guard
+    # ==========================================
+    LLM_MONTHLY_BUDGET_EUR: float = Field(
+        default=10.0, description="Monthly LLM budget in EUR (hard stop at ~85% to leave margin)"
     )
-    AZURE_OPENAI_DEPLOYMENT_NAME: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices(
-            "AZURE_OPENAI_DEPLOYMENT_NAME",
-            "AZURE_OPENAI_DEPLOYMENT",
-        ),
-        description="Azure OpenAI deployment name",
+    LLM_BUDGET_HARD_STOP_EUR: float = Field(
+        default=8.50, description="Hard stop threshold - disable LLM calls when reached"
     )
-    AZURE_OPENAI_API_VERSION: str = Field(
-        default="2024-02-01", description="Azure OpenAI API version"
+    LLM_COST_TRACKING_FILE: str = Field(
+        default="./data/llm_costs.json", description="File to persist LLM cost tracking data"
     )
-    AZURE_OPENAI_TIMEOUT: float = Field(
-        default=25.0, description="Timeout for Azure OpenAI API calls in seconds"
+
+    # OpenAI Pricing (per 1M tokens) - update if pricing changes
+    OPENAI_INPUT_PRICE_PER_1M: float = Field(
+        default=0.40, description="Input token price per 1M tokens (gpt-4.1-mini)"
     )
-    AZURE_OPENAI_MAX_RETRIES: int = Field(
-        default=1, description="Max retries for Azure OpenAI API calls (reduced to fail fast under rate limits)"
-    )
-    AZURE_OPENAI_MAX_TOKENS: int = Field(
-        default=400,
-        description="Maximum completion tokens for Azure OpenAI chat responses (reduced from 800 to minimize token-estimate throttling)",
-    )
-    
-    # Stage-specific token limits to minimize Azure throttling based on estimated token counts
-    # Azure throttles on prompt + max_completion_tokens, so lower caps reduce 429 risk
-    # NOTE: GPT-5 uses reasoning tokens which consume completion token budget,
-    # so routing needs higher limit to leave room for actual output after reasoning
-    AZURE_OPENAI_MAX_TOKENS_ROUTING: int = Field(
-        default=300,
-        description="Token limit for tool-selection/classifier calls (GPT-5: 300 to account for reasoning tokens)",
-    )
-    AZURE_OPENAI_MAX_TOKENS_SHORT: int = Field(
-        default=150,
-        description="Token limit for short confirmations and count responses",
-    )
-    AZURE_OPENAI_MAX_TOKENS_MEDIUM: int = Field(
-        default=400,
-        description="Token limit for standard natural language responses",
-    )
-    AZURE_OPENAI_API_KEY_SECRET_NAME: str | None = Field(
-        default=None,
-        description="Key Vault secret name for Azure OpenAI API key",
+    OPENAI_OUTPUT_PRICE_PER_1M: float = Field(
+        default=1.60, description="Output token price per 1M tokens (gpt-4.1-mini)"
     )
 
     # ==========================================
