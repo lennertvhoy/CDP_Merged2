@@ -65,7 +65,7 @@ Scenario status labels:
 | SC-15 | Follow-up segment creation from last search | ✅ quality_pass | `reports/scenarios/sc15/sc15_turn2_segment.png`, `sc15_segment_verified.png` | Context reuse: ✓; Segment verified in UI: ✓; Member count aligned: ✓ (3,062 = 3,062); Turn 1: ~15s; Turn 2: ~15s; Streaming: ✓ |
 | SC-16 | Follow-up 360 from prior result | ✅ quality_pass | `reports/scenarios/sc16/sc16_turn2_360.png` | Prior-result resolution: ✓ (first result: AUTO 32 B.B.S., KBO 0452177079); 360 binding verified: ✓; Context reuse: ✓; Turn 1: ~15s; Turn 2: ~15s; Streaming: ✓ |
 | SC-17 | Follow-up count after search | ❌ **functional_fail** | `reports/scenarios/sc17_turn1_v2.png`, `sc17_turn2_v2.png` | Context reuse broken — Turn 2 "How many is that exactly?" failed to reference Turn 1 search results |
-| SC-18 | Follow-up resume after refresh | ⚠️ **functional_pass** | `reports/scenarios/sc18_step1.png`, `sc18_step3_export.png` | Export worked after refresh (backend context persisted), but UI showed "NEW CONVERSATION" (UI state lost) |
+| SC-18 | Follow-up resume after refresh | ⏳ **pending_retest** | `reports/scenarios/sc18_step1.png`, `sc18_step3_export.png`, `sc18_fixed_ui_redesign.png` | **Bug discovered:** Export returned `http://localhost:3000/download/artifacts/...` link on public app — invalid for real users. Fix applied: relative URLs. **UI fix:** Chat page redesigned for maximum vertical space. Awaiting retest on public path. |
 
 ### Segments / exports / operational flow (SC-19 to SC-28)
 

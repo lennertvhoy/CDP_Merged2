@@ -9,7 +9,7 @@
 
 **Audience:** Demo observers, auditors, stakeholders needing visual proof
 
-**Last Updated:** 2026-03-14 (v4.13 — SC-14/15/16 Follow-up Action Continuity Complete)
+**Last Updated:** 2026-03-15 (v4.14 — SC-18 Export URL Fix + Chat UI Redesign)
 
 **Companion Docs:**
 
@@ -2714,4 +2714,104 @@ $ wc -l software-companies-in-antwerp-csv-export_20260314_202406.csv
 
 ❌ **SC-17: functional_fail** — Context reuse broken
 ⚠️ **SC-18: functional_pass** — Export works, UI refresh issues
+
+
+## Phase 22 — SC-18 Bug Fix + Chat UI Redesign (2026-03-15)
+
+**Date:** 2026-03-15 (continued)  
+**Category:** `ATTACHED_EDGE_CDP` + `UI/runtime`  
+**Public URL:** https://kbocdpagent.ngrok.app
+
+### 22.1 Critical Bug Discovered
+
+The SC-18 "export success" claim was **false**. User screenshot revealed the assistant was returning:
+
+```
+http://localhost:3000/download/artifacts/software-companies-in-antwerp-csv-export_...
+```
+
+On the public deployment at `https://kbocdpagent.ngrok.app/`, this URL is **invalid** — real users cannot download.
+
+**Root Cause:** `artifact.py` `_get_base_url()` function fell back to `http://localhost:3000` when `OPERATOR_SHELL_URL` env var was not set.
+
+### 22.2 Fix 1: Export URL Generation
+
+**File:** `src/ai_interface/tools/artifact.py`
+
+**Before:**
+```python
+def _get_base_url() -> str:
+    base_url = os.getenv("OPERATOR_SHELL_URL", "").rstrip("/")
+    if base_url:
+        return base_url
+    return "http://localhost:3000"  # ❌ Hardcoded localhost
+```
+
+**After:**
+```python
+def _get_base_url() -> str:
+    base_url = os.getenv("OPERATOR_SHELL_URL", "").rstrip("/")
+    if base_url:
+        return base_url
+    return ""  # ✅ Relative URL (empty = browser resolves against current origin)
+
+def _build_download_url(filename: str) -> str:
+    base_url = _get_base_url()
+    if base_url:
+        return f"{base_url}/download/artifacts/{filename}"
+    return f"/download/artifacts/{filename}"  # ✅ Relative URL
+```
+
+**Verification:**
+
+| Scenario | Expected | Actual | Status |
+|----------|----------|--------|--------|
+| Default (no env) | `/download/artifacts/test.csv` | `/download/artifacts/test.csv` | ✅ |
+| With OPERATOR_SHELL_URL set | Full URL | `https://kbocdpagent.ngrok.app/download/artifacts/test.csv` | ✅ |
+
+### 22.3 Fix 2: Chat Page Vertical Space Redesign
+
+**Problem:** Previous chat page wasted significant vertical space with verbose headers and excessive padding.
+
+**File:** `apps/operator-shell/components/chat-surface.tsx`
+
+**Changes Made:**
+
+| Element | Before | After |
+|---------|--------|-------|
+| Page header | `SectionHeader` with title + description | Compact bar: "Chat + LIVE + Report issue" |
+| Outer padding | `px-6 py-6` | `px-3 py-3` |
+| Conversation header | Large icon + stacked text + description | Single row: icon + title + subtitle + Feedback |
+| Header padding | `px-5 py-3.5` | `px-4 py-2` |
+| Textarea rows | 3 | 2 |
+| Composer padding | `px-5 py-4` | `px-4 py-3` |
+| Container max-width | `max-w-[72rem]` | `max-w-[80rem]` |
+| Border radius | `rounded-[28px]` | `rounded-[20px]` |
+
+**Result:** Chat surface now dominates the viewport with significantly more vertical space for conversation content.
+
+**Screenshot Evidence:**
+
+![Redesigned Chat UI](reports/scenarios/sc18_fixed_ui_redesign.png)
+
+*The redesigned chat page with compact headers and maximum vertical space for conversation.*
+
+### 22.4 Files Changed
+
+| File | Change |
+|------|--------|
+| `src/ai_interface/tools/artifact.py` | Export URL now uses relative paths by default |
+| `apps/operator-shell/components/chat-surface.tsx` | Redesigned for maximum vertical space |
+| `reports/scenarios/sc18_fixed_ui_redesign.png` | Evidence of UI redesign |
+
+### 22.5 SC-18 Status
+
+⏳ **pending_retest** — Awaiting public path verification with Edge CDP to confirm:
+1. Export link returns relative URL (`/download/artifacts/...`)
+2. CSV downloads successfully from `https://kbocdpagent.ngrok.app/`
+3. No `localhost` appears in delivered links
+
+---
+
+*End of Phase 22*
 

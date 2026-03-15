@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 import { FeedbackButton } from "@/components/feedback-button";
-import { SectionHeader, SurfacePill } from "@/components/shell-primitives";
+import { SurfacePill } from "@/components/shell-primitives";
 import type { OperatorShellAdapter } from "@/lib/adapters/operator-shell";
 import type {
   BootstrapPayload,
@@ -364,58 +364,56 @@ export function ChatSurface({
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-[#050505]">
-      <SectionHeader
-        title="Chat"
-        detail="Ask a question, review the answer, and continue from the same saved conversation."
-        actions={
-          <div className="flex items-center gap-3">
+      {/* Compact header bar - replaces verbose SectionHeader */}
+      <div className="flex items-center justify-between border-b border-zinc-800/80 px-4 py-2 shrink-0">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium text-zinc-300">Chat</span>
+          <SurfacePill mode="backend" label="Live" />
+        </div>
+        <div className="flex items-center gap-2">
+          <FeedbackButton
+            adapter={adapter}
+            surface="chat"
+            threadId={threadId}
+            context={{ message_count: messages.length, streaming: isStreaming }}
+            buttonLabel="Report issue"
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-1 overflow-hidden px-3 py-3">
+        <div className="mx-auto flex min-h-0 w-full max-w-[80rem] flex-col rounded-[20px] border border-zinc-800 bg-[#0a0a0a]">
+          {/* Compact conversation header */}
+          <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2 shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-400">
+                <TerminalSquare size={14} />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-zinc-100">
+                  {threadId ? "Saved conversation" : "New conversation"}
+                </span>
+                <span className="text-[10px] text-zinc-500">
+                  {threadId
+                    ? "Thread persists across sessions"
+                    : "First answer creates a saved thread"}
+                </span>
+              </div>
+            </div>
             <FeedbackButton
               adapter={adapter}
-              surface="chat"
+              surface="chat.conversation"
               threadId={threadId}
-              context={{ message_count: messages.length, streaming: isStreaming }}
-              buttonLabel="Report chat issue"
+              context={{ message_count: messages.length, has_result: messages.length > 0 }}
+              buttonLabel="Feedback"
+              buttonClassName="inline-flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-xs text-zinc-300 transition hover:border-zinc-600"
             />
-            <SurfacePill mode="backend" label="Live" />
-          </div>
-        }
-      />
-
-      <div className="flex flex-1 overflow-hidden px-6 py-6">
-        <div className="mx-auto flex min-h-0 w-full max-w-[72rem] flex-col rounded-[28px] border border-zinc-800 bg-[#0a0a0a]">
-          <div className="border-b border-zinc-800 px-5 py-3.5">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950 text-zinc-400">
-                  <TerminalSquare size={16} />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-medium text-zinc-100">Conversation</div>
-                  <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.16em] text-zinc-500">
-                    {threadId ? "Saved conversation" : "New conversation"}
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    {threadId
-                      ? "Replies and follow-up actions stay attached to this thread automatically."
-                      : "Your first completed answer will create a saved thread automatically."}
-                  </p>
-                </div>
-              </div>
-              <FeedbackButton
-                adapter={adapter}
-                surface="chat.conversation"
-                threadId={threadId}
-                context={{ message_count: messages.length, has_result: messages.length > 0 }}
-                buttonLabel="Share feedback"
-                buttonClassName="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-200 transition hover:border-zinc-600"
-              />
-            </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-4 py-4">
+          <div className="flex-1 overflow-y-auto px-3 py-3">
             {messages.length === 0 ? (
-              <div className="rounded-[22px] border border-dashed border-zinc-800 bg-zinc-950/70 px-5 py-5">
-                <p className="max-w-2xl text-sm leading-6 text-zinc-300">
+              <div className="rounded-[16px] border border-dashed border-zinc-800 bg-zinc-950/70 px-4 py-3">
+                <p className="max-w-2xl text-sm leading-5 text-zinc-300">
                   Start the conversation here. Once the first answer is complete, the thread stays
                   available in the Threads tab so you can resume it later.
                 </p>
@@ -435,9 +433,9 @@ export function ChatSurface({
             <div ref={transcriptEndRef} />
           </div>
 
-          <div className="border-t border-zinc-800 px-5 py-4">
+          <div className="border-t border-zinc-800 px-4 py-3">
             <form
-              className="space-y-3"
+              className="space-y-2"
               onSubmit={(event) => {
                 event.preventDefault();
                 handleSubmit();
@@ -454,9 +452,9 @@ export function ChatSurface({
                       handleSubmit();
                     }
                   }}
-                  rows={3}
+                  rows={2}
                   placeholder="Ask a question, continue this conversation, or start a new topic..."
-                  className="w-full resize-none rounded-[22px] border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-zinc-600"
+                  className="w-full resize-none rounded-[16px] border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 outline-none transition focus:border-zinc-600"
                 />
               </label>
               <div className="flex items-center justify-between gap-3">
@@ -466,7 +464,7 @@ export function ChatSurface({
                 <button
                   type="submit"
                   disabled={isStreaming || !draft.trim()}
-                  className="inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-950 transition hover:bg-white disabled:cursor-not-allowed disabled:border-zinc-800 disabled:bg-zinc-900 disabled:text-zinc-500"
+                  className="inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-950 transition hover:bg-white disabled:cursor-not-allowed disabled:border-zinc-800 disabled:bg-zinc-900 disabled:text-zinc-500"
                 >
                   {isStreaming ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                   {isStreaming ? "Working" : "Send"}

@@ -4,6 +4,54 @@
 
 ---
 
+## 2026-03-15 (SC-18 Bug Fix + Chat UI Redesign)
+
+### Task: Fix CSV export public URL bug + Redesign chat page for vertical space
+
+**Type:** app_code  
+**Status:** COMPLETE (pending retest on public path)  
+**Timestamp:** 2026-03-15 12:00 CET  
+**Git Head:** `4ac26da`  
+**Worktree:** Modified (changes to be committed)
+
+**Critical Bug Discovered:**
+The SC-18 "export success" claim was false. The assistant was returning `http://localhost:3000/download/artifacts/...` links when running on the public ngrok deployment (`https://kbocdpagent.ngrok.app/`). This made exports fail for real users.
+
+**Fix 1: Export URL Generation (artifact.py)**
+- Changed `_get_base_url()` to return empty string (relative URLs) by default
+- Changed `_build_download_url()` to return `/download/artifacts/{filename}` instead of `http://localhost:3000/...`
+- Relative URLs work on any deployment without hardcoding origins
+- `OPERATOR_SHELL_URL` env var can still override if needed
+
+**Fix 2: Chat Page Vertical Space Redesign (chat-surface.tsx)**
+- Replaced verbose `SectionHeader` with compact header bar
+- Reduced outer padding from `px-6 py-6` to `px-3 py-3`
+- Compressed conversation header:
+  - Removed large icon and stacked text
+  - Single row: icon + "New/Saved conversation" + subtitle + Feedback button
+  - Reduced padding from `px-5 py-3.5` to `px-4 py-2`
+- Reduced textarea rows from 3 to 2
+- Reduced composer padding
+- Chat surface now dominates the viewport
+
+**Verification:**
+| Component | Expected | Actual | Status |
+|-----------|----------|--------|--------|
+| Export URL (default) | `/download/artifacts/filename` | `/download/artifacts/test.csv` | ✅ |
+| Export URL (with env) | Full URL | `https://kbocdpagent.ngrok.app/download/artifacts/test.csv` | ✅ |
+| UI compact header | Visible | Compact "Chat + LIVE + Report issue" bar | ✅ |
+| UI conversation card | More vertical space | Reduced padding, compact header | ✅ |
+| Worktree | Modified | 2 files changed, 1 new screenshot | ✅ |
+
+**Files Changed:**
+- `src/ai_interface/tools/artifact.py` - Export URL fix
+- `apps/operator-shell/components/chat-surface.tsx` - UI redesign
+- `reports/scenarios/sc18_fixed_ui_redesign.png` - Evidence
+
+**SC-18 Status:** `pending_retest` — awaiting public path verification with Edge CDP
+
+---
+
 ## 2026-03-14 (Illustrated Guide v3.3 + Architecture Truth + PDF Export)
 
 ### Task: Execute three backlog items — Guide v3.3, Conformity Packaging, PDF Export

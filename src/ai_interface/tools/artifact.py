@@ -24,18 +24,21 @@ ARTIFACT_ROOT = Path("output") / "agent_artifacts"
 def _get_base_url() -> str:
     """Get the base URL for download links.
 
-    Uses OPERATOR_SHELL_URL (port 3000) for the operator shell frontend,
-    which proxies /downloads/ to the operator API.
-    Falls back to localhost:3000 for local development.
+    Returns a relative URL (empty string) by default so that download links
+    work correctly on any deployment (localhost, ngrok, or custom domain).
+    The browser resolves relative URLs against the current origin.
+
+    If OPERATOR_SHELL_URL is explicitly set (e.g., for backend-to-backend
+    communication), it will be used. Otherwise, relative URLs are preferred.
     """
-    # Check for explicitly configured base URL
+    # Check for explicitly configured base URL (for special cases)
     base_url = os.getenv("OPERATOR_SHELL_URL", "").rstrip("/")
     if base_url:
         return base_url
 
-    # Default to operator shell port for local development
-    # The shell proxies /downloads/ to the operator API
-    return "http://localhost:3000"
+    # Return empty string for relative URLs - works on any host/domain
+    # The browser resolves /download/artifacts/... against current origin
+    return ""
 
 
 SEARCH_RESULT_FIELDS = [
@@ -135,10 +138,15 @@ def _build_download_url(filename: str) -> str:
         filename: The artifact filename (not full path)
 
     Returns:
-        Full URL to download the artifact via the /download/artifacts endpoint
+        URL to download the artifact via the /download/artifacts endpoint.
+        Returns a relative URL (e.g., /download/artifacts/filename) by default
+        so it works on any deployment without hardcoding origins.
     """
     base_url = _get_base_url()
-    return f"{base_url}/download/artifacts/{filename}"
+    # base_url is empty for relative URLs (default), or a full origin if configured
+    if base_url:
+        return f"{base_url}/download/artifacts/{filename}"
+    return f"/download/artifacts/{filename}"
 
 
 def _write_csv(path: Path, rows: list[dict[str, Any]], fieldnames: list[str]) -> None:
