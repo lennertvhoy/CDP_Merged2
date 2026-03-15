@@ -1044,3 +1044,73 @@ SC-18 (Context persistence): ✅ PASS
 - `scripts/test_sc17_sc18.py` - New test script
 
 **SC-17/SC-18: COMPLETE ✅**
+
+## 2026-03-15 - Public Path Chat Hang Investigation
+
+### P0 Incident: Public ngrok chat hanging on "Working"
+
+**Investigation completed**:
+1. ✅ Reproduced issue on public ngrok URL
+2. ✅ Identified AsyncSqliteSaver as primary cause of hang
+3. ✅ Applied fix: Removed checkpointer from chat stream
+4. ✅ Simple queries now work
+5. 🔴 Tool-using queries still hang at second LLM call
+
+**Root cause confirmed**: 
+- Primary: AsyncSqliteSaver checkpointer incompatibility
+- Secondary: LangGraph 1.x + Azure OpenAI + ToolMessage handling issue
+
+**Fixes committed**:
+- `6aa5857` - Remove AsyncSqliteSaver, fix tool binding logic
+
+**Files modified**:
+- `src/operator_api.py` - Removed checkpointer
+- `src/graph/nodes.py` - Fixed tool binding for GPT-4o
+
+**Status**: PARTIALLY RESOLVED
+- Simple queries: ✅ Working
+- Tool-using queries: 🔴 Still hanging
+
+**Documentation**: Created `PUBLIC_PATH_INCIDENT.md` with full details
+
+## 2026-03-15 - Tool Query Hang Investigation COMPLETE
+
+### Root Cause PROVEN: Azure OpenAI Rate Limiting
+
+**Investigation Summary:**
+1. ✅ Created minimal reproducers (all passed - not a code bug)
+2. ✅ Tested direct agent_node calls (worked - 1.03s response)
+3. ✅ Tested astream_events streaming (revealed 62-second latency)
+4. ✅ Identified HTTP 429 rate limit errors with 30s retry delays
+
+**Proven Root Cause:**
+- Azure OpenAI deployment `gpt-4o` has capacity: 10 requests, 10,000 tokens
+- Tool-using queries hit rate limits immediately
+- OpenAI client auto-retries with 30-second delays
+- 3 retries × 30s = 90s+ total latency
+- Frontend timeout makes this appear as a "hang"
+
+**What is NOT the problem:**
+- ❌ LangGraph 1.x incompatibility with ToolMessage
+- ❌ Azure OpenAI fundamental incompatibility
+- ❌ Code bug in agent_node or tool execution
+- ❌ Streaming wrapper issue
+
+**Evidence Files:**
+- `reproduce_second_call_hang.py` - Direct LLM tests (all pass)
+- `debug_second_call_direct.py` - Direct node test (works)
+- `debug_astream_events.py` - Full streaming test (shows 62s latency)
+- `debug_second_call.py` - LangGraph workflow test (timeout)
+
+**Files Modified:**
+- `src/operator_api.py` - Checkpointer removed (partial fix)
+- `src/graph/nodes.py` - Tool binding fixed
+- `PUBLIC_PATH_INCIDENT.md` - Incident documentation
+
+**Status:**
+- Simple queries: ✅ Working
+- Tool queries: ❌ Broken (Azure rate limiting)
+- SC-17/SC-18: ❌ Blocked
+
+**Next Action Required:**
+Increase Azure OpenAI deployment capacity OR implement rate limit handling.
