@@ -1409,8 +1409,31 @@ This is the canonical browser path for this project. Do not deviate without expl
 
 ### Prohibited actions
 
-- Do not spawn a fresh browser for canonical flows
-- Do not replace the live logged-in session with isolated Chromium/Playwright unless you are explicitly working on a clearly labeled non-canonical isolated test
+- **NEVER spawn a fresh browser for canonical flows**
+- **NEVER use `browser_navigate` or similar MCP tools that spawn isolated Chromium**
+- **NEVER replace the live logged-in session with isolated Chromium/Playwright**
+- Only use the already-running Edge session on `127.0.0.1:9223`
+
+### How to connect to the live Edge session
+
+```python
+# Use connect_over_cdp to attach to live Edge
+from playwright.sync_api import sync_playwright
+
+with sync_playwright() as p:
+    browser = p.chromium.connect_over_cdp('http://127.0.0.1:9223')
+    context = browser.contexts[0]
+    page = context.pages[0]  # Use the existing page
+    # ... interact with page ...
+```
+
+### Verification required before browser work
+
+Before claiming any browser-based test is complete:
+1. Verify Edge CDP is responding: `curl -s http://127.0.0.1:9223/json/list`
+2. Connect to the EXISTING page(s), do not navigate to new pages
+3. Screenshots MUST show the authenticated state
+4. Tests MUST use the live session, not a spawned browser
 
 ### Before doing browser work
 

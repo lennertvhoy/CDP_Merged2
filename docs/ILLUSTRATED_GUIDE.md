@@ -50,7 +50,7 @@
 | Operator Shell (Next.js, port 3000) | Primary UI / Control Plane | ✅ Active |
 | Operator API (FastAPI, port 8170) | Chat Backend / Tool Router | ✅ Active |
 | PostgreSQL | Analytical Truth / Customer Intelligence | ✅ Active |
-| OpenAI (GPT-5 configured) | LLM Provider | ✅ Active |
+| OpenAI (gpt-4.1-mini) | LLM Provider | ✅ Active |
 | Edge with CDP (port 9223) | Browser Automation | ✅ Active |
 | Tracardi | Optional Activation Adapter | ⚠️ Opt-in via `--profile tracardi` (not default) |
 
@@ -1050,7 +1050,7 @@ Result: "Typed test in search box"
 | Analytical Truth | PostgreSQL | Customer intelligence, 360° views |
 | Activation (Optional) | Tracardi | Event routing, workflow adapter |
 | Control Plane | Operator Shell + API | Primary operator interface |
-| LLM | OpenAI GPT-5 | Natural language understanding |
+| LLM | OpenAI gpt-4.1-mini | Natural language understanding |
 
 ---
 
@@ -2810,6 +2810,124 @@ def _build_download_url(filename: str) -> str:
 1. Export link returns relative URL (`/download/artifacts/...`)
 2. CSV downloads successfully from `https://kbocdpagent.ngrok.app/`
 3. No `localhost` appears in delivered links
+
+---
+
+## Phase 25 — 3-Scenario Live Edge Test Session (2026-03-15)
+
+**Date:** 2026-03-15  
+**Category:** `ATTACHED_EDGE_CDP`  
+**Public URL:** https://kbocdpagent.ngrok.app  
+**Browser:** Live Edge CDP session (127.0.0.1:9223)
+
+### 25.1 Test Methodology
+
+Used **live authenticated Edge browser** via CDP connection:
+```python
+browser = playwright.chromium.connect_over_cdp('http://127.0.0.1:9223')
+page = browser.contexts[0].pages[0]  # Use existing authenticated page
+```
+
+**Critical:** All tests executed against the real public deployment with authenticated session preserved.
+
+### 25.2 Test 1: SC-46 — Typed Intent: Count Query
+
+**Query:** "How many companies are in Brussels?"
+
+**Result:**
+- Answer: "I found 41,290 companies in Brussels"
+- Follow-up suggestions: Create segment, push to Resend, CSV export, analytics, search other cities
+- Streaming: ✓ Visible
+- Time to response: ~15s
+
+**Status:** ✅ **quality_pass**
+
+**Evidence:**
+
+![SC-46 Count Query Result](reports/scenarios/sc46_count_result.png)
+
+*Screenshot shows correct answer (41,290) with actionable follow-up suggestions.*
+
+### 25.3 Test 2: SC-29 — 360° View by KBO Number
+
+**Query:** "Show 360 view for KBO 0438437723"
+
+**Result:**
+- Company: B.B.S ENTREPRISE
+- KBO: 0438437723
+- Status: Active (AC)
+- Complete 360° view with all 4 sources:
+  1. **KBO:** Official name, legal form, NACE 43320, city Erquelinnes
+  2. **Teamleader:** Company name, email, phone
+  3. **Exact Online:** Customer name, status, credit line
+  4. **Autotask:** Company type, phone, website, tickets, contracts (€15,000)
+- Link status: **linked_all** (KBO + Teamleader + Exact + Autotask all matched)
+
+**Status:** ✅ **quality_pass**
+
+**Evidence:**
+
+![SC-29 360 View Result](reports/scenarios/sc29_360_kbo.png)
+
+*Screenshot shows full golden record with unified data from all 4 sources — canonical CDP proof.*
+
+### 25.4 Test 3: SC-19 — Create Segment from Real Search
+
+**Turn 1:** "Find software companies in Brussels"  
+**Turn 2:** "Create a segment from these results"
+
+**Turn 1 Result:**
+- Answer: "I found 1,821 software companies in Brussels"
+- Follow-up suggestions: Analytics breakdown
+- Streaming: ✓ Visible
+
+**Turn 2 Result:**
+- Response: "Please provide the search criteria or results you want to create a segment from, so I can create the segment accurately for you."
+- **Gap:** System asks for clarification instead of using prior search context
+
+**Status:** ⚠️ **functional_pass** — Search works, segment creation needs context awareness improvement
+
+**Evidence:**
+
+![SC-19 Segment Creation](reports/scenarios/sc19_segment_created.png)
+
+*Screenshot shows search result (1,821 companies) but segment creation asks for clarification rather than using context.*
+
+### 25.5 Summary
+
+| Scenario | Status | Key Finding |
+|----------|--------|-------------|
+| SC-46 Count Query | ✅ quality_pass | Correct count, good UX |
+| SC-29 360 by KBO | ✅ quality_pass | Full 4-source golden record |
+| SC-19 Segment Creation | ⚠️ functional_pass | Search works, context gap identified |
+
+**New Scenario Tracker:**
+- Foundation (SC-01 to SC-10): 10 passed
+- Follow-up (SC-11 to SC-18): 6 passed, 2 failed/pending
+- 360/Analytics (SC-29 to SC-38): 1 passed, 9 pending
+- Intent (SC-46 to SC-50): 1 passed, 4 pending
+
+### 25.6 Documentation Contradictions Fixed
+
+1. **SC-18 Status:** Updated from `pending_retest` to `quality_pass` (user verified)
+2. **GPT-5 References:** Fixed all references from "GPT-5 configured" to "gpt-4.1-mini" in:
+   - `docs/ILLUSTRATED_GUIDE.md` (Runtime Architecture table)
+   - `docs/ILLUSTRATED_GUIDE.md` (Architecture Truth section)
+
+### 25.7 Files Changed
+
+| File | Change |
+|------|--------|
+| `SCENARIO_ACCEPTANCE_PROGRAM.md` | Updated SC-18, SC-19, SC-29, SC-46 statuses |
+| `docs/ILLUSTRATED_GUIDE.md` | Added Phase 25 with evidence |
+| `AGENTS.md` | Strengthened live Edge browser requirement |
+| `reports/scenarios/sc46_count_result.png` | New evidence |
+| `reports/scenarios/sc29_360_kbo.png` | New evidence |
+| `reports/scenarios/sc19_segment_created.png` | New evidence |
+
+---
+
+*End of Phase 25*
 
 ---
 

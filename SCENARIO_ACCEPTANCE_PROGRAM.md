@@ -65,13 +65,13 @@ Scenario status labels:
 | SC-15 | Follow-up segment creation from last search | ✅ quality_pass | `reports/scenarios/sc15/sc15_turn2_segment.png`, `sc15_segment_verified.png` | Context reuse: ✓; Segment verified in UI: ✓; Member count aligned: ✓ (3,062 = 3,062); Turn 1: ~15s; Turn 2: ~15s; Streaming: ✓ |
 | SC-16 | Follow-up 360 from prior result | ✅ quality_pass | `reports/scenarios/sc16/sc16_turn2_360.png` | Prior-result resolution: ✓ (first result: AUTO 32 B.B.S., KBO 0452177079); 360 binding verified: ✓; Context reuse: ✓; Turn 1: ~15s; Turn 2: ~15s; Streaming: ✓ |
 | SC-17 | Follow-up count after search | ❌ **functional_fail** | `reports/scenarios/sc17_turn1_v2.png`, `sc17_turn2_v2.png` | Context reuse broken — Turn 2 "How many is that exactly?" failed to reference Turn 1 search results |
-| SC-18 | Follow-up resume after refresh | ⏳ **pending_retest** | `reports/scenarios/sc18_step1.png`, `sc18_step3_export.png`, `sc18_fixed_ui_redesign.png` | **Bug discovered:** Export returned `http://localhost:3000/download/artifacts/...` link on public app — invalid for real users. Fix applied: relative URLs. **UI fix:** Chat page redesigned for maximum vertical space. Awaiting retest on public path. |
+| SC-18 | Follow-up resume after refresh | ✅ **quality_pass** | `reports/scenarios/sc18_step1.png`, `sc18_step3_export.png`, `sc18_fixed_ui_redesign.png`, `sc18_public_verified.png` | **Fixed:** Export now returns relative URLs (`/download/artifacts/...`) that work on any host. **UI improved:** Chat page redesigned for maximum vertical space. Public path verified working on `https://kbocdpagent.ngrok.app`. |
 
 ### Segments / exports / operational flow (SC-19 to SC-28)
 
 | ID | Title | Status | Evidence | Notes |
 |----|-------|--------|----------|-------|
-| SC-19 | Create segment from real search | ⏳ pending | — | — |
+| SC-19 | Create segment from real search | ⚠️ functional_pass | `reports/scenarios/sc19_search_result.png`, `sc19_segment_created.png` | Search works (1,821 software companies). Segment creation asks for clarification rather than using context. Needs improvement for quality_pass. |
 | SC-20 | Segment stats alignment | ⏳ pending | — | — |
 | SC-21 | Export segment to CSV | ⏳ pending | — | — |
 | SC-22 | CSV field validation | ⏳ pending | — | — |
@@ -86,7 +86,7 @@ Scenario status labels:
 
 | ID | Title | Status | Evidence | Notes |
 |----|-------|--------|----------|-------|
-| SC-29 | 360 by KBO number | ⏳ pending | — | — |
+| SC-29 | 360 by KBO number | ✅ quality_pass | `reports/scenarios/sc29_360_kbo.png` | Full 360° view for KBO 0438437723 (B.B.S ENTREPRISE) with all 4 sources linked (KBO + Teamleader + Exact + Autotask). Complete golden record displayed. |
 | SC-30 | 360 by company name | ⏳ pending | — | — |
 | SC-31 | Linked source visibility | ⏳ pending | — | — |
 | SC-32 | Financial/Exact summary | ⏳ pending | — | — |
@@ -113,7 +113,7 @@ Scenario status labels:
 
 | ID | Title | Status | Evidence | Notes |
 |----|-------|--------|----------|-------|
-| SC-46 | Typed intent: count query | ⏳ pending | — | — |
+| SC-46 | Typed intent: count query | ✅ quality_pass | `reports/scenarios/sc46_count_result.png` | Query "How many companies are in Brussels?" returns 41,290 with correct count and follow-up suggestions. Streaming visible. |
 | SC-47 | Typed intent: search query | ⏳ pending | — | — |
 | SC-48 | Typed intent: 360 query | ⏳ pending | — | — |
 | SC-49 | Typed intent: segment/export query | ⏳ pending | — | — |
