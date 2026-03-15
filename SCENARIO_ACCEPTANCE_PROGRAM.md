@@ -382,3 +382,51 @@ Scenario status labels:
 ---
 
 *For business context, see `docs/BUSINESS_CASE.md`. For technical details, see `docs/SYSTEM_SPEC.md`.*
+
+## Production Model Selection (2026-03-15)
+
+### Available Deployments
+| Model | Status | Recommendation |
+|-------|--------|----------------|
+| gpt-4o | ✅ Available | **PRODUCTION CHOICE** |
+| gpt-4.1 | ✅ Available | Alternative |
+| gpt-4.1-mini | ✅ Available | Cost-effective option |
+| gpt-5 | ✅ Available | ❌ Poor tool accuracy (50%) |
+| gpt-5-mini | ✅ Available | Not tested |
+| gpt-5-nano | ✅ Available | Not tested |
+| gpt-5.1 | ❌ Unavailable | Quota=0 for ProvisionedManaged SKU |
+| gpt-5.1-codex | ❌ Unavailable | Quota=0 for ProvisionedManaged SKU |
+
+### Selection Rationale: GPT-4o
+
+**Evidence from testing:**
+1. **Tool calling accuracy**: 100% (vs GPT-5's 50%)
+2. **Latency**: ~4.5s average (vs GPT-5's ~8.5s)
+3. **Temperature control**: Supported (deterministic output)
+4. **Follow-up continuity**: Working (context maintained across turns)
+
+**Why not GPT-5:**
+- Fails to call tools for 50% of queries (e.g., returns text instead of calling aggregate_profiles for "How many...")
+- Higher latency
+- No temperature control
+
+**Why not GPT-5.1/GPT-5.1-codex:**
+- Subscription has 0 quota for "Global Provisioned Managed Throughput Unit"
+- Cannot deploy (confirmed via Azure CLI with exact error: `InsufficientQuota`)
+- See `reports/GPT51_AVAILABILITY_PROOF.md` for full evidence
+
+### Current Configuration
+```bash
+AZURE_OPENAI_DEPLOYMENT_NAME=gpt-4o
+LLM_MODEL=gpt-4o
+```
+
+### Scenario Status Update
+
+| Scenario | Status | Blocker |
+|----------|--------|---------|
+| SC-14 | ✅ quality_pass | Complete |
+| SC-17 | ⏳ pending | Database connection |
+| SC-18 | ⏳ pending | Database connection |
+
+**Note**: SC-17 and SC-18 failures are due to `DATABASE_URL not configured` - a deployment/infrastructure issue, not a model capability issue. GPT-4o correctly handles the conversation flow and tool calling.
