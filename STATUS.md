@@ -12,6 +12,7 @@
 
 ## Current Headline
 
+- `observed` from 2026-03-15 08:00 CET: **MODEL BENCHMARK COMPLETE - SWITCHED FROM GPT-5 TO GPT-4O.** Comprehensive benchmark of all 6 Azure OpenAI deployments proves GPT-5 family is incompatible (temperature=0.0 not supported). GPT-4o is 2-3x faster than alternatives and now the production deployment. See `reports/MODEL_BENCHMARK_REPORT.md` for full evidence.
 - `observed` from 2026-03-14 12:00 CET: **ADMIN PANEL IMPLEMENTED WITH BASIC ADMIN AUTHORIZATION.** Admin panel now live at `https://kbocdpagent.ngrok.app/admin`. Exposes user list to admin users with server-side protection. Boolean `is_admin` flag exposed in bootstrap. Admin shield link appears in sidebar. NOT full RBAC - only simple admin/user distinction.
 - `observed` from 2026-03-14 11:32 CET: **STABLE NGROK INFRASTRUCTURE LIVE.** Operator shell now publicly accessible at fixed ngrok-branded domain `https://kbocdpagent.ngrok.app` (Hobbyist plan). Complete systemd-based setup with auto-restart, health monitoring, and self-healing watchdog. All services enabled for boot-time startup.
 - `observed` from 2026-03-14 11:32 CET: **TRACARDI DEMOTED TO OPTIONAL ACTIVATION ADAPTER.** Architecture decision recorded - Tracardi CE limitations no longer block core delivery. First-party event processor + PostgreSQL writeback satisfy demo/runtime needs. Tracardi remains available for future paid-feature activation path if justified.
