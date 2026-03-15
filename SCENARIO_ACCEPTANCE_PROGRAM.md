@@ -426,7 +426,7 @@ LLM_MODEL=gpt-4o
 | Scenario | Status | Blocker |
 |----------|--------|---------|
 | SC-14 | ✅ quality_pass | Complete |
-| SC-17 | ⏳ pending | Database connection |
-| SC-18 | ⏳ pending | Database connection |
+| SC-17 | 🔄 ready | Fixed: Path resolution bug |
+| SC-18 | 🔄 ready | Fixed: Path resolution bug |
 
-**Note**: SC-17 and SC-18 failures are due to `DATABASE_URL not configured` - a deployment/infrastructure issue, not a model capability issue. GPT-4o correctly handles the conversation flow and tool calling.
+**Note**: Fixed path resolution bug in PostgreSQL clients (2026-03-14). The `.env.database` file is now correctly located at project root instead of one directory above. Both scenarios ready for testing.
